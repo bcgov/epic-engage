@@ -76,7 +76,7 @@ const SurveyFormBuilder = () => {
             dispatch(
                 openNotification({
                     severity: 'warning',
-                    text: 'Engagement already published. Saving is disabled.',
+                    text: 'Engagement already published. Please be careful while editing the survey.',
                 }),
             );
         }
@@ -411,7 +411,7 @@ const SurveyFormBuilder = () => {
             <Grid item xs={12}>
                 <Stack direction="row" spacing={2}>
                     <PrimaryButton
-                        disabled={!formData || hasPublishedEngagement}
+                        disabled={!formData}
                         loading={isSaving}
                         onClick={handleSaveForm}
                     >
