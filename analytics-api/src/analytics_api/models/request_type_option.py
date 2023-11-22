@@ -86,5 +86,5 @@ class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-pub
                             .group_by(survey_question.c.position, survey_question.c.label))
 
             return survey_result.all()
-        else:
-            return None  # Return None indicating no records
+
+        return None  # Return None indicating no records
