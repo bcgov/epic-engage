@@ -54,9 +54,9 @@ class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-pub
         # Get all the available responses for each question within the survey.
         available_response = (db.session.query(AvailableResponseOptionModel.request_key,
                                                AvailableResponseOptionModel.value)
-                           .filter(and_(AvailableResponseOptionModel.survey_id.in_(analytics_survey_id),
-                                        AvailableResponseOptionModel.is_active == true()))
-                           .subquery())
+                              .filter(and_(AvailableResponseOptionModel.survey_id.in_(
+                                  analytics_survey_id), AvailableResponseOptionModel.is_active == true()))
+                              .subquery())
         # Get all the survey responses with the counts for each response specific to a survey id which
         # are in active status.
         survey_response = (db.session.query(ResponseTypeOptionModel.request_key, ResponseTypeOptionModel.value,
@@ -74,16 +74,16 @@ class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-pub
             # - value: user selected response for each question
             # - count: number of time the same value is selected as a response to each question
             survey_result = (db.session.query((survey_question.c.position).label('position'),
-                                            (survey_question.c.label).label('question'),
-                                            func.json_agg(func.json_build_object('value', available_response.c.value,
-                                                                                'count', func.coalesce(
-                                                                                    survey_response.c.response, 0)))
-                                            .label('result'))
-                            .outerjoin(available_response, survey_question.c.key == available_response.c.request_key)
-                            .outerjoin(survey_response,
-                                       (available_response.c.value == survey_response.c.value) &
-                                       (available_response.c.request_key == survey_response.c.request_key))
-                            .group_by(survey_question.c.position, survey_question.c.label))
+                                              (survey_question.c.label).label('question'),
+                                              func.json_agg(func.json_build_object(
+                                                  'value', available_response.c.value,
+                                                  'count', func.coalesce(survey_response.c.response, 0)))
+                             .label('result'))
+                             .outerjoin(available_response, survey_question.c.key == available_response.c.request_key)
+                             .outerjoin(survey_response,
+                                        (available_response.c.value == survey_response.c.value) &
+                                        (available_response.c.request_key == survey_response.c.request_key))
+                             .group_by(survey_question.c.position, survey_question.c.label))
 
             return survey_result.all()
 
