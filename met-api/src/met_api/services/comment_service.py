@@ -257,7 +257,7 @@ class CommentService:
         document_options = {
             'document_type': GeneratedDocumentTypes.COMMENT_SHEET_PROPONENT.value,
             'template_name': 'proponent_comments_sheet.xlsx',
-            'convert_to': 'csv',
+            'convert_to': 'xlsx',
             'report_name': 'proponent_comments_sheet'
         }
         return DocumentGenerationService().generate_document(data=formatted_comments, options=document_options)
