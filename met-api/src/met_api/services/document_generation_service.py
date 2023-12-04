@@ -16,9 +16,7 @@
 """Service for document generation."""
 import os
 
-from flask import Response, send_file, current_app
-from io import BytesIO
-import pandas as pd
+from flask import current_app
 
 from met_api.models.generated_document_template import GeneratedDocumentTemplate
 from met_api.services.cdogs_api_service import CdogsApiService
@@ -70,39 +68,16 @@ class DocumentGenerationService:  # pylint:disable=too-few-public-methods
             document_template.hash_code = new_hash_code
             document_template.save()
 
-        # Use pandas to create a DataFrame from your data
-        # Extract titles
-        titles = [title['label'] for title in data['titles']]
-
-        # Extract comments
-        comments_data = []
-        for submission in data['comments']:
-            submission_id = submission['submission_id']
-            comment_texts = [comment['text'] for comment in submission['commentText']]
-            comments_data.append({'submission_id': submission_id, **dict(zip(titles, comment_texts))})
-
-        # Create DataFrame
-        df = pd.DataFrame(comments_data)
-
-        # Create an in-memory Excel file
-        excel_buffer = BytesIO()
-
-        # Use openpyxl to write DataFrame to Excel file with UTF-8 encoding
-        with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Sheet1')
-
-        # Seek to the beginning of the buffer before returning the response
-        excel_buffer.seek(0)
-
-        headers = {
-            'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'content-disposition': 'attachment; filename=proponent_comments_sheet.xlsx',
+        generator_options = {
+                'cachereport': False,
+                'convertTo': options.get('convert_to', 'xlsx'),
+                'overwrite': True,
+                'reportName': options.get('report_name', 'report')
         }
 
-        # Return the binary data as a Flask response
-        return Response(
-            excel_buffer.read(),
-            headers=headers,
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            status=200
+        current_app.logger.info('Generating document')
+        return self.cdgos_api_service.generate_document(
+            template_hash_code=document_template.hash_code,
+            data=data,
+            options=generator_options
         )

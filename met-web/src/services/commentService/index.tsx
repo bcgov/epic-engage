@@ -45,7 +45,7 @@ export const getStaffCommentSheet = async ({ survey_id }: GenerateCommentsSheetP
 export const getProponentCommentSheet = async ({ survey_id }: GenerateCommentsSheetParams) => {
     const url = replaceUrl(Endpoints.Comment.GET_PROPONENT_SPREAD_SHEET, 'survey_id', String(survey_id));
     const headers = {
-        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     };
     return http.GetRequest<Blob>(url, {}, headers);
 };

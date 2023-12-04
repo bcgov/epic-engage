@@ -103,12 +103,14 @@ class GeneratedProponentCommentsSheet(Resource):
 
             response = CommentService().export_comments_to_spread_sheet_proponent(survey_id)
             response_headers = dict(response.headers)
+            print(response_headers.get('content-type'))
+            print(response_headers.get('content-disposition'))
             headers = {
-                'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'content-disposition': 'attachment; filename=proponent_comments_sheet.xlsx',
+                'content-type': response_headers.get('content-type'),
+                'content-disposition': response_headers.get('content-disposition'),
             }
             return Response(
-                response=response.data,
+                response=response.content,
                 status=response.status_code,
                 headers=headers
             )

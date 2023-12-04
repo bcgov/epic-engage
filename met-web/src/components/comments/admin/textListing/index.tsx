@@ -94,46 +94,25 @@ const CommentTextListing = () => {
         try {
             setIsExporting(true);
             const response = await getProponentCommentSheet({ survey_id: survey.id });
-            // Convert the response to Blob if it's not already
-            const blobData = response.data; // Assuming 'data' property contains the blob data
-            const blob = new Blob([blobData], {
-                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            });
-            console.log(response);
-            console.log(blob);
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = `PUBLIC - ${survey.engagement?.name || ''} - ${formatToUTC(Date())}.xlsx`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
+            downloadFile(response, `PUBLIC - ${survey.engagement?.name || ''} - ${formatToUTC(Date())}.xlsx`);
             setIsExporting(false);
             handleExportToCSVClose(); // Close the menu after export
         } catch (error) {
-            console.log(error);
             setIsExporting(false);
-            if (axios.isAxiosError(error)) {
-                if (error.response) {
-                    console.error('Error response from server:', error.response);
-                }
-                if (error.response?.status === HTTP_STATUS_CODES.FORBIDDEN) {
-                    dispatch(
-                        openNotification({
-                            severity: 'error',
-                            text: 'You do not have permission to export this data.',
-                        }),
-                    );
-                } else {
-                    dispatch(
-                        openNotification({
-                            severity: 'error',
-                            text: 'Error occurred while exporting comments. Please try again later.',
-                        }),
-                    );
-                }
+            if (axios.isAxiosError(error) && error.response?.status === HTTP_STATUS_CODES.FORBIDDEN) {
+                dispatch(
+                    openNotification({
+                        severity: 'error',
+                        text: 'You do not have permission to export this data.',
+                    }),
+                );
             } else {
-                console.error('Unexpected error:', error);
+                dispatch(
+                    openNotification({
+                        severity: 'error',
+                        text: 'Error occurred while exporting comments. Please try again later.',
+                    }),
+                );
             }
         }
     };
