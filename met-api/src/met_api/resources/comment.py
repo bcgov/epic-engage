@@ -103,8 +103,6 @@ class GeneratedProponentCommentsSheet(Resource):
 
             response = CommentService().export_comments_to_spread_sheet_proponent(survey_id)
             response_headers = dict(response.headers)
-            print(response_headers.get('content-type'))
-            print(response_headers.get('content-disposition'))
             headers = {
                 'content-type': response_headers.get('content-type'),
                 'content-disposition': response_headers.get('content-disposition'),
