@@ -322,7 +322,8 @@ class CommentService:
 
         # Iterate over the input data
         for comment in comments:
-            submission_id = comment.get('submission_id', '')  # Get the submission_id, or an empty string if it's missing
+            # Get the submission_id, or an empty string if it's missing
+            submission_id = comment.get('submission_id', '')
             label = comment['label']
             text = comment.get('text', '')  # Get the text, or an empty string if it's missing
 
