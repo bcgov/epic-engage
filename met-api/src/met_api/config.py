@@ -165,7 +165,12 @@ class _Config():  # pylint: disable=too-few-public-methods
             'SUBSCRIBE_EMAIL_TEMPLATE_ID': os.getenv('SUBSCRIBE_EMAIL_TEMPLATE_ID'),
             'SUBSCRIBE_EMAIL_SUBJECT': os.getenv('SUBSCRIBE_EMAIL_SUBJECT', 'Confirm your subscription'),
             'REJECTED_EMAIL_TEMPLATE_ID': os.getenv('REJECTED_EMAIL_TEMPLATE_ID'),
-            'REJECTED_EMAIL_SUBJECT': os.getenv('REJECTED_EMAIL_SUBJECT', '{engagement_name} - About your Comments'),
+            'REJECTED_EMAIL_SUBJECT': os.getenv('REJECTED_EMAIL_SUBJECT',
+                                                'Your comment on {engagement_name} needs to be edited'),
+            'CLOSED_ENGAGEMENT_REJECTED_EMAIL_TEMPLATE_ID': os.getenv('CLOSED_ENGAGEMENT_REJECTED_EMAIL_TEMPLATE_ID'),
+            'CLOSED_ENGAGEMENT_REJECTED_EMAIL_SUBJECT':
+            os.getenv('CLOSED_ENGAGEMENT_REJECTED_EMAIL_SUBJECT',
+                      'Your comment on {engagement_name} has been rejected'),
             'SUBMISSION_RESPONSE_EMAIL_TEMPLATE_ID': os.getenv('SUBMISSION_RESPONSE_EMAIL_TEMPLATE_ID'),
             'SUBMISSION_RESPONSE_EMAIL_SUBJECT': os.getenv('SUBMISSION_RESPONSE_EMAIL_SUBJECT',
                                                            'Your feedback was successfully submitted'),
