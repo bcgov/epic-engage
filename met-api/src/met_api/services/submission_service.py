@@ -329,8 +329,7 @@ class SubmissionService:
         """Send an verification email.Throws error if fails."""
         participant_id = submission.participant_id
         participant = ParticipantModel.find_by_id(participant_id)
-        template_id = get_gc_notify_config('REJECTED_EMAIL_TEMPLATE_ID')
-        subject, body, args = SubmissionService._render_email_template(
+        template_id, subject, body, args = SubmissionService._render_email_template(
             staff_review_details, submission, review_note, token)
         try:
             notification.send_email(subject=subject,
@@ -349,11 +348,21 @@ class SubmissionService:
     @staticmethod
     # pylint: disable-msg=too-many-locals
     def _render_email_template(staff_review_details: dict, submission: SubmissionModel, review_note, token):
-        template = Template.get_template('email_rejected_comment.html')
         engagement: EngagementModel = EngagementModel.find_by_id(
             submission.engagement_id)
-        survey: SurveyModel = SurveyModel.find_by_id(submission.survey_id)
         engagement_name = engagement.name
+        survey: SurveyModel = SurveyModel.get_open(submission.survey_id)
+        if not survey:
+            template_id = get_gc_notify_config('CLOSED_ENGAGEMENT_REJECTED_EMAIL_TEMPLATE_ID')
+            template = Template.get_template('email_rejected_comment_closed.html')
+            subject = get_gc_notify_config('CLOSED_ENGAGEMENT_REJECTED_EMAIL_SUBJECT'). \
+                format(engagement_name=engagement_name)
+        else:
+            template_id = get_gc_notify_config('REJECTED_EMAIL_TEMPLATE_ID')
+            template = Template.get_template('email_rejected_comment.html')
+            subject = get_gc_notify_config('REJECTED_EMAIL_SUBJECT'). \
+                format(engagement_name=engagement_name)
+        survey: SurveyModel = SurveyModel.find_by_id(submission.survey_id)
         survey_name = survey.name
         tenant_name = SubmissionService._get_tenant_name(
             engagement.tenant_id)
@@ -362,8 +371,6 @@ class SubmissionService:
                    submission_id=submission.id, token=token)
         submission_url = notification.get_tenant_site_url(
             engagement.tenant_id, submission_path)
-        subject = get_gc_notify_config('REJECTED_EMAIL_SUBJECT'). \
-            format(engagement_name=engagement_name)
         email_environment = get_gc_notify_config('EMAIL_ENVIRONMENT')
         args = {
             'engagement_name': engagement_name,
@@ -389,7 +396,7 @@ class SubmissionService:
             end_date=args.get('end_date'),
             email_environment=args.get('email_environment'),
         )
-        return subject, body, args
+        return template_id, subject, body, args
 
     @staticmethod
     def _send_submission_response_email(participant_id, engagement_id) -> None:
