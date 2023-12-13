@@ -351,8 +351,7 @@ class SubmissionService:
         engagement: EngagementModel = EngagementModel.find_by_id(
             submission.engagement_id)
         engagement_name = engagement.name
-        survey: SurveyModel = SurveyModel.get_open(submission.survey_id)
-        if not survey:
+        if engagement.status_id == EngagementStatus.Closed.value:
             template_id = get_gc_notify_config('CLOSED_ENGAGEMENT_REJECTED_EMAIL_TEMPLATE_ID')
             template = Template.get_template('email_rejected_comment_closed.html')
             subject = get_gc_notify_config('CLOSED_ENGAGEMENT_REJECTED_EMAIL_SUBJECT'). \
