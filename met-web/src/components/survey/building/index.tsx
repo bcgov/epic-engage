@@ -411,7 +411,7 @@ const SurveyFormBuilder = () => {
             <Grid item xs={12}>
                 <Stack direction="row" spacing={2}>
                     <PrimaryButton disabled={!formData} loading={isSaving} onClick={handleSaveForm}>
-                        {'Save & Continue'}
+                        {'Report Settings'}
                     </PrimaryButton>
                     <SecondaryButton onClick={() => navigate('/surveys')}>Cancel</SecondaryButton>
                 </Stack>
