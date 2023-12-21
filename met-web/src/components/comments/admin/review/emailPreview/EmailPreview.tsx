@@ -50,7 +50,7 @@ export default function EmailPreview({
                             </>
                         ) : (
                             <>
-                                We are sorry, but the public commenting period for {engagementName} is now closed and
+                                We are sorry but the public commenting period for {engagementName} is now closed and
                                 your feedback cannot be edited.
                             </>
                         )}
