@@ -45,10 +45,14 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
                 survey_id: savedEngagement.surveys[0].id,
                 type: EmailVerificationType.Survey,
             });
-            window.snowplow('trackSelfDescribingEvent', {
-                schema: 'iglu:ca.bc.gov.met/verify-email/jsonschema/1-0-0',
-                data: { survey_id: savedEngagement.surveys[0].id, engagement_id: savedEngagement.id },
-            });
+            try {
+                window.snowplow('trackSelfDescribingEvent', {
+                    schema: 'iglu:ca.bc.gov.met/verify-email/jsonschema/1-0-0',
+                    data: { survey_id: savedEngagement.surveys[0].id, engagement_id: savedEngagement.id },
+                });
+            } catch (error) {
+                console.log(error);
+            }
             dispatch(
                 openNotification({
                     severity: 'success',
