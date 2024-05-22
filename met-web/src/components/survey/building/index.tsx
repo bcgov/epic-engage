@@ -283,49 +283,51 @@ const SurveyFormBuilder = () => {
                 <Divider />
             </Grid>
             <Grid item xs={12}>
-                <FormGroup>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={isMultiPage}
-                                onChange={(e) => {
-                                    dispatch(
-                                        openNotificationModal({
-                                            open: true,
-                                            data: {
-                                                header: 'Change Survey Type',
-                                                subText: [
-                                                    {
-                                                        text: `You will be changing the survey type from ${
-                                                            isMultiPage
-                                                                ? 'multi page to single page'
-                                                                : 'single page to multi page'
-                                                        }.`,
+                <Stack direction="row">
+                    <FormGroup>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={isMultiPage}
+                                    onChange={(e) => {
+                                        dispatch(
+                                            openNotificationModal({
+                                                open: true,
+                                                data: {
+                                                    header: 'Change Survey Type',
+                                                    subText: [
+                                                        {
+                                                            text: `You will be changing the survey type from ${
+                                                                isMultiPage
+                                                                    ? 'multi page to single page'
+                                                                    : 'single page to multi page'
+                                                            }.`,
+                                                        },
+                                                        {
+                                                            text: 'You will lose all current progress if you do.',
+                                                            bold: true,
+                                                        },
+                                                        {
+                                                            text: 'Do you want to change this survey type?',
+                                                        },
+                                                    ],
+                                                    handleConfirm: () => {
+                                                        setFormDefinition({
+                                                            display: isMultiPage ? 'form' : 'wizard',
+                                                            components: [],
+                                                        });
                                                     },
-                                                    {
-                                                        text: 'You will lose all current progress if you do.',
-                                                        bold: true,
-                                                    },
-                                                    {
-                                                        text: 'Do you want to change this survey type?',
-                                                    },
-                                                ],
-                                                handleConfirm: () => {
-                                                    setFormDefinition({
-                                                        display: isMultiPage ? 'form' : 'wizard',
-                                                        components: [],
-                                                    });
                                                 },
-                                            },
-                                            type: 'confirm',
-                                        }),
-                                    );
-                                }}
-                            />
-                        }
-                        label="Multi-page"
-                    />
-                </FormGroup>
+                                                type: 'confirm',
+                                            }),
+                                        );
+                                    }}
+                                />
+                            }
+                            label="Multi-page"
+                        />
+                    </FormGroup>
+                </Stack>
             </Grid>
             <Grid item xs={12}>
                 <FormBuilder handleFormChange={handleFormChange} savedForm={formDefinition} />
