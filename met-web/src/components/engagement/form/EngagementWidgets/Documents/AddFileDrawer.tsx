@@ -18,7 +18,7 @@ import { updatedDiff } from 'deep-object-diff';
 
 const schema = yup
     .object({
-        name: yup.string().max(50, 'Document name should not exceed 50 characters').required(),
+        name: yup.string().max(200, 'Document name should not exceed 200 characters').required(),
         link: yup.string().max(2000, 'URL should not exceed 2000 characters').required(),
         folderId: yup.number(),
     })
