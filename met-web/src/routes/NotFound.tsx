@@ -16,7 +16,7 @@ const SuggestionsList = () => (
                 Go to our <Link to="/">homepage</Link> and browse through our past and current engagements
             </li>
             <li style={listItemStyle}>Telephone Device for the Deaf (TDD) across B.C.: 711</li>
-            <li style={listItemStyle}>If you would like to email us, please contact (TBD).</li>
+            <li style={listItemStyle}>If you would like to email us, please contact eao.epicsystem@gov.bc.ca.</li>
         </ul>
     </Box>
 );
