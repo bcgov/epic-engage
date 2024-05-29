@@ -95,15 +95,19 @@ export const generateDashboardPdf = async (
 
     const emailsSent = document.getElementById('kpi-emails-sent');
     if (emailsSent) {
+        const rect = emailsSent.getBoundingClientRect();
+        const heightToWidthRatio = rect.height / rect.width;
         const emailsSentData = await toPng(emailsSent);
-        addImageToPdf(doc, emailsSentData, padding + 15, top, 70, 70);
+        addImageToPdf(doc, emailsSentData, padding + 15, top, 70, 70 * heightToWidthRatio);
     }
     handlePdfExportProgress(20);
 
     const surveysCompleted = document.getElementById('kpi-surveys-completed');
     if (surveysCompleted) {
+        const rect = surveysCompleted.getBoundingClientRect();
+        const heightToWidthRatio = rect.height / rect.width;
         const surveysCompletedData = await toPng(surveysCompleted);
-        addImageToPdf(doc, surveysCompletedData, padding + 95, top, 70, 70);
+        addImageToPdf(doc, surveysCompletedData, padding + 95, top, 70, 70 * heightToWidthRatio);
     }
     handlePdfExportProgress(40);
 
@@ -119,8 +123,10 @@ export const generateDashboardPdf = async (
 
     const submissiontrend = document.getElementById('submissiontrend');
     if (submissiontrend) {
+        const rect = submissiontrend.getBoundingClientRect();
+        const heightToWidthRatio = rect.height / rect.width;
         const submissiontrendData = await toPng(submissiontrend);
-        addImageToPdf(doc, submissiontrendData, padding, 10, 190, 60);
+        addImageToPdf(doc, submissiontrendData, padding, 10, 190, 190 * heightToWidthRatio);
         handlePdfExportProgress(80);
     }
 
