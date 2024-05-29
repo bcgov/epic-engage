@@ -159,7 +159,8 @@ def _extract_submission(form_questions, met_survey, metsession, submission, met_
                 # instead of going through each answer and iterate , we find the questions from the form and try to get the answer.
                 answer_key = submission.submission_json.get(component['key'])
 
-                if not (answer_key):
+                # skip if answer is not present or no option was selected (eg. in radio buttons or dropdown)
+                if answer_key is None or answer_key == '':
                     continue
 
                 # TODO comments related to category type question has a different format in the source system
