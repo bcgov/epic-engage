@@ -2,41 +2,26 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Grid, TextField, Stack, Autocomplete } from '@mui/material';
 import { CreateSurveyContext } from './CreateSurveyContext';
 import { useNavigate } from 'react-router-dom';
-import { fetchSurveys, linkSurvey } from 'services/surveyService';
+import { linkSurvey } from 'services/surveyService';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { MetLabel, PrimaryButton, SecondaryButton } from 'components/common';
 import { Survey } from 'models/survey';
 import { Disclaimer } from './Disclaimer';
 
-const LinkOptions = () => {
+interface LinkOptions {
+    availableSurveys: Survey[] | null;
+    loadingSurveys: boolean;
+}
+
+const LinkOptions = ({ availableSurveys, loadingSurveys }: LinkOptions) => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
     const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
-    const [loadingSurveys, setLoadingSurveys] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
 
-    const { availableSurveys, setAvailableSurveys, engagementToLink, isDisclaimerChecked, setDisclaimerError } =
-        useContext(CreateSurveyContext);
-
-    const handleFetchSurveys = async () => {
-        try {
-            const fetchedSurveys = await fetchSurveys({
-                is_unlinked: true,
-                exclude_hidden: true,
-                exclude_template: true,
-            });
-            setAvailableSurveys(fetchedSurveys);
-            setLoadingSurveys(false);
-        } catch (error) {
-            dispatch(openNotification({ severity: 'error', text: 'Error occurred while fetching available surveys' }));
-        }
-    };
-
-    useEffect(() => {
-        handleFetchSurveys();
-    }, []);
+    const { engagementToLink, isDisclaimerChecked, setDisclaimerError } = useContext(CreateSurveyContext);
 
     const handleSave = async () => {
         if (!selectedSurvey) {
