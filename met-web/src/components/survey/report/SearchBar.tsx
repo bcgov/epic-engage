@@ -14,7 +14,7 @@ const SearchBar = () => {
                 <TextField
                     id="engagement-name"
                     variant="outlined"
-                    label="Search by name"
+                    label="Start typing a question"
                     fullWidth
                     name="searchText"
                     value={searchText}
