@@ -14,6 +14,7 @@ from sqlalchemy.sql import text
 from sqlalchemy.sql.schema import ForeignKey
 
 from met_api.constants.engagement_status import EngagementDisplayStatus, Status
+from met_api.constants.engagement_visibility import Visibility
 from met_api.constants.user import SYSTEM_USER
 from met_api.models.engagement_metadata import EngagementMetadataModel
 from met_api.models.membership import Membership as MembershipModel
@@ -26,6 +27,7 @@ from met_api.utils.enums import MembershipStatus
 from .base_model import BaseModel
 from .db import db
 from .engagement_status import EngagementStatus
+from .engagement_visibility import EngagementVisibility
 
 
 class Engagement(BaseModel):
@@ -47,7 +49,7 @@ class Engagement(BaseModel):
     surveys = db.relationship('Survey', backref='engagement', cascade='all, delete')
     status_block = db.relationship('EngagementStatusBlock', backref='engagement')
     tenant_id = db.Column(db.Integer, db.ForeignKey('tenant.id'), nullable=True)
-    is_internal = db.Column(db.Boolean, nullable=False)
+    visibility = db.Column(db.Integer, ForeignKey('engagement_visibility.id'), nullable=False)
 
     @classmethod
     def get_engagements_paginated(
@@ -58,7 +60,7 @@ class Engagement(BaseModel):
             search_options=None,
     ):
         """Get engagements paginated."""
-        query = db.session.query(Engagement).join(EngagementStatus)
+        query = db.session.query(Engagement).join(EngagementStatus).join(EngagementVisibility)
 
         query = cls._add_tenant_filter(query)
 
@@ -73,7 +75,7 @@ class Engagement(BaseModel):
 
             query = cls._filter_by_project_metadata(query, search_options)
 
-        query = cls._filter_by_internal(query, search_options)
+            query = cls._filter_by_visibility(query, search_options)
 
         if scope_options.restricted:
             if scope_options.include_assigned:
@@ -122,7 +124,7 @@ class Engagement(BaseModel):
             banner_filename=engagement.get('banner_filename', None),
             content=engagement.get('content', None),
             rich_content=engagement.get('rich_content', None),
-            is_internal=engagement.get('is_internal', record.is_internal),
+            visibility=engagement.get('visibility', record.visibility)
         )
         query.update(update_fields)
         db.session.commit()
@@ -184,10 +186,9 @@ class Engagement(BaseModel):
             .filter(Engagement.status_id == Status.Scheduled.value) \
             .filter(Engagement.scheduled_date <= datetime_due)
         records = query.all()
-        if not records:
-            return None
-        query.update(update_fields)
-        db.session.commit()
+        if records:
+            query.update(update_fields)
+            db.session.commit()
         return records
 
     @staticmethod
@@ -253,10 +254,12 @@ class Engagement(BaseModel):
         return query
 
     @staticmethod
-    def _filter_by_internal(query, search_options):
+    def _filter_by_visibility(query, search_options):
         if exclude_internal := search_options.get('exclude_internal'):
             if exclude_internal:
-                query = query.filter(Engagement.is_internal.is_(False))
+                query = query.filter(Engagement.visibility == Visibility.Public)
+            else:
+                query = query.filter(Engagement.visibility == Visibility.AuthToken)
         return query
 
     @staticmethod
