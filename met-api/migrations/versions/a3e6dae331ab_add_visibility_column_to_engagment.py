@@ -1,7 +1,7 @@
 """Add visibility column to engagment
 
 Revision ID: a3e6dae331ab
-Revises: 25e6609cb4db
+Revises: 9a93fda677eb
 Create Date: 2024-05-28 08:26:11.155679
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = 'a3e6dae331ab'
-down_revision = '25e6609cb4db'
+down_revision = '9a93fda677eb'
 branch_labels = None
 depends_on = None
 
