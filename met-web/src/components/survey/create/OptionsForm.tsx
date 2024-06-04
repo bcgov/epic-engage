@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Divider, FormControl, FormControlLabel, FormLabel, Grid, RadioGroup, Stack, Radio } from '@mui/material';
 import { MetPageGridContainer, PrimaryButton, SecondaryButton, MetHeader3 } from 'components/common';
 import CloneOptions from './CloneOptions';
@@ -10,12 +10,43 @@ import { CreateSurveyContext } from './CreateSurveyContext';
 import { OptionsFormSkeleton } from './OptionsFormSkeleton';
 import { When } from 'react-if';
 import { Disclaimer } from './Disclaimer';
+import { Survey } from 'models/survey';
+import { fetchSurveys } from 'services/surveyService';
+import { useAppDispatch } from 'hooks';
+import { openNotification } from 'services/notificationService/notificationSlice';
 
 const OptionsForm = () => {
+    const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { engagementToLink, loading } = useContext(CreateSurveyContext);
+    const [value, setValue] = useState('');
+    const [availableLinkSurveys, setAvailableLinkSurveys] = useState<Survey[] | null>(null);
+    const [availableCloneSurveys, setAvailableCloneSurveys] = useState<Survey[] | null>(null);
+    const [loadingSurveys, setLoadingSurveys] = useState<boolean>(true);
 
-    const [value, setValue] = React.useState('');
+    const handleFetchSurveys = async () => {
+        try {
+            const fetchedLinkableSurveys = await fetchSurveys({
+                is_unlinked: true,
+                exclude_hidden: true,
+                exclude_template: true,
+            });
+            setAvailableLinkSurveys(fetchedLinkableSurveys);
+
+            const fetchedClonableSurveys = await fetchSurveys({
+                exclude_hidden: true,
+            });
+
+            setAvailableCloneSurveys(fetchedClonableSurveys);
+            setLoadingSurveys(false);
+        } catch (error) {
+            dispatch(openNotification({ severity: 'error', text: 'Error occurred while fetching available surveys' }));
+        }
+    };
+
+    useEffect(() => {
+        handleFetchSurveys();
+    }, []);
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setValue((event.target as HTMLInputElement).value);
@@ -69,13 +100,13 @@ const OptionsForm = () => {
 
             <When condition={value === 'CLONE'}>
                 <Grid item xs={12}>
-                    <CloneOptions />
+                    <CloneOptions availableSurveys={availableCloneSurveys} loadingSurveys={loadingSurveys} />
                 </Grid>
             </When>
 
             <When condition={value === 'LINK'}>
                 <Grid item xs={12}>
-                    <LinkOptions />
+                    <LinkOptions availableSurveys={availableLinkSurveys} loadingSurveys={loadingSurveys} />
                 </Grid>
             </When>
 
