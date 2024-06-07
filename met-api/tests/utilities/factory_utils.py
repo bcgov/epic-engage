@@ -21,6 +21,7 @@ from flask import current_app, g
 from met_api.config import get_named_config
 from met_api.constants.engagement_status import Status
 from met_api.constants.widget import WidgetType
+from met_api.constants.email_verification import EmailVerificationType
 from met_api.models import Tenant
 from met_api.models.comment import Comment as CommentModel
 from met_api.models.email_verification import EmailVerification as EmailVerificationModel
@@ -107,14 +108,19 @@ def factory_subscription_model():
     return subscription
 
 
-def factory_email_verification(survey_id):
+def factory_email_verification(survey_id, verification_type=None, submission_id=None):
     """Produce a EmailVerification model."""
     email_verification = EmailVerificationModel(
         verification_token=fake.uuid4(),
         is_active=True
     )
+    email_verification.type = verification_type if verification_type else EmailVerificationType.Survey
+    
     if survey_id:
         email_verification.survey_id = survey_id
+
+    if submission_id:
+        email_verification.submission_id = submission_id
 
     email_verification.save()
     return email_verification
