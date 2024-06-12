@@ -21,10 +21,22 @@ export const SurveyBarPrintable = ({ engagement, engagementIsLoading, dashboardT
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
 
+    const minHeight = 400;
+    const maxHeight = 1300;
+
+    const numberOfCategories = data?.data[0]?.result?.length ?? 0;
+    const height = Math.min(Math.max(numberOfCategories * 40, minHeight), maxHeight);
+
     const fetchData = async () => {
         setIsLoading(true);
         try {
             const response = await getSurveyResultData(Number(engagement.id), dashboardType);
+            response.data[0].result = response.data[0].result.map((answer) => {
+                const value =
+                    answer.value.length > 25 ? answer.value.slice(0, 25).trimEnd().concat('...') : answer.value;
+                const count = answer.count;
+                return { count, value };
+            });
             setData(response);
             setIsLoading(false);
             setIsError(false);
@@ -73,7 +85,11 @@ export const SurveyBarPrintable = ({ engagement, engagementIsLoading, dashboardT
                                             </MetLabel>
                                             <Divider sx={{ marginTop: '1em' }} />
                                             <Box marginLeft={{ xs: 0, sm: '2em' }} marginTop={'3em'}>
-                                                <ResponsiveContainer width={'100%'} height={400} key={result.position}>
+                                                <ResponsiveContainer
+                                                    width={'100%'}
+                                                    height={height}
+                                                    key={result.position}
+                                                >
                                                     <BarChart
                                                         data={result.result}
                                                         layout={'vertical'}
