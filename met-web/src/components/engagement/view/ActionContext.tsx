@@ -164,12 +164,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element | JSX.Eleme
             setSavedEngagement({ ...result });
             setEngagementLoading(false);
         } catch (error) {
-            dispatch(
-                openNotification({
-                    severity: 'error',
-                    text: 'Error occurred while fetching Engagement information',
-                }),
-            );
+            navigate('/');
         }
     };
 
@@ -186,7 +181,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element | JSX.Eleme
             dispatch(
                 openNotification({
                     severity: 'error',
-                    text: 'Error occurred while fetching Engagement wdigets',
+                    text: 'Error occurred while fetching Engagement widgets',
                 }),
             );
         }
