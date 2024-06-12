@@ -24,12 +24,18 @@ export interface Engagement {
     submission_status: SubmissionStatus;
     submissions_meta_data: SurveySubmissionData;
     status_block: EngagementStatusBlock[];
-    is_internal: boolean;
+    visibility: number;
+    engagement_visibility: Visibility;
 }
 
 export interface Status {
     id: number;
     status_name: string;
+}
+
+export interface Visibility {
+    id: number;
+    visibility_name: string;
 }
 
 export interface EngagementMetadata {
@@ -79,7 +85,8 @@ export const createDefaultEngagement = (): Engagement => {
             approved: 0,
         },
         status_block: [],
-        is_internal: false,
+        visibility: 0,
+        engagement_visibility: { id: 0, visibility_name: '' },
     };
 };
 

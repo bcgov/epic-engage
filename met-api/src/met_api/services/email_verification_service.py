@@ -5,6 +5,7 @@ from http import HTTPStatus
 
 from flask import current_app
 from met_api.constants.email_verification import INTERNAL_EMAIL_DOMAIN, EmailVerificationType
+from met_api.constants.engagement_visibility import Visibility
 
 from met_api.constants.subscription_type import SubscriptionTypes
 from met_api.exceptions.business_exception import BusinessException
@@ -52,7 +53,7 @@ class EmailVerificationService:
         survey = SurveyModel.find_by_id(email_verification.get('survey_id'))
         engagement: EngagementModel = EngagementModel.find_by_id(
             survey.engagement_id)
-        if engagement.is_internal and not email_address.endswith(INTERNAL_EMAIL_DOMAIN):
+        if engagement.visibility == Visibility.AuthToken and not email_address.endswith(INTERNAL_EMAIL_DOMAIN):
             raise BusinessException(
                 error='Not an internal email address.',
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR)

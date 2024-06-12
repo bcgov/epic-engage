@@ -126,7 +126,7 @@ def factory_email_verification(survey_id, verification_type=None, submission_id=
     return email_verification
 
 
-def factory_engagement_model(eng_info: dict = TestEngagementInfo.engagement1, name=None, status=None):
+def factory_engagement_model(eng_info: dict = TestEngagementInfo.engagement1, name=None, status=None, visibility=None):
     """Produce a engagement model."""
     engagement = EngagementModel(
         name=name if name else fake.name(),
@@ -139,7 +139,7 @@ def factory_engagement_model(eng_info: dict = TestEngagementInfo.engagement1, na
         status_id=status if status else eng_info.get('status'),
         start_date=eng_info.get('start_date'),
         end_date=eng_info.get('end_date'),
-        is_internal=eng_info.get('is_internal')
+        visibility=visibility if visibility else eng_info.get('visibility')
     )
     engagement.save()
     return engagement

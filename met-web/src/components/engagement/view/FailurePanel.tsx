@@ -3,8 +3,9 @@ import { Grid, Stack } from '@mui/material';
 import { FailurePanelProps } from './types';
 import { modalStyle, PrimaryButton, SecondaryButton, MetHeader1, MetBody } from 'components/common';
 import { When } from 'react-if';
+import { EngagementVisibility } from 'constants/engagementVisibility';
 
-const FailurePanel = ({ email, handleClose, tryAgain, isInternal }: FailurePanelProps) => {
+const FailurePanel = ({ email, handleClose, tryAgain, visibility }: FailurePanelProps) => {
     return (
         <Grid
             container
@@ -24,7 +25,7 @@ const FailurePanel = ({ email, handleClose, tryAgain, isInternal }: FailurePanel
             <Grid item xs={12}>
                 <MetBody>{email}</MetBody>
             </Grid>
-            <When condition={isInternal}>
+            <When condition={visibility == EngagementVisibility.Internal}>
                 <Grid item xs={12}>
                     <MetBody>
                         <strong>This is an internal engagement.</strong> Make sure you are using a government email.

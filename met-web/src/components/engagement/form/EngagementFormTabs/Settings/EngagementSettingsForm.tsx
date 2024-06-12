@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Divider, Grid } from '@mui/material';
 import { MetPaper, PrimaryButton } from 'components/common';
 import EngagementInformation from './EngagementInformation';
-import InternalEngagement from './InternalEngagement';
+import EngagementAccessAndVisibility from './EngagementAccessAndVisibility';
 import SendReport from './SendReport';
 import { EngagementSettingsContext } from './EngagementSettingsContext';
 
@@ -26,7 +26,7 @@ const EngagementSettingsForm = () => {
                     <Divider />
                 </Grid>
                 <Grid item xs={12}>
-                    <InternalEngagement />
+                    <EngagementAccessAndVisibility />
                 </Grid>
                 <Grid item xs={12}>
                     <Divider />

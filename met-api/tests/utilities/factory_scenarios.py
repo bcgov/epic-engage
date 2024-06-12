@@ -25,6 +25,7 @@ from met_api.config import get_named_config
 from met_api.constants.comment_status import Status as CommentStatus
 from met_api.constants.engagement_status import Status as EngagementStatus
 from met_api.constants.engagement_status import SubmissionStatus
+from met_api.constants.engagement_visibility import Visibility
 from met_api.constants.feedback import CommentType, FeedbackSourceType, FeedbackStatusType, RatingType
 from met_api.constants.widget import WidgetType
 from met_api.utils.enums import LoginSource, UserStatus
@@ -163,7 +164,7 @@ class TestEngagementInfo(dict, Enum):
         'created_by': '123',
         'updated_by': '123',
         'status': EngagementStatus.Published.value,
-        'is_internal': False,
+        'visibility': Visibility.Public.value,
         'description': 'My Test Engagement Description',
         'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
         \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
@@ -180,7 +181,7 @@ class TestEngagementInfo(dict, Enum):
         'created_by': '123',
         'updated_by': '123',
         'status': EngagementStatus.Draft.value,
-        'is_internal': False,
+        'visibility': Visibility.Public.value,
         'description': 'My Test Engagement Description',
         'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
             \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
@@ -197,7 +198,7 @@ class TestEngagementInfo(dict, Enum):
         'created_by': '123',
         'updated_by': '123',
         'status': SubmissionStatus.Open.value,
-        'is_internal': False,
+        'visibility': Visibility.Public.value,
         'description': 'My Test Engagement Description',
         'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
             \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
@@ -221,7 +222,7 @@ class TestEngagementInfo(dict, Enum):
         'created_by': '123',
         'updated_by': '123',
         'status': SubmissionStatus.Open.value,
-        'is_internal': False,
+        'visibility': Visibility.Public.value,
         'description': 'My Test Engagement Description',
         'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
             \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',

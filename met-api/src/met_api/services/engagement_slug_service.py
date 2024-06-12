@@ -100,7 +100,7 @@ class EngagementSlugService:
 
         # publish changes to EPIC
         ProjectService.update_project_info(engagement_id)
-        
+
         return {
             'slug': engagement_slug.slug,
             'engagement_id': engagement_slug.engagement_id,
