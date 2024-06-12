@@ -7,6 +7,7 @@ import { fetchSurveyReportSettings, updateSurveyReportSettings } from 'services/
 import { getSurvey } from 'services/surveyService';
 import { Survey } from 'models/survey';
 import { getSlugByEngagementId } from 'services/engagementSlugService';
+import { FormInfo } from 'components/Form/types';
 
 export interface SearchFilter {
     key: keyof SurveyReportSetting;
@@ -70,6 +71,7 @@ export const ReportSettingsContextProvider = ({ children }: { children: JSX.Elem
         try {
             setTableLoading(true);
             const settings = await fetchSurveyReportSettings(surveyId);
+            sortSurvey(settings);
             setSurveyReportSettings(settings);
             setTableLoading(false);
         } catch (error) {
@@ -116,10 +118,44 @@ export const ReportSettingsContextProvider = ({ children }: { children: JSX.Elem
         }
     };
 
+    const sortSurvey = (surveyReportSettings: SurveyReportSetting[]) => {
+        const isMultiPage = survey?.form_json?.display === 'wizard';
+        const questionOrder: Array<string> = [];
+
+        if (isMultiPage) {
+            // Parse multi-page survey form json
+            const pages = survey?.form_json?.components || [];
+            const numPages = pages?.length || 0;
+            for (let pageNum = 0; pageNum < numPages; pageNum++) {
+                const page = pages[pageNum];
+                const questions: Array<FormInfo> = page?.components as Array<FormInfo>;
+                parseQuestions(questions, questionOrder);
+            }
+        } else {
+            // Parse single-page survey form json
+            const questions: Array<FormInfo> = survey?.form_json?.components as Array<FormInfo>;
+            parseQuestions(questions, questionOrder);
+        }
+
+        surveyReportSettings.sort(
+            (x, y) => questionOrder.indexOf(x.question_id.toString()) - questionOrder.indexOf(y.question_id.toString()),
+        );
+    };
+
+    const parseQuestions = (questions: Array<FormInfo>, questionOrder: Array<string>) => {
+        const numQuestions = questions?.length || 0;
+        for (let questionNum = 0; questionNum < numQuestions; questionNum++) {
+            questionOrder.push(questions.at(questionNum)?.id as string);
+        }
+    };
+
     useEffect(() => {
-        loadSurveySettings();
         loadSurvey();
     }, [surveyId]);
+
+    useEffect(() => {
+        loadSurveySettings();
+    }, [survey]);
 
     useEffect(() => {
         if (!loadingSurvey) {
