@@ -115,7 +115,7 @@ def factory_email_verification(survey_id, verification_type=None, submission_id=
         is_active=True
     )
     email_verification.type = verification_type if verification_type else EmailVerificationType.Survey
-    
+
     if survey_id:
         email_verification.survey_id = survey_id
 
