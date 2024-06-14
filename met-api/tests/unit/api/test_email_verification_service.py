@@ -28,7 +28,8 @@ from met_api.constants.subscription_type import SubscriptionTypes
 from met_api.services.email_verification_service import EmailVerificationService
 from met_api.utils.enums import ContentType
 from tests.utilities.factory_scenarios import TestJwtClaims
-from tests.utilities.factory_utils import factory_auth_header, factory_email_verification, factory_survey_and_eng_model, set_global_tenant
+from tests.utilities.factory_utils import (
+    factory_auth_header, factory_email_verification, factory_survey_and_eng_model, set_global_tenant)
 
 fake = Faker()
 
