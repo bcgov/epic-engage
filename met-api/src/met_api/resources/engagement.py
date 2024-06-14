@@ -51,9 +51,9 @@ class Engagement(Resource):
             if engagement_record:
                 return engagement_record, HTTPStatus.OK
 
-            return 'Engagement was not found', HTTPStatus.INTERNAL_SERVER_ERROR
+            return 'Engagement was not found', HTTPStatus.NOT_FOUND
         except KeyError:
-            return 'Engagement was not found', HTTPStatus.INTERNAL_SERVER_ERROR
+            return 'Engagement was not found', HTTPStatus.NOT_FOUND
         except ValueError as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
