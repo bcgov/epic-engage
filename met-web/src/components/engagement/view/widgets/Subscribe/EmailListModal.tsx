@@ -42,10 +42,14 @@ const EmailListModal = ({ open, setOpen }: { open: boolean; setOpen: (open: bool
                 type: subscriptionType || defaultType,
             });
 
-            window.snowplow('trackSelfDescribingEvent', {
-                schema: 'iglu:ca.bc.gov.met/verify-email/jsonschema/1-0-0',
-                data: { survey_id: savedEngagement.surveys[0].id, engagement_id: savedEngagement.id },
-            });
+            try {
+                window.snowplow('trackSelfDescribingEvent', {
+                    schema: 'iglu:ca.bc.gov.met/verify-email/jsonschema/1-0-0',
+                    data: { survey_id: savedEngagement.surveys[0].id, engagement_id: savedEngagement.id },
+                });
+            } catch (error) {
+                console.log(error);
+            }
             setOpen(false);
             dispatch(
                 openNotificationModal({
@@ -82,7 +86,7 @@ const EmailListModal = ({ open, setOpen }: { open: boolean; setOpen: (open: bool
                                 text: 'Please verify your email and try again.',
                             },
                             {
-                                text: 'If this problem persists, contact sample@gmail.com',
+                                text: 'If this problem persists, contact eao.epicsystem@gov.bc.ca',
                             },
                         ],
                     },

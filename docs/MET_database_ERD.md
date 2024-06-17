@@ -18,7 +18,7 @@ erDiagram
         string banner_filename
         timestamp scheduled_date
         integer tenant_id FK "The id from tenant"
-        boolean is_internal
+        integer visibility FK "The id from engagement visibility"
     }
     survey {
         integer id PK
@@ -45,6 +45,14 @@ erDiagram
         string updated_by
     }
     engagement only one to one engagement_status : has
+    engagement_visibility {
+        integer id PK
+        string visibility_name
+        string description
+        timestamp created_date
+        timestamp updated_date
+    }
+    engagement only one to one engagement_visibility : has
     tenant {
         integer id PK
         string short_name

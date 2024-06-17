@@ -103,19 +103,21 @@ export const CreateOptions = () => {
             </Grid>
             <Grid item xs={6}></Grid>
             <Grid item xs={6}>
-                <FormGroup>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={multiPageSurvey}
-                                onChange={(e) => {
-                                    setMultiPageSurvey(!multiPageSurvey);
-                                }}
-                            />
-                        }
-                        label="Multi-page"
-                    />
-                </FormGroup>
+                <Stack direction="row">
+                    <FormGroup>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={multiPageSurvey}
+                                    onChange={(e) => {
+                                        setMultiPageSurvey(!multiPageSurvey);
+                                    }}
+                                />
+                            }
+                            label="Multi-page"
+                        />
+                    </FormGroup>
+                </Stack>
                 <MetDescription>
                     The multi-page option will enable you to add one, or many pages to a survey. It will also create a
                     progress bar. If you want to create a 1-page survey, turn off the multi-page toggle.

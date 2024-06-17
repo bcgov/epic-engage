@@ -1,6 +1,7 @@
 """Service for engagement slug management."""
 from met_api.models.engagement_slug import EngagementSlug as EngagementSlugModel
 from met_api.models.engagement import Engagement as EngagementModel
+from met_api.services.project_service import ProjectService
 from met_api.constants.engagement_status import Status
 from met_api.services.slug_generation_service import SlugGenerationService
 
@@ -96,6 +97,10 @@ class EngagementSlugService:
             engagement_slug = EngagementSlugModel(engagement_id=engagement_id, slug=slug)
 
         engagement_slug.save()
+
+        # publish changes to EPIC
+        ProjectService.update_project_info(engagement_id)
+
         return {
             'slug': engagement_slug.slug,
             'engagement_id': engagement_slug.engagement_id,

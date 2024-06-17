@@ -14,6 +14,7 @@ import { ActionContext } from './ActionContext';
 import ThankYouPanel from './ThankYouPanel';
 import { EmailVerificationType } from 'models/emailVerification';
 import { INTERNAL_EMAIL_DOMAIN } from 'constants/emailVerification';
+import { EngagementVisibility } from 'constants/engagementVisibility';
 
 const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
     const dispatch = useAppDispatch();
@@ -30,7 +31,10 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
     const updateTabValue = () => {
         if (!checkEmail(email)) {
             setFormIndex('error');
-        } else if (savedEngagement.is_internal && !email.endsWith(INTERNAL_EMAIL_DOMAIN)) {
+        } else if (
+            savedEngagement.visibility == EngagementVisibility.Internal &&
+            !email.endsWith(INTERNAL_EMAIL_DOMAIN)
+        ) {
             setFormIndex('error');
         } else {
             handleSubmit();
@@ -45,10 +49,14 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
                 survey_id: savedEngagement.surveys[0].id,
                 type: EmailVerificationType.Survey,
             });
-            window.snowplow('trackSelfDescribingEvent', {
-                schema: 'iglu:ca.bc.gov.met/verify-email/jsonschema/1-0-0',
-                data: { survey_id: savedEngagement.surveys[0].id, engagement_id: savedEngagement.id },
-            });
+            try {
+                window.snowplow('trackSelfDescribingEvent', {
+                    schema: 'iglu:ca.bc.gov.met/verify-email/jsonschema/1-0-0',
+                    data: { survey_id: savedEngagement.surveys[0].id, engagement_id: savedEngagement.id },
+                });
+            } catch (error) {
+                console.log(error);
+            }
             dispatch(
                 openNotification({
                     severity: 'success',
@@ -85,7 +93,7 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
                             handleClose={() => close()}
                             updateEmail={setEmail}
                             isSaving={isSaving}
-                            isInternal={savedEngagement.is_internal}
+                            visibility={savedEngagement.visibility}
                         />
                     </TabPanel>
                     <TabPanel value="success">
@@ -99,7 +107,7 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
                             tryAgain={() => setFormIndex('email')}
                             handleClose={() => close()}
                             email={email}
-                            isInternal={savedEngagement.is_internal}
+                            visibility={savedEngagement.visibility}
                         />
                     </TabPanel>
                 </TabContext>

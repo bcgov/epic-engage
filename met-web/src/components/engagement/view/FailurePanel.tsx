@@ -3,8 +3,9 @@ import { Grid, Stack } from '@mui/material';
 import { FailurePanelProps } from './types';
 import { modalStyle, PrimaryButton, SecondaryButton, MetHeader1, MetBody } from 'components/common';
 import { When } from 'react-if';
+import { EngagementVisibility } from 'constants/engagementVisibility';
 
-const FailurePanel = ({ email, handleClose, tryAgain, isInternal }: FailurePanelProps) => {
+const FailurePanel = ({ email, handleClose, tryAgain, visibility }: FailurePanelProps) => {
     return (
         <Grid
             container
@@ -24,7 +25,7 @@ const FailurePanel = ({ email, handleClose, tryAgain, isInternal }: FailurePanel
             <Grid item xs={12}>
                 <MetBody>{email}</MetBody>
             </Grid>
-            <When condition={isInternal}>
+            <When condition={visibility == EngagementVisibility.Internal}>
                 <Grid item xs={12}>
                     <MetBody>
                         <strong>This is an internal engagement.</strong> Make sure you are using a government email.
@@ -35,7 +36,7 @@ const FailurePanel = ({ email, handleClose, tryAgain, isInternal }: FailurePanel
                 <MetBody>Please verify your email and try again.</MetBody>
             </Grid>
             <Grid item xs={12}>
-                <MetBody>If this problem persists, contact sample@gmail.com</MetBody>
+                <MetBody>If this problem persists, contact eao.epicsystem@gov.bc</MetBody>
             </Grid>
             <Grid item container xs={12} direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: '1em' }}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} width="100%" justifyContent="flex-end">

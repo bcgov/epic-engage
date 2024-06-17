@@ -5,6 +5,7 @@ from http import HTTPStatus
 
 from flask import current_app
 from met_api.constants.email_verification import INTERNAL_EMAIL_DOMAIN, EmailVerificationType
+from met_api.constants.engagement_visibility import Visibility
 
 from met_api.constants.subscription_type import SubscriptionTypes
 from met_api.exceptions.business_exception import BusinessException
@@ -52,7 +53,7 @@ class EmailVerificationService:
         survey = SurveyModel.find_by_id(email_verification.get('survey_id'))
         engagement: EngagementModel = EngagementModel.find_by_id(
             survey.engagement_id)
-        if engagement.is_internal and not email_address.endswith(INTERNAL_EMAIL_DOMAIN):
+        if engagement.visibility == Visibility.AuthToken and not email_address.endswith(INTERNAL_EMAIL_DOMAIN):
             raise BusinessException(
                 error='Not an internal email address.',
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
@@ -64,12 +65,13 @@ class EmailVerificationService:
 
         email_verification['created_by'] = email_verification.get(
             'participant_id')
-        email_verification['verification_token'] = uuid.uuid4()
-        EmailVerification.create(email_verification, session)
+        verification_token = uuid.uuid4()
+        EmailVerification.create({**email_verification, 'verification_token': verification_token}, session)
 
         # TODO: remove this once email logic is brought over from submission service to here
         if email_verification.get('type', None) != EmailVerificationType.RejectedComment:
-            cls._send_verification_email(email_verification, subscription_type)
+            cls._send_verification_email(
+                {**email_verification, 'verification_token': verification_token}, subscription_type)
 
         return email_verification
 
@@ -239,14 +241,14 @@ class EmailVerificationService:
 
     @staticmethod
     def _get_project_name(subscription_type, tenant_name, engagement):
-        metadata_model: EngagementMetadataModel = EngagementMetadataModel.find_by_id(engagement.id)
         if subscription_type == SubscriptionTypes.TENANT.value:
             return tenant_name
 
         if subscription_type == SubscriptionTypes.PROJECT.value:
             metadata_model: EngagementMetadataModel = EngagementMetadataModel.find_by_id(engagement.id)
-            project_name = metadata_model.project_metadata.get('project_name', None)
-            return project_name or engagement.name
+            project_name = (
+                metadata_model.project_metadata.get('project_name', None) if metadata_model else engagement.name)
+            return project_name
 
         if subscription_type == SubscriptionTypes.ENGAGEMENT.value:
             return engagement.name

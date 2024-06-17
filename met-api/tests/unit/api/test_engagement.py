@@ -25,6 +25,7 @@ from faker import Faker
 from flask import current_app
 
 from met_api.constants.engagement_status import EngagementDisplayStatus, SubmissionStatus
+from met_api.constants.engagement_visibility import Visibility
 from met_api.models.tenant import Tenant as TenantModel
 from met_api.utils.constants import TENANT_ID_HEADER
 from met_api.utils.enums import ContentType
@@ -274,6 +275,20 @@ def test_search_engagements_not_logged_in(client, session):  # pylint:disable=un
     tenant_header = {TENANT_ID_HEADER: current_app.config.get('DEFAULT_TENANT_SHORT_NAME')}
     rv = client.get('/api/engagements/', headers=tenant_header, content_type=ContentType.JSON.value)
     assert rv.json.get('total') == 1, 'Tenant based fetching.So dont return the non-tenant info.'
+    assert rv.status_code == 200
+
+
+def test_search_hidden_engagements_not_logged_in(client, session):  # pylint:disable=unused-argument
+    """Assert that an engagement cannot be searched if it is hidden."""
+    factory_engagement_model(visibility=Visibility.Slug)
+
+    rv = client.get('/api/engagements/', content_type=ContentType.JSON.value)
+    assert rv.json.get('total') == 0, 'it is not visible for public user'
+    assert rv.status_code == 200
+
+    factory_engagement_model(TestEngagementInfo.engagement3)
+    rv = client.get('/api/engagements/', content_type=ContentType.JSON.value)
+    assert rv.json.get('total') == 1, 'Only the public engagaments should be visible for public user'
     assert rv.status_code == 200
 
 
