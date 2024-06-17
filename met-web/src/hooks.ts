@@ -10,7 +10,7 @@ export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 export const useAppTranslation = () => {
     const translate = useTranslation();
     const tenantId = sessionStorage.getItem('tenantId') || AppConfig.tenant.defaultTenant;
-    
+
     const { t } = translate;
 
     const tDynamic = (key: string) => {
