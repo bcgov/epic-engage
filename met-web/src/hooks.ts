@@ -1,6 +1,7 @@
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import type { RootState, AppDispatch } from './store';
 import { useTranslation } from 'react-i18next';
+import { AppConfig } from 'config';
 
 // Use throughout your app instead of plain `useDispatch` and `useSelector`
 export const useAppDispatch = () => useDispatch<AppDispatch>();
@@ -8,7 +9,7 @@ export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
 export const useAppTranslation = () => {
     const translate = useTranslation();
-    const tenantId = sessionStorage.getItem('tenantId');
+    const tenantId = sessionStorage.getItem('tenantId') || AppConfig.tenant.defaultTenant;
 
     const { t } = translate;
 
