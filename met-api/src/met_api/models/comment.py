@@ -250,6 +250,6 @@ class Comment(BaseModel):
                     ReportSetting.display == true(),
                     Submission.reviewed_by != 'System'
                 ))
-        query = query.order_by(Comment.text.asc())
+        query = query.order_by(Comment.id.asc())
         items = query.all()
         return CommentSchema(many=True, only=['submission_id', 'label', 'text']).dump(items)
