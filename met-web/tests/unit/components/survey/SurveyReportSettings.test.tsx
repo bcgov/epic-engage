@@ -128,6 +128,9 @@ describe('Survey report settings tests', () => {
 
         await waitFor(() => {
             expect(fetchSurveyReportSettingsMock).toHaveBeenCalledTimes(1);
+        });
+
+        await waitFor(() => {
             expect(screen.getByText(surveyReportSettingOne.question)).toBeVisible();
             expect(screen.getByText(surveyReportSettingTwo.question)).toBeVisible();
         });
