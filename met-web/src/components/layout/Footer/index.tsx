@@ -3,14 +3,12 @@ import { MetBody, MetLabel, SocialIconButton } from 'components/common';
 import React from 'react';
 import { ReactComponent as BCLogo } from 'assets/images/BritishColumbiaLogoDark.svg';
 import { Palette } from 'styles/Theme';
-import FacebookIcon from '@mui/icons-material/Facebook';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import TwitterIcon from '@mui/icons-material/Twitter';
+import XIcon from '@mui/icons-material/X';
 import UserService from 'services/userService';
 import { useAppSelector } from 'hooks';
 import { Unless } from 'react-if';
 import { NavLink } from 'react-router-dom';
-import { FOOTER_COLORS } from './constants';
+import { FOOTER_COLORS, SOCIAL_LINKS } from './constants';
 
 const Footer = () => {
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
@@ -130,15 +128,11 @@ const Footer = () => {
                 </Grid>
                 <Grid item xs={12} sm={6}>
                     <Stack direction="row" spacing={2}>
-                        <SocialIconButton>
-                            <FacebookIcon htmlColor={Palette.text.primary} />
-                        </SocialIconButton>
-                        <SocialIconButton>
-                            <InstagramIcon htmlColor={Palette.text.primary} />
-                        </SocialIconButton>
-                        <SocialIconButton>
-                            <TwitterIcon htmlColor={Palette.text.primary} />
-                        </SocialIconButton>
+                        <Link href={SOCIAL_LINKS.X} target="_">
+                            <SocialIconButton>
+                                <XIcon htmlColor={Palette.text.primary} />
+                            </SocialIconButton>
+                        </Link>
                     </Stack>
                 </Grid>
                 <Grid item xs={12} sm={6} container justifyContent={'flex-end'} alignItems="flex-end">
