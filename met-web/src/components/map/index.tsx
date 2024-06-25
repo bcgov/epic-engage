@@ -9,6 +9,7 @@ import { Stack } from '@mui/material';
 import { When } from 'react-if';
 import { AnyLayer } from 'mapbox-gl';
 import { Palette } from 'styles/Theme';
+
 interface MapProps {
     latitude: number;
     longitude: number;
@@ -41,8 +42,7 @@ const lineStyle: AnyLayer = {
         'line-color': `${Palette.primary.main}`,
     },
 };
-export const MAP_STYLE =
-    'https://governmentofbc.maps.arcgis.com/sharing/rest/content/items/bbe05270d3a642f5b62203d6c454f457/resources/styles/root.json';
+export const MAP_STYLE = process.env.PUBLIC_URL + '/basic-map.json';
 
 const MetMap = ({ geojson, latitude, longitude, markerLabel, zoom }: MapProps) => {
     return (
