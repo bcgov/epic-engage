@@ -232,6 +232,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
             }) as PatchEngagementRequest;
 
             if (Object.keys(engagementEditsToPatch).length === 0) {
+                dispatch(openNotification({ severity: 'success', text: 'Engagement has been saved' }));
                 setSaving(false);
                 return savedEngagement;
             }
