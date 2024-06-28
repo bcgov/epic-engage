@@ -42,7 +42,7 @@ const lineStyle: AnyLayer = {
         'line-color': `${Palette.primary.main}`,
     },
 };
-export const MAP_STYLE = process.env.PUBLIC_URL + '/basic-map.json';
+export const MAP_STYLE = window.location.origin + '/basic-map.json';
 
 const MetMap = ({ geojson, latitude, longitude, markerLabel, zoom }: MapProps) => {
     return (
