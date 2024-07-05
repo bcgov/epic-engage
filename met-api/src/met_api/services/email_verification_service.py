@@ -68,6 +68,9 @@ class EmailVerificationService:
         verification_token = uuid.uuid4()
         EmailVerification.create({**email_verification, 'verification_token': verification_token}, session)
 
+        if email_verification.get('type', None) == EmailVerificationType.RejectedComment:
+            email_verification['verification_token'] = verification_token
+
         # TODO: remove this once email logic is brought over from submission service to here
         if email_verification.get('type', None) != EmailVerificationType.RejectedComment:
             cls._send_verification_email(
