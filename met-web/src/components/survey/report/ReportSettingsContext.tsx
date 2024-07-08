@@ -145,7 +145,14 @@ export const ReportSettingsContextProvider = ({ children }: { children: JSX.Elem
     const parseQuestions = (questions: Array<FormInfo>, questionOrder: Array<string>) => {
         const numQuestions = questions?.length || 0;
         for (let questionNum = 0; questionNum < numQuestions; questionNum++) {
-            questionOrder.push(questions.at(questionNum)?.id as string);
+            if (questions.at(questionNum)?.type === 'simplesurvey') {
+                const simpleSurveyOptions = questions.at(questionNum)?.questions as [{ value: string }];
+                simpleSurveyOptions.forEach((question) => {
+                    questionOrder.push(`${questions.at(questionNum)?.id}-${question.value}`);
+                });
+            } else {
+                questionOrder.push(questions.at(questionNum)?.id as string);
+            }
         }
     };
 
