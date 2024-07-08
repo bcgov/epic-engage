@@ -97,11 +97,14 @@ class Surveys(Resource):
                 published_date_to=args.get('published_date_to', None, type=str),
             )
 
+            reduce_data = args.get('reduce_data', default=False, type=lambda v: v.lower() == 'true')
+
             survey_records = SurveyService()\
                 .get_surveys_paginated(
                     user_id,
                     pagination_options,
                     search_options,
+                    reduce_data,
             )
             return survey_records, HTTPStatus.OK
         except ValueError as err:

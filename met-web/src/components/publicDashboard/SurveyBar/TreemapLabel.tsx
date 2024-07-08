@@ -9,6 +9,7 @@ export default class TreemapLabel extends Component<any> {
 
     render() {
         const { depth, x, y, width, height, name, count } = this.props;
+        const fontSize = 16;
 
         return (
             <g>
@@ -29,9 +30,15 @@ export default class TreemapLabel extends Component<any> {
                         textAnchor="middle"
                         fill="#fff"
                         stroke="none"
-                        fontSize={16}
+                        fontSize={fontSize}
                     >
-                        {name} ({count})
+                        {name.length > Math.floor(width / fontSize)
+                            ? name
+                                  .slice(0, Math.floor(width / fontSize))
+                                  .trimEnd()
+                                  .concat('...')
+                            : name}{' '}
+                        ({count})
                     </text>
                 ) : null}
             </g>

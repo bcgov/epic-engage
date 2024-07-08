@@ -3,12 +3,18 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } 
 import { SurveyBarData } from '../types';
 import { DASHBOARD } from '../constants';
 import { Box } from '@mui/material';
+import TooltipContent from './TooltipContent';
 
 interface BarBlockProps {
     data: SurveyBarData;
 }
 export const SurveyBarBlock = ({ data }: BarBlockProps) => {
-    const height = 400;
+    const minHeight = 400;
+    const maxHeight = 1300;
+
+    const numberOfCategories = data.result.length;
+    const height = Math.min(Math.max(numberOfCategories * 40, minHeight), maxHeight);
+
     return (
         <Box marginLeft={{ xs: 0, sm: '2em' }} marginTop={'3em'}>
             <ResponsiveContainer width={'100%'} height={height} key={data.position}>
@@ -31,8 +37,11 @@ export const SurveyBarBlock = ({ data }: BarBlockProps) => {
                         minTickGap={10}
                         tickMargin={10}
                         hide={false}
+                        tickFormatter={(value: string) =>
+                            value.length > 25 ? value.slice(0, 25).trimEnd().concat('...') : value
+                        }
                     />
-                    <Tooltip />
+                    <Tooltip content={<TooltipContent />} />
                     <Bar
                         dataKey="count"
                         stackId="a"

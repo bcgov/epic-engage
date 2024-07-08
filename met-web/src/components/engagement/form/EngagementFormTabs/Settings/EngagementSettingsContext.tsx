@@ -6,8 +6,8 @@ import { openNotification } from 'services/notificationService/notificationSlice
 import { SubmissionStatus } from 'constants/engagementStatus';
 
 export interface EngagementSettingsContextState {
-    isInternal: boolean;
-    setIsInternal: (isInternal: boolean) => void;
+    visibility: number;
+    setVisibility: (visibility: number) => void;
     sendReport: boolean;
     setSendReport: (sendReport: boolean) => void;
     handleSaveSettings: () => void;
@@ -16,8 +16,8 @@ export interface EngagementSettingsContextState {
 }
 
 export const EngagementSettingsContext = createContext<EngagementSettingsContextState>({
-    isInternal: false,
-    setIsInternal: () => {
+    visibility: 1,
+    setVisibility: () => {
         return;
     },
     sendReport: false,
@@ -37,8 +37,8 @@ export const EngagementSettingsContextProvider = ({ children }: { children: Reac
     const { engagementFormData, updateEngagementSettings, settings } = useContext(EngagementTabsContext);
     const dispatch = useAppDispatch();
 
-    const { is_internal: savedIsInternal } = engagementFormData;
-    const [isInternal, setIsInternal] = useState(savedIsInternal);
+    const { visibility: savedVisibility } = engagementFormData;
+    const [visibility, setVisibility] = useState(savedVisibility);
     const [sendReport, setSendReport] = useState(Boolean(settings.send_report));
     const [updatingSettings, setUpdatingSettings] = useState(false);
 
@@ -52,7 +52,7 @@ export const EngagementSettingsContextProvider = ({ children }: { children: Reac
     const handleUpdateEngagementSettings = () => {
         return handleUpdateEngagementRequest({
             ...engagementFormData,
-            is_internal: isInternal,
+            visibility: visibility,
         });
     };
 
@@ -87,13 +87,13 @@ export const EngagementSettingsContextProvider = ({ children }: { children: Reac
     return (
         <EngagementSettingsContext.Provider
             value={{
-                isInternal,
-                sendReport,
-                setIsInternal,
-                setSendReport,
                 handleSaveSettings,
-                updatingSettings,
                 hasBeenOpened,
+                sendReport,
+                setSendReport,
+                setVisibility,
+                updatingSettings,
+                visibility,
             }}
         >
             {children}

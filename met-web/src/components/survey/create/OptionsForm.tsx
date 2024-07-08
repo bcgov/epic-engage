@@ -31,9 +31,11 @@ const OptionsForm = () => {
                     is_unlinked: true,
                     exclude_hidden: true,
                     exclude_template: true,
+                    reduce_data: true,
                 }),
                 fetchSurveys({
                     exclude_hidden: true,
+                    reduce_data: true,
                 }),
             ]);
 

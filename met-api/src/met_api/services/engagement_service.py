@@ -5,6 +5,7 @@ from http import HTTPStatus
 from flask import current_app
 
 from met_api.constants.engagement_status import Status
+from met_api.constants.engagement_visibility import Visibility
 from met_api.constants.membership_type import MembershipType
 from met_api.exceptions.business_exception import BusinessException
 from met_api.models.engagement import Engagement as EngagementModel
@@ -139,9 +140,11 @@ class EngagementService:
         engagements = EngagementModel.publish_scheduled_engagements_due()
         print('Engagements published: ', engagements)
         for engagement in engagements:
-            email_util.publish_to_email_queue(SourceType.ENGAGEMENT.value, engagement.id,
-                                              SourceAction.PUBLISHED.value, True)
-            print('Engagements published added to email queue: ', engagement.id)
+            # Only add to email queue if engagement is public.
+            if engagement.visibility == Visibility.Public.value:
+                email_util.publish_to_email_queue(SourceType.ENGAGEMENT.value, engagement.id,
+                                                  SourceAction.PUBLISHED.value, True)
+                print('Engagements published added to email queue: ', engagement.id)
         return engagements
 
     @staticmethod
@@ -178,7 +181,7 @@ class EngagementService:
             banner_filename=engagement_data.get('banner_filename', None),
             content=engagement_data.get('content', None),
             rich_content=engagement_data.get('rich_content', None),
-            is_internal=engagement_data.get('is_internal', False)
+            visibility=engagement_data.get('visibility', None)
         )
         new_engagement.save()
         return new_engagement
@@ -220,7 +223,7 @@ class EngagementService:
     @staticmethod
     def _validate_engagement_edit_data(engagement_id: int, data: dict):
         engagement = EngagementModel.find_by_id(engagement_id)
-        draft_status_restricted_changes = (EngagementModel.is_internal.key,)
+        draft_status_restricted_changes = (EngagementModel.visibility.key,)
         engagement_has_been_opened = engagement.status_id != Status.Draft.value
         if engagement_has_been_opened and any(field in data for field in draft_status_restricted_changes):
             raise ValueError('Some fields cannot be updated after the engagement has been published')

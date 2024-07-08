@@ -3,6 +3,7 @@ import { Treemap, Tooltip, ResponsiveContainer } from 'recharts';
 import { SurveyBarData } from '../types';
 import { Box } from '@mui/material';
 import TreemapLabel from './TreemapLabel';
+import TooltipContent from './TooltipContent';
 
 interface TreemapBlockProps {
     data: SurveyBarData;
@@ -25,7 +26,7 @@ export const TreemapBlock = ({ data }: TreemapBlockProps) => {
                     dataKey="count"
                     content={<TreemapLabel />}
                 >
-                    <Tooltip />
+                    <Tooltip content={<TooltipContent />} />
                 </Treemap>
             </ResponsiveContainer>
         </Box>

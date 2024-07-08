@@ -13,8 +13,9 @@ import {
 } from 'components/common';
 import { When } from 'react-if';
 import { INTERNAL_EMAIL_DOMAIN } from 'constants/emailVerification';
+import { EngagementVisibility } from 'constants/engagementVisibility';
 
-const EmailPanel = ({ email, checkEmail, handleClose, updateEmail, isSaving, isInternal }: EmailPanelProps) => {
+const EmailPanel = ({ email, checkEmail, handleClose, updateEmail, isSaving, visibility }: EmailPanelProps) => {
     const [checked, setChecked] = useState(false);
     const [emailFormError, setEmailFormError] = useState({
         terms: false,
@@ -142,7 +143,7 @@ const EmailPanel = ({ email, checkEmail, handleClose, updateEmail, isSaving, isI
                         />
                     </Grid>
                 </Grid>
-                <When condition={isInternal}>
+                <When condition={visibility == EngagementVisibility.Internal}>
                     <Grid item xs={12}>
                         <MetDescription>
                             <strong>This is an Internal Engagement!</strong> You can only use a {INTERNAL_EMAIL_DOMAIN}{' '}

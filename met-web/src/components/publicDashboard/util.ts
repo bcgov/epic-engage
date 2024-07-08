@@ -4,6 +4,7 @@ import { Map } from 'maplibre-gl';
 import { MAP_STYLE } from 'components/map';
 import { Map as IMap } from 'models/analytics/map';
 import { geoJSONDecode, calculateZoomLevel } from 'components/engagement/form/EngagementWidgets/Map/utils';
+import { Palette } from 'styles/Theme';
 
 const toPng = async (element: HTMLElement): Promise<string> => {
     try {
@@ -25,14 +26,14 @@ const addImageToPdf = (doc: jsPDF, imageData: string, x: number, y: number, widt
 export const getMapImageDataUrl = async (projectMapData: IMap | null): Promise<string> => {
     const mapContainer = document.getElementById('printableMapContainer');
     if (!mapContainer || !projectMapData) return '';
-
     // Create a maplibre-gl.Map instance
     const map = new Map({
         container: mapContainer,
         style: MAP_STYLE,
         center: [projectMapData.longitude, projectMapData.latitude],
-        zoom: calculateZoomLevel(500, 500, geoJSONDecode(projectMapData.geojson)),
+        zoom: calculateZoomLevel(300, 300, geoJSONDecode(projectMapData.geojson)),
     });
+    const geojson = projectMapData.geojson ? JSON.parse(projectMapData.geojson.replace(/\\/g, '')) : null;
     // Add marker
     map.on('load', function () {
         map.addLayer({
@@ -63,6 +64,36 @@ export const getMapImageDataUrl = async (projectMapData: IMap | null): Promise<s
                 'circle-blur': 0.5,
             },
         });
+        if (geojson) {
+            map.addSource('geojsonData', {
+                type: 'geojson',
+                data: geojson,
+            });
+            map.addLayer({
+                source: 'geojsonData',
+                id: 'layer',
+                type: 'fill',
+                filter: ['all', ['==', ['geometry-type'], 'Polygon']],
+                paint: {
+                    'fill-color': `${Palette.primary.main}`,
+                    'fill-opacity': 0.5,
+                },
+            });
+            map.addLayer({
+                source: 'geojsonData',
+                id: 'lines',
+                type: 'line',
+                filter: ['all', ['==', ['geometry-type'], 'LineString'], ['!=', ['get', 'type'], 'platform']],
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round',
+                },
+                paint: {
+                    'line-width': 1,
+                    'line-color': `${Palette.primary.main}`,
+                },
+            });
+        }
     });
 
     // Wait for the map to load completely
