@@ -26,17 +26,18 @@ const OptionsForm = () => {
 
     const handleFetchSurveys = async () => {
         try {
-            const fetchedLinkableSurveys = await fetchSurveys({
-                is_unlinked: true,
-                exclude_hidden: true,
-                exclude_template: true,
-            });
+            const [fetchedLinkableSurveys, fetchedClonableSurveys] = await Promise.all([
+                fetchSurveys({
+                    is_unlinked: true,
+                    exclude_hidden: true,
+                    exclude_template: true,
+                }),
+                fetchSurveys({
+                    exclude_hidden: true,
+                }),
+            ]);
+
             setAvailableLinkSurveys(fetchedLinkableSurveys);
-
-            const fetchedClonableSurveys = await fetchSurveys({
-                exclude_hidden: true,
-            });
-
             setAvailableCloneSurveys(fetchedClonableSurveys);
             setLoadingSurveys(false);
         } catch (error) {
