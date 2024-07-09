@@ -57,7 +57,15 @@ const DocumentFile = ({
                     <Grid item xs>
                         <Stack spacing={2} direction="row" alignItems="center">
                             {documentItem.is_uploaded ? <InsertDriveFileIcon /> : <LinkIcon />}
-                            <Typography>{documentItem.title}</Typography>
+                            <Typography
+                                sx={{
+                                    whiteSpace: 'normal',
+                                    width: '90%',
+                                    wordWrap: 'break-word',
+                                }}
+                            >
+                                {documentItem.title}
+                            </Typography>
                         </Stack>
                     </Grid>
                     <Grid item xs container justifyContent={'flex-end'}>

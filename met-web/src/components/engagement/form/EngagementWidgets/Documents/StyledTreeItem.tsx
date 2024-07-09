@@ -77,8 +77,11 @@ export function StyledTreeItem(props: StyledTreeItemProps & DocumentTreeItemProp
                             <Link
                                 sx={{
                                     alignItems: 'center',
-                                    display: 'flex',
                                     justifyContent: 'center',
+                                    whiteSpace: 'normal',
+                                    overflowWrap: 'break-word',
+                                    flexDirection: 'column',
+                                    maxWidth: '80%',
                                 }}
                                 target="_blank"
                                 href={`${labelUrl}`}

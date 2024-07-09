@@ -21,7 +21,7 @@ export default function DocumentTree({ documentItem }: DocumentTreeProps) {
             defaultCollapseIcon={<ArrowDropDownIcon sx={{ height: '35px', width: '35px' }} />}
             defaultExpandIcon={<ArrowRightIcon sx={{ height: '35px', width: '35px' }} />}
             defaultEndIcon={<div style={{ width: 24 }} />}
-            sx={{ flexGrow: 1, maxWidth: 400, overflowY: 'auto' }}
+            sx={{ flexGrow: 1, maxWidth: 1000, overflowY: 'auto' }}
         >
             <If condition={documentItem.type === 'folder'}>
                 <Then>
