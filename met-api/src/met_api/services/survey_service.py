@@ -69,7 +69,7 @@ class SurveyService:
         return survey
 
     @staticmethod
-    def get_surveys_paginated(user_id, pagination_options: PaginationOptions, search_options: SurveySearchOptions):
+    def get_surveys_paginated(user_id, pagination_options: PaginationOptions, search_options: SurveySearchOptions, reduce_data: bool):
         """Get engagements paginated."""
         # check if user has view all surveys access to view hidden surveys as well
         user_roles = TokenInfo.get_user_roles()
@@ -87,7 +87,12 @@ class SurveyService:
             pagination_options,
             search_options,
         )
-        surveys_schema = SurveySchema(many=True)
+        # surveys_schema = ReducedSurveySchema(many=True) if reduced_data else SurveySchema(many=True)
+
+        if reduce_data:
+            surveys_schema = SurveySchema(many=True, only=("id", "name"))
+        else:
+            surveys_schema = SurveySchema(many=True)
 
         return {
             'items': surveys_schema.dump(items),
