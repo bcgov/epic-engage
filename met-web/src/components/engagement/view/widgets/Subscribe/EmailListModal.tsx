@@ -86,7 +86,12 @@ const EmailListModal = ({ open, setOpen }: { open: boolean; setOpen: (open: bool
                                 text: 'Please verify your email and try again.',
                             },
                             {
-                                text: 'If this problem persists, contact eao.epicsystem@gov.bc.ca',
+                                text: (
+                                    <>
+                                        If this problem persists, contact{' '}
+                                        <a href="mailto:eao.epicsystem@gov.bc.ca">eao.epicsystem@gov.bc.ca</a>
+                                    </>
+                                ),
                             },
                         ],
                     },

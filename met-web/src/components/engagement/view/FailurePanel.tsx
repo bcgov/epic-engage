@@ -36,7 +36,10 @@ const FailurePanel = ({ email, handleClose, tryAgain, visibility }: FailurePanel
                 <MetBody>Please verify your email and try again.</MetBody>
             </Grid>
             <Grid item xs={12}>
-                <MetBody>If this problem persists, contact eao.epicsystem@gov.bc.ca</MetBody>
+                <MetBody>
+                    If this problem persists, contact{' '}
+                    <a href="mailto:eao.epicsystem@gov.bc.ca">eao.epicsystem@gov.bc.ca</a>
+                </MetBody>
             </Grid>
             <Grid item container xs={12} direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: '1em' }}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} width="100%" justifyContent="flex-end">
