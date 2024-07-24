@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 
 export interface ModalSubtext {
-    text: string;
+    text: string | ReactNode;
     bold?: boolean;
 }
 
