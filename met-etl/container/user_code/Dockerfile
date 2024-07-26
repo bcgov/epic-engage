@@ -1,13 +1,13 @@
 FROM python:3.8.5-buster
 
-ARG DAGSTER_VERSION=0.19.3
+ARG DAGSTER_VERSION=0.23.15
 
 RUN pip install --upgrade pip
 # ==> Add Dagster layer
 RUN \
     pip install \
-        dagster==1.3.3 \
-        dagster-postgres==0.19.3 \
+        dagster \
+        dagster-postgres \
         dagster-celery[flower,redis,kubernetes]==${DAGSTER_VERSION} \
         dagster-aws==${DAGSTER_VERSION} \
         dagster-k8s==${DAGSTER_VERSION} \
