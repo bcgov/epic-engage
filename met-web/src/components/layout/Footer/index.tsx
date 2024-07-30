@@ -62,6 +62,15 @@ const Footer = () => {
                     <Grid item xs={12}>
                         <MetBody>CONNECT WITH US</MetBody>
                     </Grid>
+                    <Grid item xs={12} sm={6}>
+                        <Stack direction="row" spacing={2}>
+                            <Link href={SOCIAL_LINKS.X} target="_">
+                                <SocialIconButton>
+                                    <XIcon htmlColor={Palette.text.primary} />
+                                </SocialIconButton>
+                            </Link>
+                        </Stack>
+                    </Grid>
                 </Grid>
                 <Grid
                     item
@@ -126,16 +135,7 @@ const Footer = () => {
                 <Grid item xs={12}>
                     <Divider sx={{ borderColor: Palette.text.primary }} />
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                    <Stack direction="row" spacing={2}>
-                        <Link href={SOCIAL_LINKS.X} target="_">
-                            <SocialIconButton>
-                                <XIcon htmlColor={Palette.text.primary} />
-                            </SocialIconButton>
-                        </Link>
-                    </Stack>
-                </Grid>
-                <Grid item xs={12} sm={6} container justifyContent={'flex-end'} alignItems="flex-end">
+                <Grid item xs={12} container justifyContent={'flex-end'} alignItems="flex-end">
                     <MetBody>© 2023 Government of British Columbia</MetBody>
                 </Grid>
             </Grid>
