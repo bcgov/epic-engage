@@ -34,7 +34,7 @@ class ImageInfo(BaseModel):
 
         sort = cls._get_sort_order(pagination_options)
         query = query.order_by(sort)
-    
+
         page = query.paginate(page=pagination_options.page, per_page=pagination_options.size)
         return page.items, page.total
 

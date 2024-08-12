@@ -1,3 +1,4 @@
+"""Service for image management."""
 from met_api.models.pagination_options import PaginationOptions
 from met_api.schemas.image_info import ImageInfoSchema
 from met_api.services.object_storage_service import ObjectStorageService
@@ -11,7 +12,9 @@ class ImageInfoService:
         """Initialize."""
         self.object_storage = ObjectStorageService()
 
+    @staticmethod
     def get_images_paginated(self, pagination_options: PaginationOptions, search_options=None):
+        """Get images paginated"""
         items, total = ImageInfoModel.get_images_paginated(
             pagination_options,
             search_options,

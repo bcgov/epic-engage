@@ -19,7 +19,6 @@ from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 from marshmallow import ValidationError
 
-from met_api.auth import auth
 from met_api.models.pagination_options import PaginationOptions
 from met_api.schemas.image_info import ImageInfoSchema, ImageInfoParameterSchema
 from met_api.services.image_info_service import ImageInfoService
