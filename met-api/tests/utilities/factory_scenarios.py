@@ -295,7 +295,8 @@ class TestJwtClaims(dict, Enum):
                 'toggle_user_status',
                 'export_to_csv',
                 'update_user_group',
-                'create_tenant'
+                'create_tenant',
+                'create_images'
             ]
         }
     }
@@ -649,4 +650,28 @@ class TestSubscribeInfo(Enum):
                 'form_type': 'EMAIL_LIST'
             }
         ]
+    }
+
+class TestImageInfo(dict, Enum):
+    """Test data for image info"""
+
+    image_1 = {
+        "unique_name": fake.word(),
+        "display_name": fake.word(),
+        "date_uploaded": (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+    }
+
+    image_missing_unique_name = {
+        "display_name": fake.word(),
+        "date_uploaded": (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+    }
+
+    image_missing_display_name = {
+        "unique_name": fake.word(),
+        "date_uploaded": (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+    }
+
+    image_missing_date_uploaded_name = {
+        "unique_name": fake.word(),
+        "display_name": (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
     }

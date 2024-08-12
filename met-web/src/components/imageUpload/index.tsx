@@ -13,6 +13,7 @@ interface UploaderProps {
     height?: string;
     cropAspectRatio?: number;
     accept?: Accept;
+    canCrop?: boolean;
 }
 export const ImageUpload = ({
     margin = 2,
@@ -27,6 +28,7 @@ export const ImageUpload = ({
         'image/png': [],
         'image/webp': [],
     },
+    canCrop = true,
 }: UploaderProps) => {
     return (
         <ImageUploadContextProvider
@@ -35,7 +37,7 @@ export const ImageUpload = ({
             savedImageName={savedImageName}
             cropAspectRatio={cropAspectRatio}
         >
-            <Uploader margin={margin} helpText={helpText} height={height} accept={accept} />
+            <Uploader margin={margin} helpText={helpText} height={height} accept={accept} canCrop={canCrop} />
             <CropModal />
         </ImageUploadContextProvider>
     );

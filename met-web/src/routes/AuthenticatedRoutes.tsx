@@ -24,6 +24,7 @@ import UserProfile from 'components/userManagement/userDetails';
 import ScrollToTop from 'components/scrollToTop';
 import ReportSettings from 'components/survey/report';
 import FormioListener from 'components/FormioListener';
+import Images from 'components/image/listing';
 
 const AuthenticatedRoutes = () => {
     return (
@@ -69,6 +70,9 @@ const AuthenticatedRoutes = () => {
                 </Route>
                 <Route element={<AuthGate allowedRoles={[USER_ROLES.VIEW_USERS]} />}>
                     <Route path="/usermanagement/:userId/details" element={<UserProfile />} />
+                </Route>
+                <Route element={<AuthGate allowedRoles={[USER_ROLES.CREATE_IMAGES]} />}>
+                    <Route path="/images" element={<Images />} />
                 </Route>
                 <Route path="/unauthorized" element={<Unauthorized />} />
                 <Route path="*" element={<NotFound />} />

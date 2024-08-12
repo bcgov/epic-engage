@@ -39,4 +39,5 @@ export const USER_ROLES = {
     EXPORT_ALL_TO_CSV: 'export_all_to_csv',
     EXPORT_INTERNAL_COMMENT_SHEET: 'export_internal_comment_sheet',
     EXPORT_PROPONENT_COMMENT_SHEET: 'export_proponent_comment_sheet',
+    CREATE_IMAGES: 'create_images',
 };
