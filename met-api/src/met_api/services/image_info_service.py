@@ -13,7 +13,7 @@ class ImageInfoService:
         self.object_storage = ObjectStorageService()
 
     @staticmethod
-    def get_images_paginated(self, pagination_options: PaginationOptions, search_options=None):
+    def get_images_paginated(pagination_options: PaginationOptions, search_options=None):
         """Get images paginated"""
         items, total = ImageInfoModel.get_images_paginated(
             pagination_options,
