@@ -652,26 +652,27 @@ class TestSubscribeInfo(Enum):
         ]
     }
 
+
 class TestImageInfo(dict, Enum):
-    """Test data for image info"""
+    """Test data for image info."""
 
     image_1 = {
-        "unique_name": fake.word(),
-        "display_name": fake.word(),
-        "date_uploaded": (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+        'unique_name': fake.word(),
+        'display_name': fake.word(),
+        'date_uploaded': (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
     }
 
     image_missing_unique_name = {
-        "display_name": fake.word(),
-        "date_uploaded": (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+        'display_name': fake.word(),
+        'date_uploaded': (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
     }
 
     image_missing_display_name = {
-        "unique_name": fake.word(),
-        "date_uploaded": (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+        'unique_name': fake.word(),
+        'date_uploaded': (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
     }
 
     image_missing_date_uploaded_name = {
-        "unique_name": fake.word(),
-        "display_name": (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
+        'unique_name': fake.word(),
+        'display_name': (datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
     }

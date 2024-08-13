@@ -14,7 +14,7 @@ class ImageInfoService:
 
     @staticmethod
     def get_images_paginated(pagination_options: PaginationOptions, search_options=None):
-        """Get images paginated"""
+        """Get images paginated."""
         items, total = ImageInfoModel.get_images_paginated(
             pagination_options,
             search_options,
@@ -29,7 +29,7 @@ class ImageInfoService:
 
     @staticmethod
     def create_image_info(request_json: dict):
-        """Create an Image Info upload"""
+        """Create an Image Info upload."""
         new_image = ImageInfoModel(
             unique_name=request_json.get('unique_name', None),
             display_name=request_json.get('display_name', None),

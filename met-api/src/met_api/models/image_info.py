@@ -13,6 +13,7 @@ from met_api.models.pagination_options import PaginationOptions
 
 class ImageInfo(BaseModel):
     """Definition of the ImageInfo entity."""
+
     __tablename__ = 'image_info'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     unique_name = db.Column(db.String())
@@ -24,7 +25,7 @@ class ImageInfo(BaseModel):
 
     @classmethod
     def get_images_paginated(cls, pagination_options: PaginationOptions, search_options=None):
-        """Get images paginated"""
+        """Get images paginated."""
         query = db.session.query(ImageInfo)
 
         query = cls._add_tenant_filter(query)
@@ -37,7 +38,6 @@ class ImageInfo(BaseModel):
 
         page = query.paginate(page=pagination_options.page, per_page=pagination_options.size)
         return page.items, page.total
-
 
     @staticmethod
     def _filter_by_search_text(query, search_options):

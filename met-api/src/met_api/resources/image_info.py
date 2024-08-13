@@ -14,17 +14,19 @@
 """API endpoints for managing an image uploads resource."""
 
 from http import HTTPStatus
+
 from flask import request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 from marshmallow import ValidationError
 
 from met_api.models.pagination_options import PaginationOptions
-from met_api.schemas.image_info import ImageInfoSchema, ImageInfoParameterSchema
+from met_api.schemas.image_info import ImageInfoParameterSchema, ImageInfoSchema
 from met_api.services.image_info_service import ImageInfoService
 from met_api.utils.roles import Role
 from met_api.utils.tenant_validator import require_role
 from met_api.utils.util import allowedorigins, cors_preflight
+
 
 API = Namespace('image_info', description='Endpoints for Image Info management')
 """Custom exception messages
@@ -59,7 +61,6 @@ class ImageInfo(Resource):
             return images, HTTPStatus.OK
         except ValueError as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
-
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
