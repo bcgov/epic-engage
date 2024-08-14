@@ -1,5 +1,5 @@
 #!/bin/sh
-docker-compose up -d
+docker compose up -d
 
 echo "waiting for keycloak start..."
 
