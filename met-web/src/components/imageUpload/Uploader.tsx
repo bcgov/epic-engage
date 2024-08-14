@@ -3,18 +3,21 @@ import { Grid, Stack, Typography } from '@mui/material';
 import Dropzone, { Accept } from 'react-dropzone';
 import { PrimaryButton, SecondaryButton } from 'components/common';
 import { ImageUploadContext } from './imageUploadContext';
+import { When } from 'react-if';
 
 interface UploaderProps {
     margin?: number;
     helpText?: string;
     height?: string;
     accept?: Accept;
+    canCrop?: boolean;
 }
 const Uploader = ({
     margin = 2,
     helpText = 'Drag and drop some files here, or click to select files',
     height = '10em',
     accept = {},
+    canCrop = true,
 }: UploaderProps) => {
     const {
         handleAddFile,
@@ -86,14 +89,16 @@ const Uploader = ({
                         >
                             Remove
                         </SecondaryButton>
-                        <PrimaryButton
-                            onClick={() => {
-                                setCropModalOpen(true);
-                            }}
-                            size="small"
-                        >
-                            Crop
-                        </PrimaryButton>
+                        <When condition={canCrop}>
+                            <PrimaryButton
+                                onClick={() => {
+                                    setCropModalOpen(true);
+                                }}
+                                size="small"
+                            >
+                                Crop
+                            </PrimaryButton>
+                        </When>
                     </Stack>
                 </Grid>
             </Grid>

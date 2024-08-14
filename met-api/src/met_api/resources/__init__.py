@@ -49,6 +49,7 @@ from .report_setting import API as REPORT_SETTING_API
 from .widget_video import API as WIDGET_VIDEO_API
 from .engagement_settings import API as ENGAGEMENT_SETTINGS_API
 from .cac_form import API as CAC_FORM_API
+from .image_info import API as IMAGE_INFO
 
 __all__ = ('API_BLUEPRINT',)
 
@@ -79,6 +80,7 @@ API.add_namespace(VALUE_COMPONENTS_API)
 API.add_namespace(ENGAGEMENT_METADATA_API)
 API.add_namespace(SHAPEFILE_API)
 API.add_namespace(TENANT_API)
+API.add_namespace(IMAGE_INFO)
 API.add_namespace(ENGAGEMENT_MEMBERS_API, path='/engagements/<string:engagement_id>/members')
 API.add_namespace(WIDGET_DOCUMENTS_API, path='/widgets/<string:widget_id>/documents')
 API.add_namespace(WIDGET_EVENTS_API, path='/widgets/<int:widget_id>/events')

@@ -38,4 +38,11 @@ export const Routes: Route[] = [
         authenticated: true,
         allowedRoles: [USER_ROLES.VIEW_FEEDBACKS],
     },
+    {
+        name: 'Images',
+        path: '/images',
+        base: 'images',
+        authenticated: true,
+        allowedRoles: [USER_ROLES.CREATE_IMAGES],
+    },
 ];

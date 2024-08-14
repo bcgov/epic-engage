@@ -25,6 +25,7 @@ jest.mock('react-redux', () => ({
             USER_ROLES.VIEW_SURVEYS,
             USER_ROLES.VIEW_USERS,
             USER_ROLES.VIEW_FEEDBACKS,
+            USER_ROLES.CREATE_IMAGES,
         ];
     }),
 }));
