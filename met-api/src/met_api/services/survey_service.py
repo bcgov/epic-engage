@@ -1,4 +1,5 @@
 """Service for survey management."""
+from datetime import timedelta
 from http import HTTPStatus
 
 from met_api.constants.engagement_status import Status
@@ -15,6 +16,7 @@ from met_api.services import authorization
 from met_api.services.membership_service import MembershipService
 from met_api.services.object_storage_service import ObjectStorageService
 from met_api.services.report_setting_service import ReportSettingService
+from met_api.utils.datetime import local_datetime
 from met_api.utils.roles import Role
 from met_api.utils.token_info import TokenInfo
 from ..exceptions.business_exception import BusinessException
@@ -41,7 +43,12 @@ class SurveyService:
             engagement_model = EngagementModel.find_by_id(survey_model.engagement_id)
             if engagement_model:
                 eng_id = engagement_model.id
-                if engagement_model.status_id == Status.Published.value:
+                # Calculate the threshold time (8 hours after the end_date)
+                extended_end_date = engagement_model.end_date + timedelta(days=1, hours=8)
+                # Get the current local datetime
+                current_datetime = local_datetime().replace(tzinfo=None)
+                if ((engagement_model.status_id == Status.Published.value) or
+                        (engagement_model.status_id == Status.Closed.value and current_datetime <= extended_end_date)):
                     # Published Engagement anyone can access.
                     skip_auth = True
                 else:

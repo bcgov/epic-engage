@@ -5,7 +5,7 @@ Manages the Survey
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from sqlalchemy import ForeignKey, and_, asc, desc, func, or_
@@ -18,6 +18,7 @@ from met_api.models.engagement_status import EngagementStatus
 from met_api.models.pagination_options import PaginationOptions
 from met_api.models.survey_search_options import SurveySearchOptions
 from met_api.schemas.survey import SurveySchema
+from met_api.utils.datetime import local_datetime
 
 from .base_model import BaseModel
 from .db import db
@@ -43,11 +44,15 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
     @classmethod
     def get_open(cls, survey_id) -> Survey:
         """Get an open survey."""
-        now = datetime.now().date()  # Get the current date without the timestamp
+        now = local_datetime().date()  # Get the current PST date without the timestamp
+
+        # Calculate the threshold time (8 hours after the end_date)
+        extended_end_date = Engagement.end_date + timedelta(days=1, hours=8)
+
         survey: Survey = db.session.query(Survey).filter_by(id=survey_id) \
             .join(Engagement) \
-            .filter_by(status_id=Status.Published.value) \
-            .filter(and_(func.date(Engagement.start_date) <= now, func.date(Engagement.end_date) >= now)) \
+            .filter(or_(Engagement.status_id == Status.Published.value, Engagement.status_id == Status.Closed.value)) \
+            .filter(and_(func.date(Engagement.start_date) <= now, local_datetime() <= extended_end_date)) \
             .join(EngagementStatus) \
             .first()
         return survey
