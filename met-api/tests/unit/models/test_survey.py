@@ -73,7 +73,7 @@ def test_get_open_survey_time_based(session):
     assert survey_new is not None, 'survey fetchable on the day of closure'
 
     # Move time forward by 1 day
-    day_after_time_delay = now + timedelta(days=1)
+    day_after_time_delay = now + timedelta(days=1, hours=8, minutes=1)
     with freeze_time(day_after_time_delay):
         survey_new = SurveyModel.get_open(survey.id)
         assert survey_new is None, 'survey is not fetchable after one day of closure.'

@@ -1,5 +1,5 @@
 """Service for submission management."""
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 
 from flask import current_app
@@ -30,6 +30,7 @@ from met_api.services.email_verification_service import EmailVerificationService
 from met_api.services.staff_user_service import StaffUserService
 from met_api.services.survey_service import SurveyService
 from met_api.utils import notification
+from met_api.utils.datetime import local_datetime
 from met_api.utils.roles import Role
 from met_api.utils.template import Template
 from met_api.config import get_gc_notify_config
@@ -144,7 +145,12 @@ class SubmissionService:
         if not engagement:
             raise ValueError('Survey not linked to an Engagement')
 
-        if engagement.status_id != SubmissionStatus.Open.value:
+        # Calculate the threshold time (8 hours after the end_date)
+        extended_end_date = engagement.end_date + timedelta(days=1, hours=8)
+        # Get the current local datetime
+        current_datetime = local_datetime().replace(tzinfo=None)
+        if engagement.status_id != SubmissionStatus.Open.value and (
+                engagement.status_id == SubmissionStatus.Closed.value and extended_end_date < current_datetime):
             raise ValueError('Engagement not open to submissions')
 
     @classmethod
