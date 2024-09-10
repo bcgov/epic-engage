@@ -48,7 +48,7 @@ class SurveyService:
                 # Get the current local datetime
                 current_datetime = local_datetime().replace(tzinfo=None)
                 if ((engagement_model.status_id == Status.Published.value) or
-                (engagement_model.status_id == Status.Closed.value and current_datetime <= extended_end_date)):
+                    (engagement_model.status_id == Status.Closed.value and current_datetime <= extended_end_date)):
                     # Published Engagement anyone can access.
                     skip_auth = True
                 else:
