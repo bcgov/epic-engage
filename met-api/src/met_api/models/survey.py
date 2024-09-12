@@ -58,7 +58,8 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
         survey: Survey = db.session.query(Survey).filter_by(id=survey_id) \
             .join(Engagement) \
             .filter(or_(Engagement.status_id == Status.Published.value, Engagement.status_id == Status.Closed.value)) \
-            .filter(and_(func.date(Engagement.start_date) <= now, local_datetime().replace(tzinfo=None) <= extended_end_date)) \
+            .filter(and_(func.date(Engagement.start_date) <= now, \
+                         local_datetime().replace(tzinfo=None) <= extended_end_date)) \
             .join(EngagementStatus) \
             .first()
         return survey
