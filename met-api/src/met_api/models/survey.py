@@ -46,13 +46,20 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
         """Get an open survey."""
         now = local_datetime().date()  # Get the current PST date without the timestamp
 
+        end_date = (
+            db.session.query(Engagement.end_date)
+            .join(Survey, Engagement.id == Survey.engagement_id)
+            .filter(Survey.id == survey_id)
+            .first()
+        )
         # Calculate the threshold time (8 hours after the end_date)
-        extended_end_date = Engagement.end_date + timedelta(days=1, hours=8)
+        extended_end_date = end_date[0] + timedelta(days=1, hours=8)
 
         survey: Survey = db.session.query(Survey).filter_by(id=survey_id) \
             .join(Engagement) \
             .filter(or_(Engagement.status_id == Status.Published.value, Engagement.status_id == Status.Closed.value)) \
-            .filter(and_(func.date(Engagement.start_date) <= now, local_datetime() <= extended_end_date)) \
+            .filter(and_(func.date(Engagement.start_date) <= now,
+                         local_datetime().replace(tzinfo=None) <= extended_end_date)) \
             .join(EngagementStatus) \
             .first()
         return survey
