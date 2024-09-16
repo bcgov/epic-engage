@@ -131,8 +131,12 @@ class EngagementService:
     def close_engagements_due():
         """Close published engagements that are due for a closeout."""
         engagements = EngagementModel.close_engagements_due()
-        results = [EngagementService._send_closeout_emails(engagement) for engagement in engagements]
-        return results
+        for engagement in engagements:
+            engagement_settings: EngagementSettingsModel =\
+            EngagementSettingsModel.find_by_id(engagement.id)
+            if engagement_settings:
+                if engagement_settings.send_report:
+                    EngagementService._send_closeout_emails(engagement)
 
     @staticmethod
     def publish_scheduled_engagements():
