@@ -80,11 +80,11 @@ class CommentService:
     @classmethod
     def get_comments_paginated(cls, survey_id, pagination_options: PaginationOptions, search_text=''):
         """Get comments paginated."""
-        include_unpublished = CommentService.can_view_unapproved_comments(survey_id)
+        can_view_all_comments = CommentService.can_view_unapproved_comments(survey_id)
 
         comment_schema = CommentSchema(many=True, only=('text', 'submission_date', 'label', 'submission_id'))
         items, total = Comment.get_accepted_comments_by_survey_id_paginated(
-            survey_id, pagination_options, search_text, include_unpublished)
+            survey_id, pagination_options, search_text, can_view_all_comments)
         return {
             'items': comment_schema.dump(items),
             'total': total

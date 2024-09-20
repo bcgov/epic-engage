@@ -14,6 +14,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from met_api.constants.comment_status import Status as CommentStatus
 from met_api.constants.engagement_status import Status as EngagementStatus
+from met_api.models.engagement_settings import EngagementSettingsModel
 from met_api.models.pagination_options import PaginationOptions
 from met_api.models.engagement import Engagement
 from met_api.models.report_setting import ReportSetting
@@ -90,13 +91,14 @@ class Comment(BaseModel):
 
     @classmethod
     def get_accepted_comments_by_survey_id_paginated(
-            cls, survey_id, pagination_options: PaginationOptions, search_text='', include_unpublished=False):
+            cls, survey_id, pagination_options: PaginationOptions, search_text='', can_view_all_comments=False):
         """Get comments for closed engagements."""
         query = db.session.query(Comment)\
             .join(Submission, Submission.id == Comment.submission_id)\
             .join(CommentStatusModel, Submission.comment_status_id == CommentStatusModel.id)\
             .join(Survey, Survey.id == Submission.survey_id)\
             .join(Engagement, Engagement.id == Survey.engagement_id)\
+            .join(EngagementSettingsModel, Engagement.id == EngagementSettingsModel.engagement_id)\
             .join(ReportSetting, and_(Comment.survey_id == ReportSetting.survey_id,
                                       Comment.component_id == ReportSetting.question_key))\
             .filter(
@@ -106,8 +108,11 @@ class Comment(BaseModel):
                     ReportSetting.display == true()
                 ))
 
-        if not include_unpublished:
-            query = query.filter(Engagement.status_id != EngagementStatus.Unpublished.value)
+        if not can_view_all_comments:
+            query = query.filter(
+                Engagement.status_id != EngagementStatus.Unpublished.value,
+                EngagementSettingsModel.send_report.is_(True)
+            )
 
         if search_text:
             query = query.filter(Comment.text.ilike('%' + search_text + '%'))
