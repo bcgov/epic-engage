@@ -26,6 +26,7 @@ class Engagement(BaseModel):  # pylint: disable=too-few-public-methods
     geojson = db.Column(db.Text())
     marker_label = db.Column(db.String(30))
     status_name = db.Column(db.String(50))
+    send_report = db.Column(db.Boolean, nullable=True)
 
     @classmethod
     def find_by_source_id(cls, source_identifier: int):
