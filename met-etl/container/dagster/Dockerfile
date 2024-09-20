@@ -3,12 +3,14 @@
 
 FROM python:3.8.5-buster
 
+ARG DAGSTER_VERSION=0.23.15
+
 RUN pip install \
-    dagster \
-    dagster-graphql \
-    dagit \
-    dagster-postgres \
-    dagster-docker
+    dagster==1.7.15 \
+    dagster-graphql==1.7.15 \
+    dagit==1.7.15 \
+    dagster-postgres==${DAGSTER_VERSION} \
+    dagster-docker==${DAGSTER_VERSION}
 
 # Set $DAGSTER_HOME and copy dagster instance and workspace YAML there
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/
