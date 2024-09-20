@@ -18,7 +18,7 @@ def check_engagement_access(engagement_id):
                 EngagementModel.is_active == true(),
                 or_(
                     EngagementModel.status_name == Status.Unpublished.value,
-                    EngagementModel.send_report == False
+                    EngagementModel.send_report.is_(False)
                 )
             )
         )
