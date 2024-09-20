@@ -98,7 +98,7 @@ class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-pub
                 return survey_result.all()
             # Check if there are records in survey_response before executing the final query which fetches reponses
             # even if the available_response table is not yet populated.
-            elif survey_response_exists:
+            if survey_response_exists:
                 survey_result = (db.session.query((survey_question.c.position).label('position'),
                                                 (survey_question.c.label).label('question'),
                                                 func.json_agg(func.json_build_object('value',
