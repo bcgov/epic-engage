@@ -9,7 +9,15 @@ from analytics_api.utils.token_info import TokenInfo
 
 
 def check_engagement_access(engagement_id):
-    """Check if user has access to get engagement details."""
+    """
+    Check if user has access to get engagement details.
+
+    Public users will not be able to access engagement details if the engagement is unpublished or
+    if the send report setting is turned off.
+
+    Staff Users with the `ACCESS_DASHBOARD` role, such as administrators or team members,
+    will always have access to engagement details, regardless of the engagement's visibility settings.
+    """
     engagement_conditions = db.session.query(
         exists()
         .where(
