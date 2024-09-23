@@ -134,7 +134,7 @@ class EngagementService:
         engagements = EngagementModel.close_engagements_due()
         for engagement in engagements:
             engagement_settings: EngagementSettingsModel =\
-            EngagementSettingsModel.find_by_id(engagement.id)
+                EngagementSettingsModel.find_by_id(engagement.id)
             if engagement_settings:
                 if engagement_settings.send_report:
                     EngagementService._send_closeout_emails(engagement)
