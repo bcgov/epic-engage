@@ -12,17 +12,19 @@ import { Case, Switch } from 'react-if';
 import { useNavigate } from 'react-router-dom';
 
 const SurveyBlock = ({ startSurvey }: SurveyBlockProps) => {
-    const { savedEngagement, isEngagementLoading, mockStatus } = useContext(ActionContext);
+    const { savedEngagement, engagementSettings, isEngagementLoading, isEngagementSettingsLoading, mockStatus } =
+        useContext(ActionContext);
     const navigate = useNavigate();
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
     const isPreview = isLoggedIn;
     const currentStatus = isPreview ? mockStatus : savedEngagement.submission_status;
+    const sendReport = engagementSettings.send_report;
     const surveyId = savedEngagement.surveys[0]?.id || '';
     const status_block = savedEngagement.status_block;
     const status_text = status_block.find(
         (status) => status.survey_status === SubmissionStatus[currentStatus],
     )?.block_text;
-    if (isEngagementLoading) {
+    if (isEngagementLoading || isEngagementSettingsLoading) {
         return <Skeleton variant="rectangular" height={'15em'} />;
     }
 
@@ -54,15 +56,17 @@ const SurveyBlock = ({ startSurvey }: SurveyBlockProps) => {
                     </Case>
                     <Case condition={currentStatus === SubmissionStatus.Closed}>
                         <Grid item container direction={{ xs: 'column', sm: 'row' }} xs={12} justifyContent="flex-end">
-                            <PrimaryButton
-                                data-testid="SurveyBlock/view-feedback-button"
-                                disabled={!surveyId}
-                                onClick={() => {
-                                    navigate(`/engagements/${savedEngagement.id}/dashboard/public`);
-                                }}
-                            >
-                                View Feedback
-                            </PrimaryButton>
+                            {sendReport && (
+                                <PrimaryButton
+                                    data-testid="SurveyBlock/view-feedback-button"
+                                    disabled={!surveyId}
+                                    onClick={() => {
+                                        navigate(`/engagements/${savedEngagement.id}/dashboard/public`);
+                                    }}
+                                >
+                                    View Feedback
+                                </PrimaryButton>
+                            )}
                         </Grid>
                     </Case>
                 </Switch>
