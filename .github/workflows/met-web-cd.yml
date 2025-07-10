@@ -37,7 +37,7 @@ env:
 
 jobs:
   met-web-cd:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     if: github.repository == 'bcgov/epic-engage'
     environment:
