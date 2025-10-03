@@ -16,9 +16,9 @@
         "admin": {
             "review": {
                 "threatTextOne": "Select this option if there is a threat/menace in the comment(s). No email will be sent. Contact",
-                "threatContact": "Michelle Roberts",
+                "threatContact": "Sarah Plank",
                 "threatTextTwo": "at",
-                "threatContactEmail": "michelle.roberts@gov.bc.ca"
+                "threatContactEmail": "sarah.plank@gov.bc.ca"
             }
         }
     },
