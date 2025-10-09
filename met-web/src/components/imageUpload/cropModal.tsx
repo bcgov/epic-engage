@@ -8,7 +8,11 @@ import { Box } from '@mui/system';
 import getCroppedImg from './cropImage';
 import { blobToFile } from 'utils';
 
-export const CropModal = () => {
+interface CropModalProps {
+    cropText?: string;
+}
+
+export const CropModal = ({ cropText }: CropModalProps) => {
     const {
         existingImageUrl,
         addedImageFileUrl,
@@ -92,11 +96,7 @@ export const CropModal = () => {
                     >
                         <Grid container direction="row" alignItems="flex-start" justifyContent="flex-start" spacing={2}>
                             <Grid item xs={12}>
-                                <MetDescription>
-                                    The image will be cropped at the correct ratio to display as a banner on MET. You
-                                    can zoom in or out and move the image around. Please note that part of the image
-                                    could be hidden depending on the display size.
-                                </MetDescription>
+                                <MetDescription>{cropText}</MetDescription>
                             </Grid>
                             <Grid item xs={12} container justifyContent="flex-end">
                                 <PrimaryButton

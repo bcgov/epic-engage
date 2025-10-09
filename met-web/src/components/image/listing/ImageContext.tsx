@@ -10,7 +10,8 @@ import { useAppDispatch } from 'hooks';
 
 export interface ImageListingContext {
     images: ImageInfo[];
-    handleUploadImage: (_files: File[]) => void;
+    handleTempUpload: (_files: File[]) => void;
+    handleUploadImage: () => void;
     searchText: string;
     setSearchText: (value: string) => void;
     paginationOptions: PaginationOptions<ImageInfo>;
@@ -19,11 +20,15 @@ export interface ImageListingContext {
     setPageInfo: (value: PageInfo) => void;
     tableLoading: boolean;
     imageToDisplay: ImageInfo | undefined;
+    imageToUpload: File | null;
 }
 
 export const ImageContext = createContext<ImageListingContext>({
     images: [],
-    handleUploadImage: (_files: File[]) => {
+    handleTempUpload: (_files: File[]) => {
+        /* empty default method  */
+    },
+    handleUploadImage: () => {
         /* empty default method  */
     },
     searchText: '',
@@ -45,6 +50,7 @@ export const ImageContext = createContext<ImageListingContext>({
     },
     tableLoading: false,
     imageToDisplay: undefined,
+    imageToUpload: null,
 });
 
 export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
@@ -64,17 +70,31 @@ export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Elemen
     const [tableLoading, setTableLoading] = useState(true);
     const [pageInfo, setPageInfo] = useState<PageInfo>(createDefaultPageInfo());
     const [images, setImages] = useState<Array<ImageInfo>>([]);
+    const [imageToUpload, setImageToUpload] = useState<File | null>(null);
     const dispatch = useAppDispatch();
     const { page, size, sort_key, sort_order } = paginationOptions;
 
-    const handleUploadImage = async (files: File[]) => {
+    const handleTempUpload = async (files: File[]) => {
         if (files.length > 0) {
-            const [uniquefilename, fileName]: string[] = (await handleSaveImage(files[0])) || [];
+            setImageToDisplay(undefined);
+            setImageToUpload(files[0]);
+            return;
+        }
+        setImageToUpload(null);
+    };
+
+    const handleUploadImage = async () => {
+        if (!imageToUpload) return;
+        try {
+            const [uniquefilename, fileName]: string[] = (await handleSaveImageToS3(imageToUpload)) || [];
             createImage(uniquefilename, fileName);
+            setImageToUpload(null);
+        } catch (error) {
+            console.log(error);
         }
     };
 
-    const handleSaveImage = async (file: File) => {
+    const handleSaveImageToS3 = async (file: File) => {
         if (!file) {
             return;
         }
@@ -84,6 +104,22 @@ export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Elemen
         } catch (error) {
             console.log(error);
             throw new Error('Error occurred during image upload');
+        }
+    };
+
+    const createImage = async (unqiueFilename: string, fileName: string) => {
+        setImageToDisplay(undefined);
+        const date_uploaded = new Date();
+        try {
+            const image: ImageInfo = await postImage({
+                unique_name: unqiueFilename,
+                display_name: fileName,
+                date_uploaded,
+            });
+            setPaginationOptions({ page: 1, size: 10 });
+            setImageToDisplay(image);
+        } catch (err) {
+            dispatch(openNotification({ severity: 'error', text: 'Error occurred while creating image' }));
         }
     };
 
@@ -108,22 +144,6 @@ export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Elemen
         }
     };
 
-    const createImage = async (unqiueFilename: string, fileName: string) => {
-        setImageToDisplay(undefined);
-        const date_uploaded = new Date();
-        try {
-            const image: ImageInfo = await postImage({
-                unique_name: unqiueFilename,
-                display_name: fileName,
-                date_uploaded,
-            });
-            setPaginationOptions({ page: 1, size: 10 });
-            setImageToDisplay(image);
-        } catch (err) {
-            dispatch(openNotification({ severity: 'error', text: 'Error occurred while creating image' }));
-        }
-    };
-
     useEffect(() => {
         updateURLWithPagination(paginationOptions);
         fetchImages();
@@ -133,7 +153,7 @@ export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Elemen
         <ImageContext.Provider
             value={{
                 images,
-                handleUploadImage,
+                handleTempUpload,
                 searchText,
                 setSearchText,
                 paginationOptions,
@@ -142,6 +162,8 @@ export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Elemen
                 pageInfo,
                 setPageInfo,
                 imageToDisplay,
+                imageToUpload,
+                handleUploadImage,
             }}
         >
             {children}

@@ -13,11 +13,12 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Else, If, Then } from 'react-if';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch } from 'hooks';
+import { formatDate } from 'components/common/dateHelper';
 
 const ImageListing = () => {
     const {
         images,
-        handleUploadImage,
+        handleTempUpload,
         paginationOptions,
         searchText,
         setSearchText,
@@ -25,6 +26,8 @@ const ImageListing = () => {
         pageInfo,
         setPaginationOptions,
         imageToDisplay,
+        handleUploadImage,
+        imageToUpload,
     } = useContext(ImageContext);
 
     const dispatch = useAppDispatch();
@@ -36,7 +39,7 @@ const ImageListing = () => {
 
     const headCells: HeadCell<ImageInfo>[] = [
         {
-            key: 'display_name',
+            key: 'url',
             label: '',
             disablePadding: true,
             allowSort: true,
@@ -69,13 +72,9 @@ const ImageListing = () => {
             allowSort: true,
             numeric: false,
             renderCell: (row: ImageInfo) => {
-                const date = new Date(row.date_uploaded);
-                const year = date.getFullYear();
-                const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed, pad with leading zero
-                const day = date.getDate().toString().padStart(2, '0'); // Pad with leading zero
                 return (
                     <Grid container item>
-                        {`${year}-${month}-${day}`}
+                        {formatDate(row.date_uploaded)}
                     </Grid>
                 );
             },
@@ -115,15 +114,31 @@ const ImageListing = () => {
                 <ImageUpload
                     margin={4}
                     data-testid="image-listing/image-upload"
-                    handleAddFile={handleUploadImage}
+                    handleAddFile={handleTempUpload}
                     height={'240px'}
-                    canCrop={false}
+                    cropText="You can zoom in or out and move the image around."
                 />
             </Grid>
-            <If condition={imageToDisplay != undefined}>
+            <If condition={imageToUpload != null}>
+                <Then>
+                    <Grid item xs={12}>
+                        <Stack direction={'row'} justifyContent={'flex-end'} alignItems={'center'}>
+                            <PrimaryButton
+                                onClick={() => {
+                                    handleUploadImage();
+                                }}
+                                size="small"
+                            >
+                                Upload
+                            </PrimaryButton>
+                        </Stack>
+                    </Grid>
+                </Then>
+            </If>
+            <If condition={imageToDisplay?.url}>
                 <Then>
                     <Grid item xs={6}>
-                        <Stack direction="row" spacing={2} alignItems="center" justifyContent="left">
+                        <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
                             <img
                                 src={imageToDisplay?.url}
                                 style={{
@@ -156,7 +171,6 @@ const ImageListing = () => {
                     <Grid item sx={{ height: '100px' }} />
                 </Else>
             </If>
-
             <Grid item xs={12}>
                 <HeaderTitle>Uploaded Files</HeaderTitle>
             </Grid>
@@ -171,7 +185,10 @@ const ImageListing = () => {
                         onChange={(e) => setSearchText(e.target.value)}
                         size="small"
                     />
-                    <PrimaryButton onClick={() => setPaginationOptions({ page: 1, size: 10 })}>
+                    <PrimaryButton
+                        data-testid="image/listing/searchButton"
+                        onClick={() => setPaginationOptions({ page: 1, size: 10 })}
+                    >
                         <SearchIcon />
                     </PrimaryButton>
                 </Stack>
