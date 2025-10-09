@@ -18,33 +18,49 @@ This project is to develop modern engagement tools that address shortfalls ident
 
     .github/                   - PR, CI action workflows and Issue templates
     /docs                      - Miscellaneous documentations
-    met-web/                   - MET Web application root
-    ├── src/                   - React.js application
-    └── tests/                 - Application tests
-        └── unit/              - Jest unit tests
+    analytics-api              - MET Analytics Application Root
+    ├── src/                   - Python flask application
+    │   └── analytics_api/     - Models, Resources and Services
+    ├── migrations             - Database migration scripts
+    └── tests/                 - API application tests
+        └── unit/              - Python unit tests
     met-api/                   - MET API Application Root
     ├── src/                   - Python flask application
     │   └── met_api/           - Models, Resources and Services
     ├── migrations             - Database migration scripts
     └── tests/                 - API application tests
         └── unit/              - Python unit tests
-    notify-api/                - Notification API Application Root
-    ├── src/                   - Python flask application
-    │   └── notify_api/           - Models, Resources and Services
-    └── tests/                 - API application tests
     met-cron/                  - Job Scheduler Application Root
     ├── src/                   - Python application
-    │   └── met_cron/           - Models, Resources and Services
+    │   └── met_cron/          - Models, Resources and Services
     └── tests/                 - Job Scheduler tests
+    met-etl/                   - ELT Job Application Root
+    ├── src/                   - Python application
+    │   └── etl_project/       - Dagster ops, jobs, and schedules
+    └── tests/                 - ELT job tests
+    met-web/                   - MET Web application root
+    ├── src/                   - React.js application
+    └── tests/                 - Application tests
+        └── unit/              - Jest unit tests
+    notify-api/                - Notification API Application Root
+    ├── src/                   - Python flask application
+    │   └── notify_api/        - Models, Resources and Services
+    └── tests/                 - API application tests
     openshift/                 - OpenShift templates and documentation
-    snowplow/                  - Snowplow custom schemas
+    tools/
+    ├── keycloak/              - Docker container for Keycloak in dev
+    ├── postgres/              - Docker container for Postgres db dev
+    ├── postman/               
+    ├── snowplow/              - Snowplow custom schemas               
     CODE-OF-CONDUCT.md         - Code of Conduct
     COMPLIANCE.yaml            - BCGov PIA/STRA compliance status
     CONTRIBUTING.md            - Contributing Guidelines
+    DEVELOPMENT.md             - Developer Getting Started guide for local setup
     LICENSE                    - License
 
 ## Documentation
 
+* [Local Setup for Development](DEVELOPMENT.md)
 * [Web Application Readme](met-web/README.md)
 * [API Application Readme](met-api/README.md)
 * [Notification API Application Readme](notify-api/README.md)
