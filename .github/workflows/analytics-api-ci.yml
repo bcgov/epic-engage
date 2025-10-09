@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: "true"
 
-  linting:
+  analytics-api-linting:
     needs: setup-job
     runs-on: ubuntu-22.04
 
@@ -47,7 +47,7 @@ jobs:
         id: flake8
         run: |
           make flake8
-  testing:
+  analytics-api-testing:
     needs: setup-job
     env:
       FLASK_ENV: "testing"
@@ -69,6 +69,10 @@ jobs:
       USE_TEST_KEYCLOAK_DOCKER: "YES"
       
     runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        python-version: [3.8]
 
     services:
       postgres:
