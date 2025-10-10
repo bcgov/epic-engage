@@ -158,6 +158,12 @@ const Endpoints = {
         GET: `${AppConfig.apiUrl}/image_info/`,
         CREATE: `${AppConfig.apiUrl}/image_info/`,
     },
+    Settings: {
+        GET: `${AppConfig.apiUrl}/settings/`,
+        CREATE: `${AppConfig.apiUrl}/settings/`,
+        GET_BY_KEY: `${AppConfig.apiUrl}/settings/:setting_key`,
+        UPDATE: `${AppConfig.apiUrl}/settings/:id`,
+    },
 };
 
 export default Endpoints;
