@@ -9,11 +9,12 @@ import createWcTheme from '../styles/wcTheme';
 import { store } from '../../store';
 import { PrimaryButton } from 'components/common';
 import { Grid } from '@mui/material';
+import { ConvertedProp, EventMap } from '../types/web-component-types';
 
 export default class EngagementBannerWC extends HTMLElement {
-    root: any;
+    root: ReactDOM.Root | undefined;
     observer: MutationObserver;
-    shadowContainer: any;
+    shadowContainer: ShadowRoot | undefined;
     constructor(componentToMount: React.ComponentType) {
         super();
         this.observer = new MutationObserver(() => this.update());
@@ -33,8 +34,10 @@ export default class EngagementBannerWC extends HTMLElement {
     mount() {
         const emotionRoot = document.createElement('style');
         const shadowRootElement = document.createElement('div');
-        this.shadowContainer.appendChild(emotionRoot);
-        this.shadowContainer.appendChild(shadowRootElement);
+        if (this.shadowContainer) {
+            this.shadowContainer.appendChild(emotionRoot);
+            this.shadowContainer.appendChild(shadowRootElement);
+        }
 
         const cache = createCache({
             key: 'css',
@@ -43,7 +46,7 @@ export default class EngagementBannerWC extends HTMLElement {
         });
         const shadowTheme = createWcTheme(shadowRootElement);
         this.root = ReactDOM.createRoot(shadowRootElement);
-        const props: any = {
+        const props: Record<string, string | number | boolean | object> = {
             ...this.getProps(this.attributes),
             ...this.getEvents(),
         };
@@ -61,12 +64,24 @@ export default class EngagementBannerWC extends HTMLElement {
                                         xs={12}
                                         justifyContent="flex-end"
                                     >
-                                        <PrimaryButton onClick={() => window.open(props['engagementurl'], '_blank')}>
+                                        <PrimaryButton
+                                            onClick={() => {
+                                                const url =
+                                                    typeof props['engagementurl'] === 'string'
+                                                        ? props['engagementurl']
+                                                        : '';
+                                                window.open(url, '_blank');
+                                            }}
+                                        >
                                             View Engagement
                                         </PrimaryButton>
                                     </Grid>
                                 }
-                                engagementSlug={this._getSlugFromUrl(props['engagementurl'])}
+                                engagementSlug={
+                                    typeof props['engagementurl'] === 'string'
+                                        ? this._getSlugFromUrl(props['engagementurl'])
+                                        : ''
+                                }
                                 {...props}
                             />
                         </ThemeProvider>
@@ -77,39 +92,44 @@ export default class EngagementBannerWC extends HTMLElement {
     }
 
     unmount() {
-        this.root.unmount();
+        this.root?.unmount();
     }
 
     update() {
         this.unmount();
         this.mount();
     }
-    getProps(attributes: any) {
+    getProps(attributes: NamedNodeMap): Record<string, string | number | boolean | object> {
         return [...attributes]
             .filter((attr) => attr.name !== 'style')
             .map((attr) => this.convert(attr.name, attr.value))
             .reduce((props, prop) => ({ ...props, [prop.name]: prop.value }), {});
     }
-    getEvents() {
+    getEvents(): EventMap {
         return Object.values(this.attributes)
-            .filter((key) => /on([a-z].*)/.exec(key.name))
-            .reduce(
-                (events, ev) => ({
-                    ...events,
-                    [ev.name]: (args: any) => this.dispatchEvent(new CustomEvent(ev.name, { ...args })),
-                }),
-                {},
-            );
+            .filter((attr) => /on([a-z].*)/.test(attr.name))
+            .reduce((events: EventMap, ev) => {
+                events[ev.name] = (args: Record<string, unknown> = {}) =>
+                    this.dispatchEvent(new CustomEvent(ev.name, { detail: args }));
+                return events;
+            }, {});
     }
-    convert(attrName: any, attrValue: any) {
-        let value = attrValue;
-        if (attrValue === 'true' || attrValue === 'false') value = attrValue === 'true';
-        else if (!isNaN(attrValue) && attrValue !== '') value = +attrValue;
-        else if (/^{.*}/.exec(attrValue)) value = JSON.parse(attrValue);
-        return {
-            name: attrName,
-            value: value,
-        };
+    convert(attrName: string, attrValue: string): ConvertedProp {
+        let value: string | number | boolean | object = attrValue;
+
+        if (attrValue === 'true' || attrValue === 'false') {
+            value = attrValue === 'true';
+        } else if (!isNaN(Number(attrValue)) && attrValue !== '') {
+            value = Number(attrValue);
+        } else if (/^{.*}/.test(attrValue)) {
+            try {
+                value = JSON.parse(attrValue);
+            } catch {
+                value = attrValue; // fallback
+            }
+        }
+
+        return { name: attrName, value };
     }
     _getSlugFromUrl(url: string) {
         return url.substring(url.lastIndexOf('/') + 1, url.length);

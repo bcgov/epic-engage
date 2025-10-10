@@ -1,20 +1,15 @@
 import React, { useState } from 'react';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import Button from '@mui/material/Button';
+import { useNavigate } from 'react-router-dom';
+import { AppBar, Box, Toolbar, Button, IconButton, CssBaseline, useMediaQuery, Theme } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import { When } from 'react-if';
 import UserService from 'services/userService';
-import { useMediaQuery, Theme, IconButton } from '@mui/material';
 import SideNav from '../SideNav/SideNav';
-import CssBaseline from '@mui/material/CssBaseline';
 import { Palette } from 'styles/Theme';
 import EnvironmentBanner from './EnvironmentBanner';
 import { HeaderTitle } from 'components/common';
 import { ReactComponent as BCLogo } from 'assets/images/BritishColumbiaLogoDark.svg';
-import { When } from 'react-if';
-import MenuIcon from '@mui/icons-material/Menu';
 import { HeaderProps } from './types';
-import { useNavigate } from 'react-router-dom';
 import { useAppTranslation } from 'hooks';
 
 const InternalHeader = ({ drawerWidth = 280 }: HeaderProps) => {
@@ -40,7 +35,6 @@ const InternalHeader = ({ drawerWidth = 280 }: HeaderProps) => {
                 <Toolbar>
                     <When condition={!isMediumScreen}>
                         <IconButton
-                            component={MenuIcon}
                             color="info"
                             sx={{
                                 height: '2em',
@@ -48,7 +42,9 @@ const InternalHeader = ({ drawerWidth = 280 }: HeaderProps) => {
                                 marginRight: { xs: '1em' },
                             }}
                             onClick={() => setOpen(!open)}
-                        />
+                        >
+                            <MenuIcon />
+                        </IconButton>
                     </When>
                     <When condition={logoUrl && !imageError}>
                         <Box

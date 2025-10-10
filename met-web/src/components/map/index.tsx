@@ -21,6 +21,7 @@ interface MapProps {
 const layerStyle: AnyLayer = {
     id: 'fill-layer',
     type: 'fill',
+    source: 'geojson-data',
     paint: {
         'fill-color': `${Palette.primary.main}`,
         'fill-opacity': 0.5,
@@ -32,6 +33,7 @@ const layerStyle: AnyLayer = {
 const lineStyle: AnyLayer = {
     id: 'lines',
     type: 'line',
+    source: 'geojson-data',
     filter: ['all', ['==', ['geometry-type'], 'LineString'], ['!=', ['get', 'type'], 'platform']],
     layout: {
         'line-join': 'round',

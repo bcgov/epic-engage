@@ -110,7 +110,8 @@ export const AddUserModal = () => {
         if (error.response?.status !== 409) {
             return;
         }
-        setBackendError(error.response?.data.message || '');
+        const errorData = error.response?.data as { message?: string };
+        setBackendError(errorData?.message || '');
     };
 
     const onSubmit: SubmitHandler<AddUserForm> = async (data: AddUserForm) => {
