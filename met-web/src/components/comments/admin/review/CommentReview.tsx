@@ -12,6 +12,7 @@ import {
     TextField,
     FormHelperText,
     Link,
+    IconButton,
 } from '@mui/material';
 import { getSubmission, reviewComments } from 'services/submissionService';
 import { useAppDispatch, useAppTranslation } from 'hooks';
@@ -42,6 +43,12 @@ import { Survey, createDefaultSurvey } from 'models/survey';
 import { getSurvey } from 'services/surveyService';
 import CommentIcon from '@mui/icons-material/Comment';
 import CommentsDisabledIcon from '@mui/icons-material/CommentsDisabled';
+import EditIcon from '@mui/icons-material/Edit';
+import EditContactModal from './EditContactModal';
+import { getSettingByKey } from 'services/settingsService';
+import { useLazyGetContactQuery } from 'apiManager/apiSlices/contacts';
+import { Contact } from 'models/contact';
+import { SettingKey } from 'constants/settingKey';
 
 const CommentReview = () => {
     const [submission, setSubmission] = useState<SurveySubmission>(createDefaultSubmission());
@@ -59,6 +66,9 @@ const CommentReview = () => {
     const [updatedStaffNote, setUpdatedStaffNote] = useState<StaffNote[]>([]);
     const [openEmailPreview, setEmailPreview] = useState(false);
     const [survey, setSurvey] = useState<Survey>(createDefaultSurvey());
+    const [isEditingThreatContact, setIsEditingThreatContact] = useState(false);
+    const [getContactTrigger] = useLazyGetContactQuery();
+    const [threatContact, setThreatContact] = useState<Contact | null>(null);
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { t: translate } = useAppTranslation();
@@ -125,6 +135,21 @@ const CommentReview = () => {
     useEffect(() => {
         extract_staff_note();
     }, [staffNote]);
+
+    // Get current threat contact setting and the corresponding contact
+    const fetchThreatContactSettings = async () => {
+        const currentThreatContactSetting = await getSettingByKey(SettingKey.THREAT_CONTACT);
+        if (!currentThreatContactSetting?.setting_value) return;
+        const currentThreatContact = await getContactTrigger(
+            parseInt(currentThreatContactSetting?.setting_value, 10),
+            false,
+        ).unwrap();
+        setThreatContact(currentThreatContact);
+    };
+
+    useEffect(() => {
+        fetchThreatContactSettings();
+    }, []);
 
     const handleReviewChange = (verdict: number) => {
         setReview(verdict);
@@ -200,7 +225,6 @@ const CommentReview = () => {
     };
 
     const defaultVerdict = comment_status_id !== CommentStatus.Pending ? comment_status_id : CommentStatus.Approved;
-    const threatEmailContact = translate('comment.admin.review.threatContactEmail');
     return (
         <MetPageGridContainer>
             <EmailPreviewModal
@@ -393,12 +417,39 @@ const CommentReview = () => {
                                             />
                                         }
                                     />
-                                    <MetSmallText bold color="#d32f2f" marginLeft={'3em'} mt={'-1em'}>
-                                        {translate('comment.admin.review.threatTextOne')}{' '}
-                                        {translate('comment.admin.review.threatContact')}{' '}
-                                        {translate('comment.admin.review.threatTextTwo')}{' '}
-                                        <Link href={`mailto:${threatEmailContact}`}>{threatEmailContact}</Link>
-                                    </MetSmallText>
+                                    <Grid
+                                        container
+                                        direction="row"
+                                        alignItems="center"
+                                        spacing={1}
+                                        sx={{ marginLeft: '3em', mt: '-1em' }}
+                                    >
+                                        <Grid item>
+                                            <MetSmallText bold color="#d32f2f">
+                                                {translate('comment.admin.review.threatTextOne')} {threatContact?.name}{' '}
+                                                {translate('comment.admin.review.threatTextTwo')}{' '}
+                                                <Link href={`mailto:${threatContact?.email}`}>
+                                                    {threatContact?.email}
+                                                </Link>
+                                            </MetSmallText>
+                                        </Grid>
+                                        <Grid item>
+                                            <IconButton
+                                                size="small"
+                                                color="primary"
+                                                onClick={() => setIsEditingThreatContact(true)}
+                                                data-testid="survey-widget/edit"
+                                                sx={{ padding: 0.5 }}
+                                            >
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                        </Grid>
+                                    </Grid>
+                                    <EditContactModal
+                                        isOpen={isEditingThreatContact}
+                                        setIsOpen={setIsEditingThreatContact}
+                                        onSaveCallback={fetchThreatContactSettings}
+                                    />
                                     <FormControlLabel
                                         label={<MetParagraph sx={{ color: '#494949' }}>Other</MetParagraph>}
                                         control={
