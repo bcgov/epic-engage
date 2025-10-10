@@ -33,20 +33,21 @@ jest.mock('@mui/material', () => ({
     },
 }));
 
+jest.mock('hooks', () => ({
+    ...jest.requireActual('hooks'),
+    useAppSelector: jest.fn(() => ({
+      roles: ['EDIT_MEMBERS'],
+      userDetail: { user: { id: 999 } },
+    })),
+    useAppDispatch: jest.fn(() => jest.fn()),
+  }));
+  
+
 jest.mock('components/common', () => ({
     ...jest.requireActual('components/common'),
     PrimaryButton: ({ children, onClick }: { children: ReactNode; onClick: () => void }) => {
         return <button onClick={onClick}>{children}</button>;
     },
-}));
-
-jest.mock('react-redux', () => ({
-    ...jest.requireActual('react-redux'),
-    useSelector: jest.fn(() => {
-        return {
-            assignedEngagements: [draftEngagement.id],
-        };
-    }),
 }));
 
 jest.mock('react-router-dom', () => ({
@@ -57,8 +58,6 @@ jest.mock('react-router-dom', () => ({
 }));
 
 describe('User Management tests', () => {
-    jest.spyOn(reactRedux, 'useSelector').mockImplementation(() => jest.fn());
-    jest.spyOn(reactRedux, 'useDispatch').mockImplementation(() => jest.fn());
     jest.spyOn(reactRouter, 'useNavigate').mockImplementation(() => jest.fn());
     jest.spyOn(userService, 'getUserList').mockReturnValue(
         Promise.resolve({

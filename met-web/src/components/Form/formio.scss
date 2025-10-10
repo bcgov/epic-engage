@@ -547,13 +547,6 @@ div[disabled] {
     border-radius: 4px;
 }
 
-.BC-Gov-SecondaryButton:hover {
-    opacity: 0.8;
-    text-decoration: underline;
-    background-color: #003366;
-    color: #ffffff;
-}
-
 .BC-Gov-PrimaryButton {
     display: inline-flex;
     -webkit-box-align: center;
@@ -588,9 +581,24 @@ div[disabled] {
     line-height: 1.1rem;
 }
 
-.BC-Gov-PrimaryButton:hover {
+%BC-Gov-PrimaryButton-hover {
     text-decoration: underline;
     opacity: 0.8;
+}
+
+%BC-Gov-SecondaryButton-hover {
+    opacity: 0.8;
+    text-decoration: underline;
+    background-color: #003366;
+    color: #ffffff;
+}
+
+.BC-Gov-PrimaryButton:hover {
+    @extend %BC-Gov-PrimaryButton-hover;
+}
+
+.BC-Gov-SecondaryButton:hover {
+    @extend %BC-Gov-SecondaryButton-hover;
 }
 
 .btn-wizard-nav-next {
@@ -598,8 +606,7 @@ div[disabled] {
 }
 
 .btn-wizard-nav-next:hover {
-    @extend .BC-Gov-PrimaryButton;
-    @extend .BC-Gov-PrimaryButton:hover;
+    @extend %BC-Gov-PrimaryButton-hover;
 }
 
 .btn-wizard-nav-cancel {
@@ -607,8 +614,7 @@ div[disabled] {
 }
 
 .btn-wizard-nav-cancel:hover {
-    @extend .BC-Gov-SecondaryButton;
-    @extend .BC-Gov-SecondaryButton:hover;
+    @extend %BC-Gov-SecondaryButton-hover;
 }
 
 .btn-wizard-nav-previous {
@@ -616,8 +622,7 @@ div[disabled] {
 }
 
 .btn-wizard-nav-previous:hover {
-    @extend .BC-Gov-SecondaryButton;
-    @extend .BC-Gov-SecondaryButton:hover;
+    @extend %BC-Gov-SecondaryButton-hover;
 }
 
 .btn-wizard-nav-submit {
@@ -625,8 +630,7 @@ div[disabled] {
 }
 
 .btn-wizard-nav-submit:hover {
-    @extend .BC-Gov-PrimaryButton;
-    @extend .BC-Gov-PrimaryButton:hover;
+    @extend %BC-Gov-PrimaryButton-hover;
 }
 
 .pagination {

@@ -6,12 +6,13 @@ import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom/client';
 import createWcTheme from '../styles/wcTheme';
 import { store } from '../../store';
+import { ConvertedProp, EventMap } from '../types/web-component-types';
 
 class WCBaseELement extends HTMLElement {
     ComponentToMount: React.ComponentType;
-    root: any;
+    root: ReactDOM.Root | null = null;
     observer: MutationObserver;
-    shadowContainer: any;
+    shadowContainer: ShadowRoot | null = null;
     constructor(componentToMount: React.ComponentType) {
         super();
         this.ComponentToMount = componentToMount;
@@ -34,8 +35,10 @@ class WCBaseELement extends HTMLElement {
         const ComponentToMount: React.ComponentType = this.ComponentToMount;
         const emotionRoot = document.createElement('style');
         const shadowRootElement = document.createElement('div');
-        this.shadowContainer.appendChild(emotionRoot);
-        this.shadowContainer.appendChild(shadowRootElement);
+        if (this.shadowContainer) {
+            this.shadowContainer.appendChild(emotionRoot);
+            this.shadowContainer.appendChild(shadowRootElement);
+        }
 
         const cache = createCache({
             key: 'css',
@@ -63,7 +66,7 @@ class WCBaseELement extends HTMLElement {
 
     unmount() {
         console.log('Performing unmount');
-        this.root.unmount();
+        this.root?.unmount();
     }
 
     update() {
@@ -71,32 +74,38 @@ class WCBaseELement extends HTMLElement {
         this.unmount();
         this.mount();
     }
-    getProps(attributes: any) {
+    getProps(attributes: NamedNodeMap) {
         return [...attributes]
             .filter((attr) => attr.name !== 'style')
             .map((attr) => this.convert(attr.name, attr.value))
             .reduce((props, prop) => ({ ...props, [prop.name]: prop.value }), {});
     }
-    getEvents() {
+    getEvents(): EventMap {
         return Object.values(this.attributes)
-            .filter((key) => /on([a-z].*)/.exec(key.name))
-            .reduce(
-                (events, ev) => ({
-                    ...events,
-                    [ev.name]: (args: any) => this.dispatchEvent(new CustomEvent(ev.name, { ...args })),
-                }),
-                {},
-            );
+            .filter((attr) => /on([a-z].*)/.exec(attr.name))
+            .reduce((events: EventMap, ev) => {
+                events[ev.name] = (args?: Record<string, unknown>) =>
+                    this.dispatchEvent(new CustomEvent(ev.name, { detail: args }));
+                return events;
+            }, {});
     }
-    convert(attrName: any, attrValue: any) {
-        let value = attrValue;
-        if (attrValue === 'true' || attrValue === 'false') value = attrValue === 'true';
-        else if (!isNaN(attrValue) && attrValue !== '') value = +attrValue;
-        else if (/^{.*}/.exec(attrValue)) value = JSON.parse(attrValue);
-        return {
-            name: attrName,
-            value: value,
-        };
+    convert(attrName: string, attrValue: string): ConvertedProp {
+        let value: string | number | boolean | object = attrValue;
+
+        if (attrValue === 'true' || attrValue === 'false') {
+            value = attrValue === 'true';
+        } else if (!isNaN(Number(attrValue)) && attrValue !== '') {
+            value = Number(attrValue);
+        } else if (/^{.*}/.test(attrValue)) {
+            try {
+                value = JSON.parse(attrValue);
+            } catch {
+                // fallback to string if JSON parse fails
+                value = attrValue;
+            }
+        }
+
+        return { name: attrName, value };
     }
 }
 

@@ -182,7 +182,7 @@ const CommentTextListing = () => {
             allowSort: true,
             renderCell: (row) => {
                 if (
-                    roles.includes(USER_ROLES.REVIEW_COMMENTS) ||
+                    roles?.includes(USER_ROLES.REVIEW_COMMENTS) ||
                     (assignedEngagements.includes(Number(row.engagement_id)) &&
                         userDetail.groups?.includes('/' + USER_GROUP.TEAM_MEMBER.value))
                 ) {
@@ -202,7 +202,7 @@ const CommentTextListing = () => {
             label: 'Content',
             allowSort: true,
             renderCell: (row: SurveySubmission) => (
-                <Grid container xs={12} rowSpacing={2} sx={{ pt: 1.5 }}>
+                <Grid container rowSpacing={2} sx={{ pt: 1.5 }}>
                     {row.comments?.map((comment, index) => {
                         return (
                             <Grid key={index} item xs={12}>
@@ -270,6 +270,7 @@ const CommentTextListing = () => {
                         }}
                     >
                         <Grid
+                            item
                             xs={12}
                             sx={{
                                 display: 'flex',
@@ -296,6 +297,7 @@ const CommentTextListing = () => {
                         </Grid>
                         <When condition={row.comment_status_id !== CommentStatus.Pending}>
                             <Grid
+                                item
                                 xs={12}
                                 sx={{
                                     display: 'flex',
