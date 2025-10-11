@@ -16,15 +16,13 @@
 
 Test-Suite to ensure that the /images endpoint is working as expected.
 """
-import copy
 import json
 from http import HTTPStatus
 
 import pytest
 from faker import Faker
 
-from met_api.models.tenant import Tenant as TenantModel
-from met_api.utils.constants import TENANT_ID_HEADER
+from met_api.models.image_info import ImageInfo
 from met_api.utils.enums import ContentType
 from tests.utilities.factory_scenarios import TestImageInfo, TestJwtClaims, TestTenantInfo
 from tests.utilities.factory_utils import factory_auth_header, factory_tenant_model
@@ -79,40 +77,28 @@ def test_get_images_invalid_authorization(client, jwt, session, role):  # pylint
 
 def test_cannot_get_images_with_different_tenant_ids(client, jwt, session):  # pylint:disable=unused-argument
     """Assert that a user from tenant 1 cannot see images from tenant 2."""
-    tenant_1 = TestTenantInfo.tenant1  # Create tenant 1
-    factory_tenant_model(tenant_1)
-    tenant_1_short_name = tenant_1.value['short_name']
-    tenant_1 = TenantModel.find_by_short_name(tenant_1_short_name)
-    assert tenant_1 is not None
+    other_tenant = factory_tenant_model(TestTenantInfo.tenant2)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.met_admin_role)
 
-    tenant_2 = TestTenantInfo.tenant2  # Create tenant 2
-    factory_tenant_model(tenant_2)
-    tenant_2_short_name = tenant_2.value['short_name']
-    tenant_2 = TenantModel.find_by_short_name(tenant_2_short_name)
-    assert tenant_2 is not None
+    # Create two images for tenant 1
+    image_1 = client.post('/api/image_info/', data=json.dumps(TestImageInfo.image_1),
+                          headers=headers, content_type=ContentType.JSON.value)
+    image_2 = client.post('/api/image_info/', data=json.dumps(TestImageInfo.image_1),
+                          headers=headers, content_type=ContentType.JSON.value)
 
-    user_1 = copy.deepcopy(TestJwtClaims.met_admin_role.value)  # Create a user for tenant 1
-    user_1['tenant_id'] = tenant_1.id
+    # Fetch the images and assert we see both
+    rv = client.get('/api/image_info/', headers=headers, content_type=ContentType.JSON.value)
+    assert rv.json.get('total') == 2  # Assert we see just the 2 image for our tenant
 
-    user_2 = copy.deepcopy(TestJwtClaims.met_admin_role.value)  # Create a user for tenant 2
-    user_2['tenant_id'] = tenant_2.id
-
+    # Change the tenant_id of one of the images to be the other tenant
+    image_info = session.query(ImageInfo).filter(ImageInfo.id == image_2.json.get('id')).one_or_none()
+    image_info.tenant_id = other_tenant.id
+    session.add(image_info)
     session.commit()
 
-    headers = factory_auth_header(jwt=jwt, claims=user_1)
-    headers[TENANT_ID_HEADER] = tenant_1_short_name
-    rv = client.post('/api/image_info/', data=json.dumps(TestImageInfo.image_1),
-                     headers=headers, content_type=ContentType.JSON.value)
-    response_tenant_id = rv.json.get('tenant_id')
-    user_tenant_id = user_1.get('tenant_id')
-    assert int(response_tenant_id) == int(user_tenant_id)  # Create image for tenant 1
-
-    headers = factory_auth_header(jwt=jwt, claims=user_1)
-    headers[TENANT_ID_HEADER] = tenant_1_short_name
+    # Fetch the images and assert we see just 1 now
     rv = client.get('/api/image_info/', headers=headers, content_type=ContentType.JSON.value)
-    assert rv.json.get('total') == 1  # Assert user 1 can see image
-
-    headers = factory_auth_header(jwt=jwt, claims=user_2)
-    headers[TENANT_ID_HEADER] = tenant_2_short_name
-    rv = client.get('/api/image_info/', headers=headers, content_type=ContentType.JSON.value)
-    assert rv.json.get('total') == 0  # Assert user from different tenant cannot see image
+    # Assert we see just the 1 image for our tenant
+    assert rv.json.get('total') == 1
+    # Check to make sure we get the right image
+    assert rv.json.get('items')[0].get('id') == image_1.json.get('id')

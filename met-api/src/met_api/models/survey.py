@@ -52,6 +52,10 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
             .filter(Survey.id == survey_id)
             .first()
         )
+
+        if not end_date or not end_date[0]:
+            return None
+
         # Calculate the threshold time (8 hours after the end_date)
         extended_end_date = end_date[0] + timedelta(days=1, hours=8)
 
