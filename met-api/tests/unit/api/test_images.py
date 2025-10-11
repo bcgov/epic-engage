@@ -82,10 +82,9 @@ def test_cannot_get_images_with_different_tenant_ids(client, jwt, session):  # p
 
     # Create two images for tenant 1
     image_1 = client.post('/api/image_info/', data=json.dumps(TestImageInfo.image_1),
-                     headers=headers, content_type=ContentType.JSON.value)
+                          headers=headers, content_type=ContentType.JSON.value)
     image_2 = client.post('/api/image_info/', data=json.dumps(TestImageInfo.image_1),
-                     headers=headers, content_type=ContentType.JSON.value)
-
+                          headers=headers, content_type=ContentType.JSON.value)
 
     # Fetch the images and assert we see both
     rv = client.get('/api/image_info/', headers=headers, content_type=ContentType.JSON.value)
@@ -99,5 +98,7 @@ def test_cannot_get_images_with_different_tenant_ids(client, jwt, session):  # p
 
     # Fetch the images and assert we see just 1 now
     rv = client.get('/api/image_info/', headers=headers, content_type=ContentType.JSON.value)
-    assert rv.json.get('total') == 1  # Assert we see just the 1 image for our tenant
-    assert rv.json.get('items')[0].get('id') == image_1.json.get('id') # Check to make sure we get the right image
+    # Assert we see just the 1 image for our tenant
+    assert rv.json.get('total') == 1
+    # Check to make sure we get the right image
+    assert rv.json.get('items')[0].get('id') == image_1.json.get('id')

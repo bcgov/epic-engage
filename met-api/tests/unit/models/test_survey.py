@@ -76,7 +76,7 @@ def test_get_open_survey_time_based(session):
     day_after_time_delay = now + timedelta(days=1, hours=8, minutes=1)
     with freeze_time(day_after_time_delay):
         # Adding this to account for timezone differences
-        engagement.end_date = now - timedelta(hours=12)
+        engagement.end_date = now - timedelta(hours=24)
         db.session.add(engagement)
         db.session.commit()
         survey_new = SurveyModel.get_open(survey.id)
@@ -85,5 +85,8 @@ def test_get_open_survey_time_based(session):
     # Move time backward by 1 day
     day_before_time_delay = now - timedelta(days=1)
     with freeze_time(day_before_time_delay):
+        engagement.end_date = now
+        db.session.add(engagement)
+        db.session.commit()
         survey_new = SurveyModel.get_open(survey.id)
         assert survey_new is not None, 'survey fetchable since one day before closure.'
