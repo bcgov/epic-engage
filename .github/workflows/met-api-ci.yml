@@ -17,7 +17,7 @@ defaults:
 
 jobs:
   setup-job:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     if: github.repository == 'bcgov/epic-engage'
 
@@ -25,9 +25,9 @@ jobs:
       - uses: actions/checkout@v2
       - run: "true"
 
-  linting:
+  met-api-linting:
     needs: setup-job
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     strategy:
       matrix:
@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -51,7 +51,7 @@ jobs:
         run: |
           make flake8
 
-  testing:
+  met-api-testing:
     needs: setup-job
     env:
       FLASK_ENV: "testing"
@@ -73,7 +73,11 @@ jobs:
       KEYCLOAK_TEST_REALMNAME: "demo"
       USE_TEST_KEYCLOAK_DOCKER: "YES"
       
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        python-version: [3.8]
 
     services:
       postgres:
@@ -90,7 +94,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -112,14 +116,14 @@ jobs:
         with:
           flags: metapi
           name: codecov-met-api
-          fail_ci_if_error: true   
+          fail_ci_if_error: false   
           verbose: true 
           override_branch: ${{env.CODECOV_BRANCH}}
           token: ${{ secrets.CODECOV_TOKEN }}
 
   build-check:
     needs: setup-job
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v2

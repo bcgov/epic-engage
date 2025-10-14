@@ -9,7 +9,7 @@ import { If, Then, Else } from 'react-if';
 import { EngagementTabsContext } from './EngagementTabsContext';
 import { EngagementStatus, SUBMISSION_STATUS } from 'constants/engagementStatus';
 import DayCalculatorModal from '../DayCalculator';
-import { ENGAGEMENT_CROPPER_ASPECT_RATIO, ENGAGEMENT_UPLOADER_HEIGHT } from './constants';
+import { ENGAGEMENT_CROPPER_ASPECT_RATIO, ENGAGEMENT_CROPPER_TEXT, ENGAGEMENT_UPLOADER_HEIGHT } from './constants';
 import RichTextEditor from 'components/common/RichTextEditor';
 import { getTextFromDraftJsContentState } from 'components/common/RichTextEditor/utils';
 
@@ -304,6 +304,7 @@ const EngagementForm = () => {
                         savedImageName={savedEngagement.banner_filename}
                         height={ENGAGEMENT_UPLOADER_HEIGHT}
                         cropAspectRatio={ENGAGEMENT_CROPPER_ASPECT_RATIO}
+                        cropText={ENGAGEMENT_CROPPER_TEXT}
                     />
                 </Grid>
                 <Grid item xs={12}>

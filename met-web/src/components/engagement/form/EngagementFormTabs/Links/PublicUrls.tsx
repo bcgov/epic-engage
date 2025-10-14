@@ -61,7 +61,8 @@ export const PublicUrls = () => {
             );
             return;
         }
-        setBackendError(error.response?.data.message || '');
+        const errorData = error.response?.data as { message?: string };
+        setBackendError(errorData?.message || '');
     };
 
     const handleSaveSlug = async () => {

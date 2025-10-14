@@ -17,7 +17,7 @@ defaults:
 
 jobs:
   setup-job:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     if: github.repository == 'bcgov/epic-engage'
 
@@ -25,13 +25,13 @@ jobs:
       - uses: actions/checkout@v2
       - run: "true"
 
-  linting:
+  met-web-linting:
     needs: setup-job
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [18.x]
 
     steps:
       - uses: actions/checkout@v2
@@ -47,9 +47,13 @@ jobs:
         run: |
           npm run lint
 
-  testing:
+  met-web-testing:
     needs: setup-job
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        node-version: [18.x]
 
     steps:
       - uses: actions/checkout@v2
@@ -79,14 +83,18 @@ jobs:
         with:
           flags: metweb
           name: codecov-met-web
-          fail_ci_if_error: true    
+          fail_ci_if_error: false    
           verbose: true
           override_branch: ${{env.CODECOV_BRANCH}}
           token: ${{ secrets.CODECOV_TOKEN }}
 
   build-check:
     needs: setup-job
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        node-version: [18.x]
 
     steps:
       - uses: actions/checkout@v2

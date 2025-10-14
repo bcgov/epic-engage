@@ -13,6 +13,7 @@ import SubmissionListing from 'components/comments/admin/reviewListing';
 import CommentTextListing from 'components/comments/admin/textListing';
 import * as utils from 'utils';
 import { USER_ROLES } from 'services/userService/constants';
+import { AxiosResponse } from 'axios';
 
 const mockSurveyOne = {
     ...createDefaultSurvey(),
@@ -92,7 +93,7 @@ describe('Comment listing tests', () => {
     );
     const mockGetCommentsSheet = jest
         .spyOn(commentService, 'getStaffCommentSheet')
-        .mockReturnValue(Promise.resolve({ data: new Blob(), status: 200, statusText: '', headers: {}, config: {} }));
+        .mockReturnValue(Promise.resolve({ data: new Blob(), status: 200, statusText: '', headers: {}, config: {} } as AxiosResponse));
     const mockDownloadFile = jest.spyOn(utils, 'downloadFile').mockImplementation(() => jest.fn());
 
     beforeEach(() => {
