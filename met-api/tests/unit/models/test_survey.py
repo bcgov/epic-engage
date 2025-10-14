@@ -51,6 +51,7 @@ def test_get_open_survey(session):
     survey_new_1 = SurveyModel.get_open(survey.id)
     assert survey_new_1 is not None
 
+
 # Fails until  we have stronger enforcement of timezones.
 # ENGAGE-76
 @skip
