@@ -31,7 +31,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [16.x]
+        node-version: [18.x]
 
     steps:
       - uses: actions/checkout@v2
@@ -50,6 +50,10 @@ jobs:
   met-web-testing:
     needs: setup-job
     runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        node-version: [18.x]
 
     steps:
       - uses: actions/checkout@v2
@@ -87,6 +91,10 @@ jobs:
   build-check:
     needs: setup-job
     runs-on: ubuntu-22.04
+
+    strategy:
+      matrix:
+        node-version: [18.x]
 
     steps:
       - uses: actions/checkout@v2
