@@ -50,6 +50,7 @@ def test_add_engagements(client, jwt, session, engagement_info):  # pylint:disab
 
 def test_tenant_id_in_create_engagements(client, jwt, session):  # pylint:disable=unused-argument
     """Assert that an engagement can be POSTed with tenant id."""
+    current_app.config['IS_SINGLE_TENANT_ENVIRONMENT'] = False
     headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
     tenant_short_name = current_app.config.get('DEFAULT_TENANT_SHORT_NAME')
     tenant = TenantModel.find_by_short_name(tenant_short_name)
