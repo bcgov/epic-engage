@@ -58,8 +58,6 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
 
         # Calculate the threshold time (8 hours after the end_date)
         extended_end_date = end_date[0] + timedelta(days=1, hours=8)
-        print(db.session.query(Engagement.start_date).join(Survey, Engagement.id == Survey.engagement_id).first()[0], now)
-        print(local_datetime().replace(tzinfo=None), extended_end_date)
 
         survey: Survey = db.session.query(Survey).filter_by(id=survey_id) \
             .join(Engagement) \
