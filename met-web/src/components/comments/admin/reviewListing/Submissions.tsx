@@ -52,7 +52,7 @@ const Submissions = () => {
             allowSort: true,
             renderCell: (row) => {
                 if (
-                    roles.includes(USER_ROLES.REVIEW_COMMENTS) ||
+                    roles?.includes(USER_ROLES.REVIEW_COMMENTS) ||
                     (assignedEngagements.includes(Number(survey.engagement_id)) &&
                         userDetail.groups?.includes('/' + USER_GROUP.TEAM_MEMBER.value))
                 ) {

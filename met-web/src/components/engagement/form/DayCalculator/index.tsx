@@ -503,6 +503,7 @@ const DayCalculatorModal = ({ open, updateModal }: DayCalcModalProps) => {
                                                 aria-labelledby="drop-down"
                                                 variant="outlined"
                                                 fullWidth
+                                                placeholder="selectedOption"
                                             />
                                         )}
                                         sx={{ width: '80%' }}
@@ -512,7 +513,6 @@ const DayCalculatorModal = ({ open, updateModal }: DayCalcModalProps) => {
                                         defaultValue={options[0]}
                                         data-testid={'autocomplete'}
                                         value={selectedOption}
-                                        placeholder="selectedOption"
                                     />
                                 </Stack>
                             </Grid>
@@ -576,6 +576,7 @@ const DayCalculatorModal = ({ open, updateModal }: DayCalcModalProps) => {
                                                 aria-labelledby="drop-down"
                                                 variant="outlined"
                                                 fullWidth
+                                                placeholder="selectedOption"
                                             />
                                         )}
                                         sx={{ width: '95%' }}
@@ -585,7 +586,6 @@ const DayCalculatorModal = ({ open, updateModal }: DayCalcModalProps) => {
                                         defaultValue={options[0]}
                                         data-testid={'autocomplete'}
                                         value={selectedOption}
-                                        placeholder="selectedOption"
                                     />
                                 </Stack>
                             </Grid>

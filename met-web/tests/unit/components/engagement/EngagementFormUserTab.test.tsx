@@ -102,8 +102,11 @@ describe('Engagement form page tests', () => {
         await waitFor(() => {
             expect(screen.getByDisplayValue(draftEngagement.name)).toBeInTheDocument();
         });
-        await waitForElementToBeRemoved(container.querySelector('span.MuiSkeleton-root'));
-
+        const skeleton = container.querySelector('span.MuiSkeleton-root');
+        if (skeleton) {
+          await waitForElementToBeRemoved(skeleton);
+        }
+        
         const userManagementTabButton = screen.getByText('User Management');
 
         fireEvent.click(userManagementTabButton);

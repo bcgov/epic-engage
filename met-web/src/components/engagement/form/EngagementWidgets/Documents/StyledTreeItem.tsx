@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { styled } from '@mui/material/styles';
-import TreeItem, { treeItemClasses, TreeItemProps } from '@mui/lab/TreeItem';
+import TreeItem, { TreeItemProps } from '@mui/lab/TreeItem';
 import { MetBody } from 'components/common';
 import { If, Then, Else } from 'react-if';
 import { Link, Box } from '@mui/material';
@@ -24,7 +24,7 @@ type StyledTreeItemProps = TreeItemProps & {
 
 const StyledTreeItemRoot = styled(TreeItem)(({ theme }) => ({
     color: theme.palette.text.primary,
-    [`& .${treeItemClasses.content}`]: {
+    '& .MuiTreeItem-content': {
         color: theme.palette.text.primary,
         borderTopRightRadius: theme.spacing(2),
         borderBottomRightRadius: theme.spacing(2),
@@ -39,14 +39,14 @@ const StyledTreeItemRoot = styled(TreeItem)(({ theme }) => ({
         '&.Mui-focused, &.Mui-selected, &.Mui-selected.Mui-focused': {
             backgroundColor: 'transparent',
         },
-        [`& .${treeItemClasses.label}`]: {
+        '& .MuiTreeItem-label': {
             fontWeight: 'inherit',
             color: 'inherit',
         },
     },
-    [`& .${treeItemClasses.group}`]: {
+    '& .MuiTreeItem-group': {
         marginLeft: 0,
-        [`& .${treeItemClasses.content}`]: {
+        '& .MuiTreeItem-content': {
             paddingLeft: theme.spacing(2),
         },
     },

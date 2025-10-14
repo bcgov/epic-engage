@@ -127,7 +127,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
     };
 
     const verifyUserCanEdit = () => {
-        const canViewPrivateEngagements = roles.includes(USER_ROLES.VIEW_PRIVATE_ENGAGEMENTS);
+        const canViewPrivateEngagements = roles?.includes(USER_ROLES.VIEW_PRIVATE_ENGAGEMENTS);
         if (canViewPrivateEngagements) {
             setLoadingAuthorization(false);
             return;

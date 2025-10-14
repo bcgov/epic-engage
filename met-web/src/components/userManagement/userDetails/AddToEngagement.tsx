@@ -161,7 +161,8 @@ export const AddToEngagementModal = () => {
         if (error.response?.status !== HTTP_STATUS_CODES.CONFLICT) {
             return;
         }
-        setBackendError(error.response?.data.message || '');
+        const errorMessage = (error.response?.data as { message?: string })?.message || '';
+        setBackendError(errorMessage);
     };
 
     const onSubmit: SubmitHandler<AddUserForm> = async (data: AddUserForm) => {

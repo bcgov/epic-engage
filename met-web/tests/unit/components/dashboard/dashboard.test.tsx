@@ -61,6 +61,7 @@ describe('Dashboard page tests', () => {
             expect(screen.getByText('Open Engagement')).toBeInTheDocument();
             expect(screen.getByText('Closed Engagement')).toBeInTheDocument();
         });
+        await waitFor(() => {});
     });
 
     test('Accordion expands and dashboard is displayed', async () => {
@@ -104,5 +105,7 @@ describe('Dashboard page tests', () => {
 
         fireEvent.click(accordion);
         expect(screen.getByTestId(`dashboard-frame-${openEngagement.id}`)).toBeVisible();
+
+        await waitFor(() => {});
     });
 });
