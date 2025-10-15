@@ -13,6 +13,7 @@ export interface EventItem {
     location_address: string;
     start_date: string;
     end_date: string;
+    timezone: string;
     url: string;
     url_label: string;
     sort_index: number;

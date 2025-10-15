@@ -5,6 +5,7 @@ from typing import List
 from met_api.exceptions.business_exception import BusinessException
 from met_api.models.event_item import EventItem as EventItemsModel
 from met_api.models.widget_events import WidgetEvents as WidgetEventsModel
+from met_api.utils.datetime import to_utc
 
 
 class WidgetEventsService:
@@ -45,13 +46,13 @@ class WidgetEventsService:
         event.widget_id = widget_id
         event.title = event_details.get('title')
         event.type = event_details.get('type')
-        sort_index = WidgetEventsService._find_higest_sort_index(widget_id)
+        sort_index = WidgetEventsService._find_highest_sort_index(widget_id)
         event.sort_index = sort_index + 1
         event.flush()
         return event
 
     @staticmethod
-    def _find_higest_sort_index(widget_id):
+    def _find_highest_sort_index(widget_id):
         # find the highest sort order of the widget event
         sort_index = 0
         widget_events = WidgetEventsModel.get_all_by_widget_id(widget_id)
@@ -74,10 +75,11 @@ class WidgetEventsService:
         event_item.description = event.get('description')
         event_item.location_name = event.get('location_name')
         event_item.location_address = event.get('location_address')
-        event_item.start_date = event.get('start_date')
-        event_item.end_date = event.get('end_date')
+        event_item.start_date = to_utc(event.get('start_date'), event.get('timezone'))
+        event_item.end_date = to_utc(event.get('end_date'), event.get('timezone'))
         event_item.url = event.get('url')
         event_item.url_label = event.get('url_label')
+        event_item.timezone = event.get('timezone')
         event_item.widget_events_id = widget_events_id
         return event_item
 
@@ -94,7 +96,12 @@ class WidgetEventsService:
             raise BusinessException(
                 error='Invalid widgets and event',
                 status_code=HTTPStatus.BAD_REQUEST)
-
+        # If timezone is being updated use new one otherwise use existing one.
+        timezone = request_json.get('timezone', event_item.timezone)
+        if 'start_date' in request_json:
+            request_json['start_date'] = to_utc(request_json.get('start_date'), timezone)
+        if 'end_date' in request_json:
+            request_json['end_date'] = to_utc(request_json.get('end_date'), timezone)
         WidgetEventsService._update_from_dict(event_item, request_json)
         event_item.commit()
 

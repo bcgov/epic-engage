@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 
 from faker import Faker
+import pytz
 
 from met_api.config import get_named_config
 from met_api.constants.comment_status import Status as CommentStatus
@@ -519,7 +520,7 @@ class TestCommentInfo(dict, Enum):
     }
 
 
-class TestEventnfo(dict, Enum):
+class TestEventInfo(dict, Enum):
     """Test scenarios of event."""
 
     event_meetup = {
@@ -535,6 +536,7 @@ class TestEventnfo(dict, Enum):
                 'end_date': (datetime.now() + timedelta(weeks=+1)).strftime('%Y-%m-%d'),
                 'url': fake.url(),
                 'url_label': fake.name(),
+                'timezone': pytz.timezone('Canada/Pacific').zone
             }
         ]
     }
@@ -552,6 +554,7 @@ class TestEventnfo(dict, Enum):
                 'end_date': (datetime.now() + timedelta(weeks=+1)).strftime('%Y-%m-%d'),
                 'url': fake.url(),
                 'url_label': fake.name(),
+                'timezone': pytz.timezone('Canada/Pacific').zone
             }
         ]
     }
@@ -569,6 +572,7 @@ class TestEventnfo(dict, Enum):
                 'end_date': (datetime.now() + timedelta(weeks=+1)).strftime('%Y-%m-%d'),
                 'url': fake.url(),
                 'url_label': fake.name(),
+                'timezone': pytz.timezone('Canada/Pacific').zone
             }
         ]
     }

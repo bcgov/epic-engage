@@ -24,6 +24,7 @@ class EventItem(BaseModel):  # pylint: disable=too-few-public-methods, too-many-
     url_label = db.Column(db.String(100), comment='Label to show for href links')
     sort_index = db.Column(db.Integer, nullable=True, default=1)
     widget_events_id = db.Column(db.Integer, ForeignKey('widget_events.id', ondelete='CASCADE'), nullable=True)
+    timezone = db.Column(db.String(50))
 
     @classmethod
     def save_event_items(cls, event_items: list) -> None:

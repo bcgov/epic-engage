@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
-import { Grid } from '@mui/material';
+import { Grid, MenuItem } from '@mui/material';
 import { MetHeader3, MetLabel, PrimaryButton, SecondaryButton } from 'components/common';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -13,12 +13,10 @@ import ControlledTextField from 'components/common/ControlledInputComponents/Con
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { postEvent, patchEvent } from 'services/widgetService/EventService';
 import { Event, EVENT_TYPE } from 'models/event';
-import { formatToUTC, formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'components/common/dateHelper';
 import { formEventDates } from './utils';
-import dayjs from 'dayjs';
-import tz from 'dayjs/plugin/timezone';
-
-dayjs.extend(tz);
+import ControlledSelect from 'components/common/ControlledInputComponents/ControlledSelect';
+import { TIMEZONE_OPTIONS, TIMEZONES } from 'constants/timezones';
 
 const schema = yup
     .object({
@@ -28,6 +26,7 @@ const schema = yup
         date: yup.string().defined().required('Date cannot be empty'),
         time_from: yup.string().required('Time from cannot be empty'),
         time_to: yup.string().required('Time to cannot be empty'),
+        timezone: yup.string().oneOf(Object.values(TIMEZONES)).defined().default(TIMEZONES.CANADA_PACIFIC),
     })
     .required();
 
@@ -46,8 +45,8 @@ const VirtualSessionFormDrawer = () => {
     } = useContext(EventsContext);
     const [isCreating, setIsCreating] = useState(false);
     const eventItemToEdit = eventToEdit ? eventToEdit.event_items[0] : null;
-    const startDate = dayjs(eventItemToEdit ? eventItemToEdit?.start_date : '').tz('US/Pacific');
-    const endDate = dayjs(eventItemToEdit ? eventItemToEdit?.end_date : '').tz('US/Pacific');
+    const startDate = eventItemToEdit ? new Date(eventItemToEdit.start_date) : null;
+    const endDate = eventItemToEdit ? new Date(eventItemToEdit.end_date) : null;
     const methods = useForm<VirtualSessionForm>({
         resolver: yupResolver(schema),
     });
@@ -67,8 +66,12 @@ const VirtualSessionFormDrawer = () => {
         methods.setValue('date', eventItemToEdit ? formatDate(eventItemToEdit.start_date) : '');
         methods.setValue('session_link', eventItemToEdit?.url || '');
         methods.setValue('session_link_text', eventItemToEdit?.url_label || 'Click here to register');
-        methods.setValue('time_from', pad(startDate.hour()) + ':' + pad(startDate.minute()) || '');
-        methods.setValue('time_to', pad(endDate.hour()) + ':' + pad(endDate.minute()) || '');
+        methods.setValue(
+            'time_from',
+            startDate ? pad(startDate.getHours()) + ':' + pad(startDate.getMinutes()) || '' : '',
+        );
+        methods.setValue('time_to', endDate ? pad(endDate.getHours()) + ':' + pad(endDate.getMinutes()) || '' : '');
+        methods.setValue('timezone', eventItemToEdit?.timezone || TIMEZONES.CANADA_PACIFIC);
     }, [eventToEdit]);
 
     const { handleSubmit, reset } = methods;
@@ -76,12 +79,13 @@ const VirtualSessionFormDrawer = () => {
     const updateEvent = async (data: VirtualSessionForm) => {
         if (eventItemToEdit && eventToEdit && widget) {
             const validatedData = await schema.validate(data);
-            const { description, date, time_from, time_to, session_link, session_link_text } = validatedData;
+            const { description, date, time_from, time_to, session_link, session_link_text, timezone } = validatedData;
             const { dateFrom, dateTo } = formEventDates(date, time_from, time_to);
             await patchEvent(widget.id, eventToEdit.id, eventItemToEdit.id, {
                 description: description,
-                start_date: formatToUTC(dateFrom),
-                end_date: formatToUTC(dateTo),
+                start_date: dateFrom,
+                end_date: dateTo,
+                timezone: timezone,
                 url: session_link,
                 url_label: session_link_text,
             });
@@ -104,8 +108,9 @@ const VirtualSessionFormDrawer = () => {
                         description: description,
                         url: session_link,
                         url_label: session_link_text,
-                        start_date: formatToUTC(dateFrom),
-                        end_date: formatToUTC(dateTo),
+                        start_date: dateFrom,
+                        end_date: dateTo,
+                        timezone: validatedData.timezone,
                     },
                 ],
             });
@@ -218,6 +223,26 @@ const VirtualSessionFormDrawer = () => {
                                     fullWidth
                                     size="small"
                                 />
+                            </Grid>
+                            <Grid item>
+                                <MetLabel sx={{ marginBottom: '2px' }}>Timezone</MetLabel>
+                                <ControlledSelect
+                                    name="timezone"
+                                    variant="outlined"
+                                    label=" "
+                                    InputLabelProps={{
+                                        shrink: false,
+                                    }}
+                                    fullWidth
+                                    size="small"
+                                    defaultValue={TIMEZONES.CANADA_PACIFIC}
+                                >
+                                    {TIMEZONE_OPTIONS.map((option) => (
+                                        <MenuItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </MenuItem>
+                                    ))}
+                                </ControlledSelect>
                             </Grid>
                             <Grid item xs={12}>
                                 <MetLabel sx={{ marginBottom: '2px' }}>Virtual Session Link</MetLabel>

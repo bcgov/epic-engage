@@ -23,6 +23,7 @@ interface PostEventProps {
         location_address?: string;
         start_date: string;
         end_date: string;
+        timezone: string;
         url?: string;
         url_label?: string;
     }[];
@@ -48,6 +49,7 @@ export interface PatchEventProps {
     end_date?: string;
     url?: string;
     url_label?: string;
+    timezone?: string;
 }
 
 export const patchEvent = async (

@@ -8,6 +8,7 @@ import { When } from 'react-if';
 import { Event } from 'models/event';
 import { formatDate } from 'components/common/dateHelper';
 import { EventsContext } from './EventsContext';
+import { TIMEZONE_OPTIONS } from 'constants/timezones';
 
 export interface EventInfoPaperProps {
     event: Event;
@@ -79,10 +80,18 @@ const EventInfoPaper = ({ event, removeEvent, ...rest }: EventInfoPaperProps) =>
                     </Grid>
                     <Grid item xs={9}>
                         <MetParagraph overflow="hidden" textOverflow={'ellipsis'} whiteSpace="nowrap">
-                            {`${formatDate(eventItem.start_date, 'h:mm a')} to ${formatDate(
-                                eventItem.end_date,
-                                'h:mm a',
-                            )} PT`}
+                            {`${new Date(eventItem.start_date).toLocaleTimeString('en-US', {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true,
+                            })} to ${new Date(eventItem.end_date).toLocaleTimeString('en-US', {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true,
+                            })} ${
+                                TIMEZONE_OPTIONS.find((tz: { value: string }) => tz.value === eventItem.timezone)
+                                    ?.label || ''
+                            }`}
                         </MetParagraph>
                     </Grid>
                 </Grid>
