@@ -25,7 +25,7 @@ const UserManagementListing = () => {
 
     const headCells: HeadCell<User>[] = [
         {
-            key: 'first_name',
+            key: 'last_name',
             numeric: false,
             disablePadding: true,
             label: 'User Name',
@@ -98,6 +98,12 @@ const UserManagementListing = () => {
                             name="searchBarText"
                             value={searchBarText}
                             onChange={(e) => setSearchBarText(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSearchClick();
+                                }
+                            }}
                             size="small"
                         />
                         <PrimaryButton onClick={handleSearchClick}>

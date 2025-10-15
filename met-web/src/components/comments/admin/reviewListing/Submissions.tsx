@@ -116,6 +116,12 @@ const Submissions = () => {
                             label="Search Comments"
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSearchBarClick(searchText);
+                                }
+                            }}
                             size="small"
                         />
                         <PrimaryButton

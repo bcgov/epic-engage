@@ -183,6 +183,12 @@ const ImageListing = () => {
                         name="searchText"
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                setPaginationOptions({ page: 1, size: 10 });
+                            }
+                        }}
                         size="small"
                     />
                     <PrimaryButton
