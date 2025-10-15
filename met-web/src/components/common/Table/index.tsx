@@ -50,6 +50,19 @@ function MetTableHead<T>({ order, orderBy, onRequestSort, headCells, loading, ne
                             }
                             onClick={createSortHandler(headCell.key, index)}
                             hideSortIcon={Boolean(headCell.hideSorticon)}
+                            sx={
+                                headCell.allowSort
+                                    ? {
+                                          '& .MuiTableSortLabel-icon': {
+                                              opacity: 1,
+                                              color:
+                                                  orderBy === headCell.key && nestedSortKey === headCell.nestedSortKey
+                                                      ? 'text.primary'
+                                                      : 'text.disabled',
+                                          },
+                                      }
+                                    : undefined
+                            }
                         >
                             {headCell.label}
                             {headCell.icon}
