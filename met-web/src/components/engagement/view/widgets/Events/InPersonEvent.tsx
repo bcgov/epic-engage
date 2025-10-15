@@ -3,6 +3,7 @@ import { EventItem } from 'models/event';
 import { Grid } from '@mui/material';
 import { MetBody } from 'components/common';
 import { formatDate } from 'components/common/dateHelper';
+import { TIMEZONE_OPTIONS } from 'constants/timezones';
 
 export interface EventProps {
     eventItem: EventItem;
@@ -46,10 +47,18 @@ const InPersonEvent = ({ eventItem }: EventProps) => {
                 </Grid>
                 <Grid item xs={8} paddingLeft={2}>
                     <MetBody>
-                        {`${formatDate(eventItem.start_date, 'h:mm a')} to ${formatDate(
-                            eventItem.end_date,
-                            'h:mm a',
-                        )} PT`}
+                        {`${new Date(eventItem.start_date).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                        })} to ${new Date(eventItem.end_date).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                        })} ${
+                            TIMEZONE_OPTIONS.find((tz: { value: string }) => tz.value === eventItem.timezone)?.label ||
+                            ''
+                        }`}
                     </MetBody>
                 </Grid>
             </Grid>

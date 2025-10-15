@@ -47,3 +47,16 @@ def convert_and_format_to_utc_str(date_val: datetime, dt_format='%Y-%m-%d %H:%M:
     utc_datetime_str = date_val_utc.strftime(dt_format)
 
     return utc_datetime_str
+
+
+def to_utc(dt_str, tz_str):
+    """Convert a naive datetime string in a given timezone to a UTC datetime string."""
+    # Parse naive datetime
+    dt = datetime.fromisoformat(dt_str)
+    # Convert timezone string to tzinfo object
+    tz = pytz.timezone(tz_str)
+    # Localize (attach tzinfo)
+    dt_local = tz.localize(dt)
+    # Convert to UTC
+    dt_utc = dt_local.astimezone(pytz.utc)
+    return dt_utc.isoformat()

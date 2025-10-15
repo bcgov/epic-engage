@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
-import { Grid } from '@mui/material';
+import { Grid, MenuItem } from '@mui/material';
 import { MetHeader3, MetLabel, PrimaryButton, SecondaryButton } from 'components/common';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -13,13 +13,11 @@ import ControlledTextField from 'components/common/ControlledInputComponents/Con
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { postEvent, patchEvent, PatchEventProps } from 'services/widgetService/EventService';
 import { Event, EVENT_TYPE } from 'models/event';
-import { formatToUTC, formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'components/common/dateHelper';
 import { formEventDates } from './utils';
-import dayjs from 'dayjs';
-import tz from 'dayjs/plugin/timezone';
 import { updatedDiff } from 'deep-object-diff';
-
-dayjs.extend(tz);
+import ControlledSelect from 'components/common/ControlledInputComponents/ControlledSelect';
+import { TIMEZONE_OPTIONS, TIMEZONES } from 'constants/timezones';
 
 const schema = yup
     .object({
@@ -35,6 +33,7 @@ const schema = yup
         date: yup.string().defined().required('Date cannot be empty'),
         time_from: yup.string().required('Time from cannot be empty'),
         time_to: yup.string().required('Time to cannot be empty'),
+        timezone: yup.string().oneOf(Object.values(TIMEZONES)).defined().default(TIMEZONES.CANADA_PACIFIC),
     })
     .required();
 
@@ -53,8 +52,8 @@ const InPersonEventFormDrawer = () => {
     } = useContext(EventsContext);
     const [isCreating, setIsCreating] = useState(false);
     const eventItemToEdit = eventToEdit ? eventToEdit.event_items[0] : null;
-    const startDate = dayjs(eventItemToEdit ? eventItemToEdit?.start_date : '').tz('US/Pacific');
-    const endDate = dayjs(eventItemToEdit ? eventItemToEdit?.end_date : '').tz('US/Pacific');
+    const startDate = eventItemToEdit ? new Date(eventItemToEdit.start_date) : null;
+    const endDate = eventItemToEdit ? new Date(eventItemToEdit.end_date) : null;
     const methods = useForm<InPersonEventForm>({
         resolver: yupResolver(schema),
     });
@@ -70,8 +69,12 @@ const InPersonEventFormDrawer = () => {
         methods.setValue('location_name', eventItemToEdit?.location_name || '');
         methods.setValue('location_address', eventItemToEdit?.location_address || '');
         methods.setValue('date', eventItemToEdit ? formatDate(eventItemToEdit.start_date) : '');
-        methods.setValue('time_from', pad(startDate.hour()) + ':' + pad(startDate.minute()) || '');
-        methods.setValue('time_to', pad(endDate.hour()) + ':' + pad(endDate.minute()) || '');
+        methods.setValue(
+            'time_from',
+            startDate ? pad(startDate.getHours()) + ':' + pad(startDate.getMinutes()) || '' : '',
+        );
+        methods.setValue('time_to', endDate ? pad(endDate.getHours()) + ':' + pad(endDate.getMinutes()) || '' : '');
+        methods.setValue('timezone', eventItemToEdit?.timezone || TIMEZONES.CANADA_PACIFIC);
     }, [eventToEdit]);
 
     const { handleSubmit, reset } = methods;
@@ -86,8 +89,8 @@ const InPersonEventFormDrawer = () => {
             }) as PatchEventProps;
 
             await patchEvent(widget.id, eventToEdit.id, eventItemToEdit.id, {
-                start_date: formatToUTC(dateFrom),
-                end_date: formatToUTC(dateTo),
+                start_date: dateFrom,
+                end_date: dateTo,
                 ...eventUpdatesToPatch,
             });
 
@@ -98,7 +101,7 @@ const InPersonEventFormDrawer = () => {
 
     const createEvent = async (data: InPersonEventForm) => {
         const validatedData = await schema.validate(data);
-        const { description, location_address, location_name, date, time_from, time_to } = validatedData;
+        const { description, location_address, location_name, date, time_from, time_to, timezone } = validatedData;
         const { dateFrom, dateTo } = formEventDates(date, time_from, time_to);
         if (widget) {
             const createdWidgetEvent = await postEvent(widget.id, {
@@ -109,8 +112,9 @@ const InPersonEventFormDrawer = () => {
                         description: description,
                         location_name: location_name,
                         location_address: location_address,
-                        start_date: formatToUTC(dateFrom),
-                        end_date: formatToUTC(dateTo),
+                        timezone: timezone,
+                        start_date: dateFrom,
+                        end_date: dateTo,
                     },
                 ],
             });
@@ -249,6 +253,26 @@ const InPersonEventFormDrawer = () => {
                                     fullWidth
                                     size="small"
                                 />
+                            </Grid>
+                            <Grid item>
+                                <MetLabel sx={{ marginBottom: '2px' }}>Timezone</MetLabel>
+                                <ControlledSelect
+                                    name="timezone"
+                                    variant="outlined"
+                                    label=" "
+                                    InputLabelProps={{
+                                        shrink: false,
+                                    }}
+                                    fullWidth
+                                    size="small"
+                                    defaultValue={TIMEZONES.CANADA_PACIFIC}
+                                >
+                                    {TIMEZONE_OPTIONS.map((option) => (
+                                        <MenuItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </MenuItem>
+                                    ))}
+                                </ControlledSelect>
                             </Grid>
                             <Grid
                                 item

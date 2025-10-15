@@ -3,6 +3,7 @@ import { Grid, Link } from '@mui/material';
 import { MetBody } from 'components/common';
 import { formatDate } from 'components/common/dateHelper';
 import { EventProps } from './InPersonEvent';
+import { TIMEZONE_OPTIONS } from 'constants/timezones';
 
 const VirtualSession = ({ eventItem }: EventProps) => {
     const justifyContent = { xs: 'center', md: 'flex-start' };
@@ -25,10 +26,18 @@ const VirtualSession = ({ eventItem }: EventProps) => {
                 </Grid>
                 <Grid item xs={8} paddingLeft={2}>
                     <MetBody>
-                        {`${formatDate(eventItem.start_date, 'h:mm a')} to ${formatDate(
-                            eventItem.end_date,
-                            'h:mm a',
-                        )} PT`}
+                        {`${new Date(eventItem.start_date).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                        })} to ${new Date(eventItem.end_date).toLocaleTimeString('en-US', {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true,
+                        })} ${
+                            TIMEZONE_OPTIONS.find((tz: { value: string }) => tz.value === eventItem.timezone)?.label ||
+                            ''
+                        }`}
                     </MetBody>
                 </Grid>
             </Grid>
