@@ -117,7 +117,7 @@ const UploadFileDrawer = () => {
             handleClose();
         } catch (err) {
             console.log(err);
-            dispatch(openNotification({ severity: 'error', text: 'An error occured while trying to upload File' }));
+            dispatch(openNotification({ severity: 'error', text: 'An error occurred while trying to upload File' }));
             setIsUploadingFile(false);
         }
     };

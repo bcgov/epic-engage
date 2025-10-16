@@ -81,7 +81,7 @@ class UserContext:  # pylint: disable=too-many-instance-attributes
         return Role.CREATE_ENGAGEMENT.value in self._roles if self._roles else False
 
     def is_system(self) -> bool:
-        """Return True if the user is system user.Helps to idenitfy connections from EPIC."""
+        """Return True if the user is system user. Helps to identify connections from EPIC."""
         return Role.SYSTEM.value in self._roles if self._roles else False
 
     @property

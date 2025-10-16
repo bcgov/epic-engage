@@ -1,4 +1,4 @@
-"""Initilizations for db, migration and marshmallow."""
+"""Initializations for db, migration and marshmallow."""
 
 from contextlib import contextmanager
 from flask import current_app

@@ -18,7 +18,7 @@ from .staff_user import StaffUser
 
 
 class Membership(BaseModel):
-    """Definition of the Memebership entity."""
+    """Definition of the Membership entity."""
 
     __tablename__ = 'membership'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

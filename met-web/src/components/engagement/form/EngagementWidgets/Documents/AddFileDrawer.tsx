@@ -118,7 +118,7 @@ const AddFileDrawer = () => {
             return await saveDocument(data);
         } catch (err) {
             console.log(err);
-            dispatch(openNotification({ severity: 'error', text: 'An error occured while trying to save File' }));
+            dispatch(openNotification({ severity: 'error', text: 'An error occurred while trying to save File' }));
         }
     };
 

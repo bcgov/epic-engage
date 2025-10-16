@@ -82,7 +82,7 @@ export const ActionsDropDown = ({ engagement }: { engagement: Engagement }) => {
             downloadFile(response, `cac-${engagement.name}-${formatToUTC(Date())}.csv`);
         } catch (error) {
             dispatch(
-                openNotification({ text: 'Error occured while exporting cac form submissions', severity: 'error' }),
+                openNotification({ text: 'Error occurred while exporting cac form submissions', severity: 'error' }),
             );
         } finally {
             setIsExportingCacForms(false);

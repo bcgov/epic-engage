@@ -107,12 +107,12 @@ export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Elemen
         }
     };
 
-    const createImage = async (unqiueFilename: string, fileName: string) => {
+    const createImage = async (uniqueFilename: string, fileName: string) => {
         setImageToDisplay(undefined);
         const date_uploaded = new Date();
         try {
             const image: ImageInfo = await postImage({
-                unique_name: unqiueFilename,
+                unique_name: uniqueFilename,
                 display_name: fileName,
                 date_uploaded,
             });

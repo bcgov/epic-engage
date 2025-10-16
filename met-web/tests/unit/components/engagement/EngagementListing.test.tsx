@@ -141,7 +141,7 @@ describe('Engagement form page tests', () => {
         expect(screen.getByText('Create Engagement', { exact: false })).toBeInTheDocument();
     });
 
-    test('Search filter works and fetchs engagements with the search text as a param', async () => {
+    test('Search filter works and fetches engagements with the search text as a param', async () => {
         getEngagementMock.mockReturnValue(
             Promise.resolve({
                 items: [mockEngagementOne],

@@ -12,10 +12,10 @@ class ResponseMixin:  # pylint: disable=too-few-public-methods
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
     """
-      Response needs to have additonal fields as
+      Response needs to have additional fields as
           request_key = simpletextfield,checkbox,simplecheckboxes
           value = actual user value
-          request_id = mapping to questions.Id from the reuqst table.Helps with groupiing
+          request_id = mapping to questions.Id from the request table. Helps with grouping
       """
 
     @declared_attr

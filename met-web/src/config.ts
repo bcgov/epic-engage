@@ -78,7 +78,7 @@ const ENGAGEMENT_PROJECT_TYPES: string[] = getEnv(
         'Water Management',
 ).split(',');
 
-// tenant conifg
+// tenant config
 const IS_SINGLE_TENANT_ENVIRONMENT = getEnv('REACT_APP_IS_SINGLE_TENANT_ENVIRONMENT', 'true') === 'true';
 const DEFAULT_TENANT = getEnv('REACT_APP_DEFAULT_TENANT');
 

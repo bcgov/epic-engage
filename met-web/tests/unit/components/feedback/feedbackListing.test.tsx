@@ -104,7 +104,7 @@ describe('Feedback Listing tests', () => {
         });
     });
 
-    test('fetchs feedback with the sort key as the rating', async () => {
+    test('fetches feedback with the sort key as the rating', async () => {
         getFeedbackPageMock.mockReturnValue(
             Promise.resolve({
                 items: [mockFeedbackOne],

@@ -12,7 +12,7 @@ import { SUBSCRIBE_TYPE, SubscribeForm } from 'models/subscription';
 import { openNotificationModal } from 'services/notificationModalService/notificationModalSlice';
 import { getSlugByEngagementId } from 'services/engagementSlugService';
 
-export interface CACFormSubmssion {
+export interface CACFormSubmission {
     understand: boolean;
     termsOfReference: boolean;
     firstName: string;
@@ -24,8 +24,8 @@ export interface CACFormSubmssion {
 export interface FormContextProps {
     tabValue: number;
     setTabValue: (value: number) => void;
-    formSubmission: CACFormSubmssion;
-    setFormSubmission: React.Dispatch<React.SetStateAction<CACFormSubmssion>>;
+    formSubmission: CACFormSubmission;
+    setFormSubmission: React.Dispatch<React.SetStateAction<CACFormSubmission>>;
     loading: boolean;
     submitting: boolean;
     setSubmitting: React.Dispatch<React.SetStateAction<boolean>>;
@@ -56,7 +56,7 @@ export const FormContext = createContext<FormContextProps>({
 export const FormContextProvider = ({ children }: { children: JSX.Element }) => {
     const { widgetId, engagementId } = useParams<{ widgetId: string; engagementId: string }>();
     const [tabValue, setTabValue] = useState(TAB_ONE);
-    const [formSubmission, setFormSubmission] = useState<CACFormSubmssion>({
+    const [formSubmission, setFormSubmission] = useState<CACFormSubmission>({
         understand: false,
         termsOfReference: false,
         firstName: '',
@@ -81,7 +81,7 @@ export const FormContextProvider = ({ children }: { children: JSX.Element }) => 
             return engagement;
         } catch (err) {
             dispatch(
-                openNotification({ severity: 'error', text: 'An error occured while trying to load the engagement' }),
+                openNotification({ severity: 'error', text: 'An error occurred while trying to load the engagement' }),
             );
             navigate('/');
         }
@@ -97,14 +97,16 @@ export const FormContextProvider = ({ children }: { children: JSX.Element }) => 
 
             return subscriptionForms.find((form) => form.type === SUBSCRIBE_TYPE.SIGN_UP);
         } catch (err) {
-            dispatch(openNotification({ severity: 'error', text: 'An error occured while trying to load the widget' }));
+            dispatch(
+                openNotification({ severity: 'error', text: 'An error occurred while trying to load the widget' }),
+            );
             navigate('/');
         }
     };
 
     const verifyData = (_engagement?: Engagement, subscribeWidget?: SubscribeForm) => {
         if (!_engagement || !subscribeWidget) {
-            dispatch(openNotification({ severity: 'error', text: 'An error occured while trying to load the form' }));
+            dispatch(openNotification({ severity: 'error', text: 'An error occurred while trying to load the form' }));
             navigate('/');
         } else if (_engagement.engagement_status.id === EngagementStatus.Draft) {
             dispatch(openNotification({ severity: 'error', text: 'Cannot submit this form at this time' }));
@@ -165,7 +167,9 @@ export const FormContextProvider = ({ children }: { children: JSX.Element }) => 
         } catch (err) {
             setSubmitting(false);
             console.log(err);
-            dispatch(openNotification({ severity: 'error', text: 'An error occured while trying to submit the form' }));
+            dispatch(
+                openNotification({ severity: 'error', text: 'An error occurred while trying to submit the form' }),
+            );
         }
     };
 

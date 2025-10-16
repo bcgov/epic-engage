@@ -83,11 +83,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     MET_DB_NAME = os.getenv('MET_DB_NAME', '')
 
     """
-    Though the main data base assosiated with this microservice is MET Analytics database , its configured as a bind.
+    Though the main data base associated with this microservice is MET Analytics database , its configured as a bind.
     MET DB is configured as the main database since the models are used from the met-api python module and we cant change it to add bind.
     So all the models in this project will have a bind.
 
-    To handle migrations ,we need to connect to MET Analytics database.For that a new Miigration config is added.
+    To handle migrations ,we need to connect to MET Analytics database. For that a new Migration config is added.
     """
 
     # MET MASTER DB.
@@ -141,7 +141,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     PUBLISH_ENGAGEMENT_EMAIL_SUBJECT = os.getenv('PUBLISH_ENGAGEMENT_EMAIL_SUBJECT', 'Share your feedback')
 
     # EAO is a single Tenant Environment where EAO is the only env and should be set to True
-    # This flag decides if additonal tenant based checks has to be carried or not
+    # This flag decides if additional tenant based checks has to be carried or not
     IS_SINGLE_TENANT_ENVIRONMENT = os.getenv('IS_SINGLE_TENANT_ENVIRONMENT', 'False').lower() == 'true'
 
     # Closing Soon Email Service

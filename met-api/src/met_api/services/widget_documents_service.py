@@ -87,7 +87,7 @@ class WidgetDocumentService:
         sort_index = 0
         docs = WidgetDocumentsModel.get_all_by_widget_id(widget_id)
         if docs:
-            # Find the largest in the existing widgest
+            # Find the largest in the existing widgets
             sort_index = max(doc.sort_index for doc in docs) or 0
         return sort_index
 

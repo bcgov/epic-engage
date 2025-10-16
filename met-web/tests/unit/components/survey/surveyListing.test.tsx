@@ -146,7 +146,7 @@ describe('Survey form page tests', () => {
         expect(screen.getByText('Create Survey', { exact: false })).toBeInTheDocument();
     });
 
-    test('Search filter works and fetchs surveys with the search text as a param', async () => {
+    test('Search filter works and fetches surveys with the search text as a param', async () => {
         getSurveysPageMock.mockReturnValue(
             Promise.resolve({
                 items: [mockSurveyOne],

@@ -207,7 +207,7 @@ const CommentReview = () => {
 
     // The comment display information below is fetched from the first comment from the list
     // since comment status/review are being stored individually
-    // These values should be exacly the same throughout the array.
+    // These values should be exactly the same throughout the array.
     const { id, comment_status_id, reviewed_by, created_date, review_date } = submission;
 
     if (isLoading) {

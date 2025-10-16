@@ -85,7 +85,7 @@ class SubmissionService:
         if SubmissionService.is_unpublished(engagement_id):
             return {}
 
-        # Creates a scoped session that will be committed when diposed or rolledback if a exception occurs
+        # Creates a scoped session that will be committed when disposed or rolledback if a exception occurs
         with session_scope() as session:
             email_verification = EmailVerificationService().verify(
                 token, survey_id, None, session)
@@ -315,7 +315,7 @@ class SubmissionService:
                     # Cant view any Rejected/Pending
                     return {'items': [], 'total': 0}
                 if not advanced_search_filters['status']:
-                    # No blanket search.Return only approved if filter doesnt have any status
+                    # No blanket search.Return only approved if filter doesn't have any status
                     advanced_search_filters['status'] = Status.Approved.value
 
         items, total = Comment.get_by_survey_id_paginated(
