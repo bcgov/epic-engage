@@ -9,6 +9,7 @@ import { formatDate } from 'components/common/dateHelper';
 import { EventInfoPaperProps } from './EventInfoPaper';
 import { EventsContext } from './EventsContext';
 import { TIMEZONE_OPTIONS } from 'constants/timezones';
+import { getDateInTimezone } from './utils';
 
 const VirtualEventInfoPaper = ({ event, removeEvent, ...rest }: EventInfoPaperProps) => {
     const eventItem = event.event_items[0];
@@ -56,11 +57,17 @@ const VirtualEventInfoPaper = ({ event, removeEvent, ...rest }: EventInfoPaperPr
                     </Grid>
                     <Grid item xs={9}>
                         <MetParagraph overflow="hidden" textOverflow={'ellipsis'} whiteSpace="nowrap">
-                            {`${new Date(eventItem.start_date).toLocaleTimeString('en-US', {
+                            {`${getDateInTimezone(
+                                new Date(eventItem.start_date),
+                                eventItem.timezone,
+                            ).toLocaleTimeString('en-US', {
                                 hour: 'numeric',
                                 minute: '2-digit',
                                 hour12: true,
-                            })} to ${new Date(eventItem.end_date).toLocaleTimeString('en-US', {
+                            })} to ${getDateInTimezone(
+                                new Date(eventItem.end_date),
+                                eventItem.timezone,
+                            ).toLocaleTimeString('en-US', {
                                 hour: 'numeric',
                                 minute: '2-digit',
                                 hour12: true,
