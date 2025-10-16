@@ -4,6 +4,7 @@ import { MetBody } from 'components/common';
 import { formatDate } from 'components/common/dateHelper';
 import { EventProps } from './InPersonEvent';
 import { TIMEZONE_OPTIONS } from 'constants/timezones';
+import { getDateInTimezone } from 'components/engagement/form/EngagementWidgets/Events/utils';
 
 const VirtualSession = ({ eventItem }: EventProps) => {
     const justifyContent = { xs: 'center', md: 'flex-start' };
@@ -26,15 +27,21 @@ const VirtualSession = ({ eventItem }: EventProps) => {
                 </Grid>
                 <Grid item xs={8} paddingLeft={2}>
                     <MetBody>
-                        {`${new Date(eventItem.start_date).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true,
-                        })} to ${new Date(eventItem.end_date).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true,
-                        })} ${
+                        {`${getDateInTimezone(new Date(eventItem.start_date), eventItem.timezone).toLocaleTimeString(
+                            'en-US',
+                            {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true,
+                            },
+                        )} to ${getDateInTimezone(new Date(eventItem.end_date), eventItem.timezone).toLocaleTimeString(
+                            'en-US',
+                            {
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true,
+                            },
+                        )} ${
                             TIMEZONE_OPTIONS.find((tz: { value: string }) => tz.value === eventItem.timezone)?.label ||
                             ''
                         }`}

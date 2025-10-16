@@ -9,6 +9,7 @@ import { Event } from 'models/event';
 import { formatDate } from 'components/common/dateHelper';
 import { EventsContext } from './EventsContext';
 import { TIMEZONE_OPTIONS } from 'constants/timezones';
+import { getDateInTimezone } from './utils';
 
 export interface EventInfoPaperProps {
     event: Event;
@@ -80,11 +81,17 @@ const EventInfoPaper = ({ event, removeEvent, ...rest }: EventInfoPaperProps) =>
                     </Grid>
                     <Grid item xs={9}>
                         <MetParagraph overflow="hidden" textOverflow={'ellipsis'} whiteSpace="nowrap">
-                            {`${new Date(eventItem.start_date).toLocaleTimeString('en-US', {
+                            {`${getDateInTimezone(
+                                new Date(eventItem.start_date),
+                                eventItem.timezone,
+                            ).toLocaleTimeString('en-US', {
                                 hour: 'numeric',
                                 minute: '2-digit',
                                 hour12: true,
-                            })} to ${new Date(eventItem.end_date).toLocaleTimeString('en-US', {
+                            })} to ${getDateInTimezone(
+                                new Date(eventItem.end_date),
+                                eventItem.timezone,
+                            ).toLocaleTimeString('en-US', {
                                 hour: 'numeric',
                                 minute: '2-digit',
                                 hour12: true,

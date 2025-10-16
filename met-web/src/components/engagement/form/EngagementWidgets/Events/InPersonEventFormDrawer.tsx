@@ -14,7 +14,7 @@ import { openNotification } from 'services/notificationService/notificationSlice
 import { postEvent, patchEvent, PatchEventProps } from 'services/widgetService/EventService';
 import { Event, EVENT_TYPE } from 'models/event';
 import { formatDate } from 'components/common/dateHelper';
-import { formEventDates } from './utils';
+import { formEventDates, getDateInTimezone } from './utils';
 import { updatedDiff } from 'deep-object-diff';
 import ControlledSelect from 'components/common/ControlledInputComponents/ControlledSelect';
 import { TIMEZONE_OPTIONS, TIMEZONES } from 'constants/timezones';
@@ -54,6 +54,11 @@ const InPersonEventFormDrawer = () => {
     const eventItemToEdit = eventToEdit ? eventToEdit.event_items[0] : null;
     const startDate = eventItemToEdit ? new Date(eventItemToEdit.start_date) : null;
     const endDate = eventItemToEdit ? new Date(eventItemToEdit.end_date) : null;
+    const timezone = eventItemToEdit ? eventItemToEdit.timezone : TIMEZONES.CANADA_PACIFIC;
+
+    const startInTimezone = startDate ? getDateInTimezone(startDate, timezone) : null;
+    const endInTimezone = endDate ? getDateInTimezone(endDate, timezone) : null;
+
     const methods = useForm<InPersonEventForm>({
         resolver: yupResolver(schema),
     });
@@ -71,9 +76,12 @@ const InPersonEventFormDrawer = () => {
         methods.setValue('date', eventItemToEdit ? formatDate(eventItemToEdit.start_date) : '');
         methods.setValue(
             'time_from',
-            startDate ? pad(startDate.getHours()) + ':' + pad(startDate.getMinutes()) || '' : '',
+            startInTimezone ? pad(startInTimezone.getHours()) + ':' + pad(startInTimezone.getMinutes()) || '' : '',
         );
-        methods.setValue('time_to', endDate ? pad(endDate.getHours()) + ':' + pad(endDate.getMinutes()) || '' : '');
+        methods.setValue(
+            'time_to',
+            endInTimezone ? pad(endInTimezone.getHours()) + ':' + pad(endInTimezone.getMinutes()) || '' : '',
+        );
         methods.setValue('timezone', eventItemToEdit?.timezone || TIMEZONES.CANADA_PACIFIC);
     }, [eventToEdit]);
 

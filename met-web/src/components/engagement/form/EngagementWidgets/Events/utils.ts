@@ -8,7 +8,7 @@
  * @returns dateFrom - The start date-time in ISO format "YYYY-MM-DDTHH:mm:00"
  * @returns dateTo - The end date-time in ISO format "YYYY-MM-DDTHH:mm:00"
  */
-export function formEventDates(date: string, time_from: string, time_to: string) {
+export const formEventDates = (date: string, time_from: string, time_to: string) => {
     // date: "YYYY-MM-DD"
     // time_from: "HH:mm"
     // time_to: "HH:mm"
@@ -16,4 +16,15 @@ export function formEventDates(date: string, time_from: string, time_to: string)
     const dateTo = `${date}T${time_to}:00`;
 
     return { dateFrom, dateTo };
-}
+};
+
+/**
+ * Helper function to get Date parts in a specific timezone
+ * @param date - The date to convert
+ * @param tz - The timezone to convert to
+ * @returns The date in the specified timezone
+ */
+export const getDateInTimezone = (date: Date, tz: string) => {
+    const dateStr = date.toLocaleString('en-US', { timeZone: tz });
+    return new Date(dateStr);
+};
