@@ -38,7 +38,7 @@ Before running the following commands run `. venv/bin/activate` to enter into th
 > Lints the application code.
 
 
-To run met-cron functionality on your local machine execute the pyhton commands located in the run files of this directory.
-For example the `run_met_publish.sh` file contains the coammnd to publish a scheduled engagement 
+To run met-cron functionality on your local machine execute the python commands located in the run files of this directory.
+For example the `run_met_publish.sh` file contains the command to publish a scheduled engagement 
 
 >`python3 invoke_jobs.py ENGAGEMENT_PUBLISH` 

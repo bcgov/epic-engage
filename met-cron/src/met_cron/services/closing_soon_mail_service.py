@@ -37,7 +37,7 @@ class ClosingSoonEmailService:  # pylint: disable=too-few-public-methods
             .filter(
                 and_(
                     EngagementModel.status_id == Status.Published.value,
-                    EngagementModel.visibility == Visiblity.Public.value,
+                    EngagementModel.visibility == Visibility.Public.value,
                     func.date(EngagementModel.end_date) == func.date(days_from_now)
                 )) \
             .all()

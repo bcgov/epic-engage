@@ -42,19 +42,19 @@ class WidgetService:
         if widget_data.get('engagement_id', None) != int(engagement_id):
             raise ValueError('widget data has engagement id for a different engagement')
 
-        sort_index = WidgetService._find_higest_sort_index(engagement_id)
+        sort_index = WidgetService._find_highest_sort_index(engagement_id)
 
         widget_data['sort_index'] = sort_index + 1
         created_widget = WidgetModel.create_widget(widget_data)
         return WidgetSchema().dump(created_widget)
 
     @staticmethod
-    def _find_higest_sort_index(engagement_id):
+    def _find_highest_sort_index(engagement_id):
         # find the highest sort order of the engagement
         sort_index = 0
         widgets = WidgetModel.get_widgets_by_engagement_id(engagement_id)
         if widgets:
-            # Find the largest in the existing widgest
+            # Find the largest in the existing widgets
             sort_index = max(widget.sort_index for widget in widgets)
         return sort_index
 

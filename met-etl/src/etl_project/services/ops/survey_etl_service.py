@@ -158,12 +158,12 @@ def _refresh_questions_and_available_option_status(session, source_survey_id):
     if not etl_survey_model:
         return
 
-    deactive_flag = {'is_active': False}
+    deactivate_flag = {'is_active': False}
 
     for survey_id in etl_survey_model:
-        session.query(EtlRequestTypeOption).filter(EtlRequestTypeOption.survey_id == survey_id).update(deactive_flag)
+        session.query(EtlRequestTypeOption).filter(EtlRequestTypeOption.survey_id == survey_id).update(deactivate_flag)
         session.query(EtlAvailableResponseOption).filter(
-            EtlAvailableResponseOption.survey_id == survey_id).update(deactive_flag)
+            EtlAvailableResponseOption.survey_id == survey_id).update(deactivate_flag)
 
 
 def _do_etl_survey_data(session, survey, survey_new_runcycleid):

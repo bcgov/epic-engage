@@ -84,7 +84,7 @@ def test_tenant_id_in_create_engagements(client, jwt, session):  # pylint:disabl
     # 403 since engagement tenant id is different from users tenant id
     assert response.status_code == 403
 
-    # set users tenant id to be same as engagment tenant id
+    # set users tenant id to be same as engagement tenant id
     claims = copy.deepcopy(TestJwtClaims.staff_admin_role.value)
     claims['tenant_id'] = tenant_2.id
     headers = factory_auth_header(jwt=jwt, claims=claims)
@@ -142,7 +142,7 @@ def test_get_engagements_reviewer(client, jwt, session, engagement_info):  # pyl
 
     factory_membership_model(user_id=user.id, engagement_id=eng_id, member_type='REVIEWER')
 
-    # Reveiwer has access to draft engagement if he is assigned
+    # Reviewer has access to draft engagement if he is assigned
     rv = client.get(f'/api/engagements/{eng_id}',
                     headers=headers, content_type=ContentType.JSON.value)
     assert rv.status_code == HTTPStatus.OK.value
@@ -270,7 +270,7 @@ def test_search_engagements_not_logged_in(client, session):  # pylint:disable=un
 
     factory_engagement_model(TestEngagementInfo.engagement3)
     rv = client.get('/api/engagements/', content_type=ContentType.JSON.value)
-    assert rv.json.get('total') == 2, 'Both of the engagaments should visible for public user wit no tenant information'
+    assert rv.json.get('total') == 2, 'Both of the engagements should visible for public user wit no tenant information'
     assert rv.status_code == 200
 
     tenant_header = {TENANT_ID_HEADER: current_app.config.get('DEFAULT_TENANT_SHORT_NAME')}
@@ -289,7 +289,7 @@ def test_search_hidden_engagements_not_logged_in(client, session):  # pylint:dis
 
     factory_engagement_model(TestEngagementInfo.engagement3)
     rv = client.get('/api/engagements/', content_type=ContentType.JSON.value)
-    assert rv.json.get('total') == 1, 'Only the public engagaments should be visible for public user'
+    assert rv.json.get('total') == 1, 'Only the public engagements should be visible for public user'
     assert rv.status_code == 200
 
 

@@ -276,10 +276,10 @@ def test_sort_files(client, jwt, session):
     # Retrieve the initial order of documents within the folder
     rv = client.get(f'/api/widgets/{widget.id}/documents', headers=headers, content_type=ContentType.JSON.value)
     assert rv.status_code == HTTPStatus.OK
-    retreived_folder = rv.json['children'][0]
+    retrieved_folder = rv.json['children'][0]
     initial_order = [
         doc['id']
-        for doc in retreived_folder.get('children')
+        for doc in retrieved_folder.get('children')
         if doc.get('parent_document_id') == folder.id
     ]
 
@@ -298,10 +298,10 @@ def test_sort_files(client, jwt, session):
     # Retrieve the updated order of documents within the folder
     rv = client.get(f'/api/widgets/{widget.id}/documents', headers=headers, content_type=ContentType.JSON.value)
     assert rv.status_code == HTTPStatus.OK
-    retreived_folder = rv.json['children'][0]
+    retrieved_folder = rv.json['children'][0]
     updated_order = [
         doc['id']
-        for doc in retreived_folder.get('children')
+        for doc in retrieved_folder.get('children')
         if doc.get('parent_document_id') == folder.id
     ]
 
@@ -320,7 +320,7 @@ def test_sort_files(client, jwt, session):
 
     # Verify that the order of documents has been reset
     rv = client.get(f'/api/widgets/{widget.id}/documents', headers=headers, content_type=ContentType.JSON.value)
-    retreived_folder = rv.json['children'][0]
+    retrieved_folder = rv.json['children'][0]
     assert rv.status_code == HTTPStatus.OK
-    reset_order = [doc['id'] for doc in retreived_folder.get('children') if doc.get('type') == 'file']
+    reset_order = [doc['id'] for doc in retrieved_folder.get('children') if doc.get('type') == 'file']
     assert reset_order == initial_order

@@ -14,7 +14,7 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
     def do_mail():
         """Send mail by listening to the email_queue.
 
-            1. Get N number of unprocessed recoreds from the email_queue table
+            1. Get N number of unprocessed records from the email_queue table
             2. Process each mail and send it to subscribed users
 
         """

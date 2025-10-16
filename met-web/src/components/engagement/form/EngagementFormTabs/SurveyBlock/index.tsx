@@ -47,7 +47,7 @@ export const SurveyBlock = () => {
             dispatch(
                 openNotification({
                     severity: 'success',
-                    text: `Survey "${surveyName}" successfuly removed from this engagement`,
+                    text: `Survey "${surveyName}" successfully removed from this engagement`,
                 }),
             );
             fetchEngagement();

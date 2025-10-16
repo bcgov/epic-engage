@@ -41,7 +41,7 @@ class ProjectService:
                 api_response = RestService.put(endpoint=update_url, token=eao_service_account_token,
                                                data=epic_comment_period_payload,
                                                raise_for_status=False)
-                # no handling of return so far since epic doesnt return anything
+                # no handling of return so far since epic doesn't return anything
 
             else:
                 create_url = f'{current_app.config.get("EPIC_URL")}'

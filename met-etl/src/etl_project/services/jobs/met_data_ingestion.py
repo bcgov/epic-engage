@@ -77,11 +77,11 @@ def met_data_ingestion():
         submission_last_run_cycle_time,
         submission_new_runcycleid_created)
 
-    submission_new_runcycleid_passed_to_load_reponse = load_submission(new_submission, updated_submission,
+    submission_new_runcycleid_passed_to_load_response = load_submission(new_submission, updated_submission,
                                                                        submission_new_runcycleid_passed_to_load)
 
     submission_new_runcycleid_passed_to_end = load_user_response_details(new_submission, updated_submission,
-                                                                         submission_new_runcycleid_passed_to_load_reponse)
+                                                                         submission_new_runcycleid_passed_to_load_response)
 
     flag_to_run_step_after_submission = submission_end_run_cycle(submission_new_runcycleid_passed_to_end)
 
