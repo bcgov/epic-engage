@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
 import { Grid, Skeleton } from '@mui/material';
-import { ActionContext } from '../ActionContext';
+import { EngagementViewContext } from '../EngagementViewContext';
 import { WidgetSwitch } from './WidgetSwitch';
 
 const WidgetBlock = () => {
-    const { widgets, isWidgetsLoading } = useContext(ActionContext);
+    const { widgets, isWidgetsLoading } = useContext(EngagementViewContext);
 
     if (isWidgetsLoading) {
         return <Skeleton variant="rectangular" height={'30em'} />;

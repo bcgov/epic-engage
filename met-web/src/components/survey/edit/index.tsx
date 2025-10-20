@@ -1,13 +1,13 @@
 import React from 'react';
-import SurveySubmitWrapped from './FormWrapped';
-import { ActionProvider } from './ActionContext';
+import EditSurveyWrapped from './EditFormWrapper';
+import { EditSurveyProvider } from './EditSurveyContext';
 
-const SurveySubmit = () => {
+const EditSurvey = () => {
     return (
-        <ActionProvider>
-            <SurveySubmitWrapped />
-        </ActionProvider>
+        <EditSurveyProvider>
+            <EditSurveyWrapped />
+        </EditSurveyProvider>
     );
 };
 
-export default SurveySubmit;
+export default EditSurvey;

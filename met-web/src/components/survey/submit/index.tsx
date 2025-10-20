@@ -1,13 +1,13 @@
 import React from 'react';
-import SurveySubmitWrapped from './SurveySubmitWrapped';
-import { ActionProvider } from './ActionContext';
+import SubmitSurveyWrapper from './SubmitSurveyWrapper';
+import { SubmitSurveyProvider } from './SubmitSurveyContext';
 
-const SurveySubmit = () => {
+const SubmitSurvey = () => {
     return (
-        <ActionProvider>
-            <SurveySubmitWrapped />
-        </ActionProvider>
+        <SubmitSurveyProvider>
+            <SubmitSurveyWrapper />
+        </SubmitSurveyProvider>
     );
 };
 
-export default SurveySubmit;
+export default SubmitSurvey;

@@ -3,7 +3,7 @@ import { useAppDispatch } from 'hooks';
 import { Widget } from 'models/widget';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { getWidgets } from 'services/widgetService';
-import { ActionContext } from '../ActionContext';
+import { EngagementFormContext } from '../EngagementFormContext';
 import { WidgetTabValues } from './type';
 import { useDeleteWidgetMutation, useSortWidgetsMutation } from 'apiManager/apiSlices/widgets';
 
@@ -48,7 +48,7 @@ export const WidgetDrawerContext = createContext<WidgetDrawerContextProps>({
 });
 
 export const WidgetDrawerProvider = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const dispatch = useAppDispatch();
     const [widgets, setWidgets] = useState<Widget[]>([]);
     const [isWidgetsLoading, setIsWidgetsLoading] = useState(true);

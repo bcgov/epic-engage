@@ -1,17 +1,17 @@
 import React from 'react';
 import { EventsProvider } from './EventsContext';
-import Form from './Form';
+import EventsForm from './EventsForm';
 import InPersonEventFormDrawer from './InPersonEventFormDrawer';
 import VirtualSessionFormDrawer from './VirtualSessionFormDrawer';
 
-export const EventsForm = () => {
+export const EventsWidget = () => {
     return (
         <EventsProvider>
-            <Form />
+            <EventsForm />
             <InPersonEventFormDrawer />
             <VirtualSessionFormDrawer />
         </EventsProvider>
     );
 };
 
-export default EventsForm;
+export default EventsWidget;

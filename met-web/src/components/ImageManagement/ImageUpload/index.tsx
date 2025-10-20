@@ -1,6 +1,6 @@
 import React from 'react';
-import { CropModal } from './cropModal';
-import { ImageUploadContextProvider } from './imageUploadContext';
+import { CropModal } from './CropModal';
+import { ImageUploadContextProvider } from './ImageUploadContext';
 import Uploader from './Uploader';
 import { Accept } from 'react-dropzone';
 

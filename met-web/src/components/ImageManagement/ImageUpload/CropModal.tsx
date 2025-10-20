@@ -3,9 +3,9 @@ import Modal from '@mui/material/Modal';
 import { Container, Grid, Paper } from '@mui/material';
 import { MetDescription, modalStyle, PrimaryButton } from 'components/common';
 import Cropper, { Area } from 'react-easy-crop';
-import { ImageUploadContext } from './imageUploadContext';
+import { ImageUploadContext } from './ImageUploadContext';
 import { Box } from '@mui/system';
-import getCroppedImg from './cropImage';
+import getCroppedImg from './cropImageUtils';
 import { blobToFile } from 'utils';
 
 interface CropModalProps {

@@ -4,13 +4,13 @@ import TabPanel from '@mui/lab/TabPanel';
 import WidgetOptionCards from './WidgetOptionCards';
 import { WidgetDrawerContext } from './WidgetDrawerContext';
 import { WidgetTabValues } from './type';
-import WhoIsListening from './WhoIsListening';
+import WhoIsListeningWidget from './WhoIsListening';
 import Documents from './Documents';
-import Phases from './Phases';
+import PhasesWidget from './Phases';
 import EventsForm from './Events';
 import MapForm from './Map';
 import VideoForm from './Video';
-import SubscribeForm from './Subscribe';
+import SubscribeWidget from './Subscribe';
 
 const WidgetDrawerTabs = () => {
     const { widgetDrawerTabValue } = useContext(WidgetDrawerContext);
@@ -21,16 +21,16 @@ const WidgetDrawerTabs = () => {
                     <WidgetOptionCards />
                 </TabPanel>
                 <TabPanel sx={{ width: '100%' }} value={WidgetTabValues.WHO_IS_LISTENING_FORM}>
-                    <WhoIsListening />
+                    <WhoIsListeningWidget />
                 </TabPanel>
                 <TabPanel sx={{ width: '100%' }} value={WidgetTabValues.DOCUMENT_FORM}>
                     <Documents />
                 </TabPanel>
                 <TabPanel sx={{ width: '100%' }} value={WidgetTabValues.SUBSCRIBE_FORM}>
-                    <SubscribeForm />
+                    <SubscribeWidget />
                 </TabPanel>
                 <TabPanel sx={{ width: '100%' }} value={WidgetTabValues.PHASES_FORM}>
-                    <Phases />
+                    <PhasesWidget />
                 </TabPanel>
                 <TabPanel sx={{ width: '100%' }} value={WidgetTabValues.EVENTS_FORM}>
                     <EventsForm />

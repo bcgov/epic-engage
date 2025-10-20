@@ -1,13 +1,13 @@
 import React, { useContext } from 'react';
 import { Box, Grid, IconButton, Skeleton, Stack } from '@mui/material';
 import { Banner } from 'components/banner/Banner';
-import { ActionContext } from './ActionContext';
+import { SubmitSurveyContext } from './SubmitSurveyContext';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { MetHeader4 } from 'components/common';
 import EngagementInfoSection from 'components/engagement/view/EngagementInfoSection';
 
 export const SurveyBanner = () => {
-    const { isEngagementLoading, savedEngagement, loadEngagement } = useContext(ActionContext);
+    const { isEngagementLoading, savedEngagement, loadEngagement } = useContext(SubmitSurveyContext);
 
     if (isEngagementLoading) {
         return <Skeleton variant="rectangular" width="100%" height="38em" />;

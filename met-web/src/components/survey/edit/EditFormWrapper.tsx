@@ -2,16 +2,16 @@ import React, { useContext } from 'react';
 import { Grid, Skeleton } from '@mui/material';
 import { Banner } from 'components/banner/Banner';
 import { EditForm } from './EditForm';
-import { ActionContext } from './ActionContext';
+import { EditSurveyContext } from './EditSurveyContext';
 import { MetPaper } from 'components/common';
 import { InvalidTokenModal } from './InvalidTokenModal';
 import { useNavigate, useParams } from 'react-router';
 import { When } from 'react-if';
 import EngagementInfoSection from 'components/engagement/view/EngagementInfoSection';
 
-const FormWrapped = () => {
+const EditFormWrapper = () => {
     const { slug } = useParams();
-    const { isTokenValid, isLoading, savedEngagement, submission } = useContext(ActionContext);
+    const { isTokenValid, isLoading, savedEngagement, submission } = useContext(EditSurveyContext);
     const navigate = useNavigate();
     const engagementPath = slug ? `/${slug}` : `/engagements/${savedEngagement?.id}/view`;
 
@@ -57,4 +57,4 @@ const FormWrapped = () => {
     );
 };
 
-export default FormWrapped;
+export default EditFormWrapper;

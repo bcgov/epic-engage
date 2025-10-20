@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Grid, Stack, Modal } from '@mui/material';
 import { modalStyle, PrimaryButton, SecondaryButton, MetHeader1, MetBody } from 'components/common';
 import { EngagementStatus } from 'constants/engagementStatus';
-import { ActionContext } from 'components/engagement/view/ActionContext';
+import { EngagementViewContext } from 'components/engagement/view/EngagementViewContext';
 
 interface UnpublishModalProps {
     open: boolean;
@@ -10,7 +10,7 @@ interface UnpublishModalProps {
 }
 
 const UnpublishModal = ({ open, setModalOpen }: UnpublishModalProps) => {
-    const { savedEngagement, unpublishEngagement } = useContext(ActionContext);
+    const { savedEngagement, unpublishEngagement } = useContext(EngagementViewContext);
     const [isUnpublishing, setIsUnpublishing] = useState(false);
 
     const handleUnpublishEngagement = async () => {

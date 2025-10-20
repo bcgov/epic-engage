@@ -1,8 +1,8 @@
 import React from 'react';
 import PhasesForm from './PhasesForm';
 
-export const Phases = () => {
+export const PhasesWidget = () => {
     return <PhasesForm />;
 };
 
-export default Phases;
+export default PhasesWidget;

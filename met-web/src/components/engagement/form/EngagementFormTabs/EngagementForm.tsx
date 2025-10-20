@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Typography, Grid, TextField, Stack, Box } from '@mui/material';
 import { MetPaper, MetLabel, PrimaryButton, SecondaryButton, MetDescription } from '../../../common';
-import { ActionContext } from '../ActionContext';
+import { EngagementFormContext } from '../EngagementFormContext';
 import ImageUpload from 'components/ImageManagement/ImageUpload';
 import { useNavigate } from 'react-router-dom';
 import { SurveyBlock } from './SurveyBlock';
@@ -23,7 +23,7 @@ const EngagementForm = () => {
         savedEngagement,
         handleAddBannerImage,
         fetchEngagement,
-    } = useContext(ActionContext);
+    } = useContext(EngagementFormContext);
 
     const {
         engagementFormData,

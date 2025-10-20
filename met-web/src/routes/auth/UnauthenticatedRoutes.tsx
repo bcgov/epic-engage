@@ -1,17 +1,18 @@
-import SurveySubmit from 'components/survey/submit';
-import EditSurvey from 'components/survey/edit';
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
-import EngagementView from '../../components/engagement/view';
-import NotAvailable from '../status/NotAvailable';
-import NotFound from '../status/NotFound';
-import EngagementComments from '../../components/engagement/dashboard/comment';
-import PublicDashboard from 'components/publicDashboard';
+import EngagementComments from 'components/engagement/comment';
+import EngagementView from 'components/engagement/view';
+import ManageSubscription from 'components/engagement/view/widgets/Subscribe/ManageSubscription';
 import Landing from 'components/landing';
-import ManageSubscription from '../../components/engagement/view/widgets/Subscribe/ManageSubscription';
+import PublicDashboard from 'components/publicDashboard';
 import { FormCAC } from 'components/FormCAC';
-import ScrollToTop from 'components/scrollToTop';
+import SubmitSurvey from 'components/survey/submit';
+import EditSurvey from 'components/survey/edit';
+import { ScrollToTop } from 'routes';
+import { NotAvailable } from 'routes';
+import { NotFound } from 'routes';
 import { RedirectLogin } from './RedirectLogin';
+
 const UnauthenticatedRoutes = () => {
     return (
         <>
@@ -30,7 +31,7 @@ const UnauthenticatedRoutes = () => {
                 <Route path="/:slug/comments/:dashboardType" element={<EngagementComments />} />
                 <Route path="/engagements/:engagementId/edit/:token" element={<EditSurvey />} />
                 <Route path="/:slug/edit/:token" element={<EditSurvey />} />
-                <Route path="/surveys/submit/:surveyId/:token" element={<SurveySubmit />} />
+                <Route path="/surveys/submit/:surveyId/:token" element={<SubmitSurvey />} />
                 <Route path="/engagements/:engagementId/cacform/:widgetId" element={<FormCAC />} />
                 <Route path="/engagements/create/form" element={<RedirectLogin />} />
                 <Route path="*" element={<NotFound />} />

@@ -3,14 +3,14 @@ import { Box, Grid, Stack } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { MetHeader1, SecondaryButton } from 'components/common';
 import { useAppSelector } from 'hooks';
-import { ActionContext } from './ActionContext';
+import { SubmitSurveyContext } from './SubmitSurveyContext';
 import { PermissionsGate } from 'components/permissionsGate';
 import { USER_ROLES } from 'services/userService/constants';
 
 export const PreviewBanner = () => {
     const navigate = useNavigate();
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
-    const { savedSurvey } = useContext(ActionContext);
+    const { savedSurvey } = useContext(SubmitSurveyContext);
 
     if (!isLoggedIn) {
         return null;

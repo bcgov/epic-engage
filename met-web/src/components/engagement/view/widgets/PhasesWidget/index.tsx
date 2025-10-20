@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Grid, Skeleton, Stack } from '@mui/material';
 import { MetBody, MetHeader3, MetLabel, MetPaper } from 'components/common';
 import { WidgetType } from 'models/widget';
-import { ActionContext } from '../../ActionContext';
+import { EngagementViewContext } from '../../EngagementViewContext';
 import { EngagementPhase } from './EngagementPhase';
 import { EngagementPhases, ENGAGEMENT_PHASES } from 'models/engagementPhases';
 import { ForumIcon } from './ForumIcon';
@@ -21,7 +21,7 @@ export const PhaseContext = React.createContext<PhaseContextProps>({
     },
 });
 export const PhasesWidget = () => {
-    const { widgets, isWidgetsLoading } = useContext(ActionContext);
+    const { widgets, isWidgetsLoading } = useContext(EngagementViewContext);
     const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
     const phases = Object.values(ENGAGEMENT_PHASES);
     const phasesWidget = widgets.find((widget) => widget.widget_type_id === WidgetType.Phases);

@@ -40,7 +40,7 @@ const SubmissionTrend = ({ engagement, engagementIsLoading }: SubmissionTrendPro
     const isExtraSmall = useMediaQuery('(max-width:299px)');
     const isBetweenMdAndLg = useMediaQuery((theme: Theme) => theme.breakpoints.between('lg', 'xl'));
     const HEIGHT = isTablet ? 200 : 250;
-    const [data, setData] = useState<UserResponseDetailByMonth | null>(null);
+    const [data, setData] = useState<UserResponseDetailByMonth[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
     const [chartBy, setChartBy] = React.useState('monthly');
@@ -67,14 +67,14 @@ const SubmissionTrend = ({ engagement, engagementIsLoading }: SubmissionTrendPro
                     fromDate ? formatToUTC(fromDate) : '',
                     toDate ? formatToUTC(toDate) : '',
                 );
-                setData(response);
+                setData(Array.isArray(response) ? response : []);
             } else if (chartBy == 'weekly') {
                 const response = await getUserResponseDetailByWeek(
                     Number(engagement.id),
                     fromDate ? formatToUTC(fromDate) : '',
                     toDate ? formatToUTC(toDate) : '',
                 );
-                setData(response);
+                setData(Array.isArray(response) ? response : []);
             }
             setIsError(false);
         } catch (error) {
@@ -128,7 +128,7 @@ const SubmissionTrend = ({ engagement, engagementIsLoading }: SubmissionTrendPro
         );
     }
 
-    if (!data) {
+    if (!data || data.length === 0) {
         return <NoData sx={{ height: HEIGHT }} />;
     }
 

@@ -8,7 +8,7 @@ import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { ActionContext } from 'components/engagement/view/ActionContext';
+import { EngagementViewContext } from 'components/engagement/view/EngagementViewContext';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { formatToUTC } from 'utils/helpers/dateHelper';
 
@@ -20,7 +20,7 @@ interface ScheduleModalProps {
 
 const ScheduleModal = ({ reschedule, open, updateModal }: ScheduleModalProps) => {
     const [scheduledDate, setScheduledDate] = useState<Dayjs | null>(dayjs(Date.now()));
-    const { savedEngagement, scheduleEngagement } = useContext(ActionContext);
+    const { savedEngagement, scheduleEngagement } = useContext(EngagementViewContext);
     const dispatch = useAppDispatch();
 
     const isEngagementReady = () => {

@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import React from 'react';
 import '@testing-library/jest-dom';
-import { Notification } from '../../../src/components/common/Notification';
+import { Notification } from '../../../src/components/common/Notifications/Notification';
 import ProviderShell from './ProviderShell';
 import { setupEnv } from './setEnvVars';
 

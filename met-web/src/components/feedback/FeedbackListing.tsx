@@ -12,9 +12,10 @@ import { formatDate } from 'utils/helpers/dateHelper';
 import { customRatings } from 'components/feedback/FeedbackModal/constants';
 import { useLocation } from 'react-router-dom';
 import { updateURLWithPagination } from 'components/common/Table/utils';
-import { ActionsDropDown } from './actionDropdown';
+import { FeedbackActionsDropdown } from './FeedbackActionsDropdown';
 import { USER_ROLES } from 'services/userService/constants';
 import { When } from 'react-if';
+
 const FeedbackListing = () => {
     const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
     const { roles } = useAppSelector((state) => state.user);
@@ -121,7 +122,7 @@ const FeedbackListing = () => {
             label: 'Actions',
             allowSort: false,
             renderCell: (row: Feedback) => {
-                return <ActionsDropDown reload={() => loadFeedbacks()} feedback={row} />;
+                return <FeedbackActionsDropdown reload={() => loadFeedbacks()} feedback={row} />;
             },
             customStyle: {
                 minWidth: '200px',

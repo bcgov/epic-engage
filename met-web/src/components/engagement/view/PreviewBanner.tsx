@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { ActionContext } from './ActionContext';
+import { EngagementViewContext } from './EngagementViewContext';
 import { Box, Typography, Grid, Skeleton, Stack, useMediaQuery, Theme, Link } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { EngagementStatusChip } from '../EngagementStatusChip';
@@ -22,7 +22,7 @@ export const PreviewBanner = () => {
     const navigate = useNavigate();
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
-    const { isEngagementLoading, savedEngagement, updateMockStatus, mockStatus } = useContext(ActionContext);
+    const { isEngagementLoading, savedEngagement, updateMockStatus, mockStatus } = useContext(EngagementViewContext);
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
     const isDraft = savedEngagement.status_id === EngagementStatus.Draft;
     const engagementId = savedEngagement.id || '';

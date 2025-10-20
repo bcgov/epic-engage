@@ -1,12 +1,12 @@
 import React, { useContext } from 'react';
 import { MetPageGridContainer, MidScreenLoader } from 'components/common';
 import EngagementFormTabs from './EngagementFormTabs/';
-import { ActionContext } from './ActionContext';
+import { EngagementFormContext } from './EngagementFormContext';
 import { Grid } from '@mui/material';
 import WidgetsBlock from './EngagementWidgets';
 
 const EngagementFormWrapper = () => {
-    const { loadingSavedEngagement, loadingAuthorization } = useContext(ActionContext);
+    const { loadingSavedEngagement, loadingAuthorization } = useContext(EngagementFormContext);
 
     const loading = loadingSavedEngagement || loadingAuthorization;
     if (loading) {

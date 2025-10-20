@@ -30,7 +30,7 @@ const schema = yup
 
 type DetailsForm = yup.TypeOf<typeof schema>;
 
-const Form = () => {
+const VideoForm = () => {
     const dispatch = useAppDispatch();
     const { widget, isLoadingVideoWidget, videoWidget } = useContext(VideoContext);
     const { handleWidgetDrawerOpen } = useContext(WidgetDrawerContext);
@@ -198,4 +198,4 @@ const Form = () => {
     );
 };
 
-export default Form;
+export default VideoForm;

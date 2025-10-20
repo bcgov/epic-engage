@@ -3,7 +3,7 @@ import AddContactDrawer from './AddContactDrawer';
 import { WhoIsListeningProvider } from './WhoIsListeningContext';
 import WhoIsListeningForm from './WhoIsListeningForm';
 
-export const WhoIsListening = () => {
+export const WhoIsListeningWidget = () => {
     return (
         <WhoIsListeningProvider>
             <WhoIsListeningForm />
@@ -12,4 +12,4 @@ export const WhoIsListening = () => {
     );
 };
 
-export default WhoIsListening;
+export default WhoIsListeningWidget;

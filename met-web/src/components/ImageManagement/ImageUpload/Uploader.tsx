@@ -2,7 +2,7 @@ import React, { useEffect, useContext } from 'react';
 import { Grid, Stack, Typography } from '@mui/material';
 import Dropzone, { Accept } from 'react-dropzone';
 import { PrimaryButton, SecondaryButton } from 'components/common';
-import { ImageUploadContext } from './imageUploadContext';
+import { ImageUploadContext } from './ImageUploadContext';
 
 interface UploaderProps {
     margin?: number;

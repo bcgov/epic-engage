@@ -2,14 +2,14 @@ import React, { useContext, useCallback } from 'react';
 import { Link as MuiLink, Skeleton } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAppSelector } from 'hooks';
-import { ActionContext } from './ActionContext';
+import { SubmitSurveyContext } from './SubmitSurveyContext';
 import { When } from 'react-if';
 import { useDispatch } from 'react-redux';
 import { openNotificationModal } from 'services/notificationModalService/notificationModalSlice';
 
 export const EngagementLink = () => {
     const dispatch = useDispatch();
-    const { savedEngagement, isEngagementLoading } = useContext(ActionContext);
+    const { savedEngagement, isEngagementLoading } = useContext(SubmitSurveyContext);
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
     const navigate = useNavigate();
 

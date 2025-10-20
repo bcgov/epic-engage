@@ -4,7 +4,7 @@ import DocumentForm from './DocumentForm';
 import AddFileDrawer from './AddFileDrawer';
 import UploadFileDrawer from './UploadFileDrawer';
 
-export const Documents = () => {
+export const DocumentWidget = () => {
     return (
         <DocumentsProvider>
             <DocumentForm />
@@ -14,4 +14,4 @@ export const Documents = () => {
     );
 };
 
-export default Documents;
+export default DocumentWidget;

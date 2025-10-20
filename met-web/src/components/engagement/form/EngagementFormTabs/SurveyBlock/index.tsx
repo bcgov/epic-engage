@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { ActionContext } from '../../ActionContext';
+import { EngagementFormContext } from '../../EngagementFormContext';
 import { Grid } from '@mui/material';
 import { MetHeader4, MetPaper, MetSurvey, SecondaryButton } from 'components/common';
 import { useNavigate } from 'react-router-dom';
@@ -11,7 +11,7 @@ import { openNotificationModal } from 'services/notificationModalService/notific
 import SurveyTextTabs from './SurveyTextTabs';
 
 export const SurveyBlock = () => {
-    const { savedEngagement, fetchEngagement } = useContext(ActionContext);
+    const { savedEngagement, fetchEngagement } = useContext(EngagementFormContext);
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 

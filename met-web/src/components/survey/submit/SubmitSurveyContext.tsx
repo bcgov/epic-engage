@@ -25,7 +25,7 @@ interface SubmitSurveyContext {
     slug: string;
 }
 
-export const ActionContext = createContext<SubmitSurveyContext>({
+export const SubmitSurveyContext = createContext<SubmitSurveyContext>({
     savedSurvey: createDefaultSurvey(),
     isSurveyLoading: true,
     isTokenValid: true,
@@ -39,7 +39,7 @@ export const ActionContext = createContext<SubmitSurveyContext>({
     slug: '',
 });
 
-export const ActionProvider = ({ children }: { children: JSX.Element }) => {
+export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
@@ -203,7 +203,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
     };
 
     return (
-        <ActionContext.Provider
+        <SubmitSurveyContext.Provider
             value={{
                 savedSurvey,
                 isSurveyLoading,
@@ -218,6 +218,6 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
             }}
         >
             {children}
-        </ActionContext.Provider>
+        </SubmitSurveyContext.Provider>
     );
 };
