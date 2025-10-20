@@ -1,6 +1,6 @@
 import React from 'react';
 import { Stepper, Step, StepLabel, Box } from '@mui/material';
-import { FormInfo } from 'components/Form/types';
+import { FormInfo } from 'components/FormBuilder/types';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 

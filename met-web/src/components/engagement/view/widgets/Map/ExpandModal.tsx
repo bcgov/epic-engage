@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import Modal from '@mui/material/Modal';
 import { Box, Paper, Grid } from '@mui/material';
-import MetMap from 'components/map';
+import MetMap from 'components/MetMap';
 import { WidgetMap } from 'models/widgetMap';
 import { PrimaryButton } from 'components/common';
 import { geoJSONDecode, calculateZoomLevel } from 'components/engagement/form/EngagementWidgets/Map/utils';

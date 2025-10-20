@@ -3,7 +3,7 @@ import { Grid } from '@mui/material';
 import { MetLabel, MetPaper, PrimaryButton, MetParagraph } from 'components/common';
 import { ActionContext } from '../../ActionContext';
 import { EngagementTabsContext } from '../EngagementTabsContext';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import TeamMemberListing from './TeamMemberListing';
 
 const EngagementUserManagement = () => {

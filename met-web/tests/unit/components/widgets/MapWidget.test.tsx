@@ -20,7 +20,7 @@ const mockEngagementSettings: EngagementSettings = {
     ...createDefaultEngagementSettings(),
 };
 
-jest.mock('components/map', () => () => {
+jest.mock('components/MetMap', () => () => {
     return <div></div>;
 });
 

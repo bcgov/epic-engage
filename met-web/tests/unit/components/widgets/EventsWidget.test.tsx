@@ -16,7 +16,7 @@ import { draftEngagement, surveys, mockEvent, eventWidget, engagementMetadata } 
 import { USER_ROLES } from 'services/userService/constants';
 import { EngagementSettings, createDefaultEngagementSettings } from 'models/engagement';
 
-jest.mock('components/map', () => () => {
+jest.mock('components/MetMap', () => () => {
     return <div></div>;
 });
 

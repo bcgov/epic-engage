@@ -4,7 +4,7 @@ import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
 import { Grid } from '@mui/material';
 import { MetHeader3, MetLabel, PrimaryButton, SecondaryButton } from 'components/common';
-import ImageUpload from 'components/imageUpload';
+import ImageUpload from 'components/ImageManagement/ImageUpload';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';

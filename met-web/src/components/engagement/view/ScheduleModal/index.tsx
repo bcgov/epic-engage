@@ -10,7 +10,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { ActionContext } from 'components/engagement/view/ActionContext';
 import { openNotification } from 'services/notificationService/notificationSlice';
-import { formatToUTC } from 'components/common/dateHelper';
+import { formatToUTC } from 'utils/helpers/dateHelper';
 
 interface ScheduleModalProps {
     reschedule: boolean;

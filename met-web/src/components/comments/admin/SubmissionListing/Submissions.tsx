@@ -4,7 +4,7 @@ import Grid from '@mui/material/Grid';
 import { Link, useLocation } from 'react-router-dom';
 import { MetPageGridContainer, PrimaryButton, MetHeader1, SecondaryButton } from 'components/common';
 import { HeadCell, PaginationOptions } from 'components/common/Table/types';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import { Collapse, Link as MuiLink } from '@mui/material';
 import TextField from '@mui/material/TextField';
 import SearchIcon from '@mui/icons-material/Search';

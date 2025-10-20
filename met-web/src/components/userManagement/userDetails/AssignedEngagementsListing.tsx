@@ -4,7 +4,7 @@ import MetTable from 'components/common/Table';
 import { Link } from 'react-router-dom';
 import { HeadCell } from 'components/common/Table/types';
 import { ENGAGEMENT_MEMBERSHIP_STATUS_NAME, EngagementTeamMember } from 'models/engagementTeamMember';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import { UserDetailsContext } from './UserDetailsContext';
 import { ActionsDropDown } from './ActionsDropDown';
 

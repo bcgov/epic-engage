@@ -7,7 +7,7 @@ import { fetchSurveyReportSettings, updateSurveyReportSettings } from 'services/
 import { getSurvey } from 'services/surveyService';
 import { Survey } from 'models/survey';
 import { getSlugByEngagementId } from 'services/engagementSlugService';
-import { FormInfo } from 'components/Form/types';
+import { FormInfo } from 'components/FormBuilder/types';
 
 export interface SearchFilter {
     key: keyof SurveyReportSetting;

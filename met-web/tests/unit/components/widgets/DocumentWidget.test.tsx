@@ -104,7 +104,7 @@ jest.mock('apiManager/apiSlices/widgets', () => ({
     useSortWidgetsMutation: () => [jest.fn(() => Promise.resolve())],
 }));
 
-jest.mock('components/map', () => () => {
+jest.mock('components/MetMap', () => () => {
     return <div></div>;
 });
 

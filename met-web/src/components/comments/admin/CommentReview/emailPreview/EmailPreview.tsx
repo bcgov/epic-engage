@@ -3,7 +3,7 @@ import * as React from 'react';
 import { MetBody } from 'components/common';
 import { ReactComponent as BCLogo } from 'assets/images/BritishColumbiaLogoDark.svg';
 import { Survey } from 'models/survey';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import { useAppSelector } from 'hooks';
 import { TenantState } from 'reduxSlices/tenantSlice';
 import { EngagementStatus } from 'constants/engagementStatus';

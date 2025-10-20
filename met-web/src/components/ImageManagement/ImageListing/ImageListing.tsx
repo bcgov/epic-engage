@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import Grid from '@mui/material/Grid';
 import { ImageContext } from './ImageContext';
 import { HeaderTitle, MetPageGridContainer, MetParagraph, PrimaryButton } from 'components/common';
-import ImageUpload from '../../imageUpload';
+import ImageUpload from '../../ImageManagement/ImageUpload';
 import { IconButton, Stack, TextField } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -13,7 +13,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Else, If, Then } from 'react-if';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch } from 'hooks';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 
 const ImageListing = () => {
     const {

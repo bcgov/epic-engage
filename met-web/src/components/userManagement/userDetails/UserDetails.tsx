@@ -3,7 +3,7 @@ import { Grid, Stack, Link } from '@mui/material';
 import { useAppSelector } from 'hooks';
 import { MetLabel, MetParagraph, MetPageGridContainer, PrimaryButton } from 'components/common';
 import { UserDetailsContext } from './UserDetailsContext';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import AssignedEngagementsListing from './AssignedEngagementsListing';
 import UserStatusButton from './UserStatusButton';
 import UserDetailsSkeleton from './UserDetailsSkeleton';
