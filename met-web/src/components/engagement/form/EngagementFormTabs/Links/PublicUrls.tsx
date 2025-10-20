@@ -3,7 +3,7 @@ import { InputAdornment, TextField, Tooltip, Grid, useTheme } from '@mui/materia
 import { SecondaryButton, MetDescription, PrimaryButton, MetHeader4, MetSmallText, MetLabel } from 'components/common';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
-import { ActionContext } from 'components/engagement/form/ActionContext';
+import { EngagementFormContext } from 'components/engagement/form/EngagementFormContext';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { patchEngagementSlug } from 'services/engagementSlugService';
@@ -17,7 +17,7 @@ export const PublicUrls = () => {
     const dispatch = useAppDispatch();
     const theme = useTheme();
 
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const { savedSlug, setSavedSlug } = useContext(EngagementTabsContext);
 
     const [slug, setSlug] = useState('');

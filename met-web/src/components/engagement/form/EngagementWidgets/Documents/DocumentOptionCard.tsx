@@ -6,7 +6,7 @@ import { WidgetDrawerContext } from '../WidgetDrawerContext';
 import { WidgetTabValues } from '../type';
 import { WidgetType } from 'models/widget';
 import { Else, If, Then } from 'react-if';
-import { ActionContext } from '../../ActionContext';
+import { EngagementFormContext } from '../../EngagementFormContext';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { optionCardStyle } from '../constants';
@@ -15,7 +15,7 @@ import { useCreateWidgetMutation } from 'apiManager/apiSlices/widgets';
 const Title = 'Documents';
 const DocumentOptionCard = () => {
     const { widgets, loadWidgets, handleWidgetDrawerTabValueChange } = useContext(WidgetDrawerContext);
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const dispatch = useAppDispatch();
     const [createWidget] = useCreateWidgetMutation();
     const [isCreatingWidget, setIsCreatingWidget] = useState(false);

@@ -17,7 +17,7 @@ import { useState } from 'react';
 import { MetBody, MetHeader3, MetLabel, modalStyle, PrimaryButton, MetDisclaimer } from '../../common';
 import { CommentTypeEnum, createDefaultFeedback, RatingTypeEnum } from 'models/feedback';
 import { Else, If, Then, When } from 'react-if';
-import { CommentTypeButton, StyledRating } from './styledComponents';
+import { CommentTypeButton, StyledRating } from './StyledComponents';
 import { createFeedback } from 'services/feedbackService';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch } from 'hooks';

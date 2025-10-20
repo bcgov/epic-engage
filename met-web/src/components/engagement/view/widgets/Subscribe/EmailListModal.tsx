@@ -1,10 +1,10 @@
 import React, { useState, useContext } from 'react';
 import { MetLabel, MetParagraph } from 'components/common';
-import { ActionContext } from '../../ActionContext';
+import { EngagementViewContext } from '../../EngagementViewContext';
 import { Grid, Link, Typography, Box, RadioGroup, Radio, FormControlLabel, useMediaQuery, Theme } from '@mui/material';
 import { useAppDispatch, useAppSelector } from 'hooks';
 import { openNotificationModal } from 'services/notificationModalService/notificationModalSlice';
-import EmailModal from 'components/common/Modals/EmailModal';
+import SubscribeEmailModal from 'components/engagement/view/widgets/Subscribe/SubscribeEmailModal';
 import { createSubscribeEmailVerification } from 'services/emailVerificationService';
 import { createSubscription } from 'services/subscriptionService';
 import { EmailVerificationType } from 'models/emailVerification';
@@ -14,7 +14,7 @@ import { TenantState } from 'redux/slices/tenantSlice';
 const EmailListModal = ({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) => {
     const dispatch = useAppDispatch();
     const isSmallScreen: boolean = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
-    const { savedEngagement, engagementMetadata } = useContext(ActionContext);
+    const { savedEngagement, engagementMetadata } = useContext(EngagementViewContext);
     const defaultType = engagementMetadata.project_id ? SubscriptionType.PROJECT : SubscriptionType.ENGAGEMENT;
     const [email, setEmail] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -108,7 +108,7 @@ const EmailListModal = ({ open, setOpen }: { open: boolean; setOpen: (open: bool
     };
 
     return (
-        <EmailModal
+        <SubscribeEmailModal
             open={open}
             updateModal={setOpen}
             email={email}

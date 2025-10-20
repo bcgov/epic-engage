@@ -1,17 +1,17 @@
 import React from 'react';
 import { SubscribeProvider } from './SubscribeContext';
-import Form from './SubscribeForm';
+import SubscribeForm from './SubscribeForm';
 import EmailListFormDrawer from './EmailListFormDrawer';
 import FormSignUpDrawer from './FormSignUpDrawer';
 
-export const SubscribeForm = () => {
+export const SubscribeWidget = () => {
     return (
         <SubscribeProvider>
-            <Form />
+            <SubscribeForm />
             <EmailListFormDrawer />
             <FormSignUpDrawer />
         </SubscribeProvider>
     );
 };
 
-export default SubscribeForm;
+export default SubscribeWidget;

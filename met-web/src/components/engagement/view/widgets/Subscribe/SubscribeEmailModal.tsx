@@ -12,9 +12,9 @@ import {
 } from '@mui/material';
 import { MetLabel, modalStyle, PrimaryButton, SecondaryButton, MetHeader1, MetBody } from 'components/common';
 import Modal from '@mui/material/Modal';
-import { ModalProps } from './types';
+import { ModalProps } from '../../../../common/Notifications/types';
 
-const EmailModal = ({
+const SubscribeEmailModal = ({
     open,
     email,
     updateEmail,
@@ -156,4 +156,4 @@ const EmailModal = ({
     );
 };
 
-export default EmailModal;
+export default SubscribeEmailModal;

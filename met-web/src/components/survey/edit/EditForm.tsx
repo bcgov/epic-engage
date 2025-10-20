@@ -1,12 +1,12 @@
 import React, { useContext } from 'react';
 import { cloneDeep } from 'lodash';
 import { Grid, Stack, TextField } from '@mui/material';
-import { ActionContext } from './ActionContext';
+import { EditSurveyContext } from './EditSurveyContext';
 import { MetLabel, PrimaryButton, SecondaryButton } from 'components/common';
 import { SurveyFormProps } from '../types';
 
 export const EditForm = ({ handleClose }: SurveyFormProps) => {
-    const { handleSubmit, isSubmitting, submission, setSubmission } = useContext(ActionContext);
+    const { handleSubmit, isSubmitting, submission, setSubmission } = useContext(EditSurveyContext);
 
     const handleChange = (value: string, commentIndex: number) => {
         if (!submission) {

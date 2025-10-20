@@ -4,7 +4,7 @@ import { MetHeader1, MetLabel } from 'components/common';
 import { EngagementStatusChip } from '../EngagementStatusChip';
 import { Editor } from 'react-draft-wysiwyg';
 import dayjs from 'dayjs';
-import { ActionContext } from './ActionContext';
+import { EngagementViewContext } from './EngagementViewContext';
 import { Engagement } from 'models/engagement';
 import { useAppSelector } from 'hooks';
 import { getEditorStateFromRaw } from 'components/common/RichTextEditor/utils';
@@ -17,7 +17,7 @@ interface EngagementInfoSectionProps {
 }
 const EngagementInfoSection = ({ savedEngagement, children }: EngagementInfoSectionProps) => {
     const { name, end_date, start_date, rich_description, submission_status } = savedEngagement;
-    const { mockStatus } = useContext(ActionContext);
+    const { mockStatus } = useContext(EngagementViewContext);
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
     const isPreview = isLoggedIn;
     const statusName = isPreview ? mockStatus : submission_status;

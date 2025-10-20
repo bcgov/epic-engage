@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { MetHeader2, MetPaper } from 'components/common';
-import { ActionContext } from '../../ActionContext';
+import { EngagementViewContext } from '../../EngagementViewContext';
 import { Divider, Grid, Skeleton } from '@mui/material';
 import { useAppDispatch } from 'hooks';
 import { Widget } from 'models/widget';
@@ -14,7 +14,7 @@ import FormSignUpSection from './FormSignUpSection';
 
 const SubscribeWidget = ({ widget }: { widget: Widget }) => {
     const dispatch = useAppDispatch();
-    const { widgets } = useContext(ActionContext);
+    const { widgets } = useContext(EngagementViewContext);
     const [open, setOpen] = useState(false);
     const [subscribeItems, setSubscribeItems] = useState<SubscribeForm[]>([]);
     const [isLoadingSubscribeItems, setIsLoadingSubscribeItems] = useState(true);

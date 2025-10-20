@@ -1,15 +1,15 @@
 import React from 'react';
-import Form from './Form';
+import MapForm from './MapForm';
 import { MapProvider } from './MapContext';
 import { PreviewModal } from './PreviewModal';
 
-export const MapForm = () => {
+export const MapWidget = () => {
     return (
         <MapProvider>
-            <Form />
+            <MapForm />
             <PreviewModal />
         </MapProvider>
     );
 };
 
-export default MapForm;
+export default MapWidget;

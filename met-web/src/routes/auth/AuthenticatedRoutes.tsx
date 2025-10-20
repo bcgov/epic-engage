@@ -7,21 +7,21 @@ import EngagementView from '../../components/engagement/view';
 import SurveyListing from 'components/survey/listing';
 import CreateSurvey from 'components/survey/create';
 import SurveyFormBuilder from 'components/survey/building';
-import SurveySubmit from 'components/survey/submit';
+import SubmitSurvey from 'components/survey/submit';
 import CommentReview from 'components/comments/admin/CommentReview';
 import CommentReviewListing from 'components/comments/admin/SubmissionListing';
 import CommentTextListing from 'components/comments/admin/CommentTextListing';
 import PublicDashboard from 'components/publicDashboard';
-import EngagementComments from '../../components/engagement/dashboard/comment';
+import EngagementComments from '../../components/engagement/comment';
 import UnderConstruction from '../status/UnderConstruction';
-import FeedbackListing from 'components/feedback/listing';
+import FeedbackListing from 'components/feedback/FeedbackListing';
 import UserManagementListing from 'components/userManagement/listing';
 import Dashboard from 'components/dashboard';
 import Unauthorized from '../status/Unauthorized';
 import AuthGate from './AuthGate';
 import { USER_ROLES } from 'services/userService/constants';
 import UserProfile from 'components/userManagement/userDetails';
-import ScrollToTop from 'components/scrollToTop';
+import { ScrollToTop } from 'routes';
 import ReportSettings from 'components/survey/report';
 import FormioListener from 'components/FormioListener';
 import Images from 'components/ImageManagement/ImageListing';
@@ -37,7 +37,7 @@ const AuthenticatedRoutes = () => {
                 <Route path="/surveys" element={<SurveyListing />} />
                 <Route path="/surveys/create" element={<CreateSurvey />} />
                 <Route path="/surveys/:surveyId/build" element={<SurveyFormBuilder />} />
-                <Route path="/surveys/:surveyId/submit" element={<SurveySubmit />} />
+                <Route path="/surveys/:surveyId/submit" element={<SubmitSurvey />} />
                 <Route path="/surveys/:surveyId/report" element={<ReportSettings />} />
                 <Route element={<AuthGate allowedRoles={[USER_ROLES.VIEW_APPROVED_COMMENTS]} />}>
                     <Route path="/surveys/:surveyId/comments" element={<CommentReviewListing />} />

@@ -4,7 +4,7 @@ import { MetHeader2, MetPaper, SecondaryButton } from 'components/common';
 import { WidgetCardSwitch } from './WidgetCardSwitch';
 import { If, Then, Else, When } from 'react-if';
 import { WidgetDrawerContext } from './WidgetDrawerContext';
-import { ActionContext } from '../ActionContext';
+import { EngagementFormContext } from '../EngagementFormContext';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { Widget, WidgetType } from 'models/widget';
@@ -17,7 +17,7 @@ import { reorder } from 'utils';
 const WidgetsBlock = () => {
     const { widgets, deleteWidget, updateWidgetsSorting, handleWidgetDrawerOpen, isWidgetsLoading } =
         useContext(WidgetDrawerContext);
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const dispatch = useAppDispatch();
 
     const [sortableWidgets, setSortableWidgets] = useState<Widget[]>([]);

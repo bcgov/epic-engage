@@ -3,7 +3,7 @@ import { Grid, Skeleton, Typography } from '@mui/material';
 import { MetBody, MetHeader3, MetPaper } from 'components/common';
 import { WidgetType } from 'models/widget';
 import { styled } from '@mui/material/styles';
-import { ActionContext } from '../../../ActionContext';
+import { EngagementViewContext } from '../../../EngagementViewContext';
 import ArrowForwardIosSharpIcon from '@mui/icons-material/ArrowForwardIosSharp';
 import { EngagementPhaseMobile } from './EngagementPhaseMobile';
 import MuiAccordion, { AccordionProps } from '@mui/material/Accordion';
@@ -43,7 +43,7 @@ const AccordionDetails = styled(MuiAccordionDetails)(({ theme }) => ({
 
 export const PhasesWidgetMobile = () => {
     const phases = Object.values(ENGAGEMENT_PHASES);
-    const { widgets, isWidgetsLoading } = useContext(ActionContext);
+    const { widgets, isWidgetsLoading } = useContext(EngagementViewContext);
 
     const phasesWidget = widgets.find((widget) => widget.widget_type_id === WidgetType.Phases);
 

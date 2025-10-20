@@ -8,3 +8,4 @@ export { default as RedirectLogin } from './auth/RedirectLogin';
 export { default as UnauthenticatedRoutes } from './auth/UnauthenticatedRoutes';
 export { default as Unauthorized } from './status/Unauthorized';
 export { default as UnderConstruction } from './status/UnderConstruction';
+export { default as ScrollToTop } from './ScrollToTop';

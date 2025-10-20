@@ -5,7 +5,7 @@ import { Banner } from 'components/banner/Banner';
 import LandingPageBanner from 'assets/images/LandingPageBanner.png';
 import { Tabs } from './Tabs';
 
-export const Form = () => {
+export const FormCACForm = () => {
     return (
         <Grid container direction="row" justifyContent={'center'} alignItems="center">
             <Grid item xs={12}>

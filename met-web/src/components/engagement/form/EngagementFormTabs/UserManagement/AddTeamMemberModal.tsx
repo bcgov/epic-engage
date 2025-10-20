@@ -10,7 +10,7 @@ import { getUserList } from 'services/userService/api';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch } from 'hooks';
 import { EngagementTabsContext } from '../EngagementTabsContext';
-import { ActionContext } from '../../ActionContext';
+import { EngagementFormContext } from '../../EngagementFormContext';
 import { addTeamMemberToEngagement } from 'services/membershipService';
 import { debounce } from 'lodash';
 import axios, { AxiosError } from 'axios';
@@ -27,7 +27,7 @@ type AddTeamMemberForm = yup.TypeOf<typeof schema>;
 export const AddTeamMemberModal = () => {
     const dispatch = useAppDispatch();
     const { addTeamMemberOpen, setAddTeamMemberOpen, teamMembers, loadTeamMembers } = useContext(EngagementTabsContext);
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const [isAdding, setIsAdding] = useState(false);
     const [usersLoading, setUsersLoading] = useState(false);
     const [users, setUsers] = useState<User[]>([]);

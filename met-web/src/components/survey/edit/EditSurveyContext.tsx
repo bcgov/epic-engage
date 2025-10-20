@@ -27,7 +27,7 @@ interface EditSurveyContext {
     setSubmission: Dispatch<SetStateAction<PublicSubmission | null>>;
 }
 
-export const ActionContext = createContext<EditSurveyContext>({
+export const EditSurveyContext = createContext<EditSurveyContext>({
     isTokenValid: true,
     handleSubmit: () => {
         return;
@@ -42,7 +42,7 @@ export const ActionContext = createContext<EditSurveyContext>({
     submission: null,
 });
 
-export const ActionProvider = ({ children }: { children: JSX.Element }) => {
+export const EditSurveyProvider = ({ children }: { children: JSX.Element }) => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const { engagementId: engagementIdParam, token, slug } = useParams<EditSurveyParams>();
@@ -186,7 +186,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
     };
 
     return (
-        <ActionContext.Provider
+        <EditSurveyContext.Provider
             value={{
                 token,
                 isTokenValid,
@@ -200,6 +200,6 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
             }}
         >
             {children}
-        </ActionContext.Provider>
+        </EditSurveyContext.Provider>
     );
 };

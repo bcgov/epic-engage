@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { ActionContext } from '../../ActionContext';
+import { EngagementFormContext } from '../../EngagementFormContext';
 import { EngagementTabsContext } from '../EngagementTabsContext';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
@@ -33,7 +33,7 @@ export const EngagementSettingsContext = createContext<EngagementSettingsContext
 
 export const EngagementSettingsContextProvider = ({ children }: { children: React.ReactNode }) => {
     const { handleUpdateEngagementMetadataRequest, engagementId, handleUpdateEngagementRequest, savedEngagement } =
-        useContext(ActionContext);
+        useContext(EngagementFormContext);
     const { engagementFormData, updateEngagementSettings, settings } = useContext(EngagementTabsContext);
     const dispatch = useAppDispatch();
 

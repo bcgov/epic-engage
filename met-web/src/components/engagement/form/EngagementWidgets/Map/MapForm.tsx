@@ -50,7 +50,7 @@ const schema = yup
 
 type DetailsForm = yup.TypeOf<typeof schema>;
 
-const Form = () => {
+const MapForm = () => {
     const dispatch = useAppDispatch();
     const { widget, mapData, isLoadingMap, setPreviewMapOpen, setPreviewMap, updateZoom } = useContext(MapContext);
     const { handleWidgetDrawerOpen } = useContext(WidgetDrawerContext);
@@ -298,4 +298,4 @@ const Form = () => {
     );
 };
 
-export default Form;
+export default MapForm;

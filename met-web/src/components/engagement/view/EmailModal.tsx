@@ -10,7 +10,7 @@ import { checkEmail } from 'utils';
 import { createEmailVerification } from 'services/emailVerificationService';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch } from 'hooks';
-import { ActionContext } from './ActionContext';
+import { EngagementViewContext } from './EngagementViewContext';
 import ThankYouPanel from './ThankYouPanel';
 import { EmailVerificationType } from 'models/emailVerification';
 import { INTERNAL_EMAIL_DOMAIN } from 'constants/emailVerification';
@@ -20,7 +20,7 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
     const dispatch = useAppDispatch();
     const [formIndex, setFormIndex] = useState(defaultPanel);
     const [email, setEmail] = useState('');
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementViewContext);
     const [isSaving, setSaving] = useState(false);
 
     const close = () => {

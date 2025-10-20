@@ -52,7 +52,7 @@ export type EngagementParams = {
     slug?: string;
 };
 
-export const ActionContext = createContext<EngagementViewContext>({
+export const EngagementViewContext = createContext<EngagementViewContext>({
     scheduleEngagement: (_engagement: EngagementSchedule): Promise<Engagement> => {
         return Promise.reject(Error('not implemented'));
     },
@@ -73,7 +73,7 @@ export const ActionContext = createContext<EngagementViewContext>({
     },
 });
 
-export const ActionProvider = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
+export const EngagementViewProvider = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
     const { engagementId: engagementIdParam, token, slug } = useParams<EngagementParams>();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
@@ -261,7 +261,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element | JSX.Eleme
     }, [savedEngagement]);
 
     return (
-        <ActionContext.Provider
+        <EngagementViewContext.Provider
             value={{
                 savedEngagement,
                 engagementMetadata,
@@ -278,6 +278,6 @@ export const ActionProvider = ({ children }: { children: JSX.Element | JSX.Eleme
             }}
         >
             {children}
-        </ActionContext.Provider>
+        </EngagementViewContext.Provider>
     );
 };

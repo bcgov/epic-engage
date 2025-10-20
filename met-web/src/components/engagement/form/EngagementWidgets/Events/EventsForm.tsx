@@ -6,7 +6,7 @@ import { EventsContext } from './EventsContext';
 import EventsInfoBlock from './EventsInfoBlock';
 import { WidgetTitle } from '../WidgetTitle';
 
-const Form = () => {
+const EventsForm = () => {
     const { handleWidgetDrawerOpen } = useContext(WidgetDrawerContext);
     const { setInPersonFormTabOpen, setVirtualSessionFormTabOpen, widget } = useContext(EventsContext);
 
@@ -58,4 +58,4 @@ const Form = () => {
     );
 };
 
-export default Form;
+export default EventsForm;

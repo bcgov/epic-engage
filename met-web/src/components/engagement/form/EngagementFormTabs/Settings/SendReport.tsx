@@ -2,14 +2,14 @@ import React, { useContext, useEffect } from 'react';
 import { Grid, FormGroup, FormControlLabel, Switch } from '@mui/material';
 import { MetHeader4, MetDescription, MetLabel } from 'components/common';
 import { EngagementTabsContext } from '../EngagementTabsContext';
-import { ActionContext } from '../../ActionContext';
+import { EngagementFormContext } from '../../EngagementFormContext';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { EngagementSettingsContext } from './EngagementSettingsContext';
 
 const SendReport = () => {
     const { settings, settingsLoading } = useContext(EngagementTabsContext);
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const { sendReport, setSendReport } = useContext(EngagementSettingsContext);
 
     const dispatch = useAppDispatch();

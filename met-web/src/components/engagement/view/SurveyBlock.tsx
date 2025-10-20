@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Grid, Skeleton } from '@mui/material';
 import { MetPaper, PrimaryButton } from '../../common';
-import { ActionContext } from './ActionContext';
+import { EngagementViewContext } from './EngagementViewContext';
 import { SubmissionStatus } from 'constants/engagementStatus';
 import { SurveyBlockProps } from './types';
 import { useAppSelector } from 'hooks';
@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 
 const SurveyBlock = ({ startSurvey }: SurveyBlockProps) => {
     const { savedEngagement, engagementSettings, isEngagementLoading, isEngagementSettingsLoading, mockStatus } =
-        useContext(ActionContext);
+        useContext(EngagementViewContext);
     const navigate = useNavigate();
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
     const isPreview = isLoggedIn;

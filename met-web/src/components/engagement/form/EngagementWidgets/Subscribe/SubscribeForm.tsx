@@ -8,7 +8,7 @@ import { WidgetTitle } from '../WidgetTitle';
 import { When } from 'react-if';
 import SubscribeInfoBlock from './SubscribeInfoBlock';
 
-const Form = () => {
+const SubscribeForm = () => {
     const { handleWidgetDrawerOpen } = useContext(WidgetDrawerContext);
     const { handleSubscribeDrawerOpen, subscribeOptions, widget, setSubscribeOptionToEdit } =
         useContext(SubscribeContext);
@@ -87,4 +87,4 @@ const Form = () => {
     );
 };
 
-export default Form;
+export default SubscribeForm;

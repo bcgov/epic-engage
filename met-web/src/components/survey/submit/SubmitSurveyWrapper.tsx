@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 import { Grid } from '@mui/material';
 import { SurveyBanner } from './SurveyBanner';
 import { SurveyForm } from './SurveyForm';
-import { ActionContext } from './ActionContext';
+import { SubmitSurveyContext } from './SubmitSurveyContext';
 import { MetPaper } from 'components/common';
 import { InvalidTokenModal } from './InvalidTokenModal';
 import { useNavigate } from 'react-router';
@@ -10,8 +10,8 @@ import { EngagementLink } from './EngagementLink';
 import { When } from 'react-if';
 import { PreviewBanner } from './PreviewBanner';
 
-const SurveySubmitWrapped = () => {
-    const { savedSurvey, isTokenValid, slug } = useContext(ActionContext);
+const SubmitSurveyWrapper = () => {
+    const { savedSurvey, isTokenValid, slug } = useContext(SubmitSurveyContext);
     const navigate = useNavigate();
     return (
         <Grid container direction="row" justifyContent="flex-start" alignItems="flex-start">
@@ -55,4 +55,4 @@ const SurveySubmitWrapped = () => {
     );
 };
 
-export default SurveySubmitWrapped;
+export default SubmitSurveyWrapper;

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { SubmissionStatusTypes, SUBMISSION_STATUS } from 'constants/engagementStatus';
 import { User } from 'models/user';
-import { ActionContext } from '../ActionContext';
+import { EngagementFormContext } from '../EngagementFormContext';
 import { EngagementTeamMember } from 'models/engagementTeamMember';
 import { getTeamMembers } from 'services/membershipService';
 import { openNotification } from 'services/notificationService/notificationSlice';
@@ -139,7 +139,7 @@ export const EngagementTabsContext = createContext<EngagementTabsContextState>({
 });
 
 export const EngagementTabsContextProvider = ({ children }: { children: React.ReactNode }) => {
-    const { savedEngagement, engagementMetadata } = useContext(ActionContext);
+    const { savedEngagement, engagementMetadata } = useContext(EngagementFormContext);
     const dispatch = useAppDispatch();
     const [engagementFormData, setEngagementFormData] = useState<EngagementFormData>({
         name: savedEngagement.name || '',

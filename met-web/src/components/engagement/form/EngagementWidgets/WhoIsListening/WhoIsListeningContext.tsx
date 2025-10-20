@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
-import { ActionContext } from '../../ActionContext';
+import { EngagementFormContext } from '../../EngagementFormContext';
 import { Contact } from 'models/contact';
 import { useLazyGetContactsQuery } from 'apiManager/apiSlices/contacts';
 
@@ -38,7 +38,7 @@ export const WhoIsListeningContext = createContext<WhoIsListeningContextProps>({
 });
 
 export const WhoIsListeningProvider = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const [getContactsTrigger] = useLazyGetContactsQuery();
     const dispatch = useAppDispatch();
 

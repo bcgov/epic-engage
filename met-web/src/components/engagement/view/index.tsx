@@ -1,12 +1,12 @@
 import React from 'react';
-import { ActionProvider } from './ActionContext';
+import { EngagementViewProvider } from './EngagementViewContext';
 import EngagementView from './EngagementView';
 
 export const Engagement = () => {
     return (
-        <ActionProvider>
+        <EngagementViewProvider>
             <EngagementView />
-        </ActionProvider>
+        </EngagementViewProvider>
     );
 };
 

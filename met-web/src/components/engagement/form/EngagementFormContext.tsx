@@ -23,7 +23,7 @@ import { USER_ROLES } from 'services/userService/constants';
 import { EngagementStatus } from 'constants/engagementStatus';
 
 const CREATE = 'create';
-export const ActionContext = createContext<EngagementContext>({
+export const EngagementFormContext = createContext<EngagementContext>({
     handleCreateEngagementRequest: (_engagement: EngagementForm): Promise<Engagement> => {
         return Promise.reject();
     },
@@ -53,7 +53,7 @@ export const ActionContext = createContext<EngagementContext>({
     loadingAuthorization: true,
 });
 
-export const ActionProvider = ({ children }: { children: JSX.Element }) => {
+export const EngagementFormProvider = ({ children }: { children: JSX.Element }) => {
     const { engagementId } = useParams<EngagementParams>();
     // get projectId from query params
     const { search } = useLocation();
@@ -293,7 +293,7 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
     };
 
     return (
-        <ActionContext.Provider
+        <EngagementFormContext.Provider
             value={{
                 handleCreateEngagementRequest,
                 handleUpdateEngagementRequest,
@@ -311,6 +311,6 @@ export const ActionProvider = ({ children }: { children: JSX.Element }) => {
             }}
         >
             {children}
-        </ActionContext.Provider>
+        </EngagementFormContext.Provider>
     );
 };

@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { Grid, useMediaQuery, Theme } from '@mui/material';
-import { ActionContext } from './ActionContext';
+import { EngagementViewContext } from './EngagementViewContext';
 import { EngagementContent } from './EngagementContent';
 import SurveyBlock from './SurveyBlock';
 import EmailModal from './EmailModal';
@@ -20,7 +20,7 @@ export const EngagementView = () => {
     const [defaultPanel, setDefaultPanel] = useState(state ? 'thank you' : 'email');
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
     const isPreview = isLoggedIn;
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementViewContext);
     const surveyId = savedEngagement.surveys[0]?.id || '';
     const isSmallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
     const navigate = useNavigate();

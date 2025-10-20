@@ -4,7 +4,7 @@ import { MetHeader4, MetParagraph } from 'components/common';
 import { EngagementPhases, PAST_PHASE, ProcessStageProps } from 'models/engagementPhases';
 import { PhaseBoxMobile } from './PhaseBoxMobile';
 import { LearnMoreBox } from '../LearnMoreBox';
-import { ActionContext } from 'components/engagement/view/ActionContext';
+import { EngagementViewContext } from 'components/engagement/view/EngagementViewContext';
 import { Widget, WidgetType } from 'models/widget';
 
 export const EngagementPhaseMobile = ({
@@ -15,7 +15,7 @@ export const EngagementPhaseMobile = ({
     accordionBackground,
     phaseId,
 }: ProcessStageProps) => {
-    const { widgets } = useContext(ActionContext);
+    const { widgets } = useContext(EngagementViewContext);
     const phasesWidget = widgets.find((widget: Widget) => widget.widget_type_id === WidgetType.Phases);
     const currentPhase = phasesWidget?.items[0]?.widget_data_id || EngagementPhases.Standalone;
     const isCurrent = phaseId >= currentPhase;

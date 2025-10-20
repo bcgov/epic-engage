@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
-import { ActionContext } from '../../ActionContext';
+import { EngagementFormContext } from '../../EngagementFormContext';
 import { DocumentItem } from 'models/document';
 import { WidgetDrawerContext } from '../WidgetDrawerContext';
 import { Widget, WidgetType } from 'models/widget';
@@ -50,7 +50,7 @@ export const DocumentsContext = createContext<DocumentsContextProps>({
 export const DocumentsProvider = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
     const dispatch = useAppDispatch();
     const { widgets } = useContext(WidgetDrawerContext);
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const [documentToEdit, setDocumentToEdit] = useState<DocumentItem | null>(null);
     const [documents, setDocuments] = useState<DocumentItem[]>([]);
     const [loadingDocuments, setLoadingDocuments] = useState(true);

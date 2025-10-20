@@ -2,10 +2,10 @@ import React, { useContext } from 'react';
 import { Grid, Typography } from '@mui/material';
 import { modalStyle, PrimaryButton, MetHeader1, MetBody } from 'components/common';
 import { ThankYouPanelProps } from './types';
-import { ActionContext } from './ActionContext';
+import { EngagementViewContext } from './EngagementViewContext';
 
 const ThankYouPanel = ({ handleClose }: ThankYouPanelProps) => {
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementViewContext);
     return (
         <Grid
             container

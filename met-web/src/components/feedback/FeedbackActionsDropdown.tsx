@@ -13,7 +13,7 @@ interface ActionDropDownItem {
     action?: () => void;
     condition?: boolean;
 }
-export const ActionsDropDown = ({ feedback, reload }: { feedback: Feedback; reload: () => void }) => {
+export const FeedbackActionsDropdown = ({ feedback, reload }: { feedback: Feedback; reload: () => void }) => {
     const dispatch = useAppDispatch();
     const isArchived = feedback.status == FeedbackStatusEnum.Archived;
     const canEditFeedback = (): boolean => {

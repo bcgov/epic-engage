@@ -5,7 +5,7 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import { WidgetDrawerContext } from '../WidgetDrawerContext';
 import { WidgetType } from 'models/widget';
 import { Else, If, Then } from 'react-if';
-import { ActionContext } from '../../ActionContext';
+import { EngagementFormContext } from '../../EngagementFormContext';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { optionCardStyle } from '../constants';
@@ -16,7 +16,7 @@ const Title = 'Events';
 const EventsOptionCard = () => {
     const { widgets, loadWidgets, handleWidgetDrawerOpen, handleWidgetDrawerTabValueChange } =
         useContext(WidgetDrawerContext);
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const dispatch = useAppDispatch();
     const [createWidget] = useCreateWidgetMutation();
     const [isCreatingWidget, setIsCreatingWidget] = useState(false);

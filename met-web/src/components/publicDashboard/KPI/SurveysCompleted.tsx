@@ -123,7 +123,7 @@ const SurveysCompleted = ({ engagement, engagementIsLoading }: SurveysCompletedP
                     >
                         <PolarAngleAxis
                             type="number"
-                            domain={[0, emailVerificationData?.value]}
+                            domain={[0, emailVerificationData?.value ?? 0]}
                             angleAxisId={0}
                             tick={false}
                         />

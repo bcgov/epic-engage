@@ -1,13 +1,13 @@
 import React from 'react';
 import { VideoContextProvider } from './VideoContext';
-import Form from './Form';
+import VideoForm from './VideoForm';
 
-export const VideoForm = () => {
+export const VideoWidget = () => {
     return (
         <VideoContextProvider>
-            <Form />
+            <VideoForm />
         </VideoContextProvider>
     );
 };
 
-export default VideoForm;
+export default VideoWidget;

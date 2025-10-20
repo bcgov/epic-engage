@@ -3,7 +3,7 @@ import { MetPaper, MetLabel, MetDescription } from 'components/common';
 import { Grid, CircularProgress } from '@mui/material';
 import { WidgetDrawerContext } from '../WidgetDrawerContext';
 import { WidgetTabValues } from '../type';
-import { ActionContext } from '../../ActionContext';
+import { EngagementFormContext } from '../../EngagementFormContext';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch } from 'hooks';
 import { WidgetType } from 'models/widget';
@@ -14,7 +14,7 @@ import { optionCardStyle } from '../constants';
 
 const Title = 'Environmental Assessment Process';
 const PhasesOptionCard = () => {
-    const { savedEngagement } = useContext(ActionContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const { widgets, loadWidgets, handleWidgetDrawerTabValueChange } = useContext(WidgetDrawerContext);
     const dispatch = useAppDispatch();
     const [createWidget] = useCreateWidgetMutation();

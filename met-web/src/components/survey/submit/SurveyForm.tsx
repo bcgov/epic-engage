@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { Skeleton, Grid, Stack } from '@mui/material';
-import { ActionContext } from './ActionContext';
+import { SubmitSurveyContext } from './SubmitSurveyContext';
 import FormSubmit from 'components/FormBuilder/FormSubmit';
 import { FormSubmissionData } from 'components/FormBuilder/types';
 import { useAppSelector } from 'hooks';
@@ -10,7 +10,7 @@ import { When } from 'react-if';
 
 export const SurveyForm = ({ handleClose }: SurveyFormProps) => {
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
-    const { isSurveyLoading, savedSurvey, handleSubmit, isSubmitting } = useContext(ActionContext);
+    const { isSurveyLoading, savedSurvey, handleSubmit, isSubmitting } = useContext(SubmitSurveyContext);
     const [submissionData, setSubmissionData] = useState<unknown>(null);
     const [isValid, setIsValid] = useState(false);
 
