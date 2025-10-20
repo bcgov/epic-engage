@@ -1,6 +1,6 @@
 import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
-import { filterQueryParams, replaceUrl } from 'helper';
+import { filterQueryParams, replaceUrl } from 'utils/helpers';
 import { PublicSubmission, SurveySubmission } from 'models/surveySubmission';
 import { Comment } from 'models/comment';
 import { Page } from 'services/type';

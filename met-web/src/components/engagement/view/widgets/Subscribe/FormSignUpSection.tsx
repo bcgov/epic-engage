@@ -6,7 +6,7 @@ import { When } from 'react-if';
 import { getEditorStateFromRaw } from 'components/common/RichTextEditor/utils';
 import { Editor } from 'react-draft-wysiwyg';
 import { Widget } from 'models/widget';
-import { getBaseUrl } from 'helper';
+import { getBaseUrl } from 'utils/helpers';
 
 const FormSignUpSection = ({ subscribeOption, widget }: { subscribeOption: SubscribeForm; widget: Widget }) => {
     const handleNavigate = () => {

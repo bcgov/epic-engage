@@ -5,7 +5,7 @@ import { ReactComponent as BCLogo } from 'assets/images/BritishColumbiaLogoDark.
 import { Survey } from 'models/survey';
 import { formatDate } from 'utils/helpers/dateHelper';
 import { useAppSelector } from 'hooks';
-import { TenantState } from 'reduxSlices/tenantSlice';
+import { TenantState } from 'redux/slices/tenantSlice';
 import { EngagementStatus } from 'constants/engagementStatus';
 
 export default function EmailPreview({

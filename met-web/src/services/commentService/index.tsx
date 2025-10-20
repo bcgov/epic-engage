@@ -2,7 +2,7 @@ import http from 'apiManager/httpRequestHandler';
 import { Comment } from 'models/comment';
 import Endpoints from 'apiManager/endpoints';
 
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 import { Page } from 'services/type';
 
 interface GetCommentsParams {

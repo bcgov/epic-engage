@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import { UserResponseDetailByMonth, UserResponseDetailByWeek } from 'models/analytics/userResponseDetail';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 
 export const getUserResponseDetailByMonth = async (
     engagementId: number,

@@ -9,7 +9,7 @@ import { createSubscribeEmailVerification } from 'services/emailVerificationServ
 import { createSubscription } from 'services/subscriptionService';
 import { EmailVerificationType } from 'models/emailVerification';
 import { SubscriptionType } from 'constants/subscriptionType';
-import { TenantState } from 'reduxSlices/tenantSlice';
+import { TenantState } from 'redux/slices/tenantSlice';
 
 const EmailListModal = ({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) => {
     const dispatch = useAppDispatch();

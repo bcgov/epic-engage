@@ -1,6 +1,6 @@
 import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl, replaceAllInURL } from 'helper';
+import { replaceUrl, replaceAllInURL } from 'utils/helpers';
 import { WidgetItem, Widget } from 'models/widget';
 
 export const getWidgets = async (engagement_id: number): Promise<Widget[]> => {

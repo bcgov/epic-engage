@@ -1,6 +1,6 @@
 import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
-import { replaceAllInURL, replaceUrl } from 'helper';
+import { replaceAllInURL, replaceUrl } from 'utils/helpers';
 import { VideoWidget } from 'models/videoWidget';
 
 export const fetchVideoWidgets = async (widget_id: number): Promise<VideoWidget[]> => {

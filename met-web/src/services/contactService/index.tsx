@@ -1,6 +1,6 @@
 import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 import { Contact } from 'models/contact';
 
 /**

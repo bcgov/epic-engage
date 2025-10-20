@@ -1,6 +1,6 @@
 import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl, replaceAllInURL } from 'helper';
+import { replaceUrl, replaceAllInURL } from 'utils/helpers';
 import { Event, EventTypeLabel } from 'models/event';
 
 export const getEvents = async (widget_id: number): Promise<Event[]> => {

@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import loginReducer from 'components/Login/loginSlice';
+import loginReducer from 'redux/slices/loginSlice';
 import userSlice from 'services/userService/userSlice';
 import engagementSlice from 'services/engagementService/engagementSlice';
 import notificationSlice from 'services/notificationService/notificationSlice';
@@ -8,7 +8,7 @@ import { widgetsApi } from 'apiManager/apiSlices/widgets';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { contactsApi } from 'apiManager/apiSlices/contacts';
 import { documentsApi } from 'apiManager/apiSlices/documents';
-import tenantSlice from 'reduxSlices/tenantSlice';
+import tenantSlice from 'redux/slices/tenantSlice';
 
 export const store = configureStore({
     reducer: {

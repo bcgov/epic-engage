@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import { Survey } from 'models/survey';
 import Endpoints from 'apiManager/endpoints';
-import { replaceAllInURL, replaceUrl } from 'helper';
+import { replaceAllInURL, replaceUrl } from 'utils/helpers';
 import { Page } from 'services/type';
 
 interface FetchSurveyParams {

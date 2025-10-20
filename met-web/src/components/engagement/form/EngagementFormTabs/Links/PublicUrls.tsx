@@ -9,7 +9,7 @@ import { openNotification } from 'services/notificationService/notificationSlice
 import { patchEngagementSlug } from 'services/engagementSlugService';
 import axios, { AxiosError } from 'axios';
 import { When } from 'react-if';
-import { getBaseUrl } from 'helper';
+import { getBaseUrl } from 'utils/helpers';
 import { EngagementTabsContext } from '../EngagementTabsContext';
 
 const HttpStatusBadRequest = 400;

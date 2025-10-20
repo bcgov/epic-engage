@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import { DocumentItem, DocumentType } from 'models/document';
 import Endpoints from 'apiManager/endpoints';
-import { replaceAllInURL, replaceUrl } from 'helper';
+import { replaceAllInURL, replaceUrl } from 'utils/helpers';
 
 export const fetchDocuments = async (widget_id: number): Promise<DocumentItem[]> => {
     try {
