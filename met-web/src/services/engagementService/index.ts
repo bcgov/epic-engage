@@ -4,7 +4,7 @@ import { AnyAction, Dispatch } from 'redux';
 import { Engagement } from 'models/engagement';
 import { PatchEngagementRequest, PostEngagementRequest, PutEngagementRequest } from './types';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 import { Page } from 'services/type';
 
 export const fetchAll = async (dispatch: Dispatch<AnyAction>): Promise<Engagement[]> => {

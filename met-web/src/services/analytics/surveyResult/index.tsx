@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import { SurveyResultData } from 'models/analytics/surveyResult';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 
 export const getSurveyResultData = async (engagementId: number, dashboardType: string): Promise<SurveyResultData> => {
     const url = replaceUrl(

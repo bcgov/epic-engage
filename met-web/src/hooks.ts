@@ -1,5 +1,5 @@
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import type { RootState, AppDispatch } from './store';
+import type { RootState, AppDispatch } from './redux/store';
 import { useTranslation } from 'react-i18next';
 import { AppConfig } from 'config';
 

@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
 import { Tenant } from 'models/tenant';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 
 export const getTenant = async (id: string): Promise<Tenant> => {
     const url = replaceUrl(Endpoints.Tenants.GET, 'tenant_id', id);

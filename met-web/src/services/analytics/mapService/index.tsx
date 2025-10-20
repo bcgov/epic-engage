@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import { Map } from 'models/analytics/map';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 
 export const getMapData = async (engagementId: number): Promise<Map> => {
     const url = replaceUrl(Endpoints.AnalyticsMap.GET, 'engagement_id', String(engagementId));

@@ -15,7 +15,7 @@ import http from 'apiManager/httpRequestHandler';
 import { User } from 'models/user';
 import { getMembershipsByUser } from 'services/membershipService';
 import { USER_ROLES } from 'services/userService/constants';
-import { getBaseUrl } from 'helper';
+import { getBaseUrl } from 'utils/helpers';
 
 const KeycloakData = _kc;
 /**

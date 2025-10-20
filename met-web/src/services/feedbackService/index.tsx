@@ -3,7 +3,7 @@ import Endpoints from 'apiManager/endpoints';
 import { Page } from 'services/type';
 import { Feedback } from 'models/feedback';
 import { GetFeedbackRequest, PostFeedbackRequest, UpdateFeedbackRequest } from './types';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 export const getFeedbacksPage = async ({
     page,
     size,
