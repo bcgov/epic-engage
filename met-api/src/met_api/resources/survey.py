@@ -37,7 +37,7 @@ API = Namespace('surveys', description='Endpoints for Survey Management')
 """
 
 
-@cors_preflight('GET,OPTIONS')
+@cors_preflight('GET,DELETE,OPTIONS')
 @API.route('/<survey_id>')
 class Survey(Resource):
     """Resource for managing a single survey."""
@@ -60,6 +60,22 @@ class Survey(Resource):
         except KeyError:
             return 'Survey was not found', HTTPStatus.INTERNAL_SERVER_ERROR
         except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        
+    
+    @staticmethod
+    @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
+    def delete(survey_id):
+        """Delete the survey associated with the provided id."""
+        try:
+            SurveyService().delete(survey_id)
+            return {'message': 'Survey deleted successfully'}, HTTPStatus.OK
+        except KeyError:
+            return 'Survey was not found', HTTPStatus.NOT_FOUND
+        except ValueError as err:
+            return str(err), HTTPStatus.BAD_REQUEST
+        except Exception as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
 

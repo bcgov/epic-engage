@@ -36,11 +36,13 @@ const Surveys = () => {
         setSearchFilter,
         pageInfo,
         tableLoading,
-        surveys,
         searchText,
         setSearchText,
         searchFilter,
+        surveys, // ADD THIS - get surveys from context
+        setSurveys, // ADD THIS - get setSurveys from context
     } = useContext(SurveyListingContext);
+
     const navigate = useNavigate();
 
     const isMediumScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
@@ -65,6 +67,10 @@ const Surveys = () => {
             ...searchFilter,
             value: surveyNameFilter,
         });
+    };
+
+    const handleSurveyDeleted = (surveyId: number) => {
+        setSurveys((prev) => prev.filter((s) => s.id !== surveyId));
     };
 
     const headCells: HeadCell<Survey>[] = [
@@ -373,7 +379,7 @@ const Surveys = () => {
             label: 'Actions',
             allowSort: false,
             renderCell: (row: Survey) => {
-                return <ActionsDropDown survey={row} />;
+                return <ActionsDropDown survey={row} onSurveyDeleted={handleSurveyDeleted} />;
             },
             customStyle: {
                 minWidth: '200px',
