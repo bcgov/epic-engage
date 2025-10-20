@@ -1,7 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { Grid, Stack, TextField, Modal } from '@mui/material';
 import { modalStyle, PrimaryButton, SecondaryButton, MetHeader1, MetBody, MetLabel } from 'components/common';
-import dayjs, { Dayjs } from 'dayjs';
 import { useAppDispatch } from 'hooks';
 import { EngagementStatus } from 'constants/engagementStatus';
 import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
@@ -10,7 +9,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { ActionContext } from 'components/engagement/view/ActionContext';
 import { openNotification } from 'services/notificationService/notificationSlice';
-import { formatToUTC } from 'utils/helpers/dateHelper';
+import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
+import { TIMEZONES } from 'constants/timezones';
 
 interface ScheduleModalProps {
     reschedule: boolean;
@@ -18,8 +18,52 @@ interface ScheduleModalProps {
     updateModal: (open: boolean) => void;
 }
 
+// Helper function to create a Date object that displays Pacific time values in the pickers
+const createPacificDisplayDate = (pacificDate?: Date) => {
+    const sourceDate = pacificDate || new Date();
+
+    // Get the Pacific time components
+    const pacificTime = utcToZonedTime(sourceDate, TIMEZONES.CANADA_PACIFIC);
+
+    // Create a new Date with these components but in local context for the pickers
+    return new Date(
+        pacificTime.getFullYear(),
+        pacificTime.getMonth(),
+        pacificTime.getDate(),
+        pacificTime.getHours(),
+        pacificTime.getMinutes(),
+        pacificTime.getSeconds(),
+    );
+};
+
+// Convert picker date to Pacific timezone for backend
+const convertPickerDateToPacificUTC = (pickerDate: Date) => {
+    // The picker date contains the Pacific time values but in local context
+    // We need to treat these values as Pacific time and convert to UTC
+
+    // Create a date string with the picker values
+    const year = pickerDate.getFullYear();
+    const month = pickerDate.getMonth();
+    const day = pickerDate.getDate();
+    const hours = pickerDate.getHours();
+    const minutes = pickerDate.getMinutes();
+    const seconds = pickerDate.getSeconds();
+
+    // Create a date with these values (this will be in local timezone context)
+    const localDate = new Date(year, month, day, hours, minutes, seconds);
+
+    // Convert this to UTC assuming it represents Pacific time
+    const pacificUTC = zonedTimeToUtc(localDate, TIMEZONES.CANADA_PACIFIC);
+
+    return pacificUTC;
+};
+
 const ScheduleModal = ({ reschedule, open, updateModal }: ScheduleModalProps) => {
-    const [scheduledDate, setScheduledDate] = useState<Dayjs | null>(dayjs(Date.now()));
+    // Initialize with current Pacific time
+    const [scheduledDate, setScheduledDate] = useState<Date>(() => {
+        return createPacificDisplayDate();
+    });
+
     const { savedEngagement, scheduleEngagement } = useContext(ActionContext);
     const dispatch = useAppDispatch();
 
@@ -32,14 +76,17 @@ const ScheduleModal = ({ reschedule, open, updateModal }: ScheduleModalProps) =>
         );
     };
 
-    const handleChange = (newDate: Dayjs | null) => {
+    const handleChange = (newDate: Date | null) => {
         if (newDate != null) {
             setScheduledDate(newDate);
         }
     };
 
     const validateDate = () => {
-        if (scheduledDate && scheduledDate >= dayjs(savedEngagement.end_date)) {
+        const endDate = new Date(savedEngagement.end_date);
+        const pacificUTC = convertPickerDateToPacificUTC(scheduledDate);
+
+        if (pacificUTC && pacificUTC >= endDate) {
             dispatch(
                 openNotification({
                     severity: 'error',
@@ -62,14 +109,18 @@ const ScheduleModal = ({ reschedule, open, updateModal }: ScheduleModalProps) =>
             );
             return;
         }
-        if (validateDate())
+        if (validateDate()) {
+            // Convert picker selection to proper Pacific UTC
+            const pacificUTC = convertPickerDateToPacificUTC(scheduledDate);
+
             await scheduleEngagement({
                 id: savedEngagement.id,
-                scheduled_date: scheduledDate !== null ? formatToUTC(scheduledDate) : '',
+                scheduled_date: pacificUTC.toISOString(),
                 status_id: EngagementStatus.Scheduled,
             });
 
-        updateModal(false);
+            updateModal(false);
+        }
     };
 
     return (
