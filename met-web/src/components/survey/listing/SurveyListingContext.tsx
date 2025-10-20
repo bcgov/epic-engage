@@ -48,6 +48,7 @@ export interface SurveyListingContextState {
     pageInfo: PageInfo;
     setPageInfo: (value: PageInfo) => void;
     tableLoading: boolean;
+    setSurveys: React.Dispatch<React.SetStateAction<Survey[]>>;
     surveys: Survey[];
     initialSearchFilters: AdvancedSearchFilters;
 }
@@ -83,6 +84,9 @@ export const SurveyListingContext = createContext<SurveyListingContextState>({
         throw new Error('setPageInfo not implemented');
     },
     tableLoading: false,
+    setSurveys: () => {
+        throw new Error('setSurveys not implemented');
+    },
     surveys: [],
     initialSearchFilters: initialSearchFilters,
 });
@@ -168,6 +172,7 @@ export const SurveyListingContextProvider = ({ children }: SurveyListingContextP
                 advancedSearchFilters,
                 setAdvancedSearchFilters,
                 surveys,
+                setSurveys,
                 initialSearchFilters,
             }}
         >

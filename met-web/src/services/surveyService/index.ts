@@ -118,3 +118,7 @@ export const unlinkSurvey = async (params: UnlinkPutSurveyRequest): Promise<Surv
     const response = await http.DeleteRequest<Survey>(url);
     return response.data;
 };
+export const deleteSurvey = async (surveyId: number): Promise<void> => {
+    const url = replaceUrl(Endpoints.Survey.DELETE, 'survey_id', String(surveyId));
+    await http.DeleteRequest<void>(url);
+};
