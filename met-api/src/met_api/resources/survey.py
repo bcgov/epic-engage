@@ -61,8 +61,7 @@ class Survey(Resource):
             return 'Survey was not found', HTTPStatus.INTERNAL_SERVER_ERROR
         except ValueError as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
-        
-    
+
     @staticmethod
     @cross_origin(origins=allowedorigins())
     @_jwt.requires_auth
@@ -75,8 +74,6 @@ class Survey(Resource):
             return 'Survey was not found', HTTPStatus.NOT_FOUND
         except ValueError as err:
             return str(err), HTTPStatus.BAD_REQUEST
-        except Exception as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @cors_preflight('GET, POST, PUT, OPTIONS')

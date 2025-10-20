@@ -164,7 +164,7 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
         query.update(update_fields)
         db.session.commit()
         return record
-    
+
     @classmethod
     def delete_survey(cls, survey_id: int) -> bool:
         """Delete survey."""

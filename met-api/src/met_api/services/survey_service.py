@@ -1,7 +1,6 @@
 """Service for survey management."""
 from datetime import timedelta
 from http import HTTPStatus
-from unittest import result
 
 from met_api.constants.engagement_status import Status
 from met_api.constants.membership_type import MembershipType
@@ -210,28 +209,32 @@ class SurveyService:
         })
 
         return updated_survey
-    
+
     @staticmethod
     def delete(survey_id: int):
         """Delete survey."""
         survey = SurveyService.get(survey_id)
         if not survey:
             raise KeyError('Survey to delete was not found')
-        
+
         eng_id = None
         if engagement_id := survey.get('engagement_id', None):
             engagement_model = EngagementModel.find_by_id(engagement_id)
             eng_id = getattr(engagement_model, 'id', None)
 
-        authorization.check_auth(one_of_roles=(MembershipType.TEAM_MEMBER.name,
-                                               Role.CREATE_ADMIN_USER.value), engagement_id=eng_id) # TODO create proper role for delete survey
+        authorization.check_auth(
+            one_of_roles=(
+                MembershipType.TEAM_MEMBER.name,
+                Role.CREATE_ADMIN_USER.value
+            ),
+            engagement_id=eng_id)  # TODO create proper role for delete survey
         if engagement_id:
             raise ValueError('Cannot delete a survey linked to an engagement')
 
-        result = SurveyModel.delete_survey(survey_id)
-        if not result:
+        res = SurveyModel.delete_survey(survey_id)
+        if not res:
             raise ValueError('Failed to delete survey')
-        
+
         return {'message': 'Survey deleted successfully'}
 
     @staticmethod
