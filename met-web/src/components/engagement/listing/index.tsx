@@ -9,7 +9,7 @@ import { MetPageGridContainer, MetTooltip, PrimaryButton, SecondaryButton } from
 import { Engagement } from 'models/engagement';
 import { useAppDispatch, useAppSelector } from 'hooks';
 import { createDefaultPageInfo, HeadCell, PageInfo, PaginationOptions } from 'components/common/Table/types';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import { Link as MuiLink, useMediaQuery, Theme } from '@mui/material';
 import { getEngagements } from 'services/engagementService';
 import SearchIcon from '@mui/icons-material/Search';

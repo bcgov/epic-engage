@@ -100,7 +100,7 @@ jest.mock('apiManager/apiSlices/contacts', () => ({
     useLazyGetContactQuery: () => [...mockLazyGetContactQuery()],
 }));
 
-jest.mock('components/map', () => () => {
+jest.mock('components/MetMap', () => () => {
     return <div></div>;
 });
 

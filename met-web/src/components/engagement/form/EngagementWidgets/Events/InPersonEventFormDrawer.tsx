@@ -13,7 +13,7 @@ import ControlledTextField from 'components/common/ControlledInputComponents/Con
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { postEvent, patchEvent, PatchEventProps } from 'services/widgetService/EventService';
 import { Event, EVENT_TYPE } from 'models/event';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import { formEventDates, getDateInTimezone } from './utils';
 import { updatedDiff } from 'deep-object-diff';
 import ControlledSelect from 'components/common/ControlledInputComponents/ControlledSelect';

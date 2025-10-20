@@ -70,7 +70,7 @@ jest.mock('@reduxjs/toolkit/query/react', () => ({
     fetchBaseQuery: jest.fn(),
 }));
 
-jest.mock('components/map', () => () => {
+jest.mock('components/MetMap', () => () => {
     return <div></div>;
 });
 

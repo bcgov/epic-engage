@@ -17,7 +17,7 @@ import { MetParagraph, MetLabel } from 'components/common';
 import { EngagementDisplayStatus } from 'constants/engagementStatus';
 import { PrimaryButton, SecondaryButton } from '../../../common';
 import dayjs from 'dayjs';
-import { formatToUTC } from 'components/common/dateHelper';
+import { formatToUTC } from 'utils/helpers/dateHelper';
 import { SearchOptions } from './SearchTypes';
 import { AppConfig } from 'config';
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { EventItem } from 'models/event';
 import { Grid } from '@mui/material';
 import { MetBody } from 'components/common';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import { TIMEZONE_OPTIONS } from 'constants/timezones';
 import { getDateInTimezone } from 'components/engagement/form/EngagementWidgets/Events/utils';
 

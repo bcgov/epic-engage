@@ -5,7 +5,7 @@ import { Link as MuiLink } from '@mui/material';
 import MetTable from 'components/common/Table';
 import { EngagementTabsContext } from '../EngagementTabsContext';
 import { ENGAGEMENT_MEMBERSHIP_STATUS_NAME, EngagementTeamMember } from 'models/engagementTeamMember';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import { ActionsDropDown } from 'components/engagement/form/EngagementFormTabs/UserManagement/ActionsDropDown';
 
 const TeamMemberListing = () => {

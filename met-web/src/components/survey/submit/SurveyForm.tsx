@@ -1,8 +1,8 @@
 import React, { useContext, useState } from 'react';
 import { Skeleton, Grid, Stack } from '@mui/material';
 import { ActionContext } from './ActionContext';
-import FormSubmit from 'components/Form/FormSubmit';
-import { FormSubmissionData } from 'components/Form/types';
+import FormSubmit from 'components/FormBuilder/FormSubmit';
+import { FormSubmissionData } from 'components/FormBuilder/types';
 import { useAppSelector } from 'hooks';
 import { PrimaryButton, SecondaryButton } from 'components/common';
 import { SurveyFormProps } from '../types';

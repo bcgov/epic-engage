@@ -9,7 +9,7 @@ import { MetBody, MetHeader4, MetLabel, MetParagraph, PrimaryButton, SecondaryBu
 import { getEngagement } from 'services/engagementService';
 import { If, Then, When } from 'react-if';
 import dayjs from 'dayjs';
-import { EngagementStatusChip } from 'components/engagement/status';
+import { EngagementStatusChip } from 'components/engagement/EngagementStatusChip';
 import { SubmissionStatus } from 'constants/engagementStatus';
 import { TileSkeleton } from './TileSkeleton';
 import { getSlugByEngagementId } from 'services/engagementSlugService';

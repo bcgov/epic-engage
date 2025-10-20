@@ -52,7 +52,7 @@ jest.mock('@mui/material', () => ({
     },
 }));
 
-jest.mock('components/map', () => () => {
+jest.mock('components/MetMap', () => () => {
     return <div></div>;
 });
 
