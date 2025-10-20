@@ -5,7 +5,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom/client';
 import createWcTheme from '../styles/wcTheme';
-import { store } from '../../store';
+import { store } from '../../redux/store';
 import { ConvertedProp, EventMap } from '../types/web-component-types';
 
 class WCBaseELement extends HTMLElement {

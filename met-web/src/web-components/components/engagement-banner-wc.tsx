@@ -6,7 +6,7 @@ import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom/client';
 import { EngagementBanner } from '../../components/engagement/view/EngagementBanner/StandAloneBanner';
 import createWcTheme from '../styles/wcTheme';
-import { store } from '../../store';
+import { store } from '../../redux/store';
 import { PrimaryButton } from 'components/common';
 import { Grid } from '@mui/material';
 import { ConvertedProp, EventMap } from '../types/web-component-types';

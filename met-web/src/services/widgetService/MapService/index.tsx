@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import { WidgetMap } from 'models/widgetMap';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 import { GeoJSON } from 'geojson';
 
 export const fetchMaps = async (widget_id: number): Promise<WidgetMap[]> => {

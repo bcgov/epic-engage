@@ -6,7 +6,7 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import EditIcon from '@mui/icons-material/Edit';
 import { When } from 'react-if';
 import { Event } from 'models/event';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import { EventsContext } from './EventsContext';
 import { TIMEZONE_OPTIONS } from 'constants/timezones';
 import { getDateInTimezone } from './utils';

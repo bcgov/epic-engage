@@ -4,7 +4,7 @@ import { Grid, Skeleton, Divider, Box, IconButton, Link, useMediaQuery, Theme } 
 import { Widget } from 'models/widget';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
-import MetMap from 'components/map';
+import MetMap from 'components/MetMap';
 import { fetchMaps } from 'services/widgetService/MapService';
 import { WidgetMap } from 'models/widgetMap';
 import OpenWithIcon from '@mui/icons-material/OpenWith';

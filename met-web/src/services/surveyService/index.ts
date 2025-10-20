@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import { Survey } from 'models/survey';
 import Endpoints from 'apiManager/endpoints';
-import { replaceAllInURL, replaceUrl } from 'helper';
+import { replaceAllInURL, replaceUrl } from 'utils/helpers';
 import { Page } from 'services/type';
 
 interface FetchSurveyParams {
@@ -117,4 +117,8 @@ export const unlinkSurvey = async (params: UnlinkPutSurveyRequest): Promise<Surv
 
     const response = await http.DeleteRequest<Survey>(url);
     return response.data;
+};
+export const deleteSurvey = async (surveyId: number): Promise<void> => {
+    const url = replaceUrl(Endpoints.Survey.DELETE, 'survey_id', String(surveyId));
+    await http.DeleteRequest<void>(url);
 };

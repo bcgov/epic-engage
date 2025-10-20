@@ -1,7 +1,7 @@
 import React from 'react';
 import { Grid, Link } from '@mui/material';
 import { MetBody } from 'components/common';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import { EventProps } from './InPersonEvent';
 import { TIMEZONE_OPTIONS } from 'constants/timezones';
 import { getDateInTimezone } from 'components/engagement/form/EngagementWidgets/Events/utils';

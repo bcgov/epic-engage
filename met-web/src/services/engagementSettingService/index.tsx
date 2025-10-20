@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import { EngagementSettings } from 'models/engagement';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 
 export const getEngagementSettings = async (engagementId: number): Promise<EngagementSettings> => {
     const url = replaceUrl(Endpoints.EngagementSettings.GET, 'engagement_id', String(engagementId));

@@ -1,30 +1,30 @@
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
-import NotFound from './NotFound';
-import EngagementForm from '../components/engagement/form';
-import EngagementListing from '../components/engagement/listing';
-import EngagementView from '../components/engagement/view';
+import NotFound from '../status/NotFound';
+import EngagementForm from '../../components/engagement/form';
+import EngagementListing from '../../components/engagement/listing';
+import EngagementView from '../../components/engagement/view';
 import SurveyListing from 'components/survey/listing';
 import CreateSurvey from 'components/survey/create';
 import SurveyFormBuilder from 'components/survey/building';
 import SurveySubmit from 'components/survey/submit';
-import CommentReview from 'components/comments/admin/review/CommentReview';
-import CommentReviewListing from 'components/comments/admin/reviewListing';
-import CommentTextListing from 'components/comments/admin/textListing';
+import CommentReview from 'components/comments/admin/CommentReview';
+import CommentReviewListing from 'components/comments/admin/SubmissionListing';
+import CommentTextListing from 'components/comments/admin/CommentTextListing';
 import PublicDashboard from 'components/publicDashboard';
-import EngagementComments from '../components/engagement/dashboard/comment';
-import UnderConstruction from './UnderConstruction';
+import EngagementComments from '../../components/engagement/dashboard/comment';
+import UnderConstruction from '../status/UnderConstruction';
 import FeedbackListing from 'components/feedback/listing';
 import UserManagementListing from 'components/userManagement/listing';
 import Dashboard from 'components/dashboard';
-import Unauthorized from './Unauthorized';
+import Unauthorized from '../status/Unauthorized';
 import AuthGate from './AuthGate';
 import { USER_ROLES } from 'services/userService/constants';
 import UserProfile from 'components/userManagement/userDetails';
 import ScrollToTop from 'components/scrollToTop';
 import ReportSettings from 'components/survey/report';
 import FormioListener from 'components/FormioListener';
-import Images from 'components/image/listing';
+import Images from 'components/ImageManagement/ImageListing';
 
 const AuthenticatedRoutes = () => {
     return (

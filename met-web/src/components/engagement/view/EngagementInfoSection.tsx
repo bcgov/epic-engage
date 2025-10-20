@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { Grid, Stack } from '@mui/material';
 import { MetHeader1, MetLabel } from 'components/common';
-import { EngagementStatusChip } from '../status';
+import { EngagementStatusChip } from '../EngagementStatusChip';
 import { Editor } from 'react-draft-wysiwyg';
 import dayjs from 'dayjs';
 import { ActionContext } from './ActionContext';

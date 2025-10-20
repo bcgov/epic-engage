@@ -170,6 +170,17 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
         return record
 
     @classmethod
+    def delete_survey(cls, survey_id: int) -> bool:
+        """Delete survey."""
+        query = Survey.query.filter_by(id=survey_id)
+        record = query.first()
+        if not record:
+            return False
+        query.delete()
+        db.session.commit()
+        return True
+
+    @classmethod
     def link_survey(cls, survey_id, engagement_id) -> Optional[Survey or None]:
         """Link survey to engagement."""
         query = Survey.query.filter_by(id=survey_id)

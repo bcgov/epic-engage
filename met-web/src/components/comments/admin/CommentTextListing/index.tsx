@@ -14,12 +14,12 @@ import { Link as MuiLink, Grid, Stack, TextField, Menu, MenuItem } from '@mui/ma
 import SearchIcon from '@mui/icons-material/Search';
 import { useAppDispatch, useAppSelector } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
-import { CommentStatusChip } from '../../status';
+import { CommentStatusChip } from '../CommentStatusChip';
 import { CommentStatus } from 'constants/commentStatus';
 import { If, Then, Else, When } from 'react-if';
 import { getSubmissionPage } from 'services/submissionService';
 import { SurveySubmission } from 'models/surveySubmission';
-import { formatDate, formatToUTC } from 'components/common/dateHelper';
+import { formatDate, formatToUTC } from 'utils/helpers/dateHelper';
 import { USER_ROLES } from 'services/userService/constants';
 import { USER_GROUP } from 'models/user';
 import { updateURLWithPagination } from 'components/common/Table/utils';

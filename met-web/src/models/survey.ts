@@ -1,4 +1,4 @@
-import { FormBuilderData } from 'components/Form/types';
+import { FormBuilderData } from 'components/FormBuilder/types';
 import { createDefaultEngagement, Engagement } from './engagement';
 
 export interface Survey {

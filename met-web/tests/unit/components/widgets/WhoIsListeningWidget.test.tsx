@@ -60,7 +60,7 @@ const mockEngagementSettings: EngagementSettings = {
 
 jest.mock('axios');
 
-jest.mock('components/map', () => () => {
+jest.mock('components/MetMap', () => () => {
     return <div></div>;
 });
 

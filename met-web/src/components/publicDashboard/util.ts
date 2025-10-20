@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf';
 import * as htmlToImage from 'html-to-image';
 import { Map } from 'maplibre-gl';
-import { MAP_STYLE } from 'components/map';
+import { MAP_STYLE } from 'components/MetMap';
 import { Map as IMap } from 'models/analytics/map';
 import { geoJSONDecode, calculateZoomLevel } from 'components/engagement/form/EngagementWidgets/Map/utils';
 import { Palette } from 'styles/Theme';

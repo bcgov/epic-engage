@@ -1,6 +1,6 @@
 import { Grid, Typography } from '@mui/material';
 import React from 'react';
-import { IProps } from './types';
+import { IProps } from '../auth/types';
 import RoofingIcon from '@mui/icons-material/Roofing';
 
 const UnderConstruction = React.memo(({ errorMessage = 'This page is under construction' }: IProps) => {

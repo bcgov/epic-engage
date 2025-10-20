@@ -5,10 +5,10 @@ import * as reactRedux from 'react-redux';
 import * as notificationSlice from 'services/notificationService/notificationSlice';
 import * as imageService from 'services/imageService';
 import { setupEnv } from '../setEnvVars';
-import ImageListing from 'components/image/listing/ImageListing';
-import { ImageProvider } from 'components/image/listing/ImageContext';
+import ImageListing from 'components/ImageManagement/ImageListing';
+import { ImageProvider } from 'components/ImageManagement/ImageListing/ImageContext';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import assert from 'assert';
 
 const mockImageOne = {

@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import HelpIcon from '@mui/icons-material/Help';
 import { useNavigate, useParams } from 'react-router-dom';
-import FormBuilder from 'components/Form/FormBuilder';
+import FormBuilder from 'components/FormBuilder';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import ClearIcon from '@mui/icons-material/Clear';
 import { SurveyParams } from '../types';
@@ -22,7 +22,7 @@ import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { MetHeader3, MetPageGridContainer, PrimaryButton, SecondaryButton } from 'components/common';
 import FormBuilderSkeleton from './FormBuilderSkeleton';
-import { FormBuilderData } from 'components/Form/types';
+import { FormBuilderData } from 'components/FormBuilder/types';
 import { EngagementStatus } from 'constants/engagementStatus';
 import { getEngagement } from 'services/engagementService';
 import { Engagement } from 'models/engagement';

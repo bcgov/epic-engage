@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Typography, Grid, TextField, Stack, Box } from '@mui/material';
 import { MetPaper, MetLabel, PrimaryButton, SecondaryButton, MetDescription } from '../../../common';
 import { ActionContext } from '../ActionContext';
-import ImageUpload from 'components/imageUpload';
+import ImageUpload from 'components/ImageManagement/ImageUpload';
 import { useNavigate } from 'react-router-dom';
 import { SurveyBlock } from './SurveyBlock';
 import { If, Then, Else } from 'react-if';

@@ -2,18 +2,15 @@ import React, { useContext } from 'react';
 import Grid from '@mui/material/Grid';
 import { ImageContext } from './ImageContext';
 import { HeaderTitle, MetPageGridContainer, MetParagraph, PrimaryButton } from 'components/common';
-import ImageUpload from '../../imageUpload';
+import ImageUpload from '../../ImageManagement/ImageUpload';
 import { IconButton, Stack, TextField } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import { Search as SearchIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import MetTable from 'components/common/Table';
 import { HeadCell, PaginationOptions } from 'components/common/Table/types';
 import { ImageInfo } from 'models/image';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Else, If, Then } from 'react-if';
-import { openNotification } from 'services/notificationService/notificationSlice';
-import { useAppDispatch } from 'hooks';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 
 const ImageListing = () => {
     const {
@@ -29,13 +26,6 @@ const ImageListing = () => {
         handleUploadImage,
         imageToUpload,
     } = useContext(ImageContext);
-
-    const dispatch = useAppDispatch();
-
-    const copyToClipBoard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        dispatch(openNotification({ severity: 'success', text: 'URL copied to clipboard' }));
-    };
 
     const headCells: HeadCell<ImageInfo>[] = [
         {
@@ -89,8 +79,13 @@ const ImageListing = () => {
                 <Grid container direction={'row'} gap={1} alignItems={'center'}>
                     <Grid item>{row.url}</Grid>
                     <Grid item>
-                        <IconButton onClick={() => copyToClipBoard(row.url)}>
-                            <ContentCopyIcon />
+                        <IconButton
+                            component="a"
+                            href={imageToDisplay?.url ?? ''}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <OpenInNewIcon />
                         </IconButton>
                     </Grid>
                 </Grid>
@@ -161,8 +156,13 @@ const ImageListing = () => {
                             sx={{ height: 100 }}
                         >
                             <MetParagraph>{imageToDisplay?.url}</MetParagraph>
-                            <IconButton onClick={() => copyToClipBoard(imageToDisplay?.url ?? '')}>
-                                <ContentCopyIcon />
+                            <IconButton
+                                component="a"
+                                href={imageToDisplay?.url ?? ''}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <OpenInNewIcon />
                             </IconButton>
                         </Stack>
                     </Grid>

@@ -8,7 +8,7 @@ import { SubmissionStatus, EngagementStatus } from 'constants/engagementStatus';
 import { Palette } from 'styles/Theme';
 import { getFormsSheet } from 'services/FormCAC';
 import { openNotification } from 'services/notificationService/notificationSlice';
-import { formatToUTC } from 'components/common/dateHelper';
+import { formatToUTC } from 'utils/helpers/dateHelper';
 import { downloadFile } from 'utils';
 
 interface ActionDropDownItem {

@@ -1,6 +1,6 @@
 import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 import { EmailVerification, EmailVerificationType } from 'models/emailVerification';
 
 export const getEmailVerification = async (token: string): Promise<EmailVerification> => {

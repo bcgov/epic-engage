@@ -3,7 +3,7 @@ import Modal from '@mui/material/Modal';
 import { Box, Paper } from '@mui/material';
 import { modalStyle } from 'components/common';
 import { MapContext } from './MapContext';
-import MetMap from 'components/map';
+import MetMap from 'components/MetMap';
 
 export const PreviewModal = () => {
     const { previewMapOpen, setPreviewMapOpen, previewMap, zoomLevel, mapHeight, mapWidth } = useContext(MapContext);

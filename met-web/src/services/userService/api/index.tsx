@@ -2,7 +2,7 @@ import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
 import { Page } from 'services/type';
 import { User } from 'models/user';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 import { Engagement } from 'models/engagement';
 
 interface GetUserListParams {

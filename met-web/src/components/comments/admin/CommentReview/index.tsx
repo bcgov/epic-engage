@@ -31,7 +31,7 @@ import {
 } from 'components/common';
 import { CommentStatus } from 'constants/commentStatus';
 import { StaffNoteType } from 'constants/staffNoteType';
-import { formatDate } from 'components/common/dateHelper';
+import { formatDate } from 'utils/helpers/dateHelper';
 import { CommentReviewSkeleton } from './CommentReviewSkeleton';
 import { createDefaultSubmission, SurveySubmission } from 'models/surveySubmission';
 import { createDefaultReviewNote, createDefaultInternalNote, StaffNote } from 'models/staffNote';

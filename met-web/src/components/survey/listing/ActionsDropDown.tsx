@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { USER_ROLES } from 'services/userService/constants';
 import { MenuItem, Select } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -6,6 +6,7 @@ import { useAppSelector } from 'hooks';
 import { SubmissionStatus, EngagementStatus } from 'constants/engagementStatus';
 import { Palette } from 'styles/Theme';
 import { Survey } from 'models/survey';
+import { DeleteSurveyModal } from './DeleteSurveyModal';
 
 interface ActionDropDownItem {
     value: number;
@@ -13,9 +14,16 @@ interface ActionDropDownItem {
     action?: () => void;
     condition?: boolean;
 }
-export const ActionsDropDown = ({ survey }: { survey: Survey }) => {
+export const ActionsDropDown = ({
+    survey,
+    onSurveyDeleted,
+}: {
+    survey: Survey;
+    onSurveyDeleted: (surveyId: number) => void;
+}) => {
     const navigate = useNavigate();
     const { roles, assignedEngagements } = useAppSelector((state) => state.user);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const engagement = survey.engagement;
     const engagementId = engagement?.id ?? 0;
     const submissionHasBeenOpened =
@@ -67,6 +75,21 @@ export const ActionsDropDown = ({ survey }: { survey: Survey }) => {
         );
     };
 
+    const handleSurveyDeleted = () => {
+        onSurveyDeleted(survey.id);
+    };
+
+    const canDeleteSurvey = (): boolean => {
+        if (!roles.includes(USER_ROLES.CREATE_ADMIN_USER)) {
+            // TODO create a specific role for deleting surveys
+            return false;
+        }
+        if (isEngagementDraft || engagement === null) {
+            return true;
+        }
+        return false;
+    };
+
     const ITEMS: ActionDropDownItem[] = useMemo(
         () => [
             {
@@ -109,26 +132,42 @@ export const ActionsDropDown = ({ survey }: { survey: Survey }) => {
                 },
                 condition: canEditSurvey(),
             },
+            {
+                value: 6,
+                label: 'Delete Survey',
+                action: () => {
+                    setDeleteModalOpen(true);
+                },
+                condition: canDeleteSurvey(),
+            },
         ],
         [engagementId],
     );
 
     return (
-        <Select
-            id={`action-drop-down-${survey.id}`}
-            value={0}
-            fullWidth
-            size="small"
-            sx={{ backgroundColor: 'white', color: Palette.info.main }}
-        >
-            <MenuItem value={0} sx={{ fontStyle: 'italic', height: '2em' }} color="info" disabled>
-                {'(Select One)'}
-            </MenuItem>
-            {ITEMS.filter((item) => item.condition).map((item) => (
-                <MenuItem key={item.value} value={item.value} onClick={item.action}>
-                    {item.label}
+        <>
+            <Select
+                id={`action-drop-down-${survey.id}`}
+                value={0}
+                fullWidth
+                size="small"
+                sx={{ backgroundColor: 'white', color: Palette.info.main }}
+            >
+                <MenuItem value={0} sx={{ fontStyle: 'italic', height: '2em' }} color="info" disabled>
+                    {'(Select One)'}
                 </MenuItem>
-            ))}
-        </Select>
+                {ITEMS.filter((item) => item.condition).map((item) => (
+                    <MenuItem key={item.value} value={item.value} onClick={item.action}>
+                        {item.label}
+                    </MenuItem>
+                ))}
+            </Select>
+            <DeleteSurveyModal
+                open={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onDelete={handleSurveyDeleted}
+                survey={survey}
+            />
+        </>
     );
 };

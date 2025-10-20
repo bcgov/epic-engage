@@ -3,7 +3,7 @@ import { ListItemButton, ListItem } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import { Palette } from '../../../styles/Theme';
 import { MetHeader4 } from 'components/common';
-import { levenshteinDistance } from 'helper';
+import { levenshteinDistance } from 'utils/helpers';
 
 const THRESHOLD_SIMILARITY_SCORE = 10;
 const HELP_URL = 'https://bcgov.github.io/epic-engage-guide';

@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import { EngagementMetadata } from 'models/engagement';
 import Endpoints from 'apiManager/endpoints';
-import { replaceUrl } from 'helper';
+import { replaceUrl } from 'utils/helpers';
 
 export const getEngagementMetadata = async (engagementId: number): Promise<EngagementMetadata> => {
     const url = replaceUrl(Endpoints.EngagementMetadata.GET, 'engagement_id', String(engagementId));
