@@ -1,7 +1,7 @@
 import { render, waitFor, screen, fireEvent } from '@testing-library/react';
 import React, { ReactNode } from 'react';
 import '@testing-library/jest-dom';
-import Dashboard from 'components/dashboard';
+import Dashboard from 'components/admin/dashboard';
 import { setupEnv } from '../setEnvVars';
 import * as reactRedux from 'react-redux';
 import * as engagementService from 'services/engagementService';
@@ -20,8 +20,8 @@ jest.mock('@mui/material', () => ({
 
 jest.mock('axios')
 
-jest.mock('components/common', () => ({
-    ...jest.requireActual('components/common'),
+jest.mock('components/shared/common', () => ({
+    ...jest.requireActual('components/shared/common'),
     PrimaryButton: ({ children, ...rest }: { children: ReactNode;[prop: string]: unknown }) => {
         return <button {...rest}>{children}</button>;
     },

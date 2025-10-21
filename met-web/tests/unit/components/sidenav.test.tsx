@@ -1,10 +1,10 @@
 import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 import React from 'react';
 import '@testing-library/jest-dom';
-import SideNav from '../../../src/components/layout/SideNav/SideNav';
+import SideNav from 'components/shared/layout/SideNav/SideNav';
 import ProviderShell from './ProviderShell';
 import { setupEnv } from './setEnvVars';
-import { Routes } from '../../../src/components/layout/SideNav/SideNavElements';
+import { Routes } from 'components/shared/layout/SideNav/SideNavElements';
 import { USER_ROLES } from 'services/userService/constants';
 
 const drawerWidth = 280;

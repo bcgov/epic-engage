@@ -1,7 +1,7 @@
 import React from 'react';
 import { Grid } from '@mui/material';
-import { MetHeader1, MetParagraph, MetLabel } from 'components/common';
-import { Banner } from 'components/banner/Banner';
+import { MetHeader1, MetParagraph, MetLabel } from 'components/shared/common';
+import { Banner } from 'components/shared/banner/Banner';
 import LandingPageBanner from 'assets/images/LandingPageBanner.png';
 import { useAppSelector } from 'hooks';
 

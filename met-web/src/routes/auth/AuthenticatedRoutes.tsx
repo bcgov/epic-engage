@@ -1,30 +1,30 @@
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import NotFound from '../status/NotFound';
-import EngagementForm from '../../components/engagement/form';
-import EngagementListing from '../../components/engagement/listing';
-import EngagementView from '../../components/engagement/view';
-import SurveyListing from 'components/survey/listing';
-import CreateSurvey from 'components/survey/create';
-import SurveyFormBuilder from 'components/survey/building';
-import SubmitSurvey from 'components/survey/submit';
-import CommentReview from 'components/comments/admin/CommentReview';
-import CommentReviewListing from 'components/comments/admin/SubmissionListing';
-import CommentTextListing from 'components/comments/admin/CommentTextListing';
-import PublicDashboard from 'components/publicDashboard';
-import EngagementComments from '../../components/engagement/comment';
-import UnderConstruction from '../status/UnderConstruction';
-import FeedbackListing from 'components/feedback/FeedbackListing';
-import UserManagementListing from 'components/userManagement/listing';
-import Dashboard from 'components/dashboard';
-import Unauthorized from '../status/Unauthorized';
+import EngagementForm from 'components/admin/engagement/form';
+import EngagementListing from 'components/admin/engagement/listing';
+import EngagementView from 'components/public/engagement/view';
+import SurveyListing from 'components/admin/survey/listing';
+import CreateSurvey from 'components/admin/survey/create';
+import SurveyFormBuilder from 'components/admin/survey/building';
+import SubmitSurvey from 'components/public/survey/submit';
+import CommentReview from 'components/admin/comments/admin/CommentReview';
+import CommentReviewListing from 'components/admin/comments/admin/SubmissionListing';
+import CommentTextListing from 'components/admin/comments/admin/CommentTextListing';
+import PublicDashboard from 'components/public/dashboard';
+import EngagementComments from 'components/public/engagement/comments';
+import { UnderConstruction } from 'routes';
+import FeedbackListing from 'components/admin/feedback/FeedbackListing';
+import UserManagementListing from 'components/admin/userManagement/listing';
+import AdminDashboard from 'components/admin/dashboard';
+import { Unauthorized } from 'routes';
 import AuthGate from './AuthGate';
 import { USER_ROLES } from 'services/userService/constants';
-import UserProfile from 'components/userManagement/userDetails';
+import UserProfile from 'components/admin/userManagement/userDetails';
 import { ScrollToTop } from 'routes';
-import ReportSettings from 'components/survey/report';
-import FormioListener from 'components/FormioListener';
-import Images from 'components/ImageManagement/ImageListing';
+import ReportSettings from 'components/admin/survey/report';
+import { FormioListener } from 'routes';
+import Images from 'components/admin/imageManagement/ImageListing';
 
 const AuthenticatedRoutes = () => {
     return (
@@ -32,7 +32,7 @@ const AuthenticatedRoutes = () => {
             <ScrollToTop />
             <FormioListener />
             <Routes>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<AdminDashboard />} />
                 <Route path="/engagements" element={<EngagementListing />} />
                 <Route path="/surveys" element={<SurveyListing />} />
                 <Route path="/surveys/create" element={<CreateSurvey />} />

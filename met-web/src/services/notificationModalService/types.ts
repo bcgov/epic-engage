@@ -1,4 +1,4 @@
-import { ModalSubtext } from 'components/common/Notifications/types';
+import { ModalSubtext } from 'components/shared/common/Notifications/types';
 
 export interface ModalProps {
     header: string;

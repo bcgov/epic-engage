@@ -1,7 +1,7 @@
 import { render, waitFor, screen } from '@testing-library/react';
 import React, { ReactNode } from 'react';
 import '@testing-library/jest-dom';
-import EngagementView from 'components/engagement/view';
+import EngagementView from 'components/public/engagement/view';
 import { Contact } from 'models/contact';
 import { setupEnv } from '../setEnvVars';
 import * as reactRedux from 'react-redux';
@@ -100,12 +100,12 @@ jest.mock('apiManager/apiSlices/contacts', () => ({
     useLazyGetContactQuery: () => [...mockLazyGetContactQuery()],
 }));
 
-jest.mock('components/MetMap', () => () => {
+jest.mock('components/admin/MetMap', () => () => {
     return <div></div>;
 });
 
-jest.mock('components/permissionsGate', () => ({
-    ...jest.requireActual('components/permissionsGate'),
+jest.mock('components/shared/permissionsGate', () => ({
+    ...jest.requireActual('components/shared/permissionsGate'),
     PermissionsGate: ({ children }: { children: ReactNode }) => {
         return <>{children}</>;
     },

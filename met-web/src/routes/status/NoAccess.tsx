@@ -1,6 +1,6 @@
 import { Grid, Stack, Toolbar } from '@mui/material';
 import React from 'react';
-import { MetHeader1, MetHeader4 } from 'components/common';
+import { MetHeader1, MetHeader4 } from 'components/shared/common';
 
 const NoAccess = () => {
     return (

@@ -4,7 +4,7 @@ import { render, fireEvent, waitFor, screen } from '@testing-library/react';
 // add custom jest matchers from jest-dom
 import '@testing-library/jest-dom';
 // the component to test
-import { PrimaryButton } from 'components/common';
+import { PrimaryButton } from 'components/shared/common';
 
 test('loads and displays greeting', async () => {
     render(

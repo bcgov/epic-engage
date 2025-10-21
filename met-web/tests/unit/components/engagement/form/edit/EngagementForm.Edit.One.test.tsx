@@ -1,7 +1,7 @@
 import { render, waitFor, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import '@testing-library/jest-dom';
-import EngagementForm from '../../../../../../src/components/engagement/form';
+import EngagementForm from 'components/admin/engagement/form';
 import { setupEnv } from '../../../setEnvVars';
 import * as reactRedux from 'react-redux';
 import * as reactRouter from 'react-router';
@@ -40,8 +40,8 @@ jest.mock('react-redux', () => ({
     }),
 }));
 
-jest.mock('components/common/Dragdrop', () => ({
-    ...jest.requireActual('components/common/Dragdrop'),
+jest.mock('components/shared/common/Dragdrop', () => ({
+    ...jest.requireActual('components/shared/common/Dragdrop'),
     MetDroppable: ({ children }: { children: React.ReactNode }) => <Box>{children}</Box>,
     MetDraggable: ({ children }: { children: React.ReactNode }) => <Box>{children}</Box>,
 }));
@@ -56,7 +56,7 @@ jest.mock('@reduxjs/toolkit/query/react', () => ({
     fetchBaseQuery: jest.fn(),
 }));
 
-jest.mock('components/MetMap', () => () => {
+jest.mock('components/admin/MetMap', () => () => {
     return <Box></Box>;
 });
 

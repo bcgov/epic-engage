@@ -1,6 +1,6 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import LoggedInHeader from '../../../src/components/layout/Header/InternalHeader';
+import LoggedInHeader from 'components/shared/layout/Header/InternalHeader';
 import { render, waitFor, screen } from '@testing-library/react';
 import ProviderShell from './ProviderShell';
 import { setupEnv } from './setEnvVars';

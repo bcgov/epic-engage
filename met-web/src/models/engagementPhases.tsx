@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { Grid } from '@mui/material';
-import { MetParagraph } from 'components/common';
+import { MetParagraph } from 'components/shared/common';
 
 export enum EngagementPhases {
     Standalone = 0,

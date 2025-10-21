@@ -9,8 +9,8 @@ import * as submissionService from 'services/submissionService';
 import { createDefaultSurvey } from 'models/survey';
 import { createDefaultSubmission } from 'models/surveySubmission';
 import { createDefaultComment } from 'models/comment';
-import SubmissionListing from 'components/comments/admin/SubmissionListing';
-import CommentTextListing from 'components/comments/admin/CommentTextListing';
+import SubmissionListing from 'components/admin/comments/admin/SubmissionListing';
+import CommentTextListing from 'components/admin/comments/admin/CommentTextListing';
 import * as utils from 'utils';
 import { USER_ROLES } from 'services/userService/constants';
 import { AxiosResponse } from 'axios';
@@ -48,8 +48,8 @@ jest.mock('@mui/material', () => ({
 
 jest.mock('axios');
 
-jest.mock('components/common', () => ({
-    ...jest.requireActual('components/common'),
+jest.mock('components/shared/common', () => ({
+    ...jest.requireActual('components/shared/common'),
     PrimaryButton: ({ children }: { children: ReactNode }) => {
         return <button>{children}</button>;
     },
