@@ -80,10 +80,28 @@ const ImageListing = () => {
                     <Grid item>{row.url}</Grid>
                     <Grid item>
                         <IconButton
-                            component="a"
-                            href={imageToDisplay?.url ?? ''}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            onClick={() => {
+                                const url = row?.url ?? '';
+                                const newWindow = window.open();
+                                if (newWindow) {
+                                    newWindow.document.write(`
+                            <!DOCTYPE html>
+                            <html>
+                                <head>
+                                <title>Image</title>
+                                <style>
+                                    body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; }
+                                    img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+                                </style>
+                                </head>
+                                <body>
+                                <img src="${url}" alt="Image" />
+                                </body>
+                            </html>
+                            `);
+                                    newWindow.document.close();
+                                }
+                            }}
                         >
                             <OpenInNewIcon />
                         </IconButton>
@@ -157,10 +175,28 @@ const ImageListing = () => {
                         >
                             <MetParagraph>{imageToDisplay?.url}</MetParagraph>
                             <IconButton
-                                component="a"
-                                href={imageToDisplay?.url ?? ''}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                onClick={() => {
+                                    const url = imageToDisplay?.url ?? '';
+                                    const newWindow = window.open();
+                                    if (newWindow) {
+                                        newWindow.document.write(`
+                            <!DOCTYPE html>
+                            <html>
+                                <head>
+                                <title>Image</title>
+                                <style>
+                                    body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; }
+                                    img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+                                </style>
+                                </head>
+                                <body>
+                                <img src="${url}" alt="Image" />
+                                </body>
+                            </html>
+                            `);
+                                        newWindow.document.close();
+                                    }
+                                }}
                             >
                                 <OpenInNewIcon />
                             </IconButton>
