@@ -1,13 +1,13 @@
 import React, { useContext } from 'react';
 import Grid from '@mui/material/Grid';
 import { ImageContext } from './ImageContext';
-import { HeaderTitle, MetPageGridContainer, MetParagraph, PrimaryButton } from 'components/common';
-import ImageUpload from '../../ImageManagement/ImageUpload';
+import { HeaderTitle, MetPageGridContainer, MetParagraph, PrimaryButton } from 'components/shared/common';
+import ImageUpload from '../ImageUpload';
 import { IconButton, Stack, TextField } from '@mui/material';
 import { Search as SearchIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import MetTable from 'components/common/Table';
-import { HeadCell, PaginationOptions } from 'components/common/Table/types';
+import MetTable from 'components/shared/common/Table';
+import { HeadCell, PaginationOptions } from 'components/shared/common/Table/types';
 import { ImageInfo } from 'models/image';
 import { Else, If, Then } from 'react-if';
 import { formatDate } from 'utils/helpers/dateHelper';
@@ -80,10 +80,28 @@ const ImageListing = () => {
                     <Grid item>{row.url}</Grid>
                     <Grid item>
                         <IconButton
-                            component="a"
-                            href={imageToDisplay?.url ?? ''}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                            onClick={() => {
+                                const url = imageToDisplay?.url ?? '';
+                                const newWindow = window.open();
+                                if (newWindow) {
+                                    newWindow.document.write(`
+                                        <!DOCTYPE html>
+                                        <html>
+                                            <head>
+                                                <title>Image</title>
+                                                <style>
+                                                    body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; }
+                                                    img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <img src="${url}" alt="Image" />
+                                            </body>
+                                        </html>
+                                    `);
+                                    newWindow.document.close();
+                                }
+                            }}
                         >
                             <OpenInNewIcon />
                         </IconButton>
@@ -157,10 +175,28 @@ const ImageListing = () => {
                         >
                             <MetParagraph>{imageToDisplay?.url}</MetParagraph>
                             <IconButton
-                                component="a"
-                                href={imageToDisplay?.url ?? ''}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                onClick={() => {
+                                    const url = imageToDisplay?.url ?? '';
+                                    const newWindow = window.open();
+                                    if (newWindow) {
+                                        newWindow.document.write(`
+                                        <!DOCTYPE html>
+                                        <html>
+                                            <head>
+                                                <title>Image</title>
+                                                <style>
+                                                    body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; }
+                                                    img { max-width: 100%; max-height: 100vh; object-fit: contain; }
+                                                </style>
+                                            </head>
+                                            <body>
+                                                <img src="${url}" alt="Image" />
+                                            </body>
+                                        </html>
+                                    `);
+                                        newWindow.document.close();
+                                    }
+                                }}
                             >
                                 <OpenInNewIcon />
                             </IconButton>
