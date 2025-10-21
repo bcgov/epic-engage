@@ -1,13 +1,13 @@
 import React, { useContext } from 'react';
 import Grid from '@mui/material/Grid';
 import { ImageContext } from './ImageContext';
-import { HeaderTitle, MetPageGridContainer, MetParagraph, PrimaryButton } from 'components/shared/common';
-import ImageUpload from '../ImageUpload';
+import { HeaderTitle, MetPageGridContainer, MetParagraph, PrimaryButton } from 'components/common';
+import ImageUpload from '../../ImageManagement/ImageUpload';
 import { IconButton, Stack, TextField } from '@mui/material';
 import { Search as SearchIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import MetTable from 'components/shared/common/Table';
-import { HeadCell, PaginationOptions } from 'components/shared/common/Table/types';
+import MetTable from 'components/common/Table';
+import { HeadCell, PaginationOptions } from 'components/common/Table/types';
 import { ImageInfo } from 'models/image';
 import { Else, If, Then } from 'react-if';
 import { formatDate } from 'utils/helpers/dateHelper';
