@@ -84,6 +84,7 @@ export interface MetTableProps<T> {
     rows: T[];
     hideHeader?: boolean;
     noRowBorder?: boolean;
+    rowPadding?: string | number;
     handleChangePagination?: (pagination: PaginationOptions<T>) => void;
     loading?: boolean;
     paginationOptions?: PaginationOptions<T>;
@@ -97,6 +98,7 @@ function MetTable<T>({
     headCells = [],
     rows = [],
     noRowBorder = false,
+    rowPadding,
     noPagination = false,
     commentTable = false,
     // eslint-disable-next-line
@@ -181,7 +183,12 @@ function MetTable<T>({
 
                             {rows.map((row, rowIndex) => {
                                 return (
-                                    <TableRow hover tabIndex={-1} key={`row-${rowIndex}`}>
+                                    <TableRow
+                                        hover
+                                        tabIndex={-1}
+                                        key={`row-${rowIndex}`}
+                                        sx={rowPadding ? { padding: rowPadding } : undefined}
+                                    >
                                         {headCells.map((cell, cellIndex) => (
                                             <TableCell
                                                 align={cell.align}
@@ -190,6 +197,7 @@ function MetTable<T>({
                                                 sx={{
                                                     paddingTop: commentTable ? 0 : '16px',
                                                     border: noRowBorder ? 'none' : '',
+                                                    ...(rowPadding && { padding: rowPadding }),
                                                 }}
                                             >
                                                 {cell.renderCell ? cell.renderCell(row) : String(row[cell.key])}

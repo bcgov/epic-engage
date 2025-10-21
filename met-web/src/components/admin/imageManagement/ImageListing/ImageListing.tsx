@@ -39,8 +39,8 @@ const ImageListing = () => {
                     <img
                         src={row.url}
                         style={{
-                            maxWidth: '100px',
-                            maxHeight: '100px',
+                            maxWidth: '80px',
+                            maxHeight: '80px',
                             width: 'auto',
                             height: 'auto',
                         }}
@@ -117,18 +117,18 @@ const ImageListing = () => {
             justifyContent="flex-start"
             alignItems="flex-start"
             container
-            columnSpacing={2}
-            rowSpacing={2}
+            columnSpacing={1}
+            rowSpacing={1}
         >
             <Grid item xs={12}>
-                <HeaderTitle>Image URL Generator</HeaderTitle>
+                <HeaderTitle sx={{ fontSize: '1.5rem' }}>Image URL Generator</HeaderTitle>
             </Grid>
             <Grid item xs={12}>
                 <ImageUpload
                     margin={4}
                     data-testid="image-listing/image-upload"
                     handleAddFile={handleTempUpload}
-                    height={'240px'}
+                    height={'160px'}
                     cropText="You can zoom in or out and move the image around."
                 />
             </Grid>
@@ -152,17 +152,17 @@ const ImageListing = () => {
                 <Then>
                     <Grid item xs={6}>
                         <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                            <CheckCircleOutlineIcon color="success" />
                             <img
                                 src={imageToDisplay?.url}
                                 style={{
-                                    maxWidth: '100px',
-                                    maxHeight: '100px',
+                                    maxWidth: '80px',
+                                    maxHeight: '80px',
                                     width: 'auto',
                                     height: 'auto',
                                 }}
                             />
                             <MetParagraph>{imageToDisplay?.display_name} has been successfully uploaded</MetParagraph>
-                            <CheckCircleOutlineIcon color="success" />
                         </Stack>
                     </Grid>
                     <Grid item xs={6}>
@@ -173,7 +173,6 @@ const ImageListing = () => {
                             justifyContent="right"
                             sx={{ height: 100 }}
                         >
-                            <MetParagraph>{imageToDisplay?.url}</MetParagraph>
                             <IconButton
                                 onClick={() => {
                                     const url = imageToDisplay?.url ?? '';
@@ -208,7 +207,7 @@ const ImageListing = () => {
                 </Else>
             </If>
             <Grid item xs={12}>
-                <HeaderTitle>Uploaded Files</HeaderTitle>
+                <HeaderTitle sx={{ fontSize: '1.17em' }}>Uploaded Files</HeaderTitle>
             </Grid>
             <Grid item xs={12}>
                 <Stack direction="row" spacing={1} alignItems="center">
@@ -245,6 +244,7 @@ const ImageListing = () => {
                     paginationOptions={paginationOptions}
                     loading={tableLoading}
                     pageInfo={pageInfo}
+                    rowPadding={0.5}
                 />
             </Grid>
         </MetPageGridContainer>
