@@ -5,8 +5,8 @@ import * as reactRedux from 'react-redux';
 import * as notificationSlice from 'services/notificationService/notificationSlice';
 import * as imageService from 'services/imageService';
 import { setupEnv } from '../setEnvVars';
-import ImageListing from 'components/ImageManagement/ImageListing';
-import { ImageProvider } from 'components/ImageManagement/ImageListing/ImageContext';
+import ImageListing from 'components/admin/imageManagement/ImageListing';
+import { ImageProvider } from 'components/admin/imageManagement/ImageListing/ImageContext';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { formatDate } from 'utils/helpers/dateHelper';
 import assert from 'assert';
@@ -37,15 +37,15 @@ jest.mock('@mui/material', () => ({
     useMediaQuery: () => false,
 }));
 
-jest.mock('components/common', () => ({
-    ...jest.requireActual('components/common'),
+jest.mock('components/shared/common', () => ({
+    ...jest.requireActual('components/shared/common'),
     PrimaryButton: ({ children, ...rest }: { children: ReactNode; [prop: string]: unknown }) => {
         return <button {...rest}>{children}</button>;
     },
 }));
 
-jest.mock('components/permissionsGate', () => ({
-    ...jest.requireActual('components/permissionsGate'),
+jest.mock('components/shared/permissionsGate', () => ({
+    ...jest.requireActual('components/shared/permissionsGate'),
     PermissionsGate: ({ children }: { children: ReactNode }) => {
         return <>{children}</>;
     },

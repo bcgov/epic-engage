@@ -10,7 +10,7 @@ import * as surveyService from 'services/surveyService';
 import * as reportSettingsService from 'services/surveyService/reportSettingsService';
 import { createDefaultSurvey, Survey } from 'models/survey';
 import { draftEngagement } from '../factory';
-import ReportSettings from 'components/survey/report';
+import ReportSettings from 'components/admin/survey/report';
 import assert from 'assert';
 
 const survey: Survey = {

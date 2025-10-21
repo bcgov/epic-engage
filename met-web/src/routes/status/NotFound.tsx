@@ -1,5 +1,5 @@
 import { Grid, Toolbar, SvgIcon, Box } from '@mui/material';
-import { MetHeader1, MetHeader4 } from 'components/common';
+import { MetHeader1, MetHeader4 } from 'components/shared/common';
 import React from 'react';
 import { ReactComponent as ErrorSvg } from 'assets/images/404.svg';
 import { Link } from 'react-router-dom';

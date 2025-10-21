@@ -1,7 +1,7 @@
 import { render, waitFor, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import '@testing-library/jest-dom';
-import EngagementForm from '../../../../src/components/engagement/form';
+import EngagementForm from 'components/admin/engagement/form';
 import { setupEnv } from '../setEnvVars';
 import * as reactRedux from 'react-redux';
 import * as reactRouter from 'react-router';
@@ -104,7 +104,7 @@ jest.mock('apiManager/apiSlices/widgets', () => ({
     useSortWidgetsMutation: () => [jest.fn(() => Promise.resolve())],
 }));
 
-jest.mock('components/MetMap', () => () => {
+jest.mock('components/admin/MetMap', () => () => {
     return <div></div>;
 });
 

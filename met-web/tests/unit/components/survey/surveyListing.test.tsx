@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { render, waitFor, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import SurveyListing from '../../../../src/components/survey/listing';
+import SurveyListing from 'components/admin/survey/listing';
 import { setupEnv } from '../setEnvVars';
 import * as reactRedux from 'react-redux';
 import * as surveyService from 'services/surveyService';
@@ -84,15 +84,15 @@ jest.mock('@mui/material', () => ({
     useMediaQuery: () => false,
 }));
 
-jest.mock('components/common', () => ({
-    ...jest.requireActual('components/common'),
+jest.mock('components/shared/common', () => ({
+    ...jest.requireActual('components/shared/common'),
     PrimaryButton: ({ children, ...rest }: { children: ReactNode; [prop: string]: unknown }) => {
         return <button {...rest}>{children}</button>;
     },
 }));
 
-jest.mock('components/permissionsGate', () => ({
-    ...jest.requireActual('components/permissionsGate'),
+jest.mock('components/shared/permissionsGate', () => ({
+    ...jest.requireActual('components/shared/permissionsGate'),
     PermissionsGate: ({ children }: { children: ReactNode }) => {
         return <>{children}</>;
     },

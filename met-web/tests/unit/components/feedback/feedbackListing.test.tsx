@@ -6,7 +6,7 @@ import * as reactRedux from 'react-redux';
 import * as feedbackService from 'services/feedbackService/index';
 import * as notificationSlice from 'services/notificationService/notificationSlice';
 import { createDefaultFeedback, CommentTypeEnum, SourceTypeEnum, FeedbackStatusEnum } from 'models/feedback';
-import FeedbackListing from 'components/feedback/FeedbackListing';
+import FeedbackListing from 'components/admin/feedback/FeedbackListing';
 import { USER_ROLES } from 'services/userService/constants';
 
 const mockFeedbackOne = {
@@ -36,8 +36,8 @@ jest.mock('@mui/material', () => ({
     },
 }));
 
-jest.mock('components/common', () => ({
-    ...jest.requireActual('components/common'),
+jest.mock('components/shared/common', () => ({
+    ...jest.requireActual('components/shared/common'),
     PrimaryButton: ({ children, ...rest }: { children: ReactNode; [prop: string]: unknown }) => {
         return <button {...rest}>{children}</button>;
     },

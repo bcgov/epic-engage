@@ -9,7 +9,7 @@ import * as notificationModalSlice from 'services/notificationModalService/notif
 import { User, createDefaultUser } from 'models/user';
 import { draftEngagement } from '../factory';
 import { EngagementTeamMember, initialDefaultTeamMember } from 'models/engagementTeamMember';
-import UserProfile from 'components/userManagement/userDetails';
+import UserProfile from 'components/admin/userManagement/userDetails';
 import { USER_ROLES } from 'services/userService/constants';
 
 const mockUser1: User = {
@@ -47,8 +47,8 @@ jest.mock('@mui/material', () => ({
     },
 }));
 
-jest.mock('components/common', () => ({
-    ...jest.requireActual('components/common'),
+jest.mock('components/shared/common', () => ({
+    ...jest.requireActual('components/shared/common'),
     PrimaryButton: ({ children, onClick }: { children: ReactNode; onClick: () => void }) => {
         return <button onClick={onClick}>{children}</button>;
     },

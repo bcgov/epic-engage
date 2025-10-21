@@ -8,9 +8,9 @@ import * as engagementService from 'services/engagementService';
 import * as membershipService from 'services/membershipService';
 import { ENGAGEMENT_MEMBERSHIP_STATUS } from 'models/engagementTeamMember';
 import { User, createDefaultUser } from 'models/user';
-import UserManagementListing from 'components/userManagement/listing';
-import { AssignRoleModal } from 'components/userManagement/listing/AssignRoleModal';
-import { UserManagementContext } from 'components/userManagement/listing/UserManagementContext';
+import UserManagementListing from 'components/admin/userManagement/listing';
+import { AssignRoleModal } from 'components/admin/userManagement/listing/AssignRoleModal';
+import { UserManagementContext } from 'components/admin/userManagement/listing/UserManagementContext';
 import { draftEngagement, openEngagement } from '../factory';
 
 const mockUser1: User = {
@@ -46,8 +46,8 @@ jest.mock('hooks', () => ({
     useAppDispatch: jest.fn(() => jest.fn()),
 }));
 
-jest.mock('components/common', () => ({
-    ...jest.requireActual('components/common'),
+jest.mock('components/shared/common', () => ({
+    ...jest.requireActual('components/shared/common'),
     PrimaryButton: ({ children, onClick, loading, type }: any) => {
         return <button onClick={onClick} type={type} disabled={loading}>{children}</button>;
     },

@@ -5,7 +5,7 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import createCache from '@emotion/cache';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import TileBlock from 'components/landing/TileBlock';
+import TileBlock from 'components/public/landing/TileBlock';
 import { store } from '../../redux/store';
 
 export default class EngagementTilesWC extends HTMLElement {

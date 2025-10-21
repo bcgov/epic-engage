@@ -1,6 +1,6 @@
 import React from 'react';
 import { Grid } from '@mui/material';
-import { MetHeader2, MetHeader4, PrimaryButton } from 'components/common';
+import { MetHeader2, MetHeader4, PrimaryButton } from 'components/shared/common';
 import { useNavigate } from 'react-router-dom';
 
 const Unauthorized = () => {

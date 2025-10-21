@@ -1,7 +1,7 @@
 import { render, waitFor, screen, fireEvent } from '@testing-library/react';
 import React, { ReactNode } from 'react';
 import '@testing-library/jest-dom';
-import EngagementListing from '../../../../src/components/engagement/listing';
+import EngagementListing from 'components/admin/engagement/listing';
 import { setupEnv } from '../setEnvVars';
 import * as reactRedux from 'react-redux';
 import * as engagementService from 'services/engagementService';
@@ -79,15 +79,15 @@ jest.mock('@mui/material', () => ({
     useMediaQuery: () => false,
 }));
 
-jest.mock('components/common', () => ({
-    ...jest.requireActual('components/common'),
+jest.mock('components/shared/common', () => ({
+    ...jest.requireActual('components/shared/common'),
     PrimaryButton: ({ children, ...rest }: { children: ReactNode; [prop: string]: unknown }) => {
         return <button {...rest}>{children}</button>;
     },
 }));
-
-jest.mock('components/permissionsGate', () => ({
-    ...jest.requireActual('components/permissionsGate'),
+    
+jest.mock('components/shared/permissionsGate', () => ({
+    ...jest.requireActual('components/shared/permissionsGate'),
     PermissionsGate: ({ children }: { children: ReactNode }) => {
         return <>{children}</>;
     },

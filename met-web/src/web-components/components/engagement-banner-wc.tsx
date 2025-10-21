@@ -4,10 +4,10 @@ import { CacheProvider } from '@emotion/react';
 import { ThemeProvider } from '@mui/material/styles';
 import { Provider } from 'react-redux';
 import ReactDOM from 'react-dom/client';
-import { EngagementBanner } from '../../components/engagement/view/EngagementBanner/StandAloneBanner';
+import { EngagementBanner } from 'components/public/engagement/view/EngagementBanner/StandAloneBanner';
 import createWcTheme from '../styles/wcTheme';
 import { store } from '../../redux/store';
-import { PrimaryButton } from 'components/common';
+import { PrimaryButton } from 'components/shared/common';
 import { Grid } from '@mui/material';
 import { ConvertedProp, EventMap } from '../types/web-component-types';
 
