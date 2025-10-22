@@ -21,6 +21,9 @@ export interface ImageListingContext {
     tableLoading: boolean;
     imageToDisplay: ImageInfo | undefined;
     imageToUpload: File | null;
+    archivedFilter: boolean;
+    setArchivedFilter: (value: boolean) => void;
+    fetchImages: () => void;
 }
 
 export const ImageContext = createContext<ImageListingContext>({
@@ -51,6 +54,13 @@ export const ImageContext = createContext<ImageListingContext>({
     tableLoading: false,
     imageToDisplay: undefined,
     imageToUpload: null,
+    archivedFilter: false,
+    setArchivedFilter: () => {
+        /* empty default method  */
+    },
+    fetchImages() {
+        /* empty default method  */
+    },
 });
 
 export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
@@ -71,6 +81,7 @@ export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Elemen
     const [pageInfo, setPageInfo] = useState<PageInfo>(createDefaultPageInfo());
     const [images, setImages] = useState<Array<ImageInfo>>([]);
     const [imageToUpload, setImageToUpload] = useState<File | null>(null);
+    const [archivedFilter, setArchivedFilter] = useState<boolean>(false);
     const dispatch = useAppDispatch();
     const { page, size, sort_key, sort_order } = paginationOptions;
 
@@ -132,6 +143,7 @@ export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Elemen
                 sort_key,
                 sort_order,
                 search_text: searchText,
+                archived: archivedFilter,
             });
             setImages(response.items);
             setPageInfo({
@@ -164,6 +176,9 @@ export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Elemen
                 imageToDisplay,
                 imageToUpload,
                 handleUploadImage,
+                archivedFilter,
+                setArchivedFilter,
+                fetchImages,
             }}
         >
             {children}

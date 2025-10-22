@@ -9,8 +9,11 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import MetTable from 'components/shared/common/Table';
 import { HeadCell, PaginationOptions } from 'components/shared/common/Table/types';
 import { ImageInfo } from 'models/image';
-import { Else, If, Then } from 'react-if';
+import { Else, If, Then, When } from 'react-if';
 import { formatDate } from 'utils/helpers/dateHelper';
+import { useAppSelector } from 'hooks';
+import { USER_ROLES } from 'services/userService/constants';
+import { ImageInfoActionsDropdown } from './ImageInfoActionsDropdown';
 
 const ImageListing = () => {
     const {
@@ -25,7 +28,14 @@ const ImageListing = () => {
         imageToDisplay,
         handleUploadImage,
         imageToUpload,
+        archivedFilter,
+        setArchivedFilter,
+        fetchImages,
     } = useContext(ImageContext);
+
+    const { roles } = useAppSelector((state) => state.user);
+
+    const authorized = roles.includes(USER_ROLES.CREATE_IMAGES);
 
     const headCells: HeadCell<ImageInfo>[] = [
         {
@@ -91,7 +101,25 @@ const ImageListing = () => {
                 </Grid>
             ),
         },
+        {
+            key: 'id',
+            numeric: true,
+            disablePadding: false,
+            label: 'Actions',
+            allowSort: false,
+            renderCell: (row: ImageInfo) => {
+                return <ImageInfoActionsDropdown reload={() => fetchImages()} imageInfo={row} />;
+            },
+            customStyle: {
+                minWidth: '200px',
+            },
+        },
     ];
+
+    const resetPagination = () => {
+        const prev = paginationOptions;
+        setPaginationOptions({ ...prev, page: 1, size: 10 });
+    };
 
     return (
         <MetPageGridContainer
@@ -186,17 +214,38 @@ const ImageListing = () => {
                         onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
-                                setPaginationOptions({ page: 1, size: 10 });
+                                resetPagination();
                             }
                         }}
                         size="small"
                     />
-                    <PrimaryButton
-                        data-testid="image/listing/searchButton"
-                        onClick={() => setPaginationOptions({ page: 1, size: 10 })}
-                    >
+                    <PrimaryButton data-testid="image/listing/searchButton" onClick={resetPagination}>
                         <SearchIcon />
                     </PrimaryButton>
+                </Stack>
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={1}
+                    width="100%"
+                    justifyContent="flex-end"
+                    sx={{ p: 2 }}
+                >
+                    <When condition={authorized}>
+                        <PrimaryButton
+                            onClick={() => {
+                                setPaginationOptions({
+                                    page: 1,
+                                    size: 10,
+                                    sort_key: 'id',
+                                    nested_sort_key: null,
+                                    sort_order: 'asc',
+                                });
+                                setArchivedFilter(!archivedFilter);
+                            }}
+                        >
+                            {archivedFilter ? 'View Images' : 'View Archive'}
+                        </PrimaryButton>
+                    </When>
                 </Stack>
             </Grid>
             <Grid item xs={12}>

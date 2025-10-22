@@ -17,6 +17,7 @@ const mockImageOne = {
     unique_name: '123456789',
     date_uploaded: '2024-08-14 10:00:00',
     url: 'randomurl1.com',
+    archived: false,
 };
 
 const mockImageTwo = {
@@ -25,6 +26,7 @@ const mockImageTwo = {
     unique_name: 'abcdefg',
     date_uploaded: '2024-08-13 10:00:00',
     url: 'randomurl2.com',
+    archived: false,
 };
 
 jest.mock('axios');
@@ -133,6 +135,9 @@ describe('Image listing page tests', () => {
                 page: 1,
                 size: 10,
                 search_text: 'Pond',
+                archived: false,
+                sort_key: 'date_uploaded',
+                sort_order: 'desc',
             });
         });
     });
