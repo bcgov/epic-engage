@@ -3,9 +3,9 @@ import React from 'react';
 import * as reactRedux from 'react-redux';
 import * as notificationSlice from 'services/notificationService/notificationSlice';
 import '@testing-library/jest-dom';
-import { setupEnv } from './setEnvVars';
-import ScheduleModal from 'components/public/engagement/view/ScheduleModal';
-import ProviderShell from './ProviderShell';
+import { setupEnv } from '../../setEnvVars';
+import ScheduleModal from 'components/admin/engagement/schedule/ScheduleModal';
+import ProviderShell from '../../ProviderShell';
 
 jest.mock('@reduxjs/toolkit/query/react', () => ({
     ...jest.requireActual('@reduxjs/toolkit/query/react'),

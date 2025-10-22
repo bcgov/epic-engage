@@ -38,16 +38,18 @@ const createPacificDisplayDate = (pacificDate?: Date) => {
 
 // Convert picker date to Pacific timezone for backend
 const convertPickerDateToPacificUTC = (pickerDate: Date) => {
+    // If pickerDate is a Dayjs object, convert to Date
+    const date = pickerDate instanceof Date ? pickerDate : new Date(pickerDate);
     // The picker date contains the Pacific time values but in local context
     // We need to treat these values as Pacific time and convert to UTC
 
     // Create a date string with the picker values
-    const year = pickerDate.getFullYear();
-    const month = pickerDate.getMonth();
-    const day = pickerDate.getDate();
-    const hours = pickerDate.getHours();
-    const minutes = pickerDate.getMinutes();
-    const seconds = pickerDate.getSeconds();
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const seconds = date.getSeconds();
 
     // Create a date with these values (this will be in local timezone context)
     const localDate = new Date(year, month, day, hours, minutes, seconds);
