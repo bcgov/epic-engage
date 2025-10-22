@@ -57,7 +57,9 @@ class ImageInfo(Resource):
                 'search_text': args.get('search_text', '', type=str),
             }
 
-            images = ImageInfoService().get_images_paginated(pagination_options, search_options)
+            archived = args.get('archived', default=False, type=lambda v: v.lower() == 'true')
+
+            images = ImageInfoService().get_images_paginated(pagination_options, search_options, archived)
             return images, HTTPStatus.OK
         except ValueError as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
@@ -77,3 +79,42 @@ class ImageInfo(Resource):
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
         except ValidationError as err:
             return str(err.messages), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@cors_preflight('GET, PATCH, OPTIONS')
+@API.route('/<int:image_info_id>')
+class ImageInfoById(Resource):
+    """Resource for managing image info by id."""
+
+    @staticmethod
+    @cross_origin(origins=allowedorigins())
+    @require_role([Role.CREATE_IMAGES.value])
+    def patch(image_info_id):
+        """Update image info by id."""
+        try:
+            request_json = ImageInfoParameterSchema().load(API.payload, partial=True)
+            updated_image = ImageInfoService().update_image_info(image_info_id, request_json)
+            if updated_image is None:
+                return 'Image Info not found', HTTPStatus.NOT_FOUND
+            return updated_image, HTTPStatus.OK
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValidationError as err:
+            return str(err.messages), HTTPStatus.INTERNAL_SERVER_ERROR
+
+    @staticmethod
+    @cross_origin(origins=allowedorigins())
+    @require_role([Role.CREATE_IMAGES.value])
+    def delete(image_info_id):
+        """Remove Image Info."""
+        try:
+            result = ImageInfoService().delete_image_info(image_info_id)
+            if result:
+                return 'Image Info successfully removed', HTTPStatus.OK
+            return 'Image Info not found', HTTPStatus.NOT_FOUND
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR

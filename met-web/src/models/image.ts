@@ -4,4 +4,5 @@ export interface ImageInfo {
     unique_name: string;
     date_uploaded: string;
     url: string;
+    archived: boolean;
 }

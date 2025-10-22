@@ -13,11 +13,12 @@ class ImageInfoService:
         self.object_storage = ObjectStorageService()
 
     @staticmethod
-    def get_images_paginated(pagination_options: PaginationOptions, search_options=None):
+    def get_images_paginated(pagination_options: PaginationOptions, search_options=None, archived=False):
         """Get images paginated."""
         items, total = ImageInfoModel.get_images_paginated(
             pagination_options,
             search_options,
+            archived
         )
 
         images = ImageInfoSchema(many=True).dump(items)
@@ -38,3 +39,18 @@ class ImageInfoService:
         new_image.save()
         new_image.commit()
         return new_image.find_by_id(new_image.id)
+
+    @staticmethod
+    def update_image_info(image_info_id: int, request_json: dict):
+        """Update an Image Info."""
+        updated_image = ImageInfoModel.update(image_info_id, request_json)
+        if updated_image:
+            feedback_schema = ImageInfoSchema()
+            return feedback_schema.dump(updated_image)
+        return None
+
+    @staticmethod
+    def delete_image_info(image_info_id: int):
+        """Delete an Image Info."""
+        is_deleted = ImageInfoModel.delete_by_id(image_info_id)
+        return is_deleted

@@ -158,6 +158,8 @@ const Endpoints = {
     Images: {
         GET: `${AppConfig.apiUrl}/image_info/`,
         CREATE: `${AppConfig.apiUrl}/image_info/`,
+        UPDATE: `${AppConfig.apiUrl}/image_info/image_id`,
+        DELETE: `${AppConfig.apiUrl}/image_info/image_id`,
     },
     Settings: {
         GET: `${AppConfig.apiUrl}/settings/`,

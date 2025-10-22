@@ -22,6 +22,7 @@ class ImageInfoSchema(Schema):
     date_uploaded = fields.DateTime(data_key='date_uploaded')
     tenant_id = fields.Str(data_key='tenant_id')
     url = fields.Method('get_object_store_url', dump_only=True)
+    archived = fields.Bool(data_key='archived')
 
     def get_object_store_url(self, obj):
         """Get the image URL from object storage."""
@@ -47,4 +48,10 @@ class ImageInfoParameterSchema(Schema):
     date_uploaded = fields.DateTime(
         metadata={'description': 'Date when file was uploaded'},
         required=True,
+    )
+
+    archived = fields.Bool(
+        metadata={'description': 'Indicates if the image is archived'},
+        required=False,
+        missing=False,
     )
