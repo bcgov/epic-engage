@@ -1,27 +1,26 @@
 import React, { useContext, useState } from 'react';
-import { EngagementViewContext } from './EngagementViewContext';
-import { Box, Typography, Grid, Skeleton, Stack, useMediaQuery, Theme, Link } from '@mui/material';
+import { When } from 'react-if';
 import { useNavigate } from 'react-router-dom';
+import { Box, Typography, Grid, Skeleton, Stack, useMediaQuery, Theme, Link, IconButton } from '@mui/material';
+import { Unpublished as UnpublishedIcon, Image as ImageIcon, Article as ArticleIcon } from '@mui/icons-material';
+import { MetHeader1, PrimaryButton, SecondaryButton, MetBody, MetPaper } from 'components/shared/common';
+import { PermissionsGate } from 'components/shared/permissionsGate';
+import ScheduleModal from 'components/admin/engagement/schedule/ScheduleModal';
+import { EngagementViewContext } from 'components/public/engagement/view/EngagementViewContext';
 import { EngagementStatusChip } from 'components/public/engagement/EngagementStatusChip';
 import { EngagementStatus, SubmissionStatus } from 'constants/engagementStatus';
-import { MetHeader1, PrimaryButton, SecondaryButton, MetBody, MetPaper } from 'components/shared/common';
 import { useAppSelector } from 'hooks';
-import ImageIcon from '@mui/icons-material/Image';
-import UnpublishedIcon from '@mui/icons-material/Unpublished';
-import IconButton from '@mui/material/IconButton';
-import ScheduleModal from 'components/public/engagement/view/ScheduleModal';
-import ArticleIcon from '@mui/icons-material/Article';
 import { formatDate } from 'utils/helpers/dateHelper';
-import { When } from 'react-if';
-import { PermissionsGate } from 'components/shared/permissionsGate';
 import { USER_ROLES } from 'services/userService/constants';
-import UnpublishModal from './UnpublishModal';
+import UnpublishModal from '../schedule/UnpublishModal';
+import RepublishModal from '../schedule/RepublishModal';
 
 export const PreviewBanner = () => {
     const isSmallScreen: boolean = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
     const navigate = useNavigate();
     const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
     const [isUnpublishModalOpen, setIsUnpublishModalOpen] = useState(false);
+    const [isRepublishModalOpen, setIsRepublishModalOpen] = useState(false);
     const { isEngagementLoading, savedEngagement, updateMockStatus, mockStatus } = useContext(EngagementViewContext);
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
     const isDraft = savedEngagement.status_id === EngagementStatus.Draft;
@@ -29,6 +28,7 @@ export const PreviewBanner = () => {
     const imageExists = !!savedEngagement.banner_url;
     const isScheduled = savedEngagement.status_id === EngagementStatus.Scheduled;
     const isPublished = savedEngagement.status_id === EngagementStatus.Published;
+    const isUnpublished = savedEngagement.status_id === EngagementStatus.Unpublished;
     const scheduledDate = formatDate(savedEngagement.scheduled_date, 'MMM DD YYYY');
     const scheduledTime = formatDate(savedEngagement.scheduled_date, 'HH:mm');
     const engagementBannerText = isScheduled
@@ -51,6 +51,7 @@ export const PreviewBanner = () => {
                 updateModal={setIsScheduleModalOpen}
             />
             <UnpublishModal open={isUnpublishModalOpen} setModalOpen={setIsUnpublishModalOpen} />
+            <RepublishModal open={isRepublishModalOpen} setModalOpen={setIsRepublishModalOpen} />
             <Box
                 sx={{
                     backgroundColor: 'secondary.light',
@@ -215,6 +216,27 @@ export const PreviewBanner = () => {
                                         onClick={() => setIsUnpublishModalOpen(true)}
                                     >
                                         Unpublish Engagement
+                                    </PrimaryButton>
+                                </PermissionsGate>
+                            </When>
+
+                            <When
+                                condition={
+                                    isUnpublished &&
+                                    scheduledDate &&
+                                    new Date(scheduledDate) <= new Date() &&
+                                    new Date(savedEngagement.start_date) > new Date()
+                                }
+                            >
+                                <PermissionsGate
+                                    scopes={[USER_ROLES.PUBLISH_ENGAGEMENT]}
+                                    errorProps={{ disabled: true }}
+                                >
+                                    <PrimaryButton
+                                        sx={{ marginLeft: '1em' }}
+                                        onClick={() => setIsRepublishModalOpen(true)}
+                                    >
+                                        Re-publish Engagement
                                     </PrimaryButton>
                                 </PermissionsGate>
                             </When>

@@ -4,7 +4,7 @@ import { EngagementViewContext } from './EngagementViewContext';
 import { EngagementContent } from './EngagementContent';
 import SurveyBlock from './SurveyBlock';
 import EmailModal from './EmailModal';
-import { PreviewBanner } from './PreviewBanner';
+import { PreviewBanner } from 'components/admin/engagement/preview/PreviewBanner';
 import { useAppSelector } from 'hooks';
 import { useNavigate, useLocation } from 'react-router';
 import { RouteState } from './types';

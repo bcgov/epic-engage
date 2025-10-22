@@ -26,7 +26,7 @@ interface EngagementSchedule {
     scheduled_date: string;
 }
 
-interface UnpublishEngagementParams {
+interface EngagementStatusParams {
     id: number;
     status_id: number;
 }
@@ -40,7 +40,8 @@ export interface EngagementViewContext {
     isEngagementMetadataLoading: boolean;
     isEngagementSettingsLoading: boolean;
     scheduleEngagement: (_engagement: EngagementSchedule) => Promise<Engagement>;
-    unpublishEngagement: ({ id, status_id }: UnpublishEngagementParams) => Promise<void>;
+    unpublishEngagement: ({ id, status_id }: EngagementStatusParams) => Promise<void>;
+    republishEngagement: ({ id, status_id }: EngagementStatusParams) => Promise<void>;
     widgets: Widget[];
     mockStatus: SubmissionStatus;
     updateMockStatus: (status: SubmissionStatus) => void;
@@ -56,7 +57,10 @@ export const EngagementViewContext = createContext<EngagementViewContext>({
     scheduleEngagement: (_engagement: EngagementSchedule): Promise<Engagement> => {
         return Promise.reject(Error('not implemented'));
     },
-    unpublishEngagement: (_unpublishEngagementData: UnpublishEngagementParams): Promise<void> => {
+    unpublishEngagement: (_unpublishEngagementData: EngagementStatusParams): Promise<void> => {
+        return Promise.reject(Error('not implemented'));
+    },
+    republishEngagement: (_republishEngagementData: EngagementStatusParams): Promise<void> => {
         return Promise.reject(Error('not implemented'));
     },
     savedEngagement: createDefaultEngagement(),
@@ -140,7 +144,7 @@ export const EngagementViewProvider = ({ children }: { children: JSX.Element | J
         }
     };
 
-    const unpublishEngagement = async ({ id, status_id }: UnpublishEngagementParams): Promise<void> => {
+    const unpublishEngagement = async ({ id, status_id }: EngagementStatusParams): Promise<void> => {
         try {
             await patchEngagement({
                 id,
@@ -152,6 +156,22 @@ export const EngagementViewProvider = ({ children }: { children: JSX.Element | J
             return Promise.resolve();
         } catch (error) {
             dispatch(openNotification({ severity: 'error', text: 'Error unpublishing engagement' }));
+            return Promise.reject(error);
+        }
+    };
+
+    const republishEngagement = async ({ id, status_id }: EngagementStatusParams): Promise<void> => {
+        try {
+            await patchEngagement({
+                id,
+                status_id,
+            });
+            setEngagementLoading(true);
+            fetchEngagement();
+            dispatch(openNotification({ severity: 'success', text: 'Engagement re-published successfully' }));
+            return Promise.resolve();
+        } catch (error) {
+            dispatch(openNotification({ severity: 'error', text: 'Error re-publishing engagement' }));
             return Promise.reject(error);
         }
     };
@@ -275,6 +295,7 @@ export const EngagementViewProvider = ({ children }: { children: JSX.Element | J
                 updateMockStatus,
                 mockStatus,
                 unpublishEngagement,
+                republishEngagement,
             }}
         >
             {children}
