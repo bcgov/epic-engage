@@ -7,6 +7,7 @@ from typing import List
 import requests
 from aws_requests_auth.aws_auth import AWSRequestsAuth
 from markupsafe import string
+from flask import current_app
 
 from met_api.config import get_s3_config
 from met_api.schemas.document import Document
@@ -27,21 +28,19 @@ class ObjectStorageService:
 
     def get_url(self, filename: string):
         """Get the object url."""
-        if(not self.s3_host or
-            not self.s3_bucket or
-            not filename
-           ):
+        if (not self.s3_host or
+                not self.s3_bucket or
+                not filename):
             return ''
 
-        return f'https://{self.s3_host}/{self.s3_bucket}/{filename}'
+        return f'https: //{self.s3_host}/{self.s3_bucket}/{filename}'
 
     def get_auth_headers(self, documents: List[Document]):
         """Get the s3 auth headers or the provided documents."""
-        if(self.s3_access_key_id is None or
-            self.s3_secret_access_key is None or
-            self.s3_host is None or
-            self.s3_bucket is None
-           ):
+        if (self.s3_access_key_id is None or
+                self.s3_secret_access_key is None or
+                self.s3_host is None or
+                self.s3_bucket is None):
             return {'status': 'Configuration Issue',
                     'message': 'accesskey is None or secretkey is None or S3 host is None or formsbucket is None'}, 500
 
@@ -58,7 +57,12 @@ class ObjectStorageService:
 
             s3uri = s3sourceuri if s3sourceuri is not None else self.get_url(uniquefilename)
             response = requests.put(
-                s3uri, data=None, auth=auth) if s3sourceuri is None else requests.get(s3uri, auth=auth)
+                s3uri, data=None, auth=auth, timeout=current_app.config.get('CONNECT_TIMEOUT', 60)
+            ) if s3sourceuri is None else requests.get(
+                    s3uri,
+                    auth=auth,
+                    timeout=current_app.config.get('CONNECT_TIMEOUT', 60)
+            )
 
             file['filepath'] = s3uri
             file['authheader'] = response.request.headers['Authorization']

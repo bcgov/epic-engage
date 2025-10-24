@@ -13,16 +13,17 @@
 # limitations under the License.
 """Manager for widget map schema."""
 
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
+
 from met_api.models.widget_map import WidgetMap as WidgetMapModel
 
-from marshmallow import Schema
 
-
-class WidgetMapSchema(Schema):  # pylint: disable=too-many-ancestors, too-few-public-methods
+class WidgetMapSchema(SQLAlchemyAutoSchema):  # pylint: disable=too-many-ancestors, too-few-public-methods
     """This is the schema for the map model."""
 
     class Meta:  # pylint: disable=too-few-public-methods
         """Maps all of the Widget Map fields to a default schema."""
 
         model = WidgetMapModel
-        fields = ('id', 'widget_id', 'engagement_id', 'marker_label', 'latitude', 'longitude', 'geojson', 'file_name')
+        load_instance = True  # Optional: if you want to deserialize to model instances
+        include_fk = True  # Include foreign key fields

@@ -2,7 +2,8 @@
 -r prod.txt
 
 coverage
-pylint==v2.13.8
+pylint>=3.0.0
+astroid>=3.0.0
 pylint-flask
 pytest
 pytest-cov
@@ -10,10 +11,12 @@ pytest-env
 pytest-dotenv
 pytest-mock
 requests
-flake8==4.0.1
+flake8==6.1.0
 flake8-blind-except
+flake8-bugbear
 flake8-debugger
 flake8-docstrings
+flake8-import-order
 flake8-isort
 flake8-quotes
 pep8-naming

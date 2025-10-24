@@ -39,7 +39,7 @@ def test_feedback(session):
 def test_get_feedbacks_paginated(session):
     """Assert that a feedback can be created and fetched."""
     feedback = factory_feedback_model()
-    for i in range(0, 10):
+    for _ in range(0, 10):
         factory_feedback_model()
     assert feedback.id is not None
     pagination_options = PaginationOptions(

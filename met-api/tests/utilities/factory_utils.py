@@ -15,6 +15,8 @@
 
 Test Utility for creating model factory.
 """
+import time
+
 from faker import Faker
 from flask import current_app, g
 
@@ -39,7 +41,6 @@ from met_api.models.survey import Survey as SurveyModel
 from met_api.models.widget import Widget as WidgetModal
 from met_api.models.widget_documents import WidgetDocuments as WidgetDocumentModel
 from met_api.models.widget_item import WidgetItem as WidgetItemModal
-from met_api.utils.constants import TENANT_ID_HEADER
 from met_api.utils.enums import MembershipStatus
 from tests.utilities.factory_scenarios import (
     TestCommentInfo, TestEngagementInfo, TestEngagementSlugInfo, TestFeedbackInfo, TestParticipantInfo,
@@ -213,10 +214,37 @@ def factory_feedback_model(feedback_info: dict = TestFeedbackInfo.feedback1, sta
 
 
 def factory_auth_header(jwt, claims):
-    """Produce JWT tokens for use in tests."""
+    """Produce JWT tokens for use in tests (test mode compatible)."""
+    jwt_test_header = {'alg': 'RS256', 'typ': 'JWT', 'kid': 'met-web'}
+
+    if not current_app:
+        raise RuntimeError('Must be called within app context')
+
+    # Handle Enum - extract the actual dict value
+    if hasattr(claims, 'value'):
+        claims_dict = claims.value
+    elif isinstance(claims, dict):
+        claims_dict = claims
+    else:
+        claims_dict = dict(claims)
+
+    # Make a mutable copy
+    enriched_claims = claims_dict.copy()
+    current_time = int(time.time())
+    enriched_claims.setdefault('iat', current_time)
+    enriched_claims.setdefault('exp', current_time + 3600)
+    enriched_claims.setdefault('nbf', current_time)
+    enriched_claims.setdefault('aud', current_app.config.get('JWT_OIDC_AUDIENCE', 'met-web'))
+
+    token = jwt.create_jwt(claims=enriched_claims, header=jwt_test_header)
+
+    # Handle both bytes and string (PyJWT 2.x returns strings)
+    if isinstance(token, bytes):
+        token = token.decode('utf-8')
+
     return {
-        'Authorization': 'Bearer ' + jwt.create_jwt(claims=claims, header=JWT_HEADER),
-        TENANT_ID_HEADER: current_app.config.get('DEFAULT_TENANT_SHORT_NAME'),
+        'Authorization': f'Bearer {token}',
+        'X-Tenant-Id': current_app.config.get('DEFAULT_TENANT_SHORT_NAME', 'default'),
     }
 
 

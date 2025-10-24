@@ -111,8 +111,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     DB_PORT = os.getenv('DATABASE_PORT', '5432')
     DB_SCHEMA_NAME = os.getenv('DATABASE_SCHEMA_NAME', 'met')
     SQLALCHEMY_DATABASE_URI = (
-        f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/'
-        f'{DB_NAME}?options=-csearch_path={DB_SCHEMA_NAME},public'
+        f'postgresql: //{DB_USER}: {DB_PASSWORD}@{DB_HOST}: {int(DB_PORT)}/'
+        f'{DB_NAME}?options=-csearch_path={DB_SCHEMA_NAME}, public'
     )
     SQLALCHEMY_ECHO = False
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -346,7 +346,7 @@ class DockerConfig(_Config):  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv('DATABASE_DOCKER_NAME')
     DB_HOST = os.getenv('DATABASE_DOCKER_HOST')
     DB_PORT = os.getenv('DATABASE_DOCKER_PORT', '5432')
-    SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}'
+    SQLALCHEMY_DATABASE_URI = f'postgresql: //{DB_USER}: {DB_PASSWORD}@{DB_HOST}: {int(DB_PORT)}/{DB_NAME}'
 
     print(f'SQLAlchemy URL (Docker): {SQLALCHEMY_DATABASE_URI}')
 

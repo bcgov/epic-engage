@@ -14,22 +14,20 @@
 """Super class to handle all operations related to base schema."""
 
 from marshmallow import fields, post_dump
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 
-from met_api.models import ma
 
-
-class BaseSchema(ma.ModelSchema):  # pylint: disable=too-many-ancestors
+class BaseSchema(SQLAlchemyAutoSchema):  # pylint: disable=too-many-ancestors
     """Base Schema."""
 
     def __init__(self, *args, **kwargs):
         """Excludes versions. Otherwise database will query <name>_versions table."""
-        if hasattr(self.opts.model, 'versions') and (len(self.opts.fields) == 0):
-            self.opts.exclude += ('versions',)
         super().__init__(*args, **kwargs)
 
     class Meta:  # pylint: disable=too-few-public-methods
         """Meta class to declare any class attributes."""
 
+        load_instance = True
         datetimeformat = '%Y-%m-%dT%H:%M:%S+00:00'  # Default output date format.
 
     created_by = fields.Function(
@@ -42,21 +40,20 @@ class BaseSchema(ma.ModelSchema):  # pylint: disable=too-many-ancestors
                                                                                        None) else None
     )
 
-    @post_dump(pass_many=True)
-    def _remove_empty(self, data, many):
-        """Remove all empty values and versions from the dumped dict."""
-        if not many:
-            for key in list(data):
-                if key == 'versions':
-                    data.pop(key)
+    @post_dump
+    def _remove_empty(self, data, many=False, **kwargs):
+        # Marshmallow 3.x calls post_dump for each item when many=True
+        # so data is always a single dict here, but we need to be defensive
+        if not isinstance(data, dict):
+            return data
 
-            return {
-                key: value for key, value in data.items()
-                if value is not None
-            }
-        for item in data:
-            for key in list(item):
-                if (key == 'versions') or (item[key] is None):
-                    item.pop(key)
+        # Create a copy of keys to avoid RuntimeError: dictionary changed size during iteration
+        keys_to_remove = []
+        for key in data.keys():
+            if key == 'versions' or data[key] is None:
+                keys_to_remove.append(key)
+
+        for key in keys_to_remove:
+            del data[key]
 
         return data

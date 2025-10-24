@@ -17,14 +17,14 @@ depends_on = None
 
 
 def upgrade():
-    op.execute('CREATE TYPE emailverificationtype AS ENUM (\'Survey\', \'RejectedComment\', \'Subscribe\');')    
+    op.execute(sa.text('CREATE TYPE emailverificationtype AS ENUM (\'Survey\', \'RejectedComment\', \'Subscribe\');'))
     op.add_column('email_verification', sa.Column('type', sa.Enum('Survey', 'RejectedComment', 'Subscribe', name='emailverificationtype'), nullable=True))
-    op.execute('UPDATE email_verification SET type = \'RejectedComment\' WHERE submission_id IS NOT NULL;')    
-    op.execute('UPDATE email_verification SET type = \'Survey\' WHERE type IS NULL;')    
+    op.execute(sa.text('UPDATE email_verification SET type = \'RejectedComment\' WHERE submission_id IS NOT NULL;'))
+    op.execute(sa.text('UPDATE email_verification SET type = \'Survey\' WHERE type IS NULL;'))
     op.alter_column('email_verification', sa.Column('type', sa.Enum('Survey', 'RejectedComment', 'Subscribe', name='emailverificationtype'), nullable=False))
 
 
 
 def downgrade():
     op.drop_column('email_verification', 'type')
-    op.execute('DROP TYPE emailverificationtype;')    
+    op.execute(sa.text('DROP TYPE emailverificationtype;'))

@@ -163,11 +163,13 @@ def test_search_engagements_by_status(client, jwt,
     sort_order = 'desc'
     engagement_status = EngagementDisplayStatus.Open.value
 
-    rv = client.get(f'/api/engagements/?page={page}&size={page_size}&sort_key={sort_key}\
-                    &sort_order={sort_order}&engagement_status={[engagement_status]}',
-                    data=json.dumps(engagement_info),
-                    headers=headers, content_type=ContentType.JSON.value)
-
+    rv = client.get(
+        f'/api/engagements/?page={page}&size={page_size}&sort_key={sort_key}'
+        f'&sort_order={sort_order}&engagement_status={[engagement_status]}',
+        data=json.dumps(engagement_info),
+        headers=headers,
+        content_type=ContentType.JSON.value
+    )
     assert rv.json.get('total') == 1
 
 

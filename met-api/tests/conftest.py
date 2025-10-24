@@ -18,6 +18,7 @@ from random import random
 import pytest
 from flask_migrate import Migrate, upgrade
 from sqlalchemy import event, text
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from met_api import create_app, setup_jwt_manager
 from met_api.auth import jwt as _jwt
@@ -47,15 +48,17 @@ def notify_mock(monkeypatch):
 
 
 @pytest.fixture(scope='session')
-def client(app):  # pylint: disable=redefined-outer-name
-    """Return a session-wide Flask test client."""
-    return app.test_client()
+def jwt(app):
+    """Return a session-wide JWT Manager bound to the Flask test app."""
+    app.config['JWT_OIDC_TEST_MODE'] = True
+
+    return _jwt
 
 
 @pytest.fixture(scope='session')
-def jwt():
-    """Return a session-wide jwt manager."""
-    return _jwt
+def client(app, jwt):  # pylint: disable=redefined-outer-name
+    """Return a session-wide Flask test client."""
+    return app.test_client()
 
 
 @pytest.fixture(scope='session')
@@ -79,7 +82,7 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
                           """
 
         sess = _db.session()
-        sess.execute(drop_schema_sql)
+        sess.execute(text(drop_schema_sql))
         sess.commit()
 
         # ############################################
@@ -105,7 +108,7 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         txn = conn.begin()
 
         options = dict(bind=conn, binds={})
-        sess = db.create_scoped_session(options=options)
+        sess = scoped_session(sessionmaker(**options))
 
         # establish  a SAVEPOINT just before beginning the test
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
@@ -143,13 +146,19 @@ def client_id():
 
 
 @pytest.fixture(scope='session', autouse=True)
-def auto(docker_services, app):
+def auto(docker_services, app, jwt):  # Add jwt as dependency
     """Spin up a keycloak instance and initialize jwt."""
+    # Test mode should already be set in TestConfig
+    app.config['JWT_OIDC_TEST_MODE'] = True
+
     if app.config['USE_TEST_KEYCLOAK_DOCKER']:
         docker_services.start('keycloak')
         docker_services.wait_for_service('keycloak', 8081)
 
-    setup_jwt_manager(app, _jwt)
+    # This is the ONLY place setup_jwt_manager should be called
+    setup_jwt_manager(app, jwt)
+
+    jwt._test_mode = True
 
     if app.config['USE_DOCKER_MOCK']:
         docker_services.start('proxy')

@@ -51,5 +51,5 @@ def downgrade():
 
     op.drop_table('subscribe_item')
     op.drop_table('widget_subscribe')
-    op.execute('DROP TYPE subscribetypes;')
+    op.execute(sa.text('DROP TYPE subscribetypes;'))
     # ### end Alembic commands ###

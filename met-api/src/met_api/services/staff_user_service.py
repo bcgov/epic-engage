@@ -11,6 +11,7 @@ from met_api.services.keycloak import KeycloakService
 from met_api.utils import notification
 from met_api.utils.constants import GROUP_NAME_MAPPING, Groups
 from met_api.utils.enums import KeycloakGroupName
+from met_api.utils.roles import Role
 from met_api.utils.template import Template
 from met_api.config import get_gc_notify_config
 
@@ -41,16 +42,21 @@ class StaffUserService:
     def create_or_update_user(self, user: dict):
         """Create or update a user."""
         self.validate_fields(user)
-
         external_id = user.get('external_id')
-        db_user = StaffUserModel.get_user_by_external_id(external_id)
 
+        # Add tenant_id from JWT token if not already present
+        if 'tenant_id' not in user:
+            token_info = g.get('jwt_oidc_token_info', {})
+            tenant_id = token_info.get('tenant_id', getattr(g, 'tenant_id', None))
+            if tenant_id:
+                user['tenant_id'] = tenant_id
+
+        db_user = StaffUserModel.get_user_by_external_id(external_id)
         if db_user is None:
             new_user = StaffUserModel.create_user(user)
             if len(user.get('roles', [])) == 0:
                 self._send_access_request_email(new_user)
             return new_user
-
         return StaffUserModel.update_user(db_user.id, user)
 
     @staticmethod
@@ -183,9 +189,30 @@ class StaffUserService:
         if db_user is None:
             raise KeyError('User not found')
 
+        # Get requester's tenant from JWT token info
+        token_info = g.get('jwt_oidc_token_info', {})
+        requester_tenant_id = token_info.get('tenant_id')
+
+        # Ensure g.tenant_id is set (in case decorator didn't set it)
+        if not hasattr(g, 'tenant_id') or g.tenant_id is None:
+            g.tenant_id = requester_tenant_id
+
+        # Check if this is a cross-tenant operation
+        if db_user.tenant_id and requester_tenant_id and str(db_user.tenant_id) != str(requester_tenant_id):
+            # Check if requester is MET admin (can do cross-tenant ops)
+            roles = token_info.get('realm_access', {}).get('roles', [])
+            is_met_admin = Role.CREATE_TENANT.value in roles
+
+            if not is_met_admin:
+                raise BusinessException(
+                    error='The user has no access to this tenant',
+                    status_code=HTTPStatus.FORBIDDEN
+                )
+
         groups = KEYCLOAK_SERVICE.get_user_groups(user_id=db_user.external_id)
         group_names = [group.get('name') for group in groups]
         if KeycloakGroupName.EAO_IT_ADMIN.value in group_names:
             raise BusinessException(
                 error='This user is already a Superuser.',
-                status_code=HTTPStatus.CONFLICT.value)
+                status_code=HTTPStatus.CONFLICT.value
+            )

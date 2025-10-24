@@ -96,7 +96,7 @@ class Engagement(BaseModel):
             items = query.all()
             return items, len(items)
 
-        page = query.paginate(page=pagination_options.page, per_page=pagination_options.size)
+        page = db.paginate(query, page=pagination_options.page, per_page=pagination_options.size, error_out=False)
         return page.items, page.total
 
     @classmethod
@@ -108,24 +108,22 @@ class Engagement(BaseModel):
         if not record:
             return None
 
-        update_fields = dict(
-            name=engagement.get('name', None),
-            description=engagement.get('description', None),
-            rich_description=engagement.get('rich_description', None),
-            start_date=engagement.get('start_date', None),
-            end_date=engagement.get('end_date', None),
-            status_id=engagement.get('status_id', None),
-            # to fix the bug with UI not passing published date always.
-            # Defaulting to existing
-            published_date=engagement.get('published_date', record.published_date),
-            scheduled_date=engagement.get('scheduled_date', record.scheduled_date),
-            updated_date=datetime.utcnow(),
-            updated_by=engagement.get('updated_by', None),
-            banner_filename=engagement.get('banner_filename', None),
-            content=engagement.get('content', None),
-            rich_content=engagement.get('rich_content', None),
-            visibility=engagement.get('visibility', record.visibility)
-        )
+        update_fields = {
+            'name': engagement.get('name', None),
+            'description': engagement.get('description', None),
+            'rich_description': engagement.get('rich_description', None),
+            'start_date': engagement.get('start_date', None),
+            'end_date': engagement.get('end_date', None),
+            'status_id': engagement.get('status_id', None),
+            'published_date': engagement.get('published_date', record.published_date),
+            'scheduled_date': engagement.get('scheduled_date', record.scheduled_date),
+            'updated_date': datetime.utcnow(),
+            'updated_by': engagement.get('updated_by', None),
+            'banner_filename': engagement.get('banner_filename', None),
+            'content': engagement.get('content', None),
+            'rich_content': engagement.get('rich_content', None),
+            'visibility': engagement.get('visibility', record.visibility)
+        }
         query.update(update_fields)
         db.session.commit()
         return record
@@ -154,11 +152,11 @@ class Engagement(BaseModel):
         now = local_datetime()
         # Strip the time off the datetime object
         date_due = datetime(now.year, now.month, now.day)
-        update_fields = dict(
-            status_id=Status.Closed.value,
-            updated_date=datetime.utcnow(),
-            updated_by=SYSTEM_USER
-        )
+        update_fields = {
+            'status_id': Status.Closed.value,
+            'updated_date': datetime.utcnow(),
+            'updated_by': SYSTEM_USER
+        }
         # Close published engagements where end date is prior than today
         query = Engagement.query \
             .filter(Engagement.status_id == Status.Published.value) \
@@ -175,12 +173,12 @@ class Engagement(BaseModel):
         """Update scheduled engagements to published."""
         datetime_due = datetime.now()
         print('Publish due date ------------------------', datetime_due)
-        update_fields = dict(
-            status_id=Status.Published.value,
-            published_date=datetime.utcnow(),
-            updated_date=datetime.utcnow(),
-            updated_by=SYSTEM_USER
-        )
+        update_fields = {
+            'status_id': Status.Published.value,
+            'published_date': datetime.utcnow(),
+            'updated_date': datetime.utcnow(),
+            'updated_by': SYSTEM_USER
+        }
         # Publish scheduled engagements where scheduled datetime is prior than now
         query = Engagement.query \
             .filter(Engagement.status_id == Status.Scheduled.value) \
