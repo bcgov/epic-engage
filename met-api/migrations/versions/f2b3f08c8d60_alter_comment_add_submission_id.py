@@ -24,25 +24,25 @@ def upgrade():
     # Attempt to populate the submission id for previous answers BUT
     # this could potentially link a comment with a wrong submission id 
     # when there are multiple submissions for the same survey from the same user (we are unable to identify different submissions for the same user)
-    conn.execute('UPDATE comment c \
+    conn.execute(sa.text('UPDATE comment c \
                   SET submission_id=s.id \
                   FROM submission s \
                   WHERE \
                     c.submission_id is null AND \
                     s.survey_id = c.survey_id AND \
-                    s.user_id = c.user_id')
+                    s.user_id = c.user_id'))
 
     # Attempt to populate the corresponding question/componnent id for a comment BUT
     # this could potentially link a comment with its a wrong question/component
-    # when there are multiple questions in the survey (we are unable to identify which question it belongs to)    
-    conn.execute('UPDATE comment c \
+    # when there are multiple questions in the survey (we are unable to identify which question it belongs to)
+    conn.execute(sa.text('UPDATE comment c \
                   SET component_id=item_object->>\'key\' \
                   FROM survey s, \
                        jsonb_array_elements(s.form_json->\'components\') with ordinality arr(item_object, position) \
                   WHERE \
                     c.component_id is null AND \
                     c.survey_id = s.id AND \
-                    item_object->>\'inputType\' = \'text\'')
+                    item_object->>\'inputType\' = \'text\''))
 
 
 def downgrade():

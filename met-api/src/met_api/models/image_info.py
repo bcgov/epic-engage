@@ -6,6 +6,7 @@ Manages the ImageInfo
 from sqlalchemy import asc, desc
 from sqlalchemy.sql import text
 
+
 from met_api.models import db
 from met_api.models.base_model import BaseModel
 from met_api.models.pagination_options import PaginationOptions
@@ -40,7 +41,7 @@ class ImageInfo(BaseModel):
         sort = cls._get_sort_order(pagination_options)
         query = query.order_by(sort)
 
-        page = query.paginate(page=pagination_options.page, per_page=pagination_options.size)
+        page = db.paginate(query, page=pagination_options.page, per_page=pagination_options.size, error_out=False)
         return page.items, page.total
 
     @staticmethod

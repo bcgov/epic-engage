@@ -12,6 +12,7 @@ from sqlalchemy.sql.expression import true
 from sqlalchemy.sql.schema import ForeignKey
 from sqlalchemy.ext.hybrid import hybrid_property
 
+
 from met_api.constants.comment_status import Status as CommentStatus
 from met_api.constants.engagement_status import Status as EngagementStatus
 from met_api.models.engagement_settings import EngagementSettingsModel
@@ -85,7 +86,7 @@ class Comment(BaseModel):
             items = query.all()
             return items, len(items)
 
-        page = query.paginate(page=pagination_options.page, per_page=pagination_options.size)
+        page = db.paginate(query, page=pagination_options.page, per_page=pagination_options.size, error_out=False)
 
         return page.items, page.total
 
@@ -124,7 +125,7 @@ class Comment(BaseModel):
             items = query.all()
             return items, len(items)
 
-        page = query.paginate(page=pagination_options.page, per_page=pagination_options.size)
+        page = db.paginate(query, page=pagination_options.page, per_page=pagination_options.size, error_out=False)
 
         return page.items, page.total
 
@@ -159,7 +160,7 @@ class Comment(BaseModel):
             items = query.all()
             return items, len(items)
 
-        page = query.paginate(page=pagination_options.page, per_page=pagination_options.size)
+        page = db.paginate(query, page=pagination_options.page, per_page=pagination_options.size)
 
         return page.items, page.total
 
@@ -213,11 +214,11 @@ class Comment(BaseModel):
     def update(cls, submission_id, comment: CommentSchema, session=None) -> Comment:
         """Update comment text."""
         query = Comment.query.filter_by(id=comment.get('id'), submission_id=submission_id)
-        update_fields = dict(
-            text=comment.get('text', None),
-            updated_by=comment.get('participant_id', None),
-            updated_date=datetime.utcnow(),
-        )
+        update_fields = {
+            'text': comment.get('text', None),
+            'updated_by': comment.get('participant_id', None),
+            'updated_date': datetime.utcnow(),
+        }
 
         query.update(update_fields)
         if session is None:

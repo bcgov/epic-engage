@@ -44,7 +44,7 @@ class EngagementMembership(Resource):
         try:
 
             members = MembershipService.get_memberships(engagement_id)
-            return jsonify(MembershipSchema().dump(members, many=True)), HTTPStatus.OK
+            return jsonify(MembershipSchema(many=True).dump(members)), HTTPStatus.OK
         except BusinessException as err:
             return {'message': err.error}, err.status_code
 
@@ -94,7 +94,7 @@ class EngagementMembershipUser(Resource):
 
             membership_schema = MembershipEngagementSchema() if include_engagement_details else MembershipSchema()
 
-            return jsonify(membership_schema.dump(members, many=True)), HTTPStatus.OK
+            return jsonify(membership_schema(many=True).dump(members)), HTTPStatus.OK
         except BusinessException as err:
             return {'message': err.error}, err.status_code
         except ValueError as err:

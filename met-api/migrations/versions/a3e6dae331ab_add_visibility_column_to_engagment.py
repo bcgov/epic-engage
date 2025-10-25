@@ -39,13 +39,13 @@ def upgrade():
     op.add_column('engagement', sa.Column('visibility', sa.Integer(), nullable=False, server_default='1'))
     op.create_foreign_key("engagement_visibility_fkey", 'engagement', 'engagement_visibility', ['visibility'], ['id'])
     # Update the visibility column based on the is_internal column
-    op.execute("""
+    op.execute(sa.text("""
         UPDATE engagement e
         SET visibility = ev.id
         FROM engagement_visibility ev
         WHERE (e.is_internal AND ev.visibility_name = 'AuthToken')
            OR (NOT e.is_internal AND ev.visibility_name = 'Public')
-    """)
+    """))
     op.drop_column('engagement', 'is_internal')
 
 
@@ -53,10 +53,10 @@ def downgrade():
     # Add the is_internal column to the engagement table
     op.add_column('engagement', sa.Column('is_internal', sa.BOOLEAN(), nullable=False, server_default='0'))
     # Populate the is_internal column based on the visibility column
-    op.execute("""
+    op.execute(sa.text("""
         UPDATE engagement e
         SET is_internal = (e.visibility = (SELECT id FROM engagement_visibility WHERE visibility_name = 'AuthToken'))
-    """)
+    """))
     # Drop the foreign key constraint on the visibility column
     op.drop_constraint("engagement_visibility_fkey", 'engagement', type_='foreignkey')
     op.drop_column('engagement', 'visibility')

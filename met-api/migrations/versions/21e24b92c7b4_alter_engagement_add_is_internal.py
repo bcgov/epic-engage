@@ -18,7 +18,7 @@ depends_on = None
 
 def upgrade():
     op.add_column('engagement', sa.Column('is_internal', sa.Boolean(), nullable=True))
-    op.execute('UPDATE engagement SET is_internal = false')
+    op.execute(sa.text('UPDATE engagement SET is_internal = false'))
     op.alter_column('engagement', 'is_internal',
                existing_type=sa.Boolean(),
                nullable=False)

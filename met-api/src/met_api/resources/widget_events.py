@@ -43,7 +43,7 @@ class WidgetEvents(Resource):
         """Fetch a list of widgets by engagement_id."""
         try:
             events = WidgetEventsService().get_event_by_widget_id(widget_id)
-            return jsonify(WidgetEventsSchema().dump(events, many=True)), HTTPStatus.OK
+            return jsonify(WidgetEventsSchema(many=True).dump(events)), HTTPStatus.OK
         except (KeyError, ValueError) as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 

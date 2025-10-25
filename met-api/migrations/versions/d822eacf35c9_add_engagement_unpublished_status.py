@@ -31,4 +31,4 @@ def upgrade():
 
 def downgrade():
     conn = op.get_bind()
-    conn.execute('DELETE FROM engagement_status WHERE id=5')
+    conn.execute(sa.text('DELETE FROM engagement_status WHERE id=5'))

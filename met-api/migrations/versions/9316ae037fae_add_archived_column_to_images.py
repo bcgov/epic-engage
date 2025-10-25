@@ -17,7 +17,7 @@ depends_on = None
 
 def upgrade():
     op.add_column('image_info', sa.Column('archived', sa.Boolean(), default=False))
-    op.execute("UPDATE image_info SET archived = FALSE")
+    op.execute(sa.text("UPDATE image_info SET archived = FALSE"))
 
 
 def downgrade():

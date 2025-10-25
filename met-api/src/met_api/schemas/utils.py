@@ -89,7 +89,7 @@ def validate(json_data: json,
             Draft7Validator.check_schema(schema)
 
         schema_file_path = path.join(schema_search_path, schema_id)
-        resolver = RefResolver(f'file://{schema_file_path}.json', schema, schema_store)
+        resolver = RefResolver(f'file: //{schema_file_path}.json', schema, schema_store)
 
         if Draft7Validator(schema,
                            format_checker=draft7_format_checker,

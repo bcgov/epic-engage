@@ -54,8 +54,11 @@ class Feedback(BaseModel):
             items = query.all()
             return items, len(items)
 
-        page = query.paginate(page=pagination_options.page,
-                              per_page=pagination_options.size)
+        page = db.paginate(
+            query,
+            page=pagination_options.page,
+            per_page=pagination_options.size,
+            error_out=False)
 
         return page.items, page.total
 
