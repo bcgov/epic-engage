@@ -36,10 +36,10 @@ def upgrade():
 
     # Retrieve engagement names that don't have slugs
     connection = op.get_bind()
-    result = connection.execute("""
+    result = connection.execute(sa.text("""
         SELECT id, name
         FROM engagement
-    """)
+    """))
     
     engagements_without_slugs = result.fetchall()
 
@@ -59,7 +59,7 @@ def upgrade():
             slug_data
         )
 
-    op.execute("COMMIT")
+    op.execute(sa.text("COMMIT"))
     # ### end Alembic commands ###
 
 

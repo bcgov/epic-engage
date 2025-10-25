@@ -24,7 +24,7 @@ def upgrade():
     default_tenant_id = 1
     conn = op.get_bind()
 
-    user_res = conn.execute("SELECT * FROM staff_users WHERE external_id IS NOT NULL;")
+    user_res = conn.execute(sa.text("SELECT * FROM staff_users WHERE external_id IS NOT NULL;"))
     user_list: List[StaffUser] = user_res.fetchall()
     for user in user_list:
         try:

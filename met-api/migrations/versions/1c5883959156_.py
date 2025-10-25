@@ -22,7 +22,7 @@ def upgrade():
                     existing_type=postgresql.ENUM(
                         'Unreviewed', 'Archived', name='feedbackstatustype'),
                     nullable=False)
-    op.execute('UPDATE "feedback" SET status = \'Unreviewed\'')
+    op.execute(sa.text('UPDATE "feedback" SET status = \'Unreviewed\''))
     # ### end Alembic commands ###
 
 

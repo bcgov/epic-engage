@@ -29,4 +29,4 @@ def upgrade():
 
 def downgrade():
     conn = op.get_bind()
-    conn.execute('DELETE FROM widget_type WHERE id=4')
+    conn.execute(sa.text('DELETE FROM widget_type WHERE id=4'))

@@ -53,7 +53,8 @@ class CdogsApiService:
 
     @staticmethod
     def _post_generate_document(json_request_body, headers, url):
-        response = requests.post(url, data=json_request_body, headers=headers)
+        timeout = current_app.config.get('CONNECT_TIMEOUT', 60)
+        response = requests.post(url, data=json_request_body, headers=headers, timeout=timeout)
         return response
 
     def upload_template(self, template_file_path):
@@ -93,7 +94,8 @@ class CdogsApiService:
 
     @staticmethod
     def _post_upload_template(headers, url, template):
-        response = requests.post(url, headers=headers, files=template)
+        timeout = current_app.config.get('CONNECT_TIMEOUT', 60)
+        response = requests.post(url, headers=headers, files=template, timeout=timeout)
         return response
 
     def check_template_cached(self, template_hash_code: str):
@@ -101,10 +103,11 @@ class CdogsApiService:
         headers = {
             'Authorization': f'Bearer {self.access_token}'
         }
+        timeout = current_app.config.get('CONNECT_TIMEOUT', 60)
 
         url = f'{_Config.CDOGS_BASE_URL}/api/v2/template/{template_hash_code}'
 
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=timeout)
         return response.status_code == HTTPStatus.OK
 
     @staticmethod
@@ -112,9 +115,10 @@ class CdogsApiService:
         token_url = _Config.CDOGS_TOKEN_URL
         service_client = _Config.CDOGS_SERVICE_CLIENT
         service_client_secret = _Config.CDOGS_SERVICE_CLIENT_SECRET
+        timeout = current_app.config.get('CONNECT_TIMEOUT', 60)
 
         basic_auth_encoded = base64.b64encode(
-            bytes(f'{service_client}:{service_client_secret}', 'utf-8')).decode('utf-8')
+            bytes(f'{service_client}: {service_client_secret}', 'utf-8')).decode('utf-8')
         data = 'grant_type=client_credentials'
         response = requests.post(
             token_url,
@@ -122,7 +126,8 @@ class CdogsApiService:
             headers={
                 'Authorization': f'Basic {basic_auth_encoded}',
                 'Content-Type': 'application/x-www-form-urlencoded'
-            }
+            },
+            timeout=timeout
         )
 
         response_json = response.json()

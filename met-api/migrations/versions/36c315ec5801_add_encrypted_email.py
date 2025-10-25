@@ -42,14 +42,14 @@ def upgrade():
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('external_id')
     )
-    op.execute('INSERT INTO staff_users \
+    op.execute(sa.text('INSERT INTO staff_users \
         (id, created_date, updated_date, first_name, middle_name, last_name, username, contact_number, \
         external_id, status_id, tenant_id, created_by, updated_by) SELECT id, \
         created_date, updated_date, first_name, middle_name, last_name, username, contact_number,\
-        external_id, status_id, tenant_id, created_by, updated_by FROM met_users WHERE username IS NOT NULL OR id = 1;')
-    op.execute('DELETE FROM met_users WHERE id = 1;')
-    op.execute('DELETE FROM met_users WHERE username is not null;')
-    op.execute('SELECT setval(\'staff_users_id_seq\', (SELECT MAX(id) + 1 FROM staff_users), true);')
+        external_id, status_id, tenant_id, created_by, updated_by FROM met_users WHERE username IS NOT NULL OR id = 1;'))
+    op.execute(sa.text('DELETE FROM met_users WHERE id = 1;'))
+    op.execute(sa.text('DELETE FROM met_users WHERE username is not null;'))
+    op.execute(sa.text('SELECT setval(\'staff_users_id_seq\', (SELECT MAX(id) + 1 FROM staff_users), true);'))
     op.create_index(op.f('ix_staff_users_username'), 'staff_users', ['username'], unique=True)
     op.create_foreign_key('membership_user_id_fkey', 'membership', 'staff_users', ['user_id'], ['id'])
 
@@ -77,11 +77,11 @@ def downgrade():
     op.add_column('met_users', sa.Column('access_type', sa.VARCHAR(length=200), autoincrement=False, nullable=True))
     op.add_column('met_users', sa.Column('last_name', sa.VARCHAR(length=50), autoincrement=False, nullable=True))
 
-    op.execute('INSERT INTO met_users \
+    op.execute(sa.text('INSERT INTO met_users \
         (id, created_date, updated_date, first_name, middle_name, last_name, username, contact_number, \
         external_id, status_id, tenant_id, created_by, updated_by) SELECT id, \
         created_date, updated_date, first_name, middle_name, last_name, username, contact_number,\
-        external_id, status_id, tenant_id, created_by, updated_by FROM staff_users;')
+        external_id, status_id, tenant_id, created_by, updated_by FROM staff_users;'))
 
     op.create_foreign_key('user_status_fk', 'met_users', 'user_status', ['status_id'], ['id'])
     op.create_unique_constraint('user_external_id_key', 'met_users', ['external_id'])

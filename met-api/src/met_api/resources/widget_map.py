@@ -43,7 +43,7 @@ class Map(Resource):
         """Get map widget."""
         try:
             widget_map = WidgetMapService().get_map(widget_id)
-            return jsonify(WidgetMapSchema().dump(widget_map, many=True)), HTTPStatus.OK
+            return jsonify(WidgetMapSchema(many=True).dump(widget_map)), HTTPStatus.OK
         except BusinessException as err:
             return str(err), err.status_code
 

@@ -27,7 +27,7 @@ def upgrade():
     op.add_column('submission', sa.Column('engagement_id', sa.Integer(), nullable=True))
     op.create_foreign_key('submission_engagement_id_fkey', 'submission', 'engagement', ['engagement_id'], ['id'], ondelete='CASCADE')
 
-    op.execute('UPDATE submission SET engagement_id = (select survey.engagement_id from survey where survey.id = submission.survey_id) WHERE engagement_id IS NULL')
+    op.execute(sa.text('UPDATE submission SET engagement_id = (select survey.engagement_id from survey where survey.id = submission.survey_id) WHERE engagement_id IS NULL'))
     op.alter_column('submission', 'engagement_id', nullable=False)
     # ### end Alembic commands ###
 

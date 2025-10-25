@@ -22,10 +22,10 @@ status_code - where possible use HTTP Error Codes
 
 
 class BusinessException(Exception):  # noqa: N818
-    """Exception that adds error code and error name, that can be used for i18n support."""
+    """Exception that adds error code and error name, usable for i18n support."""
 
-    def __init__(self, error, status_code, *args, **kwargs):
+    def __init__(self, error: str, status_code: int):
         """Return a valid BusinessException."""
-        super().__init__(*args, **kwargs)
+        super().__init__(error, status_code)
         self.error = error
         self.status_code = status_code

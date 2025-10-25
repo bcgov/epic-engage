@@ -152,12 +152,10 @@ def test_add_user_to_team_member_group_across_tenants(mocker, client, jwt, sessi
     """Assert that a user can be added to the team member group."""
     set_global_tenant(tenant_id=1)
     user = factory_staff_user_model()
-
     mock_add_user_to_group_keycloak, mock_get_user_groups_keycloak, mock_add_attribute_to_user = mock_add_user_to_group(
         mocker,
         [KeycloakGroupName.EAO_IT_VIEWER.value]
     )
-
     claims = copy.deepcopy(TestJwtClaims.staff_admin_role.value)
     # sets a different tenant id in the request
     claims['tenant_id'] = 2
@@ -181,7 +179,6 @@ def test_add_user_to_team_member_group_across_tenants(mocker, client, jwt, sessi
     )
     # assert MET admin can do cross tenant operation
     assert rv.status_code == HTTPStatus.OK
-
     mock_add_user_to_group_keycloak.assert_called()
     mock_get_user_groups_keycloak.assert_called()
 

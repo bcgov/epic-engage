@@ -48,5 +48,5 @@ def downgrade():
     
     conn = op.get_bind()
 
-    conn.execute('DELETE FROM widget_type WHERE id=7')
+    conn.execute(sa.text('DELETE FROM widget_type WHERE id=7'))
     # ### end Alembic commands ###

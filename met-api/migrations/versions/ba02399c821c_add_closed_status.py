@@ -30,12 +30,12 @@ def upgrade():
     op.bulk_insert(engagement_status, [
         {'id': 3, 'status_name': 'Closed', 'description': 'The engagement period is over', 'created_date': datetime.utcnow(), 'updated_date': datetime.utcnow()}
     ])
-    
-    conn.execute('SELECT setval(\'engagement_status_id_seq\', 3);')
+
+    conn.execute(sa.text('SELECT setval(\'engagement_status_id_seq\', 3);'))
 
 
 def downgrade():
     conn = op.get_bind()
 
-    conn.execute('DELETE FROM engagement_status WHERE id=3')    
-    conn.execute('SELECT setval(\'engagement_status_id_seq\', 2);')
+    conn.execute(sa.text('DELETE FROM engagement_status WHERE id=3'))
+    conn.execute(sa.text('SELECT setval(\'engagement_status_id_seq\', 2);'))

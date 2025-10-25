@@ -22,8 +22,8 @@ def upgrade():
     op.alter_column('tenant', 'description',
                existing_type=sa.String(100),
                type_=sa.String(300))
-    op.execute('UPDATE tenant SET title = \'Modern Engagement\';')
-    op.execute('UPDATE tenant SET description = \'British Columbia\'\'s environmental assessment process provides opportunities for Indigenous Nations, government agencies and the public to influence the outcome of environmental assessments in British Columbia.\' WHERE short_name = \'EAO\';')
+    op.execute(sa.text('UPDATE tenant SET title = \'Modern Engagement\';'))
+    op.execute(sa.text('UPDATE tenant SET description = \'British Columbia\'\'s environmental assessment process provides opportunities for Indigenous Nations, government agencies and the public to influence the outcome of environmental assessments in British Columbia.\' WHERE short_name = \'EAO\';'))
     op.alter_column('tenant', 'title',
                existing_type=sa.String(),
                nullable=False)

@@ -21,9 +21,9 @@ def upgrade():
     op.add_column('membership', sa.Column('is_latest', sa.Boolean(), nullable=True))
     
     # Update existing rows with default values
-    op.execute("UPDATE membership SET version = 1")
-    op.execute("UPDATE membership SET is_latest = TRUE")
-    
+    op.execute(sa.text("UPDATE membership SET version = 1"))
+    op.execute(sa.text("UPDATE membership SET is_latest = TRUE"))
+
     # Change columns to non-nullable
     op.alter_column('membership', 'version', nullable=False)
     op.alter_column('membership', 'is_latest', nullable=False)

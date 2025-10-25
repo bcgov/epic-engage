@@ -7,7 +7,6 @@ Create Date: 2022-11-08 10:31:39.240317
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '7faee53e6759'
@@ -24,14 +23,14 @@ def upgrade():
     op.add_column('submission', sa.Column('comment_status_id', sa.Integer(), nullable=True))
     op.create_foreign_key('submission_comment_status_id_fkey', 'submission', 'comment_status', ['comment_status_id'], ['id'], ondelete='SET NULL')
 
-    conn.execute('UPDATE submission s \
+    conn.execute(sa.text('UPDATE submission s \
                 SET reviewed_by=c.reviewed_by, \
                     review_date=c.review_date,\
                     comment_status_id=c.status_id\
                 FROM comment c \
                 WHERE \
                 s.comment_status_id is null AND \
-                s.id = c.submission_id')
+                s.id = c.submission_id'))
 
     op.drop_column('comment', 'reviewed_by')
     op.drop_column('comment', 'review_date')
@@ -46,14 +45,14 @@ def downgrade():
     op.add_column('comment', sa.Column('reviewed_by', sa.String(length=50), nullable=True))
     op.create_foreign_key('comment_status_id_fkey', 'comment', 'comment_status', ['status_id'], ['id'], ondelete='SET NULL')
     
-    conn.execute('UPDATE comment c \
+    conn.execute(sa.text('UPDATE comment c \
             SET reviewed_by=s.reviewed_by, \
                 review_date=s.review_date,\
                 status_id=s.comment_status_id\
             FROM submission s \
             WHERE \
             c.status_id is null AND \
-            c.submission_id = s.id')
+            c.submission_id = s.id'))
 
     op.drop_column('submission', 'comment_status_id')
     op.drop_column('submission', 'review_date')

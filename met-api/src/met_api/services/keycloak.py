@@ -114,7 +114,7 @@ class KeycloakService:  # pylint: disable=too-few-public-methods
 
         response = requests.post(token_url,
                                  data=f'client_id={admin_client_id}&grant_type=client_credentials'
-                                      f'&client_secret={admin_secret}', headers=headers,
+                                 f'&client_secret={admin_secret}', headers=headers,
                                  timeout=timeout)
         return response.json().get('access_token')
 
@@ -168,6 +168,7 @@ class KeycloakService:  # pylint: disable=too-few-public-methods
         config = current_app.config
         base_url = config.get('KEYCLOAK_BASE_URL')
         realm = config.get('KEYCLOAK_REALMNAME')
+        timeout = config.get('CONNECT_TIMEOUT', 60)
         admin_token = KeycloakService._get_admin_token()
 
         tenant_attributes = {
@@ -176,10 +177,10 @@ class KeycloakService:  # pylint: disable=too-few-public-methods
 
         user_url = f'{base_url}/auth/admin/realms/{realm}/users/{user_id}'
         headers = {'Authorization': f'Bearer {admin_token}'}
-        response = requests.get(user_url, headers=headers)
+        response = requests.get(user_url, headers=headers, timeout=timeout)
         user_data = response.json()
         user_data.setdefault('attributes', {}).update(tenant_attributes)
-        requests.put(user_url, json=user_data, headers=headers)
+        requests.put(user_url, json=user_data, headers=headers, timeout=timeout)
         response.raise_for_status()
 
     @staticmethod

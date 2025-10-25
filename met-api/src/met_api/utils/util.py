@@ -37,7 +37,7 @@ def cors_preflight(methods):
                        'Access-Control-Allow-Headers': 'Authorization, Content-Type, registries-trace-id, '
                                                        'invitation_token'}
 
-        setattr(f, 'options', options)
+        f.options = options
         return f
 
     return wrapper

@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Manager for widget video schema."""
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 
 from met_api.models.widget_video import WidgetVideo as WidgetVideoModel
 
-from marshmallow import Schema
 
-
-class WidgetVideoSchema(Schema):  # pylint: disable=too-many-ancestors, too-few-public-methods
+class WidgetVideoSchema(SQLAlchemyAutoSchema):  # pylint: disable=too-many-ancestors, too-few-public-methods
     """This is the schema for the video model."""
 
     class Meta:  # pylint: disable=too-few-public-methods
         """Videos all of the Widget Video fields to a default schema."""
 
         model = WidgetVideoModel
-        fields = ('id', 'widget_id', 'engagement_id', 'video_url', 'description')
+        load_instance = True
+        include_fk = True

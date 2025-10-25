@@ -29,35 +29,35 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
 
-    op.execute('INSERT INTO participant (id, email_address, created_date, updated_date, created_by, updated_by) \
-            SELECT id, email_address, created_date, updated_date, created_by, updated_by FROM met_users;')
+    op.execute(sa.text('INSERT INTO participant (id, email_address, created_date, updated_date, created_by, updated_by) \
+            SELECT id, email_address, created_date, updated_date, created_by, updated_by FROM met_users;'))
 
     op.create_index(op.f('ix_participant_email_address'), 'participant', ['email_address'], unique=False)
     op.add_column('comment', sa.Column('participant_id', sa.Integer(), nullable=True))
     op.create_foreign_key('comment_participant_id_fkey', 'comment', 'participant', ['participant_id'], ['id'], ondelete='SET NULL')
     op.drop_constraint('comment_user_id_fkey', 'comment', type_='foreignkey')
-    op.execute('UPDATE comment SET participant_id = user_id')
+    op.execute(sa.text('UPDATE comment SET participant_id = user_id'))
     op.drop_column('comment', 'user_id')
 
     op.add_column('email_verification', sa.Column('participant_id', sa.Integer(), nullable=True))
     op.create_foreign_key('email_verification_participant_id_fkey', 'email_verification', 'participant', ['participant_id'], ['id'])
     op.drop_constraint('email_verification_user_id_fkey', 'email_verification', type_='foreignkey')
-    op.execute('UPDATE email_verification SET participant_id = user_id')
+    op.execute(sa.text('UPDATE email_verification SET participant_id = user_id'))
     op.drop_column('email_verification', 'user_id')
 
     op.add_column('submission', sa.Column('participant_id', sa.Integer(), nullable=True))
     op.drop_constraint('submission_user_id_fkey', 'submission', type_='foreignkey')
     op.create_foreign_key('submission_participant_id_fkey', 'submission', 'participant', ['participant_id'], ['id'])
-    op.execute('UPDATE submission SET participant_id = user_id')
+    op.execute(sa.text('UPDATE submission SET participant_id = user_id'))
     op.drop_column('submission', 'user_id')
 
     op.add_column('subscription', sa.Column('participant_id', sa.Integer(), nullable=True))
     op.drop_constraint('subscription_user_id_fkey', 'subscription', type_='foreignkey')
     op.create_foreign_key('subscription_participant_id_fkey', 'subscription', 'participant', ['participant_id'], ['id'])
-    op.execute('UPDATE subscription SET participant_id = user_id')
+    op.execute(sa.text('UPDATE subscription SET participant_id = user_id'))
     op.drop_column('subscription', 'user_id')
 
-    op.execute('SELECT setval(\'participant_id_seq\', (SELECT MAX(id) + 1 FROM participant), true);')
+    op.execute(sa.text('SELECT setval(\'participant_id_seq\', (SELECT MAX(id) + 1 FROM participant), true);'))
     op.drop_table('met_users')
 
 
@@ -74,8 +74,8 @@ def downgrade():
     sa.PrimaryKeyConstraint('id', name='user_pkey')
     )
 
-    op.execute('INSERT INTO met_users (id, email_address, created_date, updated_date, created_by, updated_by) \
-        SELECT id, email_address, created_date, updated_date, created_by, updated_by FROM participant;')
+    op.execute(sa.text('INSERT INTO met_users (id, email_address, created_date, updated_date, created_by, updated_by) \
+        SELECT id, email_address, created_date, updated_date, created_by, updated_by FROM participant;'))
 
     op.add_column('submission', sa.Column('user_id', sa.INTEGER(), autoincrement=False, nullable=True))
     op.drop_constraint('submission_participant_id_fkey', 'submission', type_='foreignkey')

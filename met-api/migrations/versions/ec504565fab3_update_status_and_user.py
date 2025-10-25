@@ -27,27 +27,28 @@ def upgrade():
         sa.column('created_date', sa.DateTime),
         sa.column('updated_date', sa.DateTime))
 
-    conn.execute('UPDATE "user" SET first_name=\'MET\', middle_name=\'\', last_name=\'System\' WHERE id=1')
+    conn.execute(sa.text('UPDATE "user" SET first_name=\'MET\', middle_name=\'\', last_name=\'System\' WHERE id=1'))
 
     conn.execute(
         engagement_status.update()
         .where(engagement_status.c.id==1)
-        .values({'status_name': 'Draft', 'description': 'Not ready to the public'}))
+        .values({'status_name': 'Draft', 'description': 'Not ready to the public'})
+    )
 
     op.bulk_insert(engagement_status, [
         {'id': 2, 'status_name': 'Published', 'description': 'Visible to the public', 'created_date': datetime.utcnow(), 'updated_date': datetime.utcnow()}
     ])
-    
-    conn.execute('SELECT setval(\'engagement_status_id_seq\', 2);')
+
+    conn.execute(sa.text('SELECT setval(\'engagement_status_id_seq\', 2);'))
     # ### end Alembic commands ###
 
 
 def downgrade():
     conn = op.get_bind()
 
-    conn.execute('UPDATE engagement_status SET status_name=\'draft\', description=\'Test Description\' WHERE id=1')
-    conn.execute('UPDATE "user" SET first_name=\'A\', middle_name=\'B\', last_name=\'C\' WHERE id=1')
-    conn.execute('DELETE FROM engagement_status WHERE id=2')
-    
-    conn.execute('SELECT setval(\'engagement_status_id_seq\', 1);')
+    conn.execute(sa.text('UPDATE engagement_status SET status_name=\'draft\', description=\'Test Description\' WHERE id=1'))
+    conn.execute(sa.text('UPDATE "user" SET first_name=\'A\', middle_name=\'B\', last_name=\'C\' WHERE id=1'))
+    conn.execute(sa.text('DELETE FROM engagement_status WHERE id=2'))
+
+    conn.execute(sa.text('SELECT setval(\'engagement_status_id_seq\', 1);'))
     # ### end Alembic commands ###

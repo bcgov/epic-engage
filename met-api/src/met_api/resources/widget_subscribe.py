@@ -44,7 +44,7 @@ class WidgetSubscribe(Resource):
         """Fetch a list of widgets by engagement_id."""
         try:
             subscribe = WidgetSubscribeService().get_subscribe_by_widget_id(widget_id)
-            return jsonify(WidgetSubscribeSchema().dump(subscribe, many=True)), HTTPStatus.OK
+            return jsonify(WidgetSubscribeSchema(many=True).dump(subscribe)), HTTPStatus.OK
         except (KeyError, ValueError) as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
@@ -55,7 +55,7 @@ class WidgetSubscribe(Resource):
         request_json = request.get_json()
         try:
             subscribe = WidgetSubscribeService().create_subscribe(widget_id, request_json)
-            return WidgetSubscribeSchema().dump(subscribe, many=False), HTTPStatus.OK
+            return WidgetSubscribeSchema().dump(subscribe), HTTPStatus.OK
         except BusinessException as err:
             return str(err), err.status_code
 

@@ -41,7 +41,7 @@ class Videos(Resource):
         """Get video widget."""
         try:
             widget_video = WidgetVideoService().get_video(widget_id)
-            return jsonify(WidgetVideoSchema().dump(widget_video, many=True)), HTTPStatus.OK
+            return jsonify(WidgetVideoSchema(many=True).dump(widget_video)), HTTPStatus.OK
         except BusinessException as err:
             return str(err), err.status_code
 

@@ -19,9 +19,7 @@ A simple decorator to validate roles with in the tenant.
 from functools import wraps
 from http import HTTPStatus
 from typing import Dict
-
 from flask import abort, current_app, g
-
 from met_api.auth import jwt as _jwt
 from met_api.utils.constants import TENANT_ID_JWT_CLAIM
 from met_api.utils.roles import Role
@@ -35,11 +33,9 @@ def require_role(role, skip_tenant_check_for_admin=False):
         skip_tenant_check_for_admin (bool, optional): A flag to indicate whether to skip tenant checks for MET Admins.
             If set to True, tenant checks are skipped for users with MET administrative privileges.
             Defaults to False. Set it to True for cross tenant operations like first time adding a super user to tenant.
-
     Returns:
         function: A decorator function that can be used to enforce role-based authorization.
     """
-
     def decorator(func):
         @wraps(func)
         @_jwt.has_one_of_roles(role)
@@ -56,15 +52,21 @@ def require_role(role, skip_tenant_check_for_admin=False):
 
             tenant_id = token_info.get(TENANT_ID_JWT_CLAIM, None)
             current_app.logger.debug(f'Tenant Id From JWT Claim {tenant_id}')
-            current_app.logger.debug(f'Tenant Id From g {g.tenant_id}')
-            if g.tenant_id and str(g.tenant_id) == str(tenant_id):
+
+            g_tenant_id = getattr(g, 'tenant_id', None)
+            current_app.logger.debug(f'Tenant Id From g {g_tenant_id}')
+
+            # If g.tenant_id is not set but we have it in the token, set it
+            if g_tenant_id is None and tenant_id is not None:
+                g.tenant_id = tenant_id
+                g_tenant_id = tenant_id
+
+            if g_tenant_id and str(g_tenant_id) == str(tenant_id):
                 return func(*args, **kwargs)
             else:
                 abort(HTTPStatus.FORBIDDEN,
                       description='The user has no access to this tenant')
-
         return wrapper
-
     return decorator
 
 
@@ -76,5 +78,4 @@ def is_met_global_admin(token_info) -> bool:
     """Return True if the user is MET Admin ie who can manage all tenants."""
     roles: list = token_info.get('realm_access', None).get('roles', []) if 'realm_access' in token_info \
         else []
-
     return Role.CREATE_TENANT.value in roles

@@ -18,7 +18,7 @@ depends_on = None
 def upgrade():
     # reset users type
     update_reset_access_type_query = f"update met_users set access_type = null where 0=0"
-    op.execute(update_reset_access_type_query)
+    op.execute(sa.text(update_reset_access_type_query))
     # ### end Alembic commands ###
 
 

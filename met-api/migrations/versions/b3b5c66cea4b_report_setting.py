@@ -34,7 +34,7 @@ def upgrade():
     sa.PrimaryKeyConstraint('id')
     )
     op.add_column('survey', sa.Column('generate_dashboard', sa.Boolean(), nullable=True))
-    op.execute('UPDATE survey SET generate_dashboard = True')
+    op.execute(sa.text('UPDATE survey SET generate_dashboard = True'))
     # ### end Alembic commands ###
 
 
