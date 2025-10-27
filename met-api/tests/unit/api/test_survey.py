@@ -167,8 +167,7 @@ def test_get_hidden_survey_for_admins(client, jwt, session):  # pylint:disable=u
     sort_order = 'desc'
 
     rv = client.get(f'{surveys_url}?page={page}&size={page_size}&sort_key={sort_key}\
-                    &sort_order={sort_order}&search_text=',
-                    headers=headers, content_type=ContentType.JSON.value)
+                    &sort_order={sort_order}&search_text=', headers=headers, content_type=ContentType.JSON.value)
     assert rv.status_code == 200
     assert rv.json.get('total') == 1
 
@@ -238,8 +237,7 @@ def test_get_hidden_survey_for_team_member(client, jwt, session):  # pylint:disa
     sort_order = 'desc'
 
     rv = client.get(f'{surveys_url}?page={page}&size={page_size}&sort_key={sort_key}\
-                    &sort_order={sort_order}&search_text=',
-                    headers=headers, content_type=ContentType.JSON.value)
+                    &sort_order={sort_order}&search_text=', headers=headers, content_type=ContentType.JSON.value)
     assert rv.status_code == 200
     assert rv.json.get('total') == 0
 
@@ -256,8 +254,7 @@ def test_get_template_survey(client, jwt, session):  # pylint:disable=unused-arg
     sort_order = 'desc'
 
     rv = client.get(f'{surveys_url}?page={page}&size={page_size}&sort_key={sort_key}\
-                    &sort_order={sort_order}&search_text=',
-                    headers=headers, content_type=ContentType.JSON.value)
+                    &sort_order={sort_order}&search_text=', headers=headers, content_type=ContentType.JSON.value)
     assert rv.status_code == 200
     assert rv.json.get('total') == 1
 

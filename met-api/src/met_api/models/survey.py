@@ -87,7 +87,7 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
             items = query.all()
             return items, len(items)
 
-        page = query.paginate(page=pagination_options.page, per_page=pagination_options.size)
+        page = db.paginate(query, page=pagination_options.page, per_page=pagination_options.size, error_out=False)
 
         return page.items, page.total
 
@@ -156,15 +156,15 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
         record = query.first()
         if not record:
             return None
-        update_fields = dict(
-            form_json=survey.get('form_json', record.form_json),
-            updated_date=datetime.utcnow(),
-            updated_by=survey.get('updated_by', record.updated_by),
-            name=survey.get('name', record.name),
-            is_hidden=survey.get('is_hidden', record.is_hidden),
-            is_template=survey.get('is_template', record.is_template),
-            generate_dashboard=survey.get('generate_dashboard', record.generate_dashboard),
-        )
+        update_fields = {
+            'form_json': survey.get('form_json', record.form_json),
+            'updated_date': datetime.utcnow(),
+            'updated_by': survey.get('updated_by', record.updated_by),
+            'name': survey.get('name', record.name),
+            'is_hidden': survey.get('is_hidden', record.is_hidden),
+            'is_template': survey.get('is_template', record.is_template),
+            'generate_dashboard': survey.get('generate_dashboard', record.generate_dashboard),
+        }
         query.update(update_fields)
         db.session.commit()
         return record

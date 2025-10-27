@@ -172,6 +172,6 @@ class EngagementMemberships(Resource):
         try:
             members = MembershipService.get_engagements_by_user(user_id)
             engagement_schema = EngagementSchema(exclude=['surveys', 'rich_content', 'rich_description'], many=True)
-            return jsonify(engagement_schema.dump(members, many=True)), HTTPStatus.OK
+            return jsonify(engagement_schema.dump(members)), HTTPStatus.OK
         except BusinessException as err:
             return {'message': err.error}, err.status_code

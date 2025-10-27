@@ -1,7 +1,4 @@
-.PHONY: license
-.PHONY: setup
-.PHONY: ci cd
-.PHONY: db run
+.PHONY: license setup ci cd db run help
 
 MKFILE_PATH:=$(abspath $(lastword $(MAKEFILE_LIST)))
 CURRENT_ABS_DIR:=$(patsubst %/,%,$(dir $(MKFILE_PATH)))
@@ -18,6 +15,9 @@ license: ## Verify source code license headers.
 #################################################################################
 # COMMANDS -- Setup                                                             #
 #################################################################################
+
+PYTHON := python3.12
+
 setup: clean install install-dev ## Setup the project
 
 clean: clean-build clean-pyc clean-test ## Clean the project
@@ -43,16 +43,16 @@ clean-test: ## clean test files
 	rm -fr htmlcov/
 
 build-req: clean ## Upgrade requirements
-	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
+	test -f venv/bin/activate ||  $(PYTHON) -m venv $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
-	pip install --upgrade pip ;\
-	pip install -Ur requirements/prod.txt ;\
-	pip freeze | sort > requirements.txt ;\
+	$(PYTHON) -m pip install --upgrade pip ;\
+	$(PYTHON) -m pip install -Ur requirements/prod.txt ;\
+	$(PYTHON) -m pip freeze | sort > requirements.txt ;\
 	cat requirements/repo-libraries.txt >> requirements.txt ;\
-	pip install -Ur requirements/repo-libraries.txt
+	$(PYTHON) -m pip install -Ur requirements/repo-libraries.txt
 
-install: clean ## Install python virtrual environment
-	test -f venv/bin/activate || python3 -m venv  $(CURRENT_ABS_DIR)/venv ;\
+install: clean ## Install python virtual environment
+	test -f venv/bin/activate || $(PYTHON) -m venv venv ;\
 	. venv/bin/activate ;\
 	pip install --upgrade pip ;\
 	pip install -Ur requirements.txt
@@ -74,7 +74,7 @@ flake8: ## Linting with flake8
 	. venv/bin/activate && flake8 src/$(PROJECT_NAME) tests
 
 lintfix: ## Linting fix
-	. venv/bin/activate && autopep8 -i -a src/**/*.py tests/**/*.py
+	. venv/bin/activate && autopep8 -i -a -r src/$(PROJECT_NAME) tests
 
 lint: pylint flake8 ## run all lint type scripts
 
@@ -138,17 +138,20 @@ tag: push ## tag image
 #################################################################################
 # COMMANDS - Local                                                              #
 #################################################################################
+
+FLASK := . venv/bin/activate && flask --app manage.py
+
 run: db ## Run the project in local
-	. venv/bin/activate && python -m flask run -p 5000
+	$(FLASK) run -p 5000
 
 db: ## Update the local database
-	. venv/bin/activate && python manage.py db upgrade
+	$(FLASK) db upgrade
 
 db-downgrade: ## Update the local database to the previous migration
-	. venv/bin/activate && python manage.py db downgrade
+	$(FLASK) db downgrade
 
 db-migrate: ## Create a new migration
-	. venv/bin/activate && flask db migrate -m "$(message)"
+	$(FLASK) db migrate -m "$(message)"
 
 #################################################################################
 # Self Documenting Commands                                                     #

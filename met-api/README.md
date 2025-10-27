@@ -6,7 +6,7 @@ Python flask API application for The Modern Engagement Tool project.
 
 ### Development Environment
 * Install the following:
-    - [Python](https://www.python.org/)
+    - [Python](https://www.python.org/)3.12
     - [Docker](https://www.docker.com/)
     - [Docker-Compose](https://docs.docker.com/compose/install/)
 * Install Dependencies

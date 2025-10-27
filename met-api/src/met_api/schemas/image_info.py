@@ -53,5 +53,5 @@ class ImageInfoParameterSchema(Schema):
     archived = fields.Bool(
         metadata={'description': 'Indicates if the image is archived'},
         required=False,
-        missing=False,
+        load_default=False,
     )

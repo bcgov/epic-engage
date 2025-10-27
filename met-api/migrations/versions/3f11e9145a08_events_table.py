@@ -57,8 +57,9 @@ def upgrade():
                                  sa.Column('name', sa.String),
                                  sa.Column('description', sa.String))
     conn = op.get_bind()
-    res = conn.execute(
+    res = conn.execute(sa.text(
         f"select max(id) from widget_type;")
+    )
     latest_id = res.fetchall()[0][0]
 
     op.bulk_insert(widget_type_table, [
@@ -73,6 +74,6 @@ def downgrade():
 
     op.drop_table('event_item')
     op.drop_table('widget_events')
-    op.execute("delete from widget_type where name='Events'")
-    op.execute('DROP TYPE eventtypes;')
+    op.execute(sa.text("delete from widget_type where name='Events'"))
+    op.execute(sa.text('DROP TYPE eventtypes;'))
     # ### end Alembic commands ###

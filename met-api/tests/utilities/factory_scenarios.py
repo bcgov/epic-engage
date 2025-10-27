@@ -167,11 +167,17 @@ class TestEngagementInfo(dict, Enum):
         'status': EngagementStatus.Published.value,
         'visibility': Visibility.Public.value,
         'description': 'My Test Engagement Description',
-        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
-        \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
+        'rich_description': (
+            '{"blocks":[{"key":"2ku94","text":"Rich Description Sample","type":"unstyled",'
+            '"depth":0,"inlineStyleRanges":[],"entityRanges":[],"data":{}}],'
+            '"entityMap":{}}"}'
+        ),
         'content': 'Content Sample',
-        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
-        \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
+        'rich_content': (
+            '{"blocks":[{"key":"fclgj","text":"Rich Content Sample","type":"unstyled","depth":0,'
+            '"inlineStyleRanges":[],"entityRanges":[],"data":{}}],'
+            '"entityMap":{}}"}'
+        ),
     }
 
     engagement_draft = {
@@ -184,11 +190,15 @@ class TestEngagementInfo(dict, Enum):
         'status': EngagementStatus.Draft.value,
         'visibility': Visibility.Public.value,
         'description': 'My Test Engagement Description',
-        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
-            \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
+        'rich_description': (
+            '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",'
+            '\"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
+        ),
         'content': 'Content Sample',
-        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
-            \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
+        'rich_content': (
+            '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,'
+            '\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
+        )
     }
 
     engagement2 = {
@@ -201,15 +211,21 @@ class TestEngagementInfo(dict, Enum):
         'status': SubmissionStatus.Open.value,
         'visibility': Visibility.Public.value,
         'description': 'My Test Engagement Description',
-        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
-            \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
+        'rich_description': (
+            '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",'
+            '\"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
+        ),
         'content': 'Content Sample',
-        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
-            \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
+        'rich_content': (
+            '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,'
+            '\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
+        ),
         'status_block': [{
             'survey_status': 'Upcoming',
-            'block_text': '{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
-            \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
+            'block_text': (
+                '{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,'
+                '\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}}'
+            )
         }
         ]
     }
@@ -225,11 +241,15 @@ class TestEngagementInfo(dict, Enum):
         'status': SubmissionStatus.Open.value,
         'visibility': Visibility.Public.value,
         'description': 'My Test Engagement Description',
-        'rich_description': '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",\
-            \"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"',
+        'rich_description': (
+            '"{\"blocks\":[{\"key\":\"2ku94\",\"text\":\"Rich Description Sample\",\"type\":\"unstyled\",'
+            '\"depth\":0,\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
+        ),
         'content': 'Content Sample',
-        'rich_content': '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,\
-            \"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
+        'rich_content': (
+            '"{\"blocks\":[{\"key\":\"fclgj\",\"text\":\"Rich Content Sample\",\"type\":\"unstyled\",\"depth\":0,'
+            '\"inlineStyleRanges\":[],\"entityRanges\":[],\"data\":{}}],\"entityMap\":{}}"'
+        )
     }
 
 

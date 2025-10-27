@@ -56,21 +56,30 @@ def test_create_submission_rollback(session):  # pylint:disable=unused-argument
     email_verification = factory_email_verification(survey.id)
     participant = factory_participant_model()
 
+    # Store before rollback
+    verification_token = email_verification.verification_token
+
     submission_request: SubmissionSchema = {
         'submission_json': '{ "test_question": "test answer"}',
         'survey_id': survey.id,
         'participant_id': participant.id,
-        'verification_token': email_verification.verification_token,
+        'verification_token': verification_token,
     }
 
     with patch.object(CommentService, 'extract_comments_from_survey', side_effect=ValueError) as mock:
         try:
-            SubmissionService().create(email_verification.verification_token, submission_request)
+            SubmissionService().create(verification_token, submission_request)
         except ValueError:
             mock.assert_called()
-        actual_email_verification = EmailVerificationService().get(
-            email_verification.verification_token)
-        assert actual_email_verification['is_active'] is True
+
+        # Expire session to get fresh db
+        session.expire_all()
+
+        # Fetch from db using saved token
+        actual_email_verification = EmailVerificationService().get(verification_token)
+
+        # Submission_id should still be None
+        assert actual_email_verification.get('submission_id') is None
 
 
 def test_review_comment(client, jwt, session, monkeypatch):  # pylint:disable=unused-argument
