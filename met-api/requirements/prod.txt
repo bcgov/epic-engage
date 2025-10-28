@@ -1,5 +1,5 @@
 gunicorn
-Flask
+Flask==2.3.3
 Flask-Migrate>=4.0.5
 Flask-Mail
 Flask-Moment
