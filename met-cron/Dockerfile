@@ -1,4 +1,4 @@
-FROM python:3.8.5-buster
+FROM python:3.12-slim-bookworm
 
 # ========================================================================================================
 # Install go-crond (from https://github.com/BCDevOps/go-crond)
@@ -19,6 +19,16 @@ ENV BUILD_DATE=${BUILD_DATE}
 
 LABEL org.label-schema.vcs-ref=${VCS_REF} \
     org.label-schema.build-date=${BUILD_DATE}
+
+# Install curl and other necessary packages
+RUN apt-get update && \
+    apt-get install -y \
+    curl \
+    bash \
+    git \
+    libpq5 \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN curl https://github.com/$SOURCE_REPO/go-crond/releases/download/$GOCROND_VERSION/go-crond-64-linux -s -L -o /usr/local/bin/go-crond
 RUN chmod ug+x /usr/local/bin/go-crond
