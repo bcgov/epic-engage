@@ -168,7 +168,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     # config for offset days to send reminder emails
     OFFSET_DAYS = os.getenv('OFFSET_DAYS', 2)
 
-class MigrationConfig():  # pylint: disable=too-few-public-methods
+class MigrationConfig(_Config):  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults for all the other configurations."""
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -186,7 +186,7 @@ class MigrationConfig():  # pylint: disable=too-few-public-methods
     DB_PORT = os.getenv('DATABASE_PORT', '5432')
     SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}'
     SQLALCHEMY_ECHO = True
-    SQLALCHEMY_TRACK_MODIFICATIONS = True
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     print(f'SQLAlchemy URL (_Config): {SQLALCHEMY_DATABASE_URI}')
 

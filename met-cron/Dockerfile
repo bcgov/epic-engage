@@ -1,4 +1,4 @@
-FROM python:3.8.5-buster
+FROM python:3.12-slim-bookworm
 
 # ========================================================================================================
 # Install go-crond (from https://github.com/BCDevOps/go-crond)

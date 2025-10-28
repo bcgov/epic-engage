@@ -123,23 +123,26 @@ tag: push ## tag image
 #################################################################################
 # COMMANDS - Local                                                              #
 #################################################################################
+
+PYTHON := python3.12
+
 run: ## Run the project in local
 	./docker-entrypoint.sh
 
 run_etl: ## Run the etl task in local
-	. venv/bin/activate && python invoke_jobs.py EXTRACT_MET
+	. venv/bin/activate && $(PYTHON) invoke_jobs.py EXTRACT_MET
 
 run_closeout: ## Run the closeout task in local
-	. venv/bin/activate && python invoke_jobs.py ENGAGEMENT_CLOSEOUT
+	. venv/bin/activate && $(PYTHON) invoke_jobs.py ENGAGEMENT_CLOSEOUT
 
 run_publish: ## Run the publish task in local
-	. venv/bin/activate && python invoke_jobs.py ENGAGEMENT_PUBLISH
+	. venv/bin/activate && $(PYTHON) invoke_jobs.py ENGAGEMENT_PUBLISH
 
 run_purge: ## Run the publish task in local
-	. venv/bin/activate && python invoke_jobs.py PURGE
+	. venv/bin/activate && $(PYTHON) invoke_jobs.py PURGE
 
 db: ## Update the local database
-	. venv/bin/activate && python manage.py db upgrade
+	. venv/bin/activate && FLASK_APP=manage.py flask db upgrade
 
 #################################################################################
 # Self Documenting Commands                                                     #
