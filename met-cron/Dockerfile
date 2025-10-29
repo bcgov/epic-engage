@@ -9,8 +9,8 @@ FROM python:3.12-slim-bookworm
 # - https://blog.danman.eu/cron-jobs-in-openshift/
 #
 # --------------------------------------------------------------------------------------------------------
-ARG SOURCE_REPO=BCDevOps
-ARG GOCROND_VERSION=0.6.2
+ARG SOURCE_REPO=webdevops
+ARG GOCROND_VERSION=23.12.0
 ARG VCS_REF="missing"
 ARG BUILD_DATE="missing"
 
@@ -30,7 +30,7 @@ RUN apt-get update && \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN curl https://github.com/$SOURCE_REPO/go-crond/releases/download/$GOCROND_VERSION/go-crond-64-linux -s -L -o /usr/local/bin/go-crond
+RUN curl https://github.com/$SOURCE_REPO/go-crond/releases/download/$GOCROND_VERSION/go-crond.linux.amd64 -s -L -o /usr/local/bin/go-crond
 RUN chmod ug+x /usr/local/bin/go-crond
 # ========================================================================================================
 
