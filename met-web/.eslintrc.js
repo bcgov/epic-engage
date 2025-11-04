@@ -13,7 +13,11 @@ module.exports = {
             ],
 
             parserOptions: {
+                tsconfigRootDir: __dirname,
                 project: ['./tsconfig.eslint.json'],
+                ecmaVersion: 2018,
+                sourceType: 'module',
+                ecmaFeatures: { jsx: true },
             },
         },
     ],
@@ -37,4 +41,5 @@ module.exports = {
             version: 'detect', // Tells eslint-plugin-react to automatically detect the version of React to use
         },
     },
+    ignorePatterns: ['**/*.js', '**/*.config.ts', 'public/**/*'],
 };

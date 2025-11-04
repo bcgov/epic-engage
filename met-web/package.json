@@ -76,8 +76,8 @@
         "build-wc": "react-app-rewired build --wc-build",
         "test": "jest",
         "eject": "react-scripts eject",
-        "lint": "eslint \"src/**/*.{ts,tsx}\"",
-        "lintfix": "eslint \"src/**/*.{ts,tsx}\" --fix"
+        "lint": "node --max-old-space-size=4096 node_modules/.bin/eslint --cache 'src/**/*.{ts,tsx}'",
+        "lintfix": "node --max-old-space-size=4096 node_modules/.bin/eslint --cache 'src/**/*.{ts,tsx}' --fix"
     },
     "eslintConfig": {
         "extends": [
