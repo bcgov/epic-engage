@@ -1,6 +1,7 @@
-import type { Config } from '@jest/types';
+// jest.config.js
+const path = require('path');
 
-const config: Config.InitialOptions = {
+module.exports = {
     clearMocks: true,
     coverageDirectory: 'coverage',
     cache: true,
@@ -12,6 +13,7 @@ const config: Config.InitialOptions = {
         'react-dnd-html5-backend': 'react-dnd-html5-backend-cjs',
         'dnd-core': 'dnd-core-cjs',
         '\\.(css|scss)$': '<rootDir>/tests/unit/components/styleMock.tsx',
+        '^keycloak-js$': '<rootDir>/tests/unit/__mocks__/keycloak-js.ts',
     },
     preset: 'ts-jest',
     roots: ['<rootDir>'],
@@ -21,25 +23,17 @@ const config: Config.InitialOptions = {
     testPathIgnorePatterns: ['/node_modules/', '/cypress/'],
     globals: {
         'ts-jest': {
+            tsconfig: path.resolve(__dirname, 'tsconfig.jest.json'),
             isolatedModules: true,
-            tsconfig: {
-                allowJs: true,
-            },
         },
     },
     transform: {
         '^.+\\.(ts|tsx)$': 'ts-jest',
-        '^.+\\.(js|jsx)$': ['ts-jest', {
-            tsconfig: {
-                allowJs: true,
-            },
-        }],
+        '^.+\\.(js|jsx)$': 'ts-jest',
         '^.+\\.svg$': 'jest-transform-stub',
     },
     transformIgnorePatterns: [
-        'node_modules/(?!(@turf|concaveman|rbush|quickselect|quick-lru|tinyqueue|robust-predicates|d3-.*)/)',
+        'node_modules/(?!(@turf|concaveman|rbush|quickselect|quick-lru|tinyqueue|robust-predicates|d3-.*|keycloak-js)/)',
     ],
     modulePaths: ['src'],
 };
-
-export default config;

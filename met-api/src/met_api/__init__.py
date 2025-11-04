@@ -149,8 +149,15 @@ def build_cache(app):
 def setup_jwt_manager(app_context, jwt_manager):
     """Use flask app to configure the JWTManager to work for a particular Realm."""
     def get_roles(a_dict):
-        return a_dict['realm_access']['roles']  # pragma: no cover
+        """Extract user roles from Keycloak token."""
+        # Realm roles
+        roles = a_dict.get('realm_access', {}).get('roles', [])
+        # Resource roles for epic-engage
+        keycloak_client = app_context.config.get('KEYCLOAK_CLIENT_ID', 'epic-engage')
+        resource_roles = a_dict.get('resource_access', {}).get(keycloak_client, {}).get('roles', [])
+        # Combine and remove duplicates
+        all_roles = set(roles + resource_roles)
+        return list(all_roles)
 
     app_context.config['JWT_ROLE_CALLBACK'] = get_roles
-
     jwt_manager.init_app(app_context)

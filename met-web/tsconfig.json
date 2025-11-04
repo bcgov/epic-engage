@@ -4,7 +4,7 @@
         "target": "es2017",
         "lib": ["es2017", "dom", "dom.iterable"],
         "jsx": "react",
-        "module": "commonjs",
+        "module": "esnext",
         "baseUrl": "src",
         "typeRoots": [
             "./src/@types",
@@ -15,9 +15,10 @@
             "@testing-library/jest-dom",
             "node"
         ],
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "resolveJsonModule": true,
         "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
         "strict": true,
         "skipLibCheck": true

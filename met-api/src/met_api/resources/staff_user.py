@@ -61,7 +61,7 @@ class StaffUsers(Resource):
     @cross_origin(origins=allowedorigins())
     @require_role([Role.VIEW_USERS.value], skip_tenant_check_for_admin=True)
     def get():
-        """Return a set of users(staff only)."""
+        """Return a set of users (staff only)."""
         args = request.args
         pagination_options = PaginationOptions(
             page=args.get('page', None, int),

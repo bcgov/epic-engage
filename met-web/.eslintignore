@@ -1,0 +1,10 @@
+# .eslintignore
+node_modules
+build
+dist
+coverage
+.jest-cache
+public
+*.config.js
+*.config.ts
+cypress

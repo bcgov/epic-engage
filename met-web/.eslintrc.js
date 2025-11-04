@@ -13,12 +13,16 @@ module.exports = {
             ],
 
             parserOptions: {
-                project: ['./tsconfig.json'], // Specify it only for TypeScript files
+                tsconfigRootDir: __dirname,
+                project: ['./tsconfig.eslint.json'],
+                ecmaVersion: 2018,
+                sourceType: 'module',
+                ecmaFeatures: { jsx: true },
             },
         },
     ],
     parserOptions: {
-        project: 'tsconfig.json',
+        project: 'tsconfig.eslint.json',
         tsconfigRootDir: __dirname,
         ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
         sourceType: 'module', // Allows for the use of imports
@@ -37,4 +41,5 @@ module.exports = {
             version: 'detect', // Tells eslint-plugin-react to automatically detect the version of React to use
         },
     },
+    ignorePatterns: ['**/*.js', '**/*.config.ts', 'public/**/*'],
 };
