@@ -9,5 +9,4 @@ export const tenantDetail: ITenantDetail = {
     clientId: AppConfig.keycloak.clientId,
 };
 
-// eslint-disable-next-line
-export const _kc: Keycloak.KeycloakInstance = new (Keycloak as any)(tenantDetail);
+export const _kc = new Keycloak(tenantDetail);

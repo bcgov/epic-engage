@@ -22,6 +22,9 @@ const KeycloakData = _kc;
  * Initializes Keycloak instance.
  */
 const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
+    if (KeycloakData.authenticated !== undefined) {
+        return;
+    }
     try {
         const authenticated = await KeycloakData.init({
             onLoad: 'check-sso',
@@ -65,7 +68,7 @@ const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
         dispatch(userAuthentication(KeycloakData.authenticated ? true : false));
         refreshToken(dispatch);
     } catch (err) {
-        console.error(err);
+        console.error('Keycloak initialization error:', err);
         dispatch(userAuthentication(false));
     }
 };

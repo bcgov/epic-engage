@@ -94,7 +94,7 @@ class EngagementMembershipUser(Resource):
 
             membership_schema = MembershipEngagementSchema() if include_engagement_details else MembershipSchema()
 
-            return jsonify(membership_schema(many=True).dump(members)), HTTPStatus.OK
+            return jsonify(membership_schema.dump(members, many=True)), HTTPStatus.OK
         except BusinessException as err:
             return {'message': err.error}, err.status_code
         except ValueError as err:
