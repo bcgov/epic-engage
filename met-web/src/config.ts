@@ -1,4 +1,5 @@
-import { hasKey } from 'utils';
+import { ITenantDetail } from 'constants/types';
+
 declare global {
     interface Window {
         _env_: {
@@ -30,14 +31,17 @@ declare global {
             //tenant
             REACT_APP_IS_SINGLE_TENANT_ENVIRONMENT: string;
             REACT_APP_DEFAULT_TENANT: string;
+
+            [key: string]: string;
         };
     }
 }
 
-const getEnv = (key: string, defaultValue = '') => {
-    if (hasKey(window._env_, key)) {
+export const getEnv = (key: string, defaultValue = ''): string => {
+    if (typeof window !== 'undefined' && window._env_ && window._env_[key] !== undefined) {
         return window._env_[key];
-    } else return process.env[key] || defaultValue;
+    }
+    return process.env[key] || defaultValue;
 };
 
 // adding localStorage to access the MET API from external sources(eg: web-components)
@@ -112,3 +116,9 @@ export const AppConfig = {
         defaultTenant: DEFAULT_TENANT,
     },
 };
+
+export const getTenantDetail = (): ITenantDetail => ({
+    realm: getEnv('REACT_APP_KEYCLOAK_REALM'),
+    url: getEnv('REACT_APP_KEYCLOAK_URL'),
+    clientId: getEnv('REACT_APP_KEYCLOAK_CLIENT'),
+});
