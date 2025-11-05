@@ -22,7 +22,9 @@ const KeycloakData = _kc;
  * Initializes Keycloak instance.
  */
 const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
-    if (KeycloakData.authenticated !== undefined) {
+    console.log('[Keycloak] Starting initialization');
+    if (KeycloakData.authenticated === true || KeycloakData.authenticated === false) {
+        console.log('[Keycloak] Already initialized');
         return;
     }
     try {
@@ -68,7 +70,7 @@ const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
         dispatch(userAuthentication(KeycloakData.authenticated ? true : false));
         refreshToken(dispatch);
     } catch (err) {
-        console.error('Keycloak initialization error:', err);
+        console.error('[Keycloak] Keycloak initialization error:', err);
         dispatch(userAuthentication(false));
     }
 };
