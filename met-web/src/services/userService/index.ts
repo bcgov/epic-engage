@@ -18,15 +18,22 @@ import { USER_ROLES } from 'services/userService/constants';
 import { getBaseUrl } from 'utils/helpers';
 
 const KeycloakData = _kc;
+
+let isInitializing = false;
+let isInitialized = false;
+
 /**
  * Initializes Keycloak instance.
  */
 const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
     console.log('[Keycloak] Starting initialization');
-    if (KeycloakData.authenticated === true || KeycloakData.authenticated === false) {
-        console.log('[Keycloak] Already initialized');
+
+    if (isInitializing || isInitialized) {
+        console.log('[Keycloak] Already initialized or initializing');
         return;
     }
+
+    isInitializing = true;
     try {
         const authenticated = await KeycloakData.init({
             onLoad: 'check-sso',
@@ -34,6 +41,11 @@ const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
             pkceMethod: 'S256',
             checkLoginIframe: false,
         });
+
+        isInitialized = true;
+
+        console.log('[Keycloak] Init completed, authenticated:', authenticated);
+
         if (!authenticated) {
             console.warn('not authenticated!');
             dispatch(userAuthentication(authenticated));
