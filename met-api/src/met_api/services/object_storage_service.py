@@ -33,7 +33,7 @@ class ObjectStorageService:
                 not filename):
             return ''
 
-        return f'https: //{self.s3_host}/{self.s3_bucket}/{filename}'
+        return f'https://{self.s3_host}/{self.s3_bucket}/{filename}'
 
     def get_auth_headers(self, documents: List[Document]):
         """Get the s3 auth headers or the provided documents."""
