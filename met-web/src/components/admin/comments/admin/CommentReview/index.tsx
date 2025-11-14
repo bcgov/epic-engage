@@ -46,9 +46,9 @@ import CommentsDisabledIcon from '@mui/icons-material/CommentsDisabled';
 import EditIcon from '@mui/icons-material/Edit';
 import EditContactModal from './EditContactModal';
 import { getSettingByKey } from 'services/settingsService';
-import { useLazyGetContactQuery } from 'apiManager/apiSlices/contacts';
-import { Contact } from 'models/contact';
 import { SettingKey } from 'constants/settingKey';
+import { ThreatContact } from 'models/threatContact';
+import { getThreatContactById } from 'services/threatContactService';
 
 const CommentReview = () => {
     const [submission, setSubmission] = useState<SurveySubmission>(createDefaultSubmission());
@@ -67,8 +67,7 @@ const CommentReview = () => {
     const [openEmailPreview, setEmailPreview] = useState(false);
     const [survey, setSurvey] = useState<Survey>(createDefaultSurvey());
     const [isEditingThreatContact, setIsEditingThreatContact] = useState(false);
-    const [getContactTrigger] = useLazyGetContactQuery();
-    const [threatContact, setThreatContact] = useState<Contact | null>(null);
+    const [threatContact, setThreatContact] = useState<ThreatContact | null>(null);
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { t: translate } = useAppTranslation();
@@ -140,10 +139,9 @@ const CommentReview = () => {
     const fetchThreatContactSettings = async () => {
         const currentThreatContactSetting = await getSettingByKey(SettingKey.THREAT_CONTACT);
         if (!currentThreatContactSetting?.setting_value) return;
-        const currentThreatContact = await getContactTrigger(
+        const currentThreatContact = await getThreatContactById(
             parseInt(currentThreatContactSetting?.setting_value, 10),
-            false,
-        ).unwrap();
+        );
         setThreatContact(currentThreatContact);
     };
 
@@ -426,7 +424,8 @@ const CommentReview = () => {
                                     >
                                         <Grid item>
                                             <MetSmallText bold color="#d32f2f">
-                                                {translate('comment.admin.review.threatTextOne')} {threatContact?.name}{' '}
+                                                {translate('comment.admin.review.threatTextOne')}{' '}
+                                                {threatContact?.first_name} {threatContact?.last_name}{' '}
                                                 {translate('comment.admin.review.threatTextTwo')}{' '}
                                                 <Link href={`mailto:${threatContact?.email}`}>
                                                     {threatContact?.email}

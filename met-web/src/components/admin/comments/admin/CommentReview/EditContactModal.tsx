@@ -3,26 +3,24 @@ import {
     FormControlLabel,
     FormLabel,
     Grid,
-    MenuItem,
     Modal,
     Radio,
     RadioGroup,
-    Select,
     Stack,
     TextField,
 } from '@mui/material';
-import { useLazyGetContactQuery, useLazyGetContactsQuery } from 'apiManager/apiSlices/contacts';
-import { MetHeader3, MetParagraph, modalStyle, PrimaryButton, SecondaryButton } from 'components/shared/common';
+import { MetHeader1, MetLabel, modalStyle, PrimaryButton, SecondaryButton } from 'components/shared/common';
 import { SettingKey } from 'constants/settingKey';
 import { useAppDispatch } from 'hooks';
-import { Contact } from 'models/contact';
 import { Setting } from 'models/settings';
 import React, { useEffect, useState } from 'react';
 import { If, Then } from 'react-if';
-import { postContact } from 'services/contactService';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { getSettingByKey, patchSettings, postSettings } from 'services/settingsService';
 import * as yup from 'yup';
+import AutoComplete from '@mui/material/Autocomplete';
+import { getThreatContactById, getThreatContacts, postThreatContact } from 'services/threatContactService';
+import { ThreatContact } from 'models/threatContact';
 
 interface IEditContactModalProps {
     isOpen: boolean;
@@ -32,24 +30,21 @@ interface IEditContactModalProps {
 
 const EditContactModal = ({ isOpen, setIsOpen, onSaveCallback }: IEditContactModalProps) => {
     const [selectedOption, setSelectedOption] = useState<string | null>('EXISTING');
-    const [contacts, setContacts] = useState<Contact[]>([]);
-    const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+    const [contacts, setContacts] = useState<ThreatContact[]>([]);
+    const [selectedContact, setSelectedContact] = useState<ThreatContact | null>(null);
     const [threatContactSetting, setThreatContactSetting] = useState<Setting | null>(null);
     const [firstName, setFirstName] = useState<string>('');
     const [lastName, setLastName] = useState<string>('');
     const [email, setEmail] = useState<string>('');
-    const [getContactsTrigger] = useLazyGetContactsQuery();
-    const [getContactTrigger] = useLazyGetContactQuery();
     const dispatch = useAppDispatch();
 
     // Function to fetch current threat contact setting and the corresponding contact
     const fetchSettings = async () => {
         const currentThreatContactSetting = await getSettingByKey(SettingKey.THREAT_CONTACT);
         if (!currentThreatContactSetting?.setting_value) return;
-        const currentThreatContact = await getContactTrigger(
-            parseInt(currentThreatContactSetting?.setting_value, 10),
-            false,
-        ).unwrap();
+        const currentThreatContact = await getThreatContactById(
+            parseInt(currentThreatContactSetting.setting_value, 10),
+        );
         setThreatContactSetting(currentThreatContactSetting);
         setSelectedContact(currentThreatContact);
     };
@@ -57,7 +52,7 @@ const EditContactModal = ({ isOpen, setIsOpen, onSaveCallback }: IEditContactMod
     // Fetch contacts for dropdown
     useEffect(() => {
         const fetchContacts = async () => {
-            const loadedContacts = await getContactsTrigger(undefined, false).unwrap();
+            const loadedContacts = await getThreatContacts();
             setContacts(loadedContacts);
         };
 
@@ -118,11 +113,12 @@ const EditContactModal = ({ isOpen, setIsOpen, onSaveCallback }: IEditContactMod
         } else if (selectedOption === 'NEW') {
             const isValid = await validateNewContact();
             if (!isValid) return;
-            const createdContact = await postContact({
-                name: `${firstName} ${lastName}`,
+            const createdThreatContact = await postThreatContact({
+                first_name: firstName,
+                last_name: lastName,
                 email: email,
             });
-            await updateOrCreateSetting(createdContact.id);
+            await updateOrCreateSetting(createdThreatContact.id);
         }
         setIsOpen(false);
         onSaveCallback?.();
@@ -152,55 +148,60 @@ const EditContactModal = ({ isOpen, setIsOpen, onSaveCallback }: IEditContactMod
                 rowSpacing={2}
             >
                 <Grid item xs={12}>
-                    <FormControl>
-                        <FormLabel id="controlled-radio-buttons-group">
-                            <MetHeader3 sx={{ color: '#494949' }}>Edit Contact</MetHeader3>
-                        </FormLabel>
+                    <FormLabel id="controlled-radio-buttons-group">
+                        <MetHeader1 sx={{ color: '#494949' }}>Edit Contact</MetHeader1>
+                    </FormLabel>
+                </Grid>
+                <Grid item xs={12}>
+                    <FormControl fullWidth sx={{ mt: 1 }}>
                         <RadioGroup defaultValue={selectedOption} onChange={(e) => setSelectedOption(e.target.value)}>
                             <FormControlLabel
                                 key={'EXISTING'}
                                 value={'EXISTING'}
                                 control={<Radio />}
-                                label={<MetParagraph sx={{ color: '#494949' }}>Select Existing Contact</MetParagraph>}
+                                label={<MetLabel sx={{ color: '#494949' }}>Select Existing Contact</MetLabel>}
+                                sx={{ mb: 0 }}
                             />
                             <If condition={selectedOption === 'EXISTING'}>
                                 <Then>
-                                    <FormControl fullWidth sx={{ mt: 2 }}>
-                                        <Select
-                                            fullWidth
-                                            value={selectedContact?.id || ''}
-                                            displayEmpty
-                                            onChange={(e) => {
-                                                const contactId = e.target.value;
-                                                const contact = contacts.find((c) => c.id === contactId);
-                                                setSelectedContact(contact || null);
-                                            }}
-                                            sx={{
-                                                fontSize: '14px',
-                                                width: '100%',
-                                            }}
-                                        >
-                                            <MenuItem value="">
-                                                <em>Select a contact</em>
-                                            </MenuItem>
-                                            {contacts.map((contact) => (
-                                                <MenuItem key={contact.id} value={contact.id}>
-                                                    {contact.name} - {contact.email}
-                                                </MenuItem>
-                                            ))}
-                                        </Select>
-                                    </FormControl>
+                                    <AutoComplete
+                                        id="threat-contact-selector"
+                                        options={contacts || []}
+                                        renderInput={(params) => (
+                                            <TextField
+                                                {...params}
+                                                label=" "
+                                                InputLabelProps={{
+                                                    shrink: false,
+                                                }}
+                                                fullWidth
+                                            />
+                                        )}
+                                        isOptionEqualToValue={(option, value) => option.id === value.id}
+                                        size="small"
+                                        getOptionLabel={(contact: ThreatContact) =>
+                                            `${contact.first_name} ${contact.last_name} - ${contact.email}`
+                                        }
+                                        onChange={(
+                                            _e: React.SyntheticEvent<Element, Event>,
+                                            contact: ThreatContact | null,
+                                        ) => {
+                                            setSelectedContact(contact);
+                                        }}
+                                        value={selectedContact}
+                                    />
                                 </Then>
                             </If>
                             <FormControlLabel
                                 key={'NEW'}
                                 value={'NEW'}
                                 control={<Radio />}
-                                label={<MetParagraph sx={{ color: '#494949' }}>Create New Contact</MetParagraph>}
+                                label={<MetLabel sx={{ color: '#494949' }}>Create New Contact</MetLabel>}
+                                sx={{ mb: 0 }}
                             />
                             <If condition={selectedOption === 'NEW'}>
                                 <Then>
-                                    <Grid container spacing={2} sx={{ mt: 2 }}>
+                                    <Grid container spacing={1} sx={{ mt: 0 }}>
                                         <Grid item xs={6}>
                                             <TextField
                                                 required

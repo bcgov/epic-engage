@@ -105,6 +105,11 @@ const Endpoints = {
         CREATE: `${AppConfig.apiUrl}/contacts/`,
         UPDATE: `${AppConfig.apiUrl}/contacts/`,
     },
+    ThreatContacts: {
+        GET: `${AppConfig.apiUrl}/threat_contacts/threat_contact_id`,
+        GET_LIST: `${AppConfig.apiUrl}/threat_contacts/`,
+        CREATE: `${AppConfig.apiUrl}/threat_contacts/`,
+    },
     Documents: {
         GET_LIST: `${AppConfig.apiUrl}/widgets/widget_id/documents`,
         CREATE: `${AppConfig.apiUrl}/widgets/widget_id/documents`,
