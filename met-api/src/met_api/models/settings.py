@@ -43,7 +43,8 @@ class Settings(BaseModel):
 
     @classmethod
     def get_settings_by_key(cls, setting_key: str):
-        """Get a specific setting for the current tenant."""
+        """Get a specific setting for the current tenant, preferring the newest by created_date."""
         query = db.session.query(Settings).filter_by(setting_key=setting_key)
         query = cls._add_tenant_filter(query)
+        query = query.order_by(Settings.created_date.desc())
         return query.first()
