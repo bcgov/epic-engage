@@ -1,4 +1,5 @@
 #! /bin/sh
 cd /opt/app-root
 echo 'starting upgrade'
-python3 manage.py db upgrade
+export FLASK_APP=manage.py
+flask db upgrade
