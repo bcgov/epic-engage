@@ -41,7 +41,13 @@ const DrawerBox = () => {
                     <ListItem key={route.name}>
                         <ListItemButton
                             data-testid={`SideNav/${route.name}-button`}
-                            onClick={() => navigate(route.path)}
+                            onClick={() => {
+                                if (route.name === 'Images') {
+                                    window.open(`${route.path}`, '_blank', 'noopener');
+                                } else {
+                                    navigate(route.path);
+                                }
+                            }}
                             sx={{
                                 '&:hover': {
                                     backgroundColor: Palette.hover.light,

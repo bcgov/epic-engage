@@ -1,11 +1,12 @@
 import React, { useContext } from 'react';
 import Grid from '@mui/material/Grid';
 import { ImageContext } from './ImageContext';
-import { HeaderTitle, MetPageGridContainer, MetParagraph, PrimaryButton } from 'components/shared/common';
+import { MetHeader1, MetHeader3, MetPageGridContainer, MetParagraph, PrimaryButton } from 'components/shared/common';
 import ImageUpload from '../ImageUpload';
 import { IconButton, Stack, TextField } from '@mui/material';
-import { Search as SearchIcon, OpenInNew as OpenInNewIcon } from '@mui/icons-material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import MetTable from 'components/shared/common/Table';
 import { HeadCell, PaginationOptions } from 'components/shared/common/Table/types';
 import { ImageInfo } from 'models/image';
@@ -36,7 +37,6 @@ const ImageListing = () => {
     const { roles } = useAppSelector((state) => state.user);
 
     const authorized = roles.includes(USER_ROLES.CREATE_IMAGES);
-
     const headCells: HeadCell<ImageInfo>[] = [
         {
             key: 'url',
@@ -78,42 +78,24 @@ const ImageListing = () => {
                     </Grid>
                 );
             },
+            customStyle: { whiteSpace: 'nowrap' },
         },
         {
             key: 'url',
-            label: 'Image URL',
+            label: 'Copy URL',
             disablePadding: true,
             allowSort: true,
             numeric: false,
             renderCell: (row: ImageInfo) => (
                 <Grid container direction={'row'} gap={1} alignItems={'center'}>
-                    <Grid item>{row.url}</Grid>
                     <Grid item>
                         <IconButton
                             onClick={() => {
-                                const url = imageToDisplay?.url ?? '';
-                                const newWindow = window.open();
-                                if (newWindow) {
-                                    newWindow.document.write(`
-                                        <!DOCTYPE html>
-                                        <html>
-                                            <head>
-                                                <title>Image</title>
-                                                <style>
-                                                    body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; }
-                                                    img { max-width: 100%; max-height: 100vh; object-fit: contain; }
-                                                </style>
-                                            </head>
-                                            <body>
-                                                <img src="${url}" alt="Image" />
-                                            </body>
-                                        </html>
-                                    `);
-                                    newWindow.document.close();
-                                }
+                                const url = row?.url ?? '';
+                                navigator.clipboard.writeText(url);
                             }}
                         >
-                            <OpenInNewIcon />
+                            <ContentCopyIcon />
                         </IconButton>
                     </Grid>
                 </Grid>
@@ -149,7 +131,7 @@ const ImageListing = () => {
             rowSpacing={1}
         >
             <Grid item xs={12}>
-                <HeaderTitle sx={{ fontSize: '1.5rem' }}>Image URL Generator</HeaderTitle>
+                <MetHeader1>Image URL Generator</MetHeader1>
             </Grid>
             <Grid item xs={12}>
                 <ImageUpload
@@ -180,7 +162,6 @@ const ImageListing = () => {
                 <Then>
                     <Grid item xs={6}>
                         <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-                            <CheckCircleOutlineIcon color="success" />
                             <img
                                 src={imageToDisplay?.url}
                                 style={{
@@ -190,6 +171,7 @@ const ImageListing = () => {
                                     height: 'auto',
                                 }}
                             />
+                            <CheckCircleOutlineIcon color="success" />
                             <MetParagraph>{imageToDisplay?.display_name} has been successfully uploaded</MetParagraph>
                         </Stack>
                     </Grid>
@@ -201,32 +183,16 @@ const ImageListing = () => {
                             justifyContent="right"
                             sx={{ height: 100 }}
                         >
-                            <IconButton
+                            <PrimaryButton
                                 onClick={() => {
                                     const url = imageToDisplay?.url ?? '';
-                                    const newWindow = window.open();
-                                    if (newWindow) {
-                                        newWindow.document.write(`
-                                        <!DOCTYPE html>
-                                        <html>
-                                            <head>
-                                                <title>Image</title>
-                                                <style>
-                                                    body { margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000; }
-                                                    img { max-width: 100%; max-height: 100vh; object-fit: contain; }
-                                                </style>
-                                            </head>
-                                            <body>
-                                                <img src="${url}" alt="Image" />
-                                            </body>
-                                        </html>
-                                    `);
-                                        newWindow.document.close();
-                                    }
+                                    navigator.clipboard.writeText(url);
                                 }}
+                                startIcon={<ContentCopyIcon />}
+                                size="small"
                             >
-                                <OpenInNewIcon />
-                            </IconButton>
+                                Copy URL
+                            </PrimaryButton>
                         </Stack>
                     </Grid>
                 </Then>
@@ -235,7 +201,7 @@ const ImageListing = () => {
                 </Else>
             </If>
             <Grid item xs={12}>
-                <HeaderTitle sx={{ fontSize: '1.17em' }}>Uploaded Files</HeaderTitle>
+                <MetHeader3>Uploaded Files</MetHeader3>
             </Grid>
             <Grid item xs={12}>
                 <Stack direction="row" spacing={1} alignItems="center">

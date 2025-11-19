@@ -96,11 +96,9 @@ describe('Image listing page tests', () => {
         await waitFor(() => {
             expect(screen.getByText(mockImageOne.display_name)).toBeInTheDocument();
             expect(screen.getByText(formatDate(mockImageOne.date_uploaded))).toBeInTheDocument();
-            expect(screen.getByText(mockImageOne.url)).toBeInTheDocument();
 
             expect(screen.getByText(mockImageTwo.display_name)).toBeInTheDocument();
             expect(screen.getByText(formatDate(mockImageTwo.date_uploaded))).toBeInTheDocument();
-            expect(screen.getByText(mockImageTwo.url)).toBeInTheDocument();
         });
     });
 
@@ -121,7 +119,6 @@ describe('Image listing page tests', () => {
         await waitFor(() => {
             expect(screen.getByText(mockImageOne.display_name)).toBeInTheDocument();
             expect(screen.getByText(formatDate(mockImageOne.date_uploaded))).toBeInTheDocument();
-            expect(screen.getByText(mockImageOne.url)).toBeInTheDocument();
         });
 
         const searchField = container.querySelector('input[name="searchText"]');
