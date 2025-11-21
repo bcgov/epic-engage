@@ -11,7 +11,7 @@ import { useAppDispatch } from 'hooks';
 export interface ImageListingContext {
     images: ImageInfo[];
     handleTempUpload: (_files: File[]) => void;
-    handleUploadImage: () => void;
+    handleUploadImage: (_croppedImage?: File) => void;
     searchText: string;
     setSearchText: (value: string) => void;
     paginationOptions: PaginationOptions<ImageInfo>;
@@ -31,7 +31,7 @@ export const ImageContext = createContext<ImageListingContext>({
     handleTempUpload: (_files: File[]) => {
         /* empty default method  */
     },
-    handleUploadImage: () => {
+    handleUploadImage: (_croppedImage?: File) => {
         /* empty default method  */
     },
     searchText: '',
@@ -94,10 +94,11 @@ export const ImageProvider = ({ children }: { children: JSX.Element | JSX.Elemen
         setImageToUpload(null);
     };
 
-    const handleUploadImage = async () => {
-        if (!imageToUpload) return;
+    const handleUploadImage = async (croppedImage?: File) => {
+        const image = croppedImage || imageToUpload;
+        if (!image) return;
         try {
-            const [uniquefilename, fileName]: string[] = (await handleSaveImageToS3(imageToUpload)) || [];
+            const [uniquefilename, fileName]: string[] = (await handleSaveImageToS3(image)) || [];
             createImage(uniquefilename, fileName);
             setImageToUpload(null);
         } catch (error) {

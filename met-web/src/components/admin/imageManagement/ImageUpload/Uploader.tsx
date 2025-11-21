@@ -27,6 +27,7 @@ const Uploader = ({
         setCropModalOpen,
         imgAfterCrop,
         setImgAfterCrop,
+        setCropSettings,
     } = useContext(ImageUploadContext);
 
     useEffect(() => {
@@ -81,6 +82,7 @@ const Uploader = ({
                                 setExistingImageURL('');
                                 setImgAfterCrop('');
                                 handleAddFile([]);
+                                setCropSettings(undefined);
                                 URL.revokeObjectURL(addedImageFileUrl);
                             }}
                             size="small"

@@ -15,6 +15,7 @@ import { formatDate } from 'utils/helpers/dateHelper';
 import { useAppSelector } from 'hooks';
 import { USER_ROLES } from 'services/userService/constants';
 import { ImageInfoActionsDropdown } from './ImageInfoActionsDropdown';
+import { Palette } from 'styles/Theme';
 
 const ImageListing = () => {
     const {
@@ -139,21 +140,29 @@ const ImageListing = () => {
                     data-testid="image-listing/image-upload"
                     handleAddFile={handleTempUpload}
                     height={'160px'}
-                    cropText="You can zoom in or out and move the image around."
+                    cropText="You can crop the image to any aspect ratio."
+                    saveText="Save and Upload"
+                    saveAndExitText="Save and Exit"
+                    saveAndExitRequired={true}
                 />
             </Grid>
             <If condition={imageToUpload != null}>
                 <Then>
                     <Grid item xs={12}>
                         <Stack direction={'row'} justifyContent={'flex-end'} alignItems={'center'}>
-                            <PrimaryButton
+                            <MetParagraph
+                                sx={{
+                                    color: Palette.primary.main,
+                                    textDecoration: 'underline',
+                                    cursor: 'pointer',
+                                    '&:hover': { textDecoration: 'underline', opacity: 0.8 },
+                                }}
                                 onClick={() => {
                                     handleUploadImage();
                                 }}
-                                size="small"
                             >
-                                Upload
-                            </PrimaryButton>
+                                Upload this Image
+                            </MetParagraph>
                         </Stack>
                     </Grid>
                 </Then>

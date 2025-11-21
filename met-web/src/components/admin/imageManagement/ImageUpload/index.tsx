@@ -15,21 +15,27 @@ interface UploaderProps {
     accept?: Accept;
     canCrop?: boolean;
     cropText?: string;
+    saveAndExitText?: string;
+    saveText?: string;
+    saveAndExitRequired?: boolean;
 }
 export const ImageUpload = ({
+    saveAndExitText,
+    cropAspectRatio,
     margin = 2,
     handleAddFile,
     savedImageUrl = '',
     savedImageName = '',
     helpText = 'Drag and drop an image here, or click to select an image from your device. Formats accepted are: jpg, png, webp.',
     height = '10em',
-    cropAspectRatio = 1,
     cropText = '',
     accept = {
         'image/jpeg': [],
         'image/png': [],
         'image/webp': [],
     },
+    saveText = 'Save',
+    saveAndExitRequired = false,
 }: UploaderProps) => {
     return (
         <ImageUploadContextProvider
@@ -39,7 +45,12 @@ export const ImageUpload = ({
             cropAspectRatio={cropAspectRatio}
         >
             <Uploader margin={margin} helpText={helpText} height={height} accept={accept} />
-            <CropModal cropText={cropText} />
+            <CropModal
+                cropText={cropText}
+                saveAndExitText={saveAndExitText}
+                saveAndExitRequired={saveAndExitRequired}
+                saveText={saveText}
+            />
         </ImageUploadContextProvider>
     );
 };
