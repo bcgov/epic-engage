@@ -33,6 +33,9 @@ const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
         return;
     }
 
+    // Check if user intentionally logged out
+    const userLoggedOut = sessionStorage.getItem('userLoggedOut');
+
     isInitializing = true;
     try {
         const authenticated = await KeycloakData.init({
@@ -45,6 +48,13 @@ const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
         isInitialized = true;
 
         console.log('[Keycloak] Init completed, authenticated:', authenticated);
+
+        // If user logged out, ignore the authenticated state from SSO
+        if (userLoggedOut === 'true') {
+            sessionStorage.removeItem('userLoggedOut'); // Clear the flag
+            dispatch(userAuthentication(false));
+            return;
+        }
 
         if (!authenticated) {
             console.warn('not authenticated!');
@@ -122,6 +132,7 @@ const doLogout = async () => {
     const idToken = sessionStorage.getItem('idToken'); // Get the stored ID token
     sessionStorage.removeItem('idToken');
     sessionStorage.removeItem('refreshToken');
+    sessionStorage.setItem('userLoggedOut', 'true');
     clearInterval(refreshInterval);
 
     // Check if the ID token is available and pass it as id_token_hint
