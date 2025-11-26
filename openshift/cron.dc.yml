@@ -230,7 +230,7 @@ parameters:
   value: '1'
 - name: IMAGE_TAG
   description: "The image tag to deploy"
-  value: latest
+  value: dev
 - name: KC_DOMAIN
   description: "The keycloak domain"
   value: met-oidc-dev.apps.gold.devops.gov.bc.ca
