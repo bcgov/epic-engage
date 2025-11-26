@@ -192,5 +192,5 @@ parameters:
     value: met
   - name: IMAGE_TAG
     description: "The image tag to deploy"
-    value: latest
+    value: dev
     

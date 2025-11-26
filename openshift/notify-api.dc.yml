@@ -176,7 +176,7 @@ parameters:
     value: postgresql-met
   - name: IMAGE_TAG
     description: "The image tag to deploy"
-    value: latest
+    value: dev
   - name: GC_NOTIFY_API_KEY
     description: "GC Notify API Key"
     value: 

@@ -71,9 +71,7 @@ jobs:
       - name: Push image
         run: |
           IMAGE_ID=${{ env.OPENSHIFT_IMAGE_REGISTRY }}/"${{ env.OPENSHIFT_REPOSITORY}}-tools"/$APP_NAME
-          docker tag image $IMAGE_ID:latest
-          docker push $IMAGE_ID:latest
-          docker image tag $IMAGE_ID:latest $IMAGE_ID:$TAG_NAME
+          docker tag image $IMAGE_ID:$TAG_NAME
           docker push $IMAGE_ID:$TAG_NAME
 
       - name: Rollout

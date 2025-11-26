@@ -10,7 +10,7 @@ on:
       project_type:
         description: "Project Type (EAO/GDX)"
         required: false
-        default: "GDX" # Default value is GDX 
+        default: "EAO" # Default value is EAO 
 
 defaults:
   run:
@@ -19,12 +19,14 @@ defaults:
 
 env:
   TAG_NAME: "${{ github.event.inputs.environment || 'test' }}" # If the environment type is manually selected, use the input value; otherwise, use 'test' as default
-  PROJECT_TYPE: "${{ github.event.inputs.project_type || 'GDX' }}" # If the project type is manually selected, use the input value; otherwise, use 'GDX' as default
+  PROJECT_TYPE: "${{ github.event.inputs.project_type || 'EAO' }}" # If the project type is manually selected, use the input value; otherwise, use 'EAO' as default
 
- # Set OpenShift related variables based on PROJECT_TYPE
+  # Set OpenShift related variables based on PROJECT_TYPE
   OPENSHIFT_LOGIN_REGISTRY: ${{ secrets.OPENSHIFT_LOGIN_REGISTRY }}
-  OPENSHIFT_SA_TOKEN: ${{ (github.event.inputs.project_type == 'EAO') && secrets.OPENSHIFT_SA_TOKEN_EAO || secrets.OPENSHIFT_SA_TOKEN }}
-  OPENSHIFT_REPOSITORY: ${{ (github.event.inputs.project_type == 'EAO') && secrets.OPENSHIFT_REPOSITORY_EAO || secrets.OPENSHIFT_REPOSITORY }}
+  OPENSHIFT_SA_TOKEN: ${{ github.event.inputs.project_type == 'GDX' && secrets.OPENSHIFT_SA_TOKEN || secrets.OPENSHIFT_SA_TOKEN_EAO }}
+  OPENSHIFT_SA_NAME: ${{ github.event.inputs.project_type == 'GDX' && secrets.OPENSHIFT_SA_NAME || secrets.OPENSHIFT_SA_NAME_EAO }}
+  OPENSHIFT_IMAGE_REGISTRY: ${{ github.event.inputs.project_type == 'GDX' && secrets.OPENSHIFT_IMAGE_REGISTRY || secrets.OPENSHIFT_IMAGE_REGISTRY_EAO }}
+  OPENSHIFT_REPOSITORY: ${{ github.event.inputs.project_type == 'GDX' && secrets.OPENSHIFT_REPOSITORY || secrets.OPENSHIFT_REPOSITORY_EAO }}
 
 jobs:
   met-deployment:
@@ -34,6 +36,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Install OpenShift CLI
+        run: |
+          curl -LO "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz"
+          tar -xvzf openshift-client-linux.tar.gz
+          sudo mv oc /usr/local/bin/
+          rm -f openshift-client-linux.tar.gz
+
       - name: Login Openshift
         shell: bash
         run: |
@@ -42,4 +51,10 @@ jobs:
       - name: Tag Images and Rollout
         shell: bash
         run: |
+          # Set source tag: dev->test or test->prod
+          if [ "${{ github.event.inputs.environment }}" == "prod" ]; then
+            export SOURCE_TAG=test
+          else
+            export SOURCE_TAG=dev
+          fi
           sh deploy.sh ${{ github.event.inputs.environment }} ${{env.OPENSHIFT_REPOSITORY }}

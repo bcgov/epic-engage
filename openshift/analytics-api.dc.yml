@@ -181,4 +181,4 @@ parameters:
   - name: IMAGE_TAG
     description: "The image tag to deploy"
     required: true
-    value: latest
+    value: dev

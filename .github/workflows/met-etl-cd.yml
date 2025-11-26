@@ -27,7 +27,7 @@ defaults:
 env:
   APP_NAME: "dagster-etl"
   DEPLOYMENT_NAME: "dagster-dagster-user-deployments-etl"
-  TAG_NAME: "dev"
+  TAG_NAME: "${{ github.event.inputs.environment || 'dev' }}" # If the environment type is manually selected, use the input value; otherwise, use 'dev' as default
   
   PROJECT_TYPE: "${{ github.event.inputs.project_type || 'EAO' }}" # If the project type is manually selected, use the input value; otherwise, use 'EAO' as default
 
@@ -72,9 +72,7 @@ jobs:
       - name: Push image
         run: |
           IMAGE_ID=${{ env.OPENSHIFT_IMAGE_REGISTRY }}/"${{ env.OPENSHIFT_REPOSITORY}}-tools"/$APP_NAME
-          docker tag image $IMAGE_ID:latest
-          docker push $IMAGE_ID:latest
-          docker image tag $IMAGE_ID:latest $IMAGE_ID:$TAG_NAME
+          docker tag image $IMAGE_ID:$TAG_NAME
           docker push $IMAGE_ID:$TAG_NAME
 
       - name: Rollout

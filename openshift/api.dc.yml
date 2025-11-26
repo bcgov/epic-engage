@@ -300,7 +300,7 @@ parameters:
   - name: IMAGE_TAG
     description: "The image tag to deploy"
     required: true
-    value: latest
+    value: dev
   - name: MET_ADMIN_CLIENT_ID
     description: "The MET admin service account id"
     required: true
