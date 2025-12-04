@@ -57,6 +57,19 @@ class Engagement(Resource):
         except ValueError as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
+    @staticmethod
+    @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
+    def delete(engagement_id):
+        """Delete the engagement associated with the provided id."""
+        try:
+            EngagementService().delete(engagement_id)
+            return {'message': 'Engagement deleted successfully'}, HTTPStatus.OK
+        except KeyError:
+            return 'Engagement was not found', HTTPStatus.NOT_FOUND
+        except ValueError as err:
+            return str(err), HTTPStatus.BAD_REQUEST
+
 
 @cors_preflight('GET, POST, PATCH, OPTIONS')
 @API.route('/')

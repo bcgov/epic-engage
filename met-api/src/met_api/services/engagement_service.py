@@ -326,3 +326,20 @@ class EngagementService:
                 format(slug=engagement_slug.slug)
         return current_app.config.get('ENGAGEMENT_DASHBOARD_PATH'). \
             format(engagement_id=engagement.id)
+
+    @staticmethod
+    def delete(engagement_id: int) -> None:
+        """Delete engagement by id."""
+        authorization.check_auth(
+            one_of_roles=(
+                MembershipType.TEAM_MEMBER.name,
+                Role.CREATE_ADMIN_USER.value
+            ),
+            engagement_id=engagement_id
+        )
+        engagement = EngagementModel.find_by_id(engagement_id)
+
+        if not engagement:
+            raise ValueError('Engagement to delete was not found')
+
+        EngagementModel.delete_engagement(engagement_id)

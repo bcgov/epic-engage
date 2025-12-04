@@ -132,6 +132,10 @@ const EngagementListing = () => {
         });
     };
 
+    const handleEngagementDeleted = (engagementId: number) => {
+        setEngagements((prev) => prev.filter((e) => e.id !== engagementId));
+    };
+
     const headCells: HeadCell<Engagement>[] = [
         {
             key: 'name',
@@ -384,7 +388,7 @@ const EngagementListing = () => {
             label: 'Actions',
             allowSort: false,
             renderCell: (row: Engagement) => {
-                return <ActionsDropDown engagement={row} />;
+                return <ActionsDropDown engagement={row} onEngagementDeleted={handleEngagementDeleted} />;
             },
             customStyle: {
                 minWidth: '200px',
