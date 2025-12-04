@@ -14,7 +14,7 @@ const AuthGate = ({ allowedRoles }: { allowedRoles: string[] }) => {
     });
 
     return permissions.some((permission) => scopesMap[permission]) ||
-        userGroups?.includes('/' + USER_GROUP.TEAM_MEMBER.value) ? (
+        userGroups?.includes('/ENGAGE/' + USER_GROUP.TEAM_MEMBER.value) ? (
         <Outlet />
     ) : (
         <Navigate to="/unauthorized" state={{ from: location }} replace />
