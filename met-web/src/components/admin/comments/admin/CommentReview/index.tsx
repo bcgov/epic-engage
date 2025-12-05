@@ -49,6 +49,8 @@ import { getSettingByKey } from 'services/settingsService';
 import { SettingKey } from 'constants/settingKey';
 import { ThreatContact } from 'models/threatContact';
 import { getThreatContactById } from 'services/threatContactService';
+import { PermissionsGate } from 'components/shared/permissionsGate';
+import { USER_ROLES } from 'services/userService/constants';
 
 const CommentReview = () => {
     const [submission, setSubmission] = useState<SurveySubmission>(createDefaultSubmission());
@@ -432,17 +434,22 @@ const CommentReview = () => {
                                                 </Link>
                                             </MetSmallText>
                                         </Grid>
-                                        <Grid item>
-                                            <IconButton
-                                                size="small"
-                                                color="primary"
-                                                onClick={() => setIsEditingThreatContact(true)}
-                                                data-testid="survey-widget/edit"
-                                                sx={{ padding: 0.5 }}
-                                            >
-                                                <EditIcon fontSize="small" />
-                                            </IconButton>
-                                        </Grid>
+                                        <PermissionsGate
+                                            scopes={[USER_ROLES.CREATE_ENGAGEMENT]}
+                                            errorProps={{ hidden: true }}
+                                        >
+                                            <Grid item>
+                                                <IconButton
+                                                    size="small"
+                                                    color="primary"
+                                                    onClick={() => setIsEditingThreatContact(true)}
+                                                    data-testid="survey-widget/edit"
+                                                    sx={{ padding: 0.5 }}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                            </Grid>
+                                        </PermissionsGate>
                                     </Grid>
                                     <EditContactModal
                                         isOpen={isEditingThreatContact}

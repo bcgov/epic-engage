@@ -23,6 +23,8 @@ from marshmallow import ValidationError
 from met_api.auth import jwt as _jwt
 from met_api.schemas.threat_contact import ThreatContactSchema
 from met_api.services.threat_contact_service import ThreatContactService
+from met_api.utils.roles import Role
+from met_api.utils.tenant_validator import require_role
 from met_api.utils.util import allowedorigins, cors_preflight
 
 
@@ -36,6 +38,7 @@ class Contact(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def get(threat_contact_id):
         """Fetch a ThreatContact by id."""
         try:
@@ -52,7 +55,7 @@ class Contacts(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @_jwt.requires_auth
+    @require_role([Role.CREATE_ENGAGEMENT.value])
     def post():
         """Create a new ThreatContact."""
         try:
@@ -67,6 +70,7 @@ class Contacts(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def get():
         """Fetch list of contacts."""
         try:
