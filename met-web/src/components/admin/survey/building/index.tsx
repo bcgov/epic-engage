@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Grid,
     Stack,
@@ -33,6 +33,7 @@ import { USER_ROLES } from 'services/userService/constants';
 import axios from 'axios';
 import { AutoSaveSnackBar } from './AutoSaveSnackBar';
 import { debounce } from 'lodash';
+import { format } from 'date-fns';
 
 interface SurveyForm {
     id: string;
@@ -64,6 +65,11 @@ const SurveyFormBuilder = () => {
     const [isHiddenSurvey, setIsHiddenSurvey] = useState(savedSurvey ? savedSurvey.is_hidden : false);
     const [isTemplateSurvey, setIsTemplateSurvey] = useState(savedSurvey ? savedSurvey.is_template : false);
 
+    const engagementUnpublishedBeforeGoLive = useMemo(() => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        return savedEngagement?.status_id === EngagementStatus.Unpublished && today < savedEngagement?.start_date;
+    }, [savedEngagement]);
+
     const [autoSaveNotificationOpen, setAutoSaveNotificationOpen] = useState(false);
     const AUTO_SAVE_INTERVAL = 5000;
 
@@ -72,7 +78,7 @@ const SurveyFormBuilder = () => {
     }, []);
 
     useEffect(() => {
-        if (savedEngagement && hasPublishedEngagement) {
+        if (savedEngagement && hasPublishedEngagement && !engagementUnpublishedBeforeGoLive) {
             dispatch(
                 openNotification({
                     severity: 'warning',
@@ -138,28 +144,31 @@ const SurveyFormBuilder = () => {
         }
     };
 
+    const currentValuesRef = useRef({ name, isHiddenSurvey, isTemplateSurvey });
+
+    useEffect(() => {
+        currentValuesRef.current = { name, isHiddenSurvey, isTemplateSurvey };
+    }, [name, isHiddenSurvey, isTemplateSurvey]);
+
     const debounceAutoSaveForm = useRef(
-        debounce((newChanges: SurveyForm) => {
-            autoSaveForm(newChanges);
+        debounce((form: FormBuilderData) => {
+            const { name, isHiddenSurvey, isTemplateSurvey } = currentValuesRef.current;
+            autoSaveForm({
+                id: String(surveyId),
+                form_json: form,
+                name: name,
+                is_hidden: isHiddenSurvey,
+                is_template: isTemplateSurvey,
+            });
         }, AUTO_SAVE_INTERVAL),
     ).current;
-
-    const doDebounceSaveForm = (form: FormBuilderData) => {
-        debounceAutoSaveForm({
-            id: String(surveyId),
-            form_json: form,
-            name: name,
-            is_hidden: isHiddenSurvey,
-            is_template: isTemplateSurvey,
-        });
-    };
 
     const handleFormChange = (form: FormBuilderData) => {
         if (!form.components) {
             return;
         }
         setFormData(form);
-        doDebounceSaveForm(form);
+        debounceAutoSaveForm(form);
     };
 
     const autoSaveForm = async (newForm: SurveyForm) => {

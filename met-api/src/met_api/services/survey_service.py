@@ -199,7 +199,11 @@ class SurveyService:
         is_template = survey.get('is_template', None)
         cls.validate_template_surveys_edit_access(is_template, user_roles)
 
-        if engagement and engagement.get('status_id', None) not in [Status.Draft.value, Status.Published.value]:
+        engagement_status_id = engagement.get('status_id', None) if engagement else None
+
+        if engagement and engagement_status_id not in [Status.Draft.value, Status.Published.value] and not (
+            engagement_status_id == Status.Unpublished.value and not cls._did_survey_go_live(engagement)
+        ):
             raise ValueError('Engagement already published')
 
         updated_survey = SurveyModel.update_survey(data)
@@ -309,5 +313,19 @@ class SurveyService:
             raise ValueError('Survey is not linked to engagement ' + engagement_id)
 
         engagement_status = linked_engagement.get('engagement_status')
-        if engagement_status.get('id') != Status.Draft.value:
-            raise ValueError('Cannot unlink survey from engagement with status ' + engagement_status.get('status_name'))
+        status_id = engagement_status.get('id')
+        status_name = engagement_status.get('status_name')
+
+        if not (
+            status_id == Status.Draft.value or
+            (status_id == Status.Unpublished.value and not cls._did_survey_go_live(linked_engagement))
+        ):
+            raise ValueError('Cannot unlink survey from engagement with status ' + status_name)
+
+    @staticmethod
+    def _did_survey_go_live(engagement):
+        start_date = engagement.get('start_date', None)
+        if not start_date:
+            return False
+        current_datetime = local_datetime().replace(tzinfo=None).isoformat()
+        return start_date < current_datetime

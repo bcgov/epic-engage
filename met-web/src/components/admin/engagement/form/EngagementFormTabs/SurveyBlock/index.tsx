@@ -10,7 +10,11 @@ import { unlinkSurvey } from 'services/surveyService';
 import { openNotificationModal } from 'services/notificationModalService/notificationModalSlice';
 import SurveyTextTabs from './SurveyTextTabs';
 
-export const SurveyBlock = () => {
+interface SurveyBlockProps {
+    didSurveyGoLive: boolean;
+}
+
+export const SurveyBlock = ({ didSurveyGoLive }: SurveyBlockProps) => {
     const { savedEngagement, fetchEngagement } = useContext(EngagementFormContext);
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
@@ -31,7 +35,11 @@ export const SurveyBlock = () => {
     };
 
     const handleRemoveSurvey = async (surveyId: number, surveyName: string) => {
-        if (savedEngagement.engagement_status.id !== EngagementStatus.Draft) {
+        const canRemoveSurvey =
+            savedEngagement.engagement_status.id === EngagementStatus.Draft ||
+            (savedEngagement.engagement_status.id === EngagementStatus.Unpublished && !didSurveyGoLive);
+
+        if (!canRemoveSurvey) {
             dispatch(
                 openNotification({
                     severity: 'error',
