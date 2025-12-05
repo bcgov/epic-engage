@@ -78,3 +78,8 @@ export const patchEngagement = async (data: PatchEngagementRequest): Promise<Eng
     }
     return Promise.reject('Failed to update engagement');
 };
+
+export const deleteEngagement = async (engagementId: number): Promise<void> => {
+    const url = replaceUrl(Endpoints.Engagement.DELETE, 'engagement_id', String(engagementId));
+    await http.DeleteRequest<void>(url);
+};

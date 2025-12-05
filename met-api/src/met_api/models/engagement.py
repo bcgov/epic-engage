@@ -336,3 +336,14 @@ class Engagement(BaseModel):
                 )) \
             .all()
         return engagements
+
+    @classmethod
+    def delete_engagement(cls, engagement_id: int) -> bool:
+        """Delete engagement."""
+        query = Engagement.query.filter_by(id=engagement_id)
+        record = query.first()
+        if not record:
+            return False
+        query.delete()
+        db.session.commit()
+        return True

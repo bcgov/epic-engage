@@ -10,6 +10,7 @@ import { getFormsSheet } from 'services/FormCAC';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { formatToUTC } from 'utils/helpers/dateHelper';
 import { downloadFile } from 'utils';
+import { DeleteEngagementModal } from './DeleteEngagementModal';
 
 interface ActionDropDownItem {
     value: number;
@@ -17,10 +18,17 @@ interface ActionDropDownItem {
     action?: () => void;
     condition?: boolean;
 }
-export const ActionsDropDown = ({ engagement }: { engagement: Engagement }) => {
+export const ActionsDropDown = ({
+    engagement,
+    onEngagementDeleted,
+}: {
+    engagement: Engagement;
+    onEngagementDeleted: (id: number) => void;
+}) => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const [isExportingCacForms, setIsExportingCacForms] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const { roles, assignedEngagements } = useAppSelector((state) => state.user);
     const submissionHasBeenOpened = [SubmissionStatus.Open, SubmissionStatus.Closed].includes(
         engagement.submission_status,
@@ -89,6 +97,23 @@ export const ActionsDropDown = ({ engagement }: { engagement: Engagement }) => {
         }
     };
 
+    const canDeleteEngagement: boolean = useMemo(() => {
+        if (!roles.includes(USER_ROLES.CREATE_ADMIN_USER)) {
+            return false;
+        }
+
+        const today = new Date().toISOString().slice(0, 10);
+        if (engagement.engagement_status.id === EngagementStatus.Unpublished && today < engagement.start_date) {
+            return true;
+        }
+
+        return false;
+    }, [engagement.engagement_status.id, engagement.start_date, roles]);
+
+    const handleEngagementDeleted = () => {
+        onEngagementDeleted(engagement.id);
+    };
+
     const ITEMS: ActionDropDownItem[] = useMemo(
         () => [
             {
@@ -151,6 +176,14 @@ export const ActionsDropDown = ({ engagement }: { engagement: Engagement }) => {
                     (roles.includes(USER_ROLES.EXPORT_CAC_FORM_TO_SHEET) &&
                         assignedEngagements.includes(engagement.id)),
             },
+            {
+                value: 7,
+                label: 'Delete Engagement',
+                action: () => {
+                    setDeleteModalOpen(true);
+                },
+                condition: canDeleteEngagement,
+            },
         ],
         [engagement.id],
     );
@@ -160,21 +193,29 @@ export const ActionsDropDown = ({ engagement }: { engagement: Engagement }) => {
     }
 
     return (
-        <Select
-            id={`action-drop-down-${engagement.id}`}
-            value={0}
-            fullWidth
-            size="small"
-            sx={{ backgroundColor: 'white', color: Palette.info.main }}
-        >
-            <MenuItem value={0} sx={{ fontStyle: 'italic', height: '2em' }} color="info" disabled>
-                {'(Select One)'}
-            </MenuItem>
-            {ITEMS.filter((item) => item.condition).map((item) => (
-                <MenuItem key={item.value} value={item.value} onClick={item.action}>
-                    {item.label}
+        <>
+            <Select
+                id={`action-drop-down-${engagement.id}`}
+                value={0}
+                fullWidth
+                size="small"
+                sx={{ backgroundColor: 'white', color: Palette.info.main }}
+            >
+                <MenuItem value={0} sx={{ fontStyle: 'italic', height: '2em' }} color="info" disabled>
+                    {'(Select One)'}
                 </MenuItem>
-            ))}
-        </Select>
+                {ITEMS.filter((item) => item.condition).map((item) => (
+                    <MenuItem key={item.value} value={item.value} onClick={item.action}>
+                        {item.label}
+                    </MenuItem>
+                ))}
+            </Select>
+            <DeleteEngagementModal
+                open={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onDelete={handleEngagementDeleted}
+                engagement={engagement}
+            />
+        </>
     );
 };
