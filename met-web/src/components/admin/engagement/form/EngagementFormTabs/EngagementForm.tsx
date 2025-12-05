@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import { Typography, Grid, TextField, Stack, Box } from '@mui/material';
 import { MetPaper, MetLabel, PrimaryButton, SecondaryButton, MetDescription } from 'components/shared/common';
 import { EngagementFormContext } from '../EngagementFormContext';
@@ -12,6 +12,7 @@ import DayCalculatorModal from '../DayCalculator';
 import { ENGAGEMENT_CROPPER_ASPECT_RATIO, ENGAGEMENT_CROPPER_TEXT, ENGAGEMENT_UPLOADER_HEIGHT } from './constants';
 import RichTextEditor from 'components/shared/common/RichTextEditor';
 import { getTextFromDraftJsContentState } from 'components/shared/common/RichTextEditor/utils';
+import { format } from 'date-fns';
 
 const CREATE = 'create';
 const EngagementForm = () => {
@@ -36,6 +37,15 @@ const EngagementForm = () => {
         setEngagementFormError,
         surveyBlockText,
     } = useContext(EngagementTabsContext);
+
+    const didSurveyGoLive = useMemo(() => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+
+        if (!savedEngagement.start_date || today < savedEngagement.start_date) {
+            return false;
+        }
+        return true;
+    }, [savedEngagement]);
 
     const [initialRichDescription, setInitialRichDescription] = useState('');
     const [initialRichContent, setInitialRichContent] = useState('');
@@ -191,9 +201,9 @@ const EngagementForm = () => {
         navigate(`/engagements/${engagement.id}/view`);
     };
 
-    const isDateFieldDisabled = [EngagementStatus.Closed, EngagementStatus.Unpublished].includes(
-        savedEngagement.status_id,
-    );
+    const isDateFieldDisabled =
+        savedEngagement.status_id === EngagementStatus.Closed ||
+        (savedEngagement.status_id === EngagementStatus.Unpublished && didSurveyGoLive);
 
     return (
         <MetPaper elevation={1}>
@@ -337,7 +347,7 @@ const EngagementForm = () => {
                 </Grid>
 
                 <Grid item xs={12}>
-                    <SurveyBlock />
+                    <SurveyBlock didSurveyGoLive={didSurveyGoLive} />
                 </Grid>
 
                 <Grid item xs={12}>
