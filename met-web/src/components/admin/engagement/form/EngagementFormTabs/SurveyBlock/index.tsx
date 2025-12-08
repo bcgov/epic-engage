@@ -35,15 +35,25 @@ export const SurveyBlock = ({ didSurveyGoLive }: SurveyBlockProps) => {
     };
 
     const handleRemoveSurvey = async (surveyId: number, surveyName: string) => {
-        const canRemoveSurvey =
-            savedEngagement.engagement_status.id === EngagementStatus.Draft ||
-            (savedEngagement.engagement_status.id === EngagementStatus.Unpublished && !didSurveyGoLive);
+        const isDraft = savedEngagement.engagement_status.id === EngagementStatus.Draft;
+        const isUnpublishedButWentLive =
+            savedEngagement.engagement_status.id === EngagementStatus.Unpublished && didSurveyGoLive;
 
-        if (!canRemoveSurvey) {
+        if (!isDraft && !isUnpublishedButWentLive) {
             dispatch(
                 openNotification({
                     severity: 'error',
                     text: `Cannot remove survey from an engagement of status ${savedEngagement.engagement_status.status_name}`,
+                }),
+            );
+            return;
+        }
+
+        if (isUnpublishedButWentLive) {
+            dispatch(
+                openNotification({
+                    severity: 'error',
+                    text: `Cannot remove survey from an engagement that went live`,
                 }),
             );
             return;
