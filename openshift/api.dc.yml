@@ -211,6 +211,11 @@ objects:
     ACCESS_REQUEST_EMAIL_TEMPLATE_ID: ${ACCESS_REQUEST_EMAIL_TEMPLATE_ID}
     KEYCLOAK_REALMNAME: ${KEYCLOAK_REALMNAME}
     KEYCLOAK_BASE_URL: ${KEYCLOAK_BASE_URL}
+    ANALYTICS_ENABLED: ${ANALYTICS_ENABLED}
+    SNOWPLOW_ENABLED: ${SNOWPLOW_ENABLED}
+    SNOWPLOW_COLLECTOR: ${SNOWPLOW_COLLECTOR}
+    SNOWPLOW_APP_ID: ${SNOWPLOW_APP_ID}
+    SNOWPLOW_NAMESPACE: ${SNOWPLOW_NAMESPACE}
 - kind: Secret
   apiVersion: v1
   type: Opaque
@@ -316,3 +321,23 @@ parameters:
     description: "Realm name for the project"
     required: true
     value: 'met'
+  - name: ANALYTICS_ENABLED
+    description: "Enable analytics tracking"
+    required: false
+    value: 'true'
+  - name: SNOWPLOW_ENABLED
+    description: "Enable Snowplow provider"
+    required: false
+    value: 'true'
+  - name: SNOWPLOW_COLLECTOR
+    description: "Snowplow collector endpoint (spm.apps.gov.bc.ca for dev/test, spt.apps.gov.bc.ca for prod)"
+    required: false
+    value: 'spm.apps.gov.bc.ca'
+  - name: SNOWPLOW_APP_ID
+    description: "Snowplow application ID"
+    required: false
+    value: 'Snowplow_standalone_MET'
+  - name: SNOWPLOW_NAMESPACE
+    description: "Snowplow namespace for environment"
+    required: false
+    value: 'met-api-dev'

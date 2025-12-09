@@ -41,6 +41,38 @@ Open [http://localhost:5000/api](http://localhost:5000/api) to view it in the br
 >
 > Lints the application code.
 
+## Analytics
+
+### Server-Side Analytics with Snowplow
+
+This API includes **server-side analytics tracking** using Snowplow, designed with a provider-agnostic architecture for future extensibility. Currently, Snowplow is the only implemented provider, tracking user interactions server-side to bypass ad blockers.
+
+**Quick Start:**
+```python
+from met_api.utils import analytics
+
+# Track a survey submission
+analytics.track_survey_submission(
+    survey_id=123,
+    engagement_id=456,
+    submission_id=789
+)
+```
+
+**Configuration** (add to `.env`):
+```bash
+# Enable analytics
+ANALYTICS_ENABLED=true
+
+# Snowplow configuration
+SNOWPLOW_ENABLED=true
+SNOWPLOW_COLLECTOR=spt.apps.gov.bc.ca
+SNOWPLOW_APP_ID=Snowplow_standalone_MET
+SNOWPLOW_NAMESPACE=met-api
+```
+
+**Documentation:** See [docs/ANALYTICS.md](docs/ANALYTICS.md) for complete guide including usage examples, integration patterns, deployment checklist, and troubleshooting.
+
 ## Debugging in the Editor
 
 ### Visual Studio Code
