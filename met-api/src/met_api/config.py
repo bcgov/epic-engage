@@ -228,7 +228,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     # Analytics Configuration
     ANALYTICS_ENABLED = os.getenv('ANALYTICS_ENABLED', 'False').lower() == 'true'
-    
+
     # Snowplow Analytics Configuration
     SNOWPLOW_ENABLED = os.getenv('SNOWPLOW_ENABLED', 'False').lower() == 'true'
     SNOWPLOW_COLLECTOR = os.getenv('SNOWPLOW_COLLECTOR', 'spt.apps.gov.bc.ca')
