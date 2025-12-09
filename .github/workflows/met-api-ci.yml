@@ -73,6 +73,13 @@ jobs:
       KEYCLOAK_TEST_REALMNAME: "demo"
       USE_TEST_KEYCLOAK_DOCKER: "YES"
       
+      # Analytics Configuration (enabled for testing, use dev collector)
+      ANALYTICS_ENABLED: "true"
+      SNOWPLOW_ENABLED: "true"
+      SNOWPLOW_COLLECTOR: "spm.apps.gov.bc.ca"
+      SNOWPLOW_APP_ID: "Snowplow_standalone_MET"
+      SNOWPLOW_NAMESPACE: "met-api-test"
+      
     runs-on: ubuntu-22.04
 
     strategy:

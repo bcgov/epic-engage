@@ -226,6 +226,15 @@ class _Config():  # pylint: disable=too-few-public-methods
     # Timezone in BC
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
 
+    # Analytics Configuration
+    ANALYTICS_ENABLED = os.getenv('ANALYTICS_ENABLED', 'False').lower() == 'true'
+
+    # Snowplow Analytics Configuration
+    SNOWPLOW_ENABLED = os.getenv('SNOWPLOW_ENABLED', 'False').lower() == 'true'
+    SNOWPLOW_COLLECTOR = os.getenv('SNOWPLOW_COLLECTOR', 'spt.apps.gov.bc.ca')
+    SNOWPLOW_APP_ID = os.getenv('SNOWPLOW_APP_ID', 'Snowplow_standalone_MET')
+    SNOWPLOW_NAMESPACE = os.getenv('SNOWPLOW_NAMESPACE', 'met-api')
+
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Dev Config."""

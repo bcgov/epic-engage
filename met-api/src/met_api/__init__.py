@@ -73,6 +73,10 @@ def create_app(run_mode: str = None):
     # Marshmallow initialize
     ma.init_app(app)
 
+    # Initialize analytics
+    from met_api.utils.analytics import init_analytics  # pylint: disable=import-outside-toplevel
+    init_analytics(app)
+
     @app.before_request
     def set_origin():
         g.origin_url = request.environ.get('HTTP_ORIGIN', 'localhost')
