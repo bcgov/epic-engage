@@ -1,4 +1,4 @@
-FROM python:3.8.5-buster
+FROM python:3.12-slim-bookworm
 
 ARG DAGSTER_VERSION=0.23.15
 
