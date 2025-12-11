@@ -118,7 +118,7 @@ class CdogsApiService:
         timeout = current_app.config.get('CONNECT_TIMEOUT', 60)
 
         basic_auth_encoded = base64.b64encode(
-            bytes(f'{service_client}: {service_client_secret}', 'utf-8')).decode('utf-8')
+            bytes(f'{service_client}:{service_client_secret}', 'utf-8')).decode('utf-8')
         data = 'grant_type=client_credentials'
         response = requests.post(
             token_url,
