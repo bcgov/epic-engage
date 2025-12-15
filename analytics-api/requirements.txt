@@ -12,7 +12,7 @@ PyJWT==2.10.1
 SQLAlchemy-Continuum==1.5.2
 SQLAlchemy-Utils==0.42.1
 SQLAlchemy==2.0.45
-Werkzeug==2.3.8
+Werkzeug==3.0.6
 alembic==1.17.2
 aniso8601==10.0.1
 anytree==2.13.0
