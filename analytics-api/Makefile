@@ -43,7 +43,7 @@ clean-test: ## clean test files
 	rm -fr htmlcov/
 
 build-req: clean ## Upgrade requirements
-	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
+	test -f venv/bin/activate || python3.12 -m venv  $(CURRENT_ABS_DIR)/venv ;\
 	. venv/bin/activate ;\
 	pip install --upgrade pip ;\
 	pip install -Ur requirements/prod.txt ;\
@@ -74,7 +74,7 @@ flake8: ## Linting with flake8
 	. venv/bin/activate && flake8 src/$(PROJECT_NAME)
 
 lintfix: ## Linting fix
-	. venv/bin/activate && autopep8 -i -a src/**/*.py
+	. venv/bin/activate && autopep8 -i -a -r src/$(PROJECT_NAME)
 
 lint: pylint flake8 ## run all lint type scripts
 

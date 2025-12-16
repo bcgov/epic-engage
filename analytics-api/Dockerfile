@@ -1,6 +1,13 @@
-FROM python:3.8.5-buster
+FROM python:3.12-slim-bookworm
 
 USER root
+
+# Install build dependencies for psycopg2 and other packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create working directory
 RUN mkdir /opt/app-root && chmod 755 /opt/app-root

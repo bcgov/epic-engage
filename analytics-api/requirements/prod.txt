@@ -19,11 +19,12 @@ itsdangerous
 sentry-sdk[flask]
 bcrypt
 jaeger-client
-Werkzeug<3
+Werkzeug>=3.0.3
 minio
 pyhumps
 sqlalchemy-utils
 Flask-Caching
+Flask-Cors
 asyncio-nats-client
 asyncio-nats-streaming
 sqlalchemy>=2.0.31
