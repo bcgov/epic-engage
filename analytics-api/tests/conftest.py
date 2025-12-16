@@ -14,6 +14,7 @@
 """Common setup and fixtures for the pytest suite used by this service."""
 import pytest
 from sqlalchemy import event, text
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from analytics_api import create_app
 from analytics_api.models import db as _db
@@ -83,7 +84,7 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         txn = conn.begin()
 
         options = dict(bind=conn, binds={})
-        sess = db.create_scoped_session(options=options)
+        sess = scoped_session(sessionmaker(**options))
 
         # establish  a SAVEPOINT just before beginning the test
         # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)

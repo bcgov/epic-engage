@@ -61,9 +61,26 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'development')):
 
     @app.after_request
     def set_secure_headers(response):
-        """Set CORS headers for security."""
-        secure_headers.framework.flask(response)  # pylint: disable=no-member
-        response.headers.add('Cross-Origin-Resource-Policy', '*')
+        """Set security headers manually."""
+        # Content-Security-Policy
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data:; "
+            "object-src 'self'; "
+            "connect-src 'self'"
+        )
+        # Strict Transport Security
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+        # Referrer Policy
+        response.headers['Referrer-Policy'] = 'no-referrer'
+        # Cache control
+        response.headers['Cache-Control'] = 'no-store, max-age=0'
+        # X-Frame-Options
+        response.headers['X-Frame-Options'] = 'DENY'
+        # Additional cross-origin headers
+        response.headers['Cross-Origin-Resource-Policy'] = '*'
         response.headers['Cross-Origin-Opener-Policy'] = '*'
         response.headers['Cross-Origin-Embedder-Policy'] = 'unsafe-none'
         return response
