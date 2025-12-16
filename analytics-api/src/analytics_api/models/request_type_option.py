@@ -36,7 +36,8 @@ class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-pub
             survey_question = (db.session.query(RequestTypeOption.position.label('position'),
                                                 RequestTypeOption.label.label('label'),
                                                 RequestTypeOption.key)
-                               .filter(and_(RequestTypeOption.survey_id.in_(analytics_survey_id),
+                               .filter(and_(RequestTypeOption.survey_id.in_(  # pylint: disable=no-member
+                                   analytics_survey_id),
                                             RequestTypeOption.is_active == true()))
                                .order_by(RequestTypeOption.position)
                                .subquery())
@@ -44,7 +45,8 @@ class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-pub
             survey_question = (db.session.query(RequestTypeOption.position.label('position'),
                                                 RequestTypeOption.label.label('label'),
                                                 RequestTypeOption.key)
-                               .filter(and_(RequestTypeOption.survey_id.in_(analytics_survey_id),
+                               .filter(and_(RequestTypeOption.survey_id.in_(  # pylint: disable=no-member
+                                   analytics_survey_id),
                                             RequestTypeOption.is_active == true(),
                                             or_(RequestTypeOption.display == true(),
                                                 RequestTypeOption.display.is_(None))))
@@ -56,14 +58,15 @@ class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-pub
             # Get all the available responses for each question within the survey.
             available_response = (db.session.query(AvailableResponseOptionModel.request_key,
                                                    AvailableResponseOptionModel.value)
-                                  .filter(and_(AvailableResponseOptionModel.survey_id.in_(
+                                  .filter(and_(AvailableResponseOptionModel.survey_id.in_(  # pylint: disable=no-member
                                       analytics_survey_id), AvailableResponseOptionModel.is_active == true()))
                                   .subquery())
             # Get all the survey responses with the counts for each response specific to a survey id which
             # are in active status.
             survey_response = (db.session.query(ResponseTypeOptionModel.request_key, ResponseTypeOptionModel.value,
                                                 func.count(ResponseTypeOptionModel.request_key).label('response'))
-                               .filter(and_(ResponseTypeOptionModel.survey_id.in_(analytics_survey_id),
+                               .filter(and_(ResponseTypeOptionModel.survey_id.in_(  # pylint: disable=no-member
+                                   analytics_survey_id),
                                             ResponseTypeOptionModel.is_active == true()))
                                .group_by(ResponseTypeOptionModel.request_key, ResponseTypeOptionModel.value)
                                .subquery())

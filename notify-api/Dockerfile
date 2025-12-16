@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm
+FROM python:3.8.5-buster
 
 USER root
 

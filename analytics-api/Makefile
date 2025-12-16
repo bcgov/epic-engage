@@ -74,7 +74,7 @@ flake8: ## Linting with flake8
 	. venv/bin/activate && flake8 src/$(PROJECT_NAME)
 
 lintfix: ## Linting fix
-	. venv/bin/activate && autopep8 -i -a src/**/*.py
+	. venv/bin/activate && autopep8 -i -a -r src/$(PROJECT_NAME)
 
 lint: pylint flake8 ## run all lint type scripts
 
