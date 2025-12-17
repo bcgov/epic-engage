@@ -56,7 +56,7 @@ const DocumentWidget = ({ widget }: DocumentWidgetProps) => {
                 {documents.map((document: DocumentItem) => {
                     return (
                         <Grid key={document.id} container item spacing={1} rowSpacing={1} xs={12} paddingTop={2}>
-                            <DocumentTree nodeId={`${document.id}`} documentItem={document} />
+                            <DocumentTree itemId={`${document.id}`} documentItem={document} />
                         </Grid>
                     );
                 })}

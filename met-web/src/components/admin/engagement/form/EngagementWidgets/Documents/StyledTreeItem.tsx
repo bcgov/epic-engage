@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { styled } from '@mui/material/styles';
-import TreeItem, { TreeItemProps } from '@mui/lab/TreeItem';
+import { TreeItem, TreeItemProps } from '@mui/x-tree-view/TreeItem';
 import { MetBody } from 'components/shared/common';
 import { If, Then, Else } from 'react-if';
 import { Link, Box } from '@mui/material';
@@ -10,7 +10,7 @@ import { SvgIconProps } from '@mui/material';
 type DocumentTreeItemProps = TreeItemProps & {
     labelIcon: React.ElementType<SvgIconProps>;
     labelUrl?: string;
-    nodeId: string;
+    itemId: string;
 };
 
 type StyledTreeItemProps = TreeItemProps & {
