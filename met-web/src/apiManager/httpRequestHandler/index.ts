@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig } from 'axios';
 import UserService from 'services/userService';
 
 const GetRequest = <T>(url: string, params = {}, headers = {}, responseType?: string) => {
-    const defaultHeaders = {
+    const defaultHeaders: Record<string, string> = {
         'Content-type': 'application/json',
         Authorization: `Bearer ${UserService.getToken()}`,
         'tenant-id': `${sessionStorage.getItem('tenantId')}`,
@@ -27,34 +27,52 @@ const GetRequest = <T>(url: string, params = {}, headers = {}, responseType?: st
 };
 
 const PostRequest = <T>(url: string, data = {}, params = {}) => {
+    const headers: Record<string, string> = {
+        'Content-type': 'application/json',
+        Authorization: `Bearer ${UserService.getToken()}`,
+        'tenant-id': `${sessionStorage.getItem('tenantId')}`,
+    };
+
+    if (data instanceof FormData) {
+        delete headers['Content-type'];
+    }
+
     return axios.post<T>(url, data, {
         params,
-        headers: {
-            'Content-type': 'application/json',
-            Authorization: `Bearer ${UserService.getToken()}`,
-            'tenant-id': `${sessionStorage.getItem('tenantId')}`,
-        },
+        headers,
     });
 };
 
 const PutRequest = <T>(url: string, data = {}, params = {}) => {
+    const headers: Record<string, string> = {
+        'Content-type': 'application/json',
+        Authorization: `Bearer ${UserService.getToken()}`,
+        'tenant-id': `${sessionStorage.getItem('tenantId')}`,
+    };
+
+    if (data instanceof FormData) {
+        delete headers['Content-type'];
+    }
+
     return axios.put<T>(url, data, {
         params,
-        headers: {
-            'Content-type': 'application/json',
-            Authorization: `Bearer ${UserService.getToken()}`,
-            'tenant-id': `${sessionStorage.getItem('tenantId')}`,
-        },
+        headers,
     });
 };
 
 const PatchRequest = <T>(url: string, data = {}) => {
+    const headers: Record<string, string> = {
+        'Content-type': 'application/json',
+        Authorization: `Bearer ${UserService.getToken()}`,
+        'tenant-id': `${sessionStorage.getItem('tenantId')}`,
+    };
+
+    if (data instanceof FormData) {
+        delete headers['Content-type'];
+    }
+
     return axios.patch<T>(url, data, {
-        headers: {
-            'Content-type': 'application/json',
-            Authorization: `Bearer ${UserService.getToken()}`,
-            'tenant-id': `${sessionStorage.getItem('tenantId')}`,
-        },
+        headers,
     });
 };
 
