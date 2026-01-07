@@ -82,7 +82,7 @@ export const FirstTab: React.FC = () => {
                     opportunities to directly seek the advice of community advisory committee members. See the
                     <Link href="https://www2.gov.bc.ca/assets/gov/environment/natural-resource-stewardship/environmental-assessments/guidance-documents/cac_guide_v20_2024_final.pdf" target="_blank" rel="noopener noreferrer">
                         Community Advisory Committee Guideline
-                    </Link>
+                    </Link>{' '}
                     for further information.
                 </MetParagraph>
             </Grid>
