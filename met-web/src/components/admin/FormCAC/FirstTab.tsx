@@ -79,7 +79,7 @@ export const FirstTab: React.FC = () => {
                     input through public comment periods held at several points in the environmental assessment.
                     Depending on the overall interest of community advisory committee members, the Environmental
                     Assessment Office may also hold meetings (online or in person) or host other engagement
-                    opportunities to directly seek the advice of community advisory committee members. See the
+                    opportunities to directly seek the advice of community advisory committee members. See the{' '}
                     <Link
                         href="https://www2.gov.bc.ca/assets/gov/environment/natural-resource-stewardship/environmental-assessments/guidance-documents/cac_guide_v20_2024_final.pdf"
                         target="_blank"
