@@ -53,38 +53,33 @@ export const FirstTab: React.FC = () => {
             <Grid item xs={12}>
                 <MetLabel>What is a Community Advisory Committee (CAC)?</MetLabel>
                 <MetParagraph>
-                    A community advisory committee provides a venue for interested community
-                    members to advise the Environmental Assessment Office on the potential effects
-                    of a project on a community. It supports information-sharing so members can
-                    learn about and stay up to date on the environmental assessment and gives
-                    members an opportunity to provide their input on potential project impacts and
-                    mitigation measures. In particular, community advisory committee members can
-                    provide valuable local knowledge about the community, the region’s environment
-                    or the use of the proposed project area to ensure this information is captured in
-                    the EAO’s assessment.
+                    A community advisory committee provides a venue for interested community members to advise the
+                    Environmental Assessment Office on the potential effects of a project on a community. It supports
+                    information-sharing so members can learn about and stay up to date on the environmental assessment
+                    and gives members an opportunity to provide their input on potential project impacts and mitigation
+                    measures. In particular, community advisory committee members can provide valuable local knowledge
+                    about the community, the region’s environment or the use of the proposed project area to ensure this
+                    information is captured in the EAO’s assessment.
                 </MetParagraph>
             </Grid>
             <Grid item xs={12}>
                 <MetParagraph>
-                    The format and structure of community advisory committees depend on the
-                    potential effects of a project and community interest, amongst other
-                    considerations.
+                    The format and structure of community advisory committees depend on the potential effects of a
+                    project and community interest, amongst other considerations.
                 </MetParagraph>
             </Grid>
 
             <Grid item xs={12}>
                 <MetLabel>What can I expect as a Community Advisory Committee Member?</MetLabel>
                 <MetParagraph>
-                    The Environmental Assessment Office will provide community advisory committee
-                    members with information on the environmental assessment process and the
-                    proposed project, including notifications of process milestones, when and where
-                    key documents are posted, information on public comment periods and any other
-                    engagement opportunities. Members will be invited to provide their input through
-                    public comment periods held at several points in the environmental assessment.
-                    Depending on the overall interest of community advisory committee members, the
-                    Environmental Assessment Office may also hold meetings (online or in person) or
-                    host other engagement opportunities to directly seek the advice of community
-                    advisory committee members. See the
+                    The Environmental Assessment Office will provide community advisory committee members with
+                    information on the environmental assessment process and the proposed project, including
+                    notifications of process milestones, when and where key documents are posted, information on public
+                    comment periods and any other engagement opportunities. Members will be invited to provide their
+                    input through public comment periods held at several points in the environmental assessment.
+                    Depending on the overall interest of community advisory committee members, the Environmental
+                    Assessment Office may also hold meetings (online or in person) or host other engagement
+                    opportunities to directly seek the advice of community advisory committee members. See the
                     <Link href="https://www2.gov.bc.ca/assets/gov/environment/natural-resource-stewardship/environmental-assessments/guidance-documents/cac_guide_v20_2024_final.pdf">
                         Community Advisory Committee Guideline
                     </Link>
