@@ -136,7 +136,7 @@ const Footer = () => {
                     <Divider sx={{ borderColor: Palette.text.primary }} />
                 </Grid>
                 <Grid item xs={12} container justifyContent={'flex-end'} alignItems="flex-end">
-                    <MetBody>© 2023 Government of British Columbia</MetBody>
+                    <MetBody>© 2026 Government of British Columbia</MetBody>
                 </Grid>
             </Grid>
         </Grid>
