@@ -138,8 +138,12 @@ export const FirstTab: React.FC = () => {
                         label={
                             <MetLabel>
                                 By checking this box, I acknowledge that I have read, understood, and will abide by the{' '}
-                                <Link href="https://www2.gov.bc.ca/assets/gov/environment/natural-resource-stewardship/environmental-assessments/guidance-documents/2018-act/community_advisory_committee_guideline_v1.pdf">
-                                    Community Advisory Committee Terms of Reference.
+                                <Link
+                                    href="https://www2.gov.bc.ca/assets/gov/environment/natural-resource-stewardship/environmental-assessments/guidance-documents/cac_guide_v20_2024_final.pdf"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Community Advisory Committee Guideline.
                                 </Link>
                             </MetLabel>
                         }
