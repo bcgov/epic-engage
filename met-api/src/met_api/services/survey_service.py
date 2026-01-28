@@ -202,7 +202,8 @@ class SurveyService:
         engagement_status_id = engagement.get('status_id', None) if engagement else None
 
         if engagement and engagement_status_id not in [Status.Draft.value, Status.Published.value] and not (
-            engagement_status_id == Status.Unpublished.value and not cls._did_survey_go_live(engagement)
+            engagement_status_id in [Status.Unpublished.value, Status.Scheduled.value] and
+            not cls._did_survey_go_live(engagement)
         ):
             raise ValueError('Engagement already published')
 
