@@ -49,6 +49,7 @@ const API_URL = localStorage.getItem('met-api-url') || getEnv('REACT_APP_API_URL
 const PUBLIC_URL = localStorage.getItem('met-public-url') || getEnv('REACT_APP_PUBLIC_URL');
 const REDASH_DASHBOARD_URL = getEnv('REACT_APP_REDASH_PUBLIC_URL');
 const REDASH_CMNTS_DASHBOARD_URL = getEnv('REACT_APP_REDASH_COMMENTS_PUBLIC_URL');
+const CENTRE_API_URL = getEnv('REACT_APP_CENTRE_API_URL');
 
 // adding localStorage to access the MET Analytics API from external sources(eg: web-components)
 const REACT_APP_ANALYTICS_API_URL = localStorage.getItem('analytics-api-url') || getEnv('REACT_APP_ANALYTICS_API_URL');
@@ -92,6 +93,7 @@ export const AppConfig = {
     publicUrl: PUBLIC_URL,
     redashDashboardUrl: REDASH_DASHBOARD_URL,
     redashCmntsDashboardUrl: REDASH_CMNTS_DASHBOARD_URL,
+    centreApiUrl: CENTRE_API_URL,
     formio: {
         projectUrl: FORMIO_PROJECT_URL,
         apiUrl: FORMIO_API_URL,
