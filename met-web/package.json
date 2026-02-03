@@ -50,6 +50,7 @@
         "maplibre-gl": "^4.7.1",
         "met-formio": "^1.0.14-rc1",
         "mui-sx": "^1.0.0",
+        "oidc-client-ts": "^3.4.1",
         "react": "^18.0.0",
         "react-dom": "^18.0.0",
         "react-draft-wysiwyg": "^1.14.7",
@@ -75,7 +76,7 @@
     },
     "scripts": {
         "start": "react-app-rewired start",
-        "build": "react-app-rewired build",
+        "build": "react-app-rewired --max-old-space-size=4096 build",
         "build-wc": "react-app-rewired build --wc-build",
         "test": "jest",
         "eject": "react-scripts eject",
