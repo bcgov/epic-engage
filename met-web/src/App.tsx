@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import './App.scss';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import UserService from './services/userService';
-import { useAppSelector, useAppDispatch } from './hooks';
+import { useAppSelector, useAppDispatch, useRecordAnalyticsWithRetry } from './hooks';
 import { MidScreenLoader, MobileToolbar } from './components/shared/common';
 import { Box, Container, useMediaQuery, Theme, Toolbar } from '@mui/material';
 import InternalHeader from 'components/shared/layout/Header/InternalHeader';
@@ -23,7 +23,6 @@ import { TenantState, loadingTenant, saveTenant } from 'redux/slices/tenantSlice
 import { openNotification } from 'services/notificationService/notificationSlice';
 import i18n from './i18n';
 import DocumentTitle from 'DocumentTitle';
-import { recordAnalytics } from '@epic/centre-analytics';
 
 const App = () => {
     const drawerWidth = 280;
@@ -41,29 +40,7 @@ const App = () => {
         UserService.initKeycloak(dispatch);
     }, [dispatch]);
 
-    const bearerToken = useAppSelector((state) => state.user?.bearerToken);
-    const userDetail = useAppSelector((state) => state.user?.userDetail);
-
-    useEffect(() => {
-        if (!AppConfig.centreApiUrl || !isLoggedIn || !bearerToken || !userDetail) return;
-        recordAnalytics({
-            appName: 'epic_engage',
-            centreApiUrl: AppConfig.centreApiUrl,
-            enabled: true,
-            authState: {
-                user: {
-                    access_token: bearerToken,
-                    profile: {
-                        preferred_username: userDetail.preferred_username,
-                        sub: userDetail.sub,
-                    },
-                },
-                isAuthenticated: true,
-            },
-        }).catch((error) => {
-            console.log('Failed to record analytics:', error);
-        });
-    }, [isLoggedIn, bearerToken, userDetail]);
+    useRecordAnalyticsWithRetry();
 
     useEffect(() => {
         sessionStorage.setItem('apiurl', String(AppConfig.apiUrl));
