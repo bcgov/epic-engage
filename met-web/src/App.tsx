@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import './App.scss';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import UserService from './services/userService';
-import { useAppSelector, useAppDispatch } from './hooks';
+import { useAppSelector, useAppDispatch, useRecordAnalyticsWithRetry } from './hooks';
 import { MidScreenLoader, MobileToolbar } from './components/shared/common';
 import { Box, Container, useMediaQuery, Theme, Toolbar } from '@mui/material';
 import InternalHeader from 'components/shared/layout/Header/InternalHeader';
@@ -39,6 +39,8 @@ const App = () => {
     useEffect(() => {
         UserService.initKeycloak(dispatch);
     }, [dispatch]);
+
+    useRecordAnalyticsWithRetry();
 
     useEffect(() => {
         sessionStorage.setItem('apiurl', String(AppConfig.apiUrl));
