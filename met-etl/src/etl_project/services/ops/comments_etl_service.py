@@ -73,14 +73,14 @@ def load_comments(context, new_comments, comments_new_run_cycle_id):
 
         for comment in new_comments:
 
-            etl_survey = session.query(EtlSurveyModel.id).filter(EtlSurveyModel.source_survey_id == comment.survey_id,
-                                                                 EtlSurveyModel.is_active == True).first()
+            etl_survey_id = session.query(EtlSurveyModel.id).filter(EtlSurveyModel.source_survey_id == comment.survey_id,
+                                                                    EtlSurveyModel.is_active == True).scalar()
 
-            for survey in etl_survey:
+            if etl_survey_id:
                 context.log.info('Survey id in Analytics DB: %s  for Comment: %s with source survey id:%s:', comment.id,
-                                 survey, comment.survey_id)
+                                 etl_survey_id, comment.survey_id)
 
-                user_feedback_model = UserFeedbackModel(survey_id=survey,
+                user_feedback_model = UserFeedbackModel(survey_id=etl_survey_id,
                                                         user_id=comment.user_id,
                                                         comment=comment.text,
                                                         source_comment_id=comment.id,
