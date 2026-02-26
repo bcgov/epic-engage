@@ -140,9 +140,9 @@ def extract_survey_components(context, session, survey, survey_new_runcycleid, f
         has_valid_question_type = _validate_form_type(context, component_type)
 
         if has_valid_question_type:
-            etl_survey = session.query(EtlSurveyModel.id).filter(EtlSurveyModel.source_survey_id == survey.id,
-                                                                 EtlSurveyModel.is_active == True)
-            for survey_id in etl_survey:
+            etl_survey_ids = session.query(EtlSurveyModel.id).filter(EtlSurveyModel.source_survey_id == survey.id,
+                                                                     EtlSurveyModel.is_active == True).scalars().all()
+            for survey_id in etl_survey_ids:
                 position = _do_etl_survey_inputs(session, survey_id, component, component_type,
                                                  survey_new_runcycleid, position)
                 _load_available_response_option(context, session, survey_id, component, component_type,
@@ -153,14 +153,14 @@ def extract_survey_components(context, session, survey, survey_new_runcycleid, f
 
 # inactivate if record is existing in analytics database
 def _refresh_questions_and_available_option_status(session, source_survey_id):
-    etl_survey_model = session.query(EtlSurveyModel.id).filter(EtlSurveyModel.source_survey_id == source_survey_id,
-                                                               EtlSurveyModel.is_active == False)
-    if not etl_survey_model:
+    etl_survey_ids = session.query(EtlSurveyModel.id).filter(EtlSurveyModel.source_survey_id == source_survey_id,
+                                                              EtlSurveyModel.is_active == False).scalars().all()
+    if not etl_survey_ids:
         return
 
     deactivate_flag = {'is_active': False}
 
-    for survey_id in etl_survey_model:
+    for survey_id in etl_survey_ids:
         session.query(EtlRequestTypeOption).filter(EtlRequestTypeOption.survey_id == survey_id).update(deactivate_flag)
         session.query(EtlAvailableResponseOption).filter(
             EtlAvailableResponseOption.survey_id == survey_id).update(deactivate_flag)
