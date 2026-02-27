@@ -51,7 +51,7 @@ export const LandingContextProvider = ({ children }: { children: JSX.Element | J
             const loadedEngagements = await getEngagements({
                 page: page,
                 size: PAGE_SIZE,
-                sort_key: 'engagement.created_date',
+                sort_key: 'engagement.published_date',
                 sort_order: 'desc',
                 include_banner_url: true,
                 engagement_status: status,
