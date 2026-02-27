@@ -1,0 +1,131 @@
+# Dagster Helm Chart Values
+# =========================
+# Reference: https://github.com/dagster-io/dagster/tree/master/helm/dagster
+#
+# Usage:
+#   helm upgrade --install dagster dagster/dagster \
+#     --values values.yaml \
+#     --set runLauncher.config.k8sRunLauncher.jobNamespace=<NAMESPACE> \
+#     -n <NAMESPACE>
+#
+# Environment Examples:
+#   Development: --set runLauncher.config.k8sRunLauncher.jobNamespace=c72cba-dev -n c72cba-dev
+#   Test:        --set runLauncher.config.k8sRunLauncher.jobNamespace=c72cba-test -n c72cba-test
+#   Production:  --set runLauncher.config.k8sRunLauncher.jobNamespace=c72cba-prod -n c72cba-prod
+
+# ------------------------------------------------------------------------------
+# Dagster Webserver (Dagit UI)
+# ------------------------------------------------------------------------------
+dagsterWebserver:
+  replicaCount: 1
+  # Resource limits - adjust based on environment needs
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ------------------------------------------------------------------------------
+# Dagster Daemon
+# Responsible for schedules, sensors, and run queue processing
+# ------------------------------------------------------------------------------
+dagsterDaemon:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# ------------------------------------------------------------------------------
+# User Code Deployments (MET ETL code)
+# ------------------------------------------------------------------------------
+dagsterUserDeployments:
+  enabled: true
+  deployments:
+    - name: "met-etl"
+      image:
+        # Update repository path for your environment
+        repository: "image-registry.openshift-image-registry.svc:5000/c72cba-tools/dagster-etl"
+        tag: "latest"
+        pullPolicy: Always
+      dagsterApiGrpcArgs:
+        - "-f"
+        - "repo.py"
+      port: 4000
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+
+# ------------------------------------------------------------------------------
+# Run Launcher Configuration
+# Controls how Dagster launches job runs as Kubernetes pods
+# ------------------------------------------------------------------------------
+runLauncher:
+  type: K8sRunLauncher
+  config:
+    k8sRunLauncher:
+      # IMPORTANT: Set via --set flag during deployment
+      # Do not hardcode namespace here
+      # jobNamespace: ""
+      
+      # Ensures pods exit with non-zero code when job fails
+      # This makes failed jobs visible in OpenShift pod status
+      failPodOnRunFailure: true
+      
+      imagePullPolicy: Always
+      loadInclusterConfig: true
+
+# ------------------------------------------------------------------------------
+# PostgreSQL Configuration
+# Using external met-patroni16 database
+# ------------------------------------------------------------------------------
+postgresql:
+  # Disable built-in PostgreSQL - we use external met-patroni16
+  enabled: false
+
+# External PostgreSQL connection (met-patroni16)
+postgresqlHost: "met-patroni16"
+postgresqlPort: 5432
+postgresqlDatabase: "app"
+postgresqlUsername: "dagster"
+# Password provided via secret: dagster-postgresql-secret
+
+# ------------------------------------------------------------------------------
+# Instance ConfigMap
+# References the dagster-instance ConfigMap with full dagster.yaml config
+# ------------------------------------------------------------------------------
+dagsterInstance:
+  configMapName: "dagster-instance"
+
+# ------------------------------------------------------------------------------
+# Service Account
+# ------------------------------------------------------------------------------
+serviceAccount:
+  create: true
+  name: dagster
+
+# ------------------------------------------------------------------------------
+# Run Coordinator
+# ------------------------------------------------------------------------------
+runCoordinator:
+  type: QueuedRunCoordinator
+  config:
+    queuedRunCoordinator:
+      maxConcurrentRuns: -1
+      dequeueUseThreads: true
+      dequeueNumWorkers: 4
+
+# ------------------------------------------------------------------------------
+# Telemetry
+# ------------------------------------------------------------------------------
+telemetry:
+  enabled: false

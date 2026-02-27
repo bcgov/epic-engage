@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dagster-instance
+  labels:
+    app: dagster
+data:
+  dagster.yaml: |
+    scheduler:      
+      module: dagster.core.scheduler
+      class: DagsterDaemonScheduler
+
+    schedule_storage:
+      module: dagster_postgres.schedule_storage
+      class: PostgresScheduleStorage
+      config:        
+        postgres_db:
+          username: dagster
+          password:
+            env: DAGSTER_PG_PASSWORD
+          hostname: "met-patroni16"
+          db_name: app
+          port: 5432
+          params:
+            {}
+
+    run_launcher:      
+      module: dagster_k8s
+      class: K8sRunLauncher
+      config:
+        load_incluster_config: true
+        # IMPORTANT: Replace with target namespace before applying
+        # e.g., c72cba-dev, c72cba-test, c72cba-prod
+        job_namespace: REPLACE_WITH_NAMESPACE
+        image_pull_policy: Always
+        service_account_name: dagster
+        dagster_home: "/opt/dagster/dagster_home"
+        instance_config_map: "dagster-instance"
+        postgres_password_secret: "dagster-postgresql-secret"
+        # Ensures pod exits with non-zero code when job fails
+        # This makes failed jobs visible in OpenShift pod status
+        fail_pod_on_run_failure: true
+
+    run_storage:
+      module: dagster_postgres.run_storage
+      class: PostgresRunStorage
+      config:        
+        postgres_db:
+          username: dagster
+          password:
+            env: DAGSTER_PG_PASSWORD
+          hostname: "met-patroni16"
+          db_name: app
+          port: 5432
+          params:
+            {}
+
+    event_log_storage:
+      module: dagster_postgres.event_log
+      class: PostgresEventLogStorage
+      config:        
+        postgres_db:
+          username: dagster
+          password:
+            env: DAGSTER_PG_PASSWORD
+          hostname: "met-patroni16"
+          db_name: app
+          port: 5432
+          params:
+            {}
+
+    run_coordinator:      
+      module: dagster.core.run_coordinator
+      class: QueuedRunCoordinator
+      config:
+        max_concurrent_runs: -1
+        dequeue_use_threads: true
+        dequeue_num_workers: 4
+
+    compute_logs:      
+      module: dagster.core.storage.noop_compute_log_manager
+      class: NoOpComputeLogManager
+
+    run_monitoring:
+      enabled: true
+      start_timeout_seconds: 300
+      max_resume_run_attempts: 0
+      poll_interval_seconds: 120
+      free_slots_after_run_end_seconds: 0
+
+    run_retries:
+      enabled: true
+
+    sensors:
+      use_threads: true
+      num_workers: 4
+
+    schedules:
+      use_threads: true
+      num_workers: 4
+
+    telemetry:
+      enabled: false
