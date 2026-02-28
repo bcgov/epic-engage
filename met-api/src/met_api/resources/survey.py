@@ -151,9 +151,9 @@ class Surveys(Resource):
             SurveyService().update(survey_schema)
             return survey_schema, HTTPStatus.OK
         except KeyError as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+            return {'message': str(err)}, HTTPStatus.INTERNAL_SERVER_ERROR
         except ValueError as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+            return {'message': str(err)}, HTTPStatus.INTERNAL_SERVER_ERROR
         except BusinessException as err:
             return {'message': err.error}, err.status_code
 
