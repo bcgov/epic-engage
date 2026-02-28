@@ -9,10 +9,23 @@ from met_api.constants.report_setting_type import FormIoComponentType
 class ReportSettingService:
     """Report setting management service."""
 
-    @staticmethod
-    def get_report_setting(survey_id):
-        """Get report setting by survey id."""
+    @classmethod
+    def get_report_setting(cls, survey_id):
+        """Get report setting by survey id, creating lazily if none exist."""
         report_setting = ReportSettingModel.find_by_survey_id(survey_id)
+
+        if not report_setting:
+            # Lazy create: fetch survey and generate settings if form_json exists
+            survey = SurveyModel.find_by_id(survey_id)
+            if not survey:
+                raise KeyError(f'Survey with id {survey_id} not found')
+            if survey and survey.form_json and survey.form_json.get('display'):
+                cls.refresh_report_setting({
+                    'id': survey_id,
+                    'form_json': survey.form_json,
+                })
+                report_setting = ReportSettingModel.find_by_survey_id(survey_id)
+
         settings = ReportSettingSchema(many=True).dump(report_setting)
         return settings
 
@@ -131,7 +144,9 @@ class ReportSettingService:
     def _delete_questions_removed_from_form(cls, survey_id, survey_question_keys):
         # Loop through the data from report setting and delete any record which does not exist on
         # survey form. This will happen if a existing survey question is deleted from the survey
-        report_settings = cls.get_report_setting(survey_id)
+        # Use model directly to avoid recursion with get_report_setting's lazy creation
+        report_setting_records = ReportSettingModel.find_by_survey_id(survey_id)
+        report_settings = ReportSettingSchema(many=True).dump(report_setting_records)
 
         report_setting_keys_to_delete = [report_setting['question_key'] for report_setting in report_settings
                                          if report_setting['question_key'] not in survey_question_keys]

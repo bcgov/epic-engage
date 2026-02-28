@@ -42,19 +42,14 @@ class ReportSetting(Resource):
     def get(survey_id):
         """Fetch report setting for the survey id provided."""
         try:
-            report_setting = ReportSettingService().get_report_setting(survey_id)
-
-            if report_setting:
-                return jsonify(report_setting), HTTPStatus.OK
-
-            return 'Report setting was not found', HTTPStatus.NOT_FOUND
-        except KeyError:
-            return 'Report setting was not found', HTTPStatus.INTERNAL_SERVER_ERROR
+            report_setting = ReportSettingService.get_report_setting(survey_id)
+            return jsonify(report_setting), HTTPStatus.OK
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
         except ValueError as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
-    # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
     @_jwt.requires_auth
     def patch(survey_id):

@@ -30,6 +30,7 @@ class EngagementSchema(Schema):
     name = fields.Str(data_key='name', required=True, validate=validate.Length(min=1, error='Name cannot be blank'))
     description = fields.Str(data_key='description')
     rich_description = fields.Str(data_key='rich_description')
+    # start_date/end_date: Pacific Time dates (surveys open beginning of day PT start_date)
     start_date = fields.Date(data_key='start_date', required=True)
     end_date = fields.Date(data_key='end_date', required=True)
     status_id = fields.Int(data_key='status_id')
@@ -37,8 +38,8 @@ class EngagementSchema(Schema):
     created_date = fields.Str(data_key='created_date')
     updated_by = fields.Str(data_key='updated_by')
     updated_date = fields.Str(data_key='updated_date')
-    published_date = fields.Str(data_key='published_date')
-    scheduled_date = fields.Str(data_key='scheduled_date')
+    published_date = fields.Str(data_key='published_date')  # UTC
+    scheduled_date = fields.Str(data_key='scheduled_date')  # UTC (frontend converts Pacific to UTC)
     content = fields.Str(data_key='content')
     rich_content = fields.Str(data_key='rich_content')
     banner_filename = fields.Str(data_key='banner_filename')

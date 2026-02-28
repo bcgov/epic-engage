@@ -38,11 +38,12 @@ class Engagement(BaseModel):
     name = db.Column(db.String(50))
     description = db.Column(db.Text, unique=False, nullable=False)
     rich_description = db.Column(JSON, unique=False, nullable=False)
+    # start_date/end_date: Naive datetime representing Pacific Time (compare with local_datetime())
     start_date = db.Column(db.DateTime)
     end_date = db.Column(db.DateTime)
     status_id = db.Column(db.Integer, ForeignKey('engagement_status.id', ondelete='CASCADE'))
-    published_date = db.Column(db.DateTime, nullable=True)
-    scheduled_date = db.Column(db.DateTime, nullable=True)
+    published_date = db.Column(db.DateTime, nullable=True)  # UTC
+    scheduled_date = db.Column(db.DateTime, nullable=True)  # UTC
     content = db.Column(db.Text, unique=False, nullable=False)
     rich_content = db.Column(JSON, unique=False, nullable=False)
     banner_filename = db.Column(db.String(), unique=False, nullable=True)
@@ -171,7 +172,7 @@ class Engagement(BaseModel):
     @classmethod
     def publish_scheduled_engagements_due(cls) -> List[Engagement]:
         """Update scheduled engagements to published."""
-        datetime_due = datetime.now()
+        datetime_due = datetime.utcnow()
         print('Publish due date ------------------------', datetime_due)
         update_fields = {
             'status_id': Status.Published.value,
@@ -179,7 +180,7 @@ class Engagement(BaseModel):
             'updated_date': datetime.utcnow(),
             'updated_by': SYSTEM_USER
         }
-        # Publish scheduled engagements where scheduled datetime is prior than now
+        # Publish scheduled engagements where scheduled datetime is prior than now (UTC)
         query = Engagement.query \
             .filter(Engagement.status_id == Status.Scheduled.value) \
             .filter(Engagement.scheduled_date <= datetime_due)
@@ -214,14 +215,14 @@ class Engagement(BaseModel):
             status_filter.append(
                 and_(
                     Engagement.status_id == Status.Published.value,
-                    Engagement.start_date > datetime.now()
+                    Engagement.start_date > local_datetime()
                 )
             )
         if EngagementDisplayStatus.Open.value in statuses:
             status_filter.append(
                 and_(
                     Engagement.status_id == Status.Published.value,
-                    Engagement.start_date <= datetime.now()
+                    Engagement.start_date <= local_datetime()
                 )
             )
         if EngagementDisplayStatus.Unpublished.value in statuses:
