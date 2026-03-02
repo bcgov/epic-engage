@@ -150,10 +150,43 @@ const SurveyFormBuilder = () => {
         currentValuesRef.current = { name, isHiddenSurvey, isTemplateSurvey };
     }, [name, isHiddenSurvey, isTemplateSurvey]);
 
+    const autoSaveForm = async (newForm: SurveyForm) => {
+        try {
+            await putSurvey(newForm);
+            setAutoSaveNotificationOpen(true);
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                const responseData = error.response?.data;
+                const errorMessage =
+                    typeof responseData === 'string'
+                        ? responseData
+                        : responseData?.message || 'Error occurred while auto-saving survey';
+                dispatch(
+                    openNotification({
+                        severity: 'error',
+                        text: errorMessage,
+                    }),
+                );
+            } else {
+                dispatch(
+                    openNotification({
+                        severity: 'error',
+                        text: 'Error occurred while auto-saving survey',
+                    }),
+                );
+            }
+        }
+    };
+
+    const autoSaveFormRef = useRef(autoSaveForm);
+    useEffect(() => {
+        autoSaveFormRef.current = autoSaveForm;
+    });
+
     const debounceAutoSaveForm = useRef(
         debounce((form: FormBuilderData) => {
             const { name, isHiddenSurvey, isTemplateSurvey } = currentValuesRef.current;
-            autoSaveForm({
+            autoSaveFormRef.current({
                 id: String(surveyId),
                 form_json: form,
                 name: name,
@@ -169,15 +202,6 @@ const SurveyFormBuilder = () => {
         }
         setFormData(form);
         debounceAutoSaveForm(form);
-    };
-
-    const autoSaveForm = async (newForm: SurveyForm) => {
-        try {
-            await putSurvey(newForm);
-            setAutoSaveNotificationOpen(true);
-        } catch (error) {
-            return;
-        }
     };
 
     const doSaveForm = async () => {

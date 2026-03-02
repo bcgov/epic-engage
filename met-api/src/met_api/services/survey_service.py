@@ -203,9 +203,9 @@ class SurveyService:
 
         if engagement and engagement_status_id not in [Status.Draft.value, Status.Published.value] and not (
             engagement_status_id in [Status.Unpublished.value, Status.Scheduled.value] and
-            not cls._did_survey_go_live(engagement)
+            not cls._did_survey_go_live(engagement_id)
         ):
-            raise ValueError('Engagement already published')
+            raise ValueError('This survey already went live as part of a published Engagement and cannot be modified.')
 
         updated_survey = SurveyModel.update_survey(data)
         ReportSettingService.refresh_report_setting({
@@ -319,14 +319,22 @@ class SurveyService:
 
         if not (
             status_id == Status.Draft.value or
-            (status_id == Status.Unpublished.value and not cls._did_survey_go_live(linked_engagement))
+            (status_id == Status.Unpublished.value and not cls._did_survey_go_live(linked_engagement.get('id')))
         ):
             raise ValueError('Cannot unlink survey from engagement with status ' + status_name)
 
     @staticmethod
-    def _did_survey_go_live(engagement):
-        start_date = engagement.get('start_date', None)
-        if not start_date:
+    def _did_survey_go_live(engagement_id: int) -> bool:
+        """Check if the survey has gone live based on engagement start_date."""
+        if not engagement_id:
             return False
-        current_datetime = local_datetime().replace(tzinfo=None).isoformat()
-        return start_date < current_datetime
+
+        engagement = EngagementModel.find_by_id(engagement_id)
+        if not engagement or not engagement.start_date:
+            return False
+
+        # Compare dates only (surveys go live on the start date)
+        start_date = engagement.start_date.date()
+        current_date = local_datetime().date()
+
+        return current_date >= start_date
