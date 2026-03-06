@@ -9,6 +9,7 @@
         "@emotion/styled": "^11.8.1",
         "@epic/centre-analytics": "github:bcgov/EPIC.analytics#v1.1.0",
         "@formio/react": "^5.3.0-rc.3",
+        "analytics": "^0.8.19",
         "@hello-pangea/dnd": "^16.2.0",
         "@hookform/resolvers": "^2.9.8",
         "@mui/icons-material": "^5.15.20",

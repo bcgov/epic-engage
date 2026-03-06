@@ -32,6 +32,9 @@ objects:
         // Redash
         "REACT_APP_REDASH_PUBLIC_URL": "https://met-analytics.apps.gold.devops.gov.bc.ca/public/dashboards/<PUBLIC_DASHBOARD_ID>?p_Engagement%20Name=",
         "REACT_APP_REDASH_COMMENTS_PUBLIC_URL": "https://met-analytics.apps.gold.devops.gov.bc.ca/public/dashboards/<COMMENTS_ASHBOARD_ID>?p_Engagement%20Name=",
+        // Penguin Analytics (event tracking)
+        "REACT_APP_PENGUIN_URL": "/analytics",
+        "REACT_APP_PENGUIN_ENABLED": "${PENGUIN_ENABLED}",
       }
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
@@ -193,4 +196,7 @@ parameters:
   - name: IMAGE_TAG
     description: "The image tag to deploy"
     value: dev
+  - name: PENGUIN_ENABLED
+    description: "Enable Penguin Analytics event tracking"
+    value: "true"
     
