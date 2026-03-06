@@ -98,7 +98,7 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
         };
 
         try {
-            const response = await fetch(`${config.apiUrl}/analytics`, {
+            const response = await fetch(config.apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
