@@ -11,6 +11,10 @@ declare global {
             // Analytics
             REACT_APP_ANALYTICS_API_URL: string;
 
+            // Penguin Analytics (event tracking)
+            REACT_APP_PENGUIN_URL: string;
+            REACT_APP_PENGUIN_ENABLED: string;
+
             // Formio
             REACT_APP_API_PROJECT_URL: string;
             REACT_APP_FORM_ID: string;
@@ -54,6 +58,10 @@ const CENTRE_API_URL = getEnv('REACT_APP_CENTRE_API_URL');
 // adding localStorage to access the MET Analytics API from external sources(eg: web-components)
 const REACT_APP_ANALYTICS_API_URL = localStorage.getItem('analytics-api-url') || getEnv('REACT_APP_ANALYTICS_API_URL');
 
+// Penguin Analytics (event tracking)
+const PENGUIN_ANALYTICS_URL = getEnv('REACT_APP_PENGUIN_URL', '/analytics');
+const PENGUIN_ENABLED = getEnv('REACT_APP_PENGUIN_ENABLED', 'false') === 'true';
+
 // Formio Environment Variables
 const FORMIO_PROJECT_URL = getEnv('REACT_APP_API_PROJECT_URL');
 const FORMIO_API_URL = getEnv('REACT_APP_API_PROJECT_URL');
@@ -94,6 +102,8 @@ export const AppConfig = {
     redashDashboardUrl: REDASH_DASHBOARD_URL,
     redashCmntsDashboardUrl: REDASH_CMNTS_DASHBOARD_URL,
     centreApiUrl: CENTRE_API_URL,
+    penguinUrl: PENGUIN_ANALYTICS_URL,
+    penguinEnabled: PENGUIN_ENABLED,
     formio: {
         projectUrl: FORMIO_PROJECT_URL,
         apiUrl: FORMIO_API_URL,
