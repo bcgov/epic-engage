@@ -2,6 +2,13 @@
 
 Commands and notes to deploy MET to a Openshift environment.
 
+## Quick Links
+
+- [Deployment Guide](#deployment-configuration)
+- [Database Setup](#database-configuration)
+- [Keycloak Configuration](#keycloak-configuration)
+- **[Penguin Analytics Integration](../docs/Penguin_Analytics_Integration.md)** - Event tracking setup
+
 ## Build Configuration
 
 Github actions are being used for building images but **IF NECESSARY** to use openshift, 

@@ -63,26 +63,50 @@ analyticsService.reset();           // On logout
 
 ## Configuration
 
-**Environment Variables:**
-```bash
-REACT_APP_PENGUIN_URL=/analytics        # Proxy route path
-REACT_APP_PENGUIN_ENABLED=true          # Feature flag
+**Environment Variables (in OpenShift ConfigMap `met-web`):**
+```javascript
+window["_env_"] = {
+  "REACT_APP_PENGUIN_URL": "/analytics",    // Proxy route path
+  "REACT_APP_PENGUIN_ENABLED": "true",      // Feature flag
+}
 ```
 
-**OpenShift ConfigMap** (`openshift/web.dc.yml`):
-```yaml
-window["_env_"] = {
-  "REACT_APP_PENGUIN_URL": "/analytics",
-  "REACT_APP_PENGUIN_ENABLED": "${PENGUIN_ENABLED}",
-}
+### How ConfigMaps Work in This Project
+
+ConfigMaps in epic-engage are **manually managed** - they're created once during initial deployment and updated via direct patches or the OpenShift console. The CI/CD pipelines only handle image promotion, not config updates.
+
+**For New Deployments:**
+
+The [openshift/web.dc.yml](../openshift/web.dc.yml) template includes Penguin Analytics with `PENGUIN_ENABLED=true` by default:
+
+```bash
+oc process -f web.dc.yml -p ENV=dev -p IMAGE_TAG=dev | oc create -f - -n c72cba-dev
+```
+
+**For Existing Deployments:**
+
+Patch the ConfigMap directly to add Penguin Analytics:
+
+```bash
+# Get current config
+oc get configmap met-web -n c72cba-test -o jsonpath='{.data.config\.js}' > /tmp/config.js
+
+# Edit /tmp/config.js to add:
+#   "REACT_APP_PENGUIN_URL": "/analytics",
+#   "REACT_APP_PENGUIN_ENABLED": "true",
+
+# Apply the update
+oc create configmap met-web --from-file=config.js=/tmp/config.js \
+  --dry-run=client -o yaml | oc apply -f - -n c72cba-test
+
+# Restart pods to pick up changes
+oc delete pod -l app=met-web -n c72cba-test
 ```
 
 **Feature Flag Logic:**
 ```typescript
 if (!AppConfig.penguinEnabled) return;  // No-op if disabled
 ```
-
-**Deployment:** Set `PENGUIN_ENABLED=true` in all environments (dev/test/prod)
 
 ## Metrics Coverage
 
@@ -117,23 +141,25 @@ yarn test tests/unit/services/penguinAnalytics.test.ts  # 21 tests
 
 ## Deployment
 
-```mermaid
-flowchart LR
-    A[Push to main] -->|CI/CD| B[Build met-web]
-    B --> C[Push to c72cba-tools]
-    C --> D{Environment}
-    D -->|dev| E[Auto-deploy]
-    D -->|test| F[Manual tag]
-    D -->|prod| G[Promote from test]
-    
-    style E fill:#c8e6c9
-    style F fill:#fff9c4
-    style G fill:#ffccbc
-```
+### Prerequisites
 
-**Workflow:** `.github/workflows/met-web-cd.yml`
+1. **Penguin Analytics backend** must be deployed to the cluster (API, TimescaleDB, Metabase)
+2. **Proxy route** `/analytics` must be configured to forward to the Penguin API
 
-**Proxy Routes:** Already deployed to c72cba (dev/test/prod) via penguin-analytics Helm charts
+### Current Status (March 2026)
+
+| Environment | ConfigMap Updated | Proxy Route | Status |
+|-------------|------------------|-------------|--------|
+| dev | ✅ | ✅ | Active |
+| test | ✅ | ✅ | Active |
+| prod | ❌ | ❌ | Not enabled |
+
+### Enabling in a New Environment
+
+1. **Deploy Penguin Analytics** using the penguin-analytics Helm chart
+2. **Add proxy route** in the OpenShift Routes configuration
+3. **Update ConfigMap** (see Configuration section above)
+4. **Restart pods** to apply config changes
 
 ## Troubleshooting
 
