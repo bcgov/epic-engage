@@ -41,13 +41,28 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
     let sessionId: string;
 
     /**
+     * Generate a UUID v4 (fallback for environments without crypto.randomUUID)
+     */
+    function generateUUID(): string {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        // Fallback for Node.js test environments
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0;
+            const v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+        });
+    }
+
+    /**
      * Get or create a session ID (persists in sessionStorage)
      */
     function getOrCreateSessionId(): string {
         const key = 'penguin_session_id';
         let existing = sessionStorage.getItem(key);
         if (!existing) {
-            existing = crypto.randomUUID();
+            existing = generateUUID();
             sessionStorage.setItem(key, existing);
         }
         return existing;
