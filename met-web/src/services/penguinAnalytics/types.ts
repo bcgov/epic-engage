@@ -22,6 +22,7 @@ export type AnalyticsAction =
     | 'subscription_click'
     | 'map_click'
     | 'cta_click'
+    | 'email_submitted'
     | 'error';
 
 /**
@@ -48,6 +49,8 @@ export interface AnalyticsEventProps {
     text?: string;
     /** Widget type for widget interactions */
     widget_type?: string;
+    /** Verification token from email link - links email submission to survey landing */
+    verification_token?: string;
 }
 
 /**
