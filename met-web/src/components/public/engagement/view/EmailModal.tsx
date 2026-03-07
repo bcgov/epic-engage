@@ -15,6 +15,7 @@ import ThankYouPanel from './ThankYouPanel';
 import { EmailVerificationType } from 'models/emailVerification';
 import { INTERNAL_EMAIL_DOMAIN } from 'constants/emailVerification';
 import { EngagementVisibility } from 'constants/engagementVisibility';
+import { analyticsService } from 'services/penguinAnalytics';
 
 const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
     const dispatch = useAppDispatch();
@@ -44,7 +45,7 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
     const handleSubmit = async () => {
         try {
             setSaving(true);
-            await createEmailVerification({
+            const verification = await createEmailVerification({
                 email_address: email,
                 survey_id: savedEngagement.surveys[0].id,
                 type: EmailVerificationType.Survey,
@@ -57,6 +58,13 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
             } catch (error) {
                 console.log(error);
             }
+            // Track email submission with token for journey tracking
+            analyticsService.track({
+                action: 'email_submitted',
+                engagement_id: savedEngagement.id.toString(),
+                survey_id: savedEngagement.surveys[0].id.toString(),
+                verification_token: verification.verification_token,
+            });
             dispatch(
                 openNotification({
                     severity: 'success',

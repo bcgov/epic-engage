@@ -179,3 +179,7 @@ yarn test tests/unit/services/penguinAnalytics.test.ts  # 21 tests
 - **Participant IDs**: Optional field (requires privacy approval)
 - **IP Addresses**: Client IP hashed (4-byte prefix), not stored in raw form
 - **Data Retention**: Configured in TimescaleDB (time-series partitioning)
+
+## Metric Implementations
+
+See [Analytics Metrics Tracker](Analytics_Metrics_Tracker.md) for implemented metrics with event flows and queries.

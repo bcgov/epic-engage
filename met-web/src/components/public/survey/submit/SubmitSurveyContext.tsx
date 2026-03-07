@@ -11,6 +11,7 @@ import { getSurvey } from 'services/surveyService';
 import { submitSurvey } from 'services/submissionService';
 import { Engagement, createDefaultEngagement } from 'models/engagement';
 import { getSlugByEngagementId } from 'services/engagementSlugService';
+import { analyticsService } from 'services/penguinAnalytics';
 
 interface SubmitSurveyContext {
     savedSurvey: Survey;
@@ -68,6 +69,13 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
             if (!verification || verification.survey_id !== Number(surveyId)) {
                 throw new Error('verification not found or does not match survey');
             }
+            // Track survey landing from email link (token links this to email_submitted event)
+            analyticsService.track({
+                action: 'survey_start',
+                engagement_id: savedSurvey.engagement_id?.toString() || '',
+                survey_id: surveyId,
+                verification_token: token,
+            });
         } catch (error) {
             dispatch(
                 openNotification({

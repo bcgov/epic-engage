@@ -394,4 +394,59 @@ describe('Penguin Analytics Service', () => {
             expect(mockTrack).toHaveBeenCalledTimes(5);
         });
     });
+
+    describe('Landing Page Visit Rate Metric', () => {
+        it('should track email_submitted event with verification_token', () => {
+            const event = {
+                action: 'email_submitted' as const,
+                engagement_id: 'eng-456',
+                survey_id: '82124',
+                verification_token: 'abc123-token',
+            };
+
+            analyticsService.track(event);
+
+            expect(mockTrack).toHaveBeenCalledWith('email_submitted', event);
+        });
+
+        it('should track survey_start event with verification_token', () => {
+            const event = {
+                action: 'survey_start' as const,
+                engagement_id: 'eng-456',
+                survey_id: '82124',
+                verification_token: 'abc123-token',
+            };
+
+            analyticsService.track(event);
+
+            expect(mockTrack).toHaveBeenCalledWith('survey_start', event);
+        });
+
+        it('should track complete email-to-survey journey with same token', () => {
+            const verificationToken = 'journey-token-xyz';
+
+            // Step 1: User submits email in modal
+            analyticsService.track({
+                action: 'email_submitted',
+                engagement_id: 'eng-456',
+                survey_id: '82124',
+                verification_token: verificationToken,
+            });
+
+            // Step 2: User clicks email link and lands on survey
+            analyticsService.track({
+                action: 'survey_start',
+                engagement_id: 'eng-456',
+                survey_id: '82124',
+                verification_token: verificationToken,
+            });
+
+            expect(mockTrack).toHaveBeenCalledTimes(2);
+
+            // Both events have same token for correlation
+            const calls = mockTrack.mock.calls;
+            expect(calls[0][1].verification_token).toBe(verificationToken);
+            expect(calls[1][1].verification_token).toBe(verificationToken);
+        });
+    });
 });
