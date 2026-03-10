@@ -12,8 +12,12 @@ graph TD
     subgraph Implemented
         R5[Row 5: Email Non-Click Rate ✅]
         R8[Row 8: Multiple Link Requests ✅]
-        R9[Row 9-10: Survey Step Tracking ✅]
         R11[Row 11: Landing Page Visit Rate ✅]
+        R16[Row 16: Survey Completion Time ✅]
+    end
+    
+    subgraph Future[Future]
+        R9[Row 9-10: Survey Step Tracking 🔄]
     end
     
     subgraph Not_Possible[Not Possible]
@@ -22,8 +26,9 @@ graph TD
     
     style R5 fill:#c3e6cb
     style R8 fill:#c3e6cb
-    style R9 fill:#c3e6cb
     style R11 fill:#c3e6cb
+    style R16 fill:#c3e6cb
+    style R9 fill:#fff3cd
     style R6 fill:#f8d7da
 ```
 
@@ -32,9 +37,10 @@ graph TD
 | 5 | Email non-click rate | ✅ Implemented | [Email Non-Click Rate](#email-non-click-rate) |
 | 6 | Email open rate | ❌ Not Possible | [Email Open Rate](#email-open-rate) |
 | 8 | Multiple link request correlation | ✅ Implemented | [Multiple Link Request Correlation](#multiple-link-request-correlation) |
-| 9 | Track which step users drop off | ✅ Implemented | [Survey Step Progression](#survey-step-progression) |
-| 10 | Track completion rate per step | ✅ Implemented | [Survey Step Progression](#survey-step-progression) |
+| 9 | Track which step users drop off | 🔄 Future | [Survey Step Progression](#survey-step-progression) |
+| 10 | Track completion rate per step | 🔄 Future | [Survey Step Progression](#survey-step-progression) |
 | 11 | Landing page visit rate | ✅ Implemented | [Landing Page Visit Rate](#landing-page-visit-rate) |
+| 16 | Survey completion time | ✅ Implemented | [Survey Completion Time](#survey-completion-time) |
 
 ---
 
@@ -195,71 +201,78 @@ ORDER BY link_requests DESC;
 
 ---
 
-## Survey Flow
+## After Accessing a Survey
 
-### Survey Step Progression
+### Survey Completion Time
 
-> **CSV Rows 9-10** - Track which step users are dropping off / Track completion rate per step
+> **CSV Row 16** - Track the average duration between first survey page load and final submission event
 
-Tracks user progression through multi-page survey steps. Identifies where users drop off.
+Tracks how long users take to complete surveys, from `survey_start` to `survey_submit`. Uses `verification_token` to correlate start and submit events.
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Survey as MultiPageForm
+    participant Survey as Survey Page
     participant Analytics as Analytics Service
     
-    User->>Survey: Starts survey
-    Analytics-->>Analytics: 📊 survey_start
+    User->>Survey: Clicks email link
+    Survey->>Analytics: 📊 survey_start<br/>(verification_token: "abc123")
     
-    User->>Survey: Completes "Personal Info"
-    Survey->>Analytics: 📊 completed_step<br/>(step: 1, name: "Personal Info")
-    
-    User->>Survey: Completes "Feedback"
-    Survey->>Analytics: 📊 completed_step<br/>(step: 2, name: "Feedback")
+    Note over User,Survey: User fills out survey
     
     User->>Survey: Submits survey
-    Analytics-->>Analytics: 📊 survey_submit
+    Survey->>Analytics: 📊 survey_submit<br/>(verification_token: "abc123")
+    
+    Note over Analytics: Completion time =<br/>submit_time - start_time
 ```
 
-**Event Properties:**
-
-| Property | Description | Example |
-|----------|-------------|---------|
-| `step_number` | Current step (1-indexed) | `1` |
-| `step_count` | Total steps in survey | `3` |
-| `step_name` | Step title from form config | `"Personal Info"` |
-| `survey_id` | Survey identifier | `"42"` |
-| `engagement_id` | Engagement identifier | `"15"` |
-
 **Metabase Cards:**
-- Survey Step Progression (funnel) - Users at each step
-- Survey Step Completion Rate (bar) - Retention % per step
-- Survey Step Details (table) - Breakdown by survey
-- Survey Completion Funnel (bar) - Full funnel: start → steps → submit
+- Survey Completion Time (smartscalar) - Average completion time with trend
+- Completed Surveys (scalar) - Total count of completed surveys
+- Survey Completion Time - Over Time (line) - Daily average completion time trend
+- Completed Surveys - Over Time (line) - Daily completion count trend
+- Survey Completion Time - Distribution (bar) - Time buckets (0-5, 5-15, 15-30, 30+ min)
+- Survey Completion Time - Details (table) - Individual completions with timestamps
 
 **Query:**
 ```sql
-WITH funnel AS (
-  SELECT 0 as stage, 'Survey Start' as stage_name,
-         COUNT(DISTINCT session_id) as users
-  FROM events WHERE event_type = 'survey_start'
-  
-  UNION ALL
-  
-  SELECT CAST(properties->>'step_number' AS INTEGER),
-         properties->>'step_name',
-         COUNT(DISTINCT session_id)
-  FROM events WHERE event_type = 'completed_step'
-  GROUP BY 1, 2
-  
-  UNION ALL
-  
-  SELECT 99, 'Survey Submit', COUNT(DISTINCT session_id)
-  FROM events WHERE event_type = 'survey_submit'
+WITH submit_events AS (
+  SELECT 
+    properties->>'verification_token' as token,
+    MIN(timestamp) as submitted_at
+  FROM events
+  WHERE source_app = 'met-web'
+    AND event_type = 'survey_submit'
+    AND properties->>'verification_token' IS NOT NULL
+  GROUP BY properties->>'verification_token'
+),
+start_events AS (
+  SELECT 
+    properties->>'verification_token' as token,
+    MIN(timestamp) as started_at
+  FROM events
+  WHERE source_app = 'met-web'
+    AND event_type = 'survey_start'
+    AND properties->>'verification_token' IS NOT NULL
+  GROUP BY properties->>'verification_token'
 )
-SELECT * FROM funnel ORDER BY stage;
+SELECT 
+  s.token,
+  st.started_at,
+  s.submitted_at,
+  ROUND(EXTRACT(EPOCH FROM (s.submitted_at - st.started_at)) / 60, 1) as completion_minutes
+FROM submit_events s
+JOIN start_events st ON s.token = st.token
+ORDER BY s.submitted_at DESC;
 ```
+
+---
+
+### Survey Step Progression (Future)
+
+> **CSV Rows 9-10** - Track which step users drop off / Track completion rate per step
+
+🔄 **Planned for future implementation.** Will track user progression through multi-page survey steps using `completed_step` events.
 
 ---
 
@@ -273,7 +286,7 @@ SELECT * FROM funnel ORDER BY stage;
 graph LR
     A[Engage Analytics Dashboard]
     A --> B[Pre-Survey Entry<br/>8 cards]
-    A --> C[Survey Flow<br/>4 cards]
+    A --> C[After Accessing a Survey<br/>6 cards]
     A --> D[Engagement Page<br/>Future]
     A --> E[Results<br/>Future]
     
@@ -287,7 +300,7 @@ graph LR
 | Tab | Cards | Purpose |
 |-----|-------|---------|
 | Pre-Survey Entry | 8 | Email-to-survey conversion, non-clicks, repeat users |
-| Survey Flow | 4 | Step progression, completion funnel |
+| After Accessing a Survey | 6 | Survey completion time and count metrics |
 | Engagement Page | - | (Future) |
 | Results | - | (Future) |
 
@@ -343,37 +356,41 @@ graph TD
 | 32 | Repeat Request Completion Rate, Link Request Correlation |
 | 39 | Repeat Link Requesters (full width) |
 
-**Survey Flow Tab:**
+**After Accessing a Survey Tab:**
 
 ```mermaid
 graph TD
     subgraph Row_0[Row 0]
-        A1[Survey Step Progression]
-        A2[Survey Step Completion Rate]
+        A1[Survey Completion Time]
+        A2[Completed Surveys]
     end
     
-    subgraph Row_10[Row 10]
-        B1[Survey Completion Funnel<br/>Full Width]
+    subgraph Row_7[Row 7]
+        B1[Completion Time Over Time]
+        B2[Completed Surveys Over Time]
     end
     
-    subgraph Row_20[Row 20]
-        C1[Survey Step Details<br/>Full Width]
+    subgraph Row_17[Row 17]
+        C1[Time Distribution]
+        C2[Completion Details]
     end
     
-    Row_0 --> Row_10
-    Row_10 --> Row_20
+    Row_0 --> Row_7
+    Row_7 --> Row_17
     
     style A1 fill:#fff3cd
     style A2 fill:#fff3cd
     style B1 fill:#fff3cd
+    style B2 fill:#fff3cd
     style C1 fill:#fff3cd
+    style C2 fill:#fff3cd
 ```
 
 | Row | Cards |
 |-----|-------|
-| 0 | Survey Step Progression, Survey Step Completion Rate |
-| 10 | Survey Completion Funnel (full width) |
-| 20 | Survey Step Details (full width) |
+| 0 | Survey Completion Time (smartscalar), Completed Surveys (scalar) |
+| 7 | Survey Completion Time - Over Time, Completed Surveys - Over Time |
+| 17 | Survey Completion Time - Distribution, Survey Completion Time - Details |
 
 ### Deployment
 
