@@ -52,6 +52,7 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
     const [savedEngagement, setSavedEngagement] = useState<Engagement | null>(null);
     const [isEngagementLoading, setIsEngagementLoading] = useState(true);
     const [slug, setSlug] = useState<string>('');
+    const [participantId, setParticipantId] = useState<string | undefined>();
 
     const verifyToken = async () => {
         if (isLoggedIn) {
@@ -69,12 +70,15 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
             if (!verification || verification.survey_id !== Number(surveyId)) {
                 throw new Error('verification not found or does not match survey');
             }
+            // Store participant_id for survey_submit tracking
+            setParticipantId(verification.participant_id?.toString());
             // Track survey landing from email link (token links this to email_submitted event)
             analyticsService.track({
                 action: 'survey_start',
                 engagement_id: savedSurvey.engagement_id?.toString() || '',
                 survey_id: surveyId,
                 verification_token: token,
+                participant_id: verification.participant_id?.toString(),
             });
         } catch (error) {
             dispatch(
@@ -187,6 +191,14 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
             } catch (error) {
                 console.log(error);
             }
+            // Track survey completion
+            analyticsService.track({
+                action: 'survey_submit',
+                engagement_id: savedSurvey.engagement_id?.toString() || '',
+                survey_id: savedSurvey.id.toString(),
+                verification_token: token || '',
+                participant_id: participantId,
+            });
             dispatch(
                 openNotification({
                     severity: 'success',

@@ -2,14 +2,22 @@ import React, { useState } from 'react';
 import { Form } from '@formio/react';
 import { FormSubmissionData, FormSubmitterProps } from './types';
 import FormStepper from 'components/public/survey/submit/Stepper';
+import { analyticsService } from 'services/penguinAnalytics';
 
 interface PageData {
     page: number;
     submission: unknown;
 }
 
-const MultiPageForm = ({ handleFormChange, savedForm, handleFormSubmit }: FormSubmitterProps) => {
+const MultiPageForm = ({
+    handleFormChange,
+    savedForm,
+    handleFormSubmit,
+    surveyId,
+    engagementId,
+}: FormSubmitterProps) => {
     const [currentPage, setCurrentPage] = useState(0);
+    const totalPages = savedForm?.components?.length || 0;
 
     const handleScrollUp = () => {
         window.scrollTo({
@@ -28,6 +36,18 @@ const MultiPageForm = ({ handleFormChange, savedForm, handleFormSubmit }: FormSu
                 onNextPage={(pageData: PageData) => {
                     setCurrentPage(pageData.page);
                     handleScrollUp();
+                    // Track step completion
+                    if (surveyId) {
+                        const pageName = savedForm?.components?.[pageData.page - 1]?.title || `Page ${pageData.page}`;
+                        analyticsService.track({
+                            action: 'completed_step',
+                            survey_id: surveyId,
+                            engagement_id: engagementId,
+                            step_number: pageData.page,
+                            step_count: totalPages,
+                            step_name: pageName,
+                        });
+                    }
                 }}
                 onPrevPage={(pageData: PageData) => {
                     setCurrentPage(pageData.page);

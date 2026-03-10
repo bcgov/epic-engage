@@ -64,6 +64,7 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
                 engagement_id: savedEngagement.id.toString(),
                 survey_id: savedEngagement.surveys[0].id.toString(),
                 verification_token: verification.verification_token,
+                participant_id: verification.participant_id?.toString(),
             });
             dispatch(
                 openNotification({

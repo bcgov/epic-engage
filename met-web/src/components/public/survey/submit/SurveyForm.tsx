@@ -37,6 +37,8 @@ export const SurveyForm = ({ handleClose }: SurveyFormProps) => {
                     savedForm={savedSurvey.form_json}
                     handleFormChange={handleChange}
                     handleFormSubmit={handleSubmit}
+                    surveyId={savedSurvey.id?.toString()}
+                    engagementId={savedSurvey.engagement_id?.toString()}
                 />
             </Grid>
             <When condition={savedSurvey.form_json?.display === 'form'}>
