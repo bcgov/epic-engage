@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
 import requests
-from flask import current_app, request
+from flask import request
 
 from met_api.utils.analytics import AnalyticsEvent, BaseAnalyticsProvider
 
@@ -92,7 +92,7 @@ class PenguinTracker(BaseAnalyticsProvider):
             logger.info(f'Penguin Analytics tracker initialized: url={self._api_url}, source_app={self._source_app}')
             return True
 
-        except Exception as e:
+        except Exception as e:  # noqa: B902
             logger.error(f'Failed to initialize Penguin Analytics tracker: {e}', exc_info=True)
             self._enabled = False
             return False
@@ -173,7 +173,7 @@ class PenguinTracker(BaseAnalyticsProvider):
         except requests.exceptions.RequestException as e:
             logger.warning(f'Penguin Analytics request error: {event_type}, error={e}')
             return False
-        except Exception as e:
+        except Exception as e:  # noqa: B902
             logger.error(f'Penguin Analytics unexpected error: {event_type}, error={e}')
             return False
 

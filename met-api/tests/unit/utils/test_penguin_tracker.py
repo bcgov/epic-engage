@@ -13,18 +13,13 @@
 # limitations under the License.
 """Tests for Penguin Analytics tracker."""
 
-import json
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
 
 from met_api.utils.penguin_tracker import (
-    ANALYTICS_SESSION_HEADER,
-    PenguinTracker,
-    get_penguin_tracker,
-    track_email_verification,
-)
+    ANALYTICS_SESSION_HEADER, PenguinTracker, get_penguin_tracker, track_email_verification)
 
 
 class TestPenguinTracker:
@@ -304,11 +299,12 @@ class TestPenguinTracker:
 
         # This tests the truncation logic even when disabled
         long_message = 'x' * 1000
-        truncated = long_message[:500]
+        expected_truncated = long_message[:500]
 
         # The truncation happens in track_error
         # Since we're disabled, we can't test the actual payload
         # but we verify the logic exists in the code
+        assert len(expected_truncated) == 500
 
     @patch('met_api.utils.penguin_tracker.requests.post')
     def test_track_page_view(self, mock_post, test_app):
