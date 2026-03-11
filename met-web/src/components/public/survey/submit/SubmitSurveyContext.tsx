@@ -52,7 +52,10 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
     const [savedEngagement, setSavedEngagement] = useState<Engagement | null>(null);
     const [isEngagementLoading, setIsEngagementLoading] = useState(true);
     const [slug, setSlug] = useState<string>('');
-    const [participantId, setParticipantId] = useState<string | undefined>();
+    const [participantId, setParticipantId] = useState<string | undefined>(() => {
+        // Restore participant_id from sessionStorage on mount (handles page refresh)
+        return sessionStorage.getItem(`participant_id_${surveyId}`) || undefined;
+    });
 
     const verifyToken = async (survey?: Survey) => {
         if (isLoggedIn) {
@@ -70,8 +73,12 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
             if (!verification || verification.survey_id !== Number(surveyId)) {
                 throw new Error('verification not found or does not match survey');
             }
-            // Store participant_id for survey_submit tracking
-            setParticipantId(verification.participant_id?.toString());
+            // Store participant_id for survey_submit tracking (persist to sessionStorage for page refresh)
+            const pid = verification.participant_id?.toString();
+            setParticipantId(pid);
+            if (pid) {
+                sessionStorage.setItem(`participant_id_${surveyId}`, pid);
+            }
             // Track survey landing from email link (token links this to email_submitted event)
             analyticsService.track({
                 action: 'survey_start',
@@ -191,14 +198,17 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
             } catch (error) {
                 console.log(error);
             }
-            // Track survey completion
+            // Track survey completion (get participant_id from state or sessionStorage fallback)
+            const submittingParticipantId = participantId || sessionStorage.getItem(`participant_id_${surveyId}`) || undefined;
             analyticsService.track({
                 action: 'survey_submit',
                 engagement_id: savedSurvey.engagement_id?.toString() || '',
                 survey_id: savedSurvey.id.toString(),
                 verification_token: token || '',
-                participant_id: participantId,
+                participant_id: submittingParticipantId,
             });
+            // Clean up sessionStorage after successful submit
+            sessionStorage.removeItem(`participant_id_${surveyId}`);
             dispatch(
                 openNotification({
                     severity: 'success',

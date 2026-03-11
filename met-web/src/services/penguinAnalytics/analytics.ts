@@ -10,12 +10,12 @@ import { AppConfig } from 'config';
  * events to /analytics proxy route to bypass ad blockers.
  */
 const analytics = Analytics({
-    app: 'met-web',
+    app: 'epic-engage',
     version: '1.0.0',
     plugins: [
         penguinAnalyticsPlugin({
             apiUrl: AppConfig.penguinUrl || '/analytics',
-            sourceApp: 'met-web',
+            sourceApp: 'epic-engage',
         }),
     ],
 });
