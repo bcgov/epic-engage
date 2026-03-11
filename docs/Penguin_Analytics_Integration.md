@@ -144,15 +144,82 @@ yarn test tests/unit/services/penguinAnalytics.test.ts  # 21 tests
 ### Prerequisites
 
 1. **Penguin Analytics backend** must be deployed to the cluster (API, TimescaleDB, Metabase)
-2. **Proxy route** `/analytics` must be configured to forward to the Penguin API
+2. **Proxy route** `/analytics` must be configured to forward to the Penguin API (for frontend)
+3. **Direct API access** from met-api pods to Penguin Analytics endpoint (for server-side tracking)
+
+### Environment Configuration
+
+#### met-web (Frontend)
+
+Uses proxy route for ad-blocker bypass. ConfigMap variables:
+
+| Variable | Description | Value |
+|----------|-------------|-------|
+| `REACT_APP_PENGUIN_URL` | Proxy route path | `/analytics` |
+| `REACT_APP_PENGUIN_ENABLED` | Feature flag | `true` / `false` |
+
+#### met-api (Server-side)
+
+Tracks events with sensitive data (verification tokens). Deployment config parameters:
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `PENGUIN_ANALYTICS_ENABLED` | Enable server-side tracking | `true` |
+| `PENGUIN_ANALYTICS_URL` | Direct API endpoint | `https://penguin-analytics-api-c72cba-dev.apps.gold.devops.gov.bc.ca/analytics` |
+| `PENGUIN_ANALYTICS_SOURCE_APP` | Source identifier | `epic-engage` |
+
+**Penguin Analytics URLs by Environment:**
+
+| Environment | URL |
+|------------|-----|
+| dev | `https://penguin-analytics-api-c72cba-dev.apps.gold.devops.gov.bc.ca/analytics` |
+| test | `https://penguin-analytics-api-c72cba-test.apps.gold.devops.gov.bc.ca/analytics` |
+| prod | `https://penguin-analytics-api-c72cba-prod.apps.gold.devops.gov.bc.ca/analytics` |
+
+### Deployment Commands
+
+**Dev Environment:**
+```bash
+oc process -f api.dc.yml \
+  -p ENV=dev \
+  -p IMAGE_TAG=dev \
+  -p PENGUIN_ANALYTICS_ENABLED=true \
+  -p PENGUIN_ANALYTICS_URL='https://penguin-analytics-api-c72cba-dev.apps.gold.devops.gov.bc.ca/analytics' \
+  -p PENGUIN_ANALYTICS_SOURCE_APP='epic-engage' \
+  | oc apply -f - -n e903c2-dev
+```
+
+**Test Environment:**
+```bash
+oc process -f api.dc.yml \
+  -p ENV=test \
+  -p IMAGE_TAG=test \
+  -p PENGUIN_ANALYTICS_ENABLED=true \
+  -p PENGUIN_ANALYTICS_URL='https://penguin-analytics-api-c72cba-test.apps.gold.devops.gov.bc.ca/analytics' \
+  -p PENGUIN_ANALYTICS_SOURCE_APP='epic-engage' \
+  | oc apply -f - -n e903c2-test
+```
+
+**Production Environment:**
+```bash
+oc process -f api.dc.yml \
+  -p ENV=prod \
+  -p IMAGE_TAG=prod \
+  -p PENGUIN_ANALYTICS_ENABLED=true \
+  -p PENGUIN_ANALYTICS_URL='https://penguin-analytics-api-c72cba-prod.apps.gold.devops.gov.bc.ca/analytics' \
+  -p PENGUIN_ANALYTICS_SOURCE_APP='epic-engage' \
+  | oc apply -f - -n e903c2-prod
+```
 
 ### Current Status (March 2026)
 
-| Environment | ConfigMap Updated | Proxy Route | Status |
-|-------------|------------------|-------------|--------|
-| dev | ✅ | ✅ | Active |
-| test | ✅ | ✅ | Active |
-| prod | ❌ | ❌ | Not enabled |
+| Environment | met-web ConfigMap | Proxy Route | met-api ConfigMap | Status |
+|-------------|------------------|-------------|-------------------|--------|
+| dev | ✅ | ✅ | ⏳ Ready | Active (frontend) |
+| test | ✅ | ✅ | ⏳ Ready | Active (frontend) |
+| prod | ❌ | ❌ | ⏳ Ready | Not enabled |
+
+**Server-side tracking** (`email_submitted` events with verification tokens) requires re-deploying met-api with the new PENGUIN_ANALYTICS_* parameters.
 
 ### Enabling in a New Environment
 

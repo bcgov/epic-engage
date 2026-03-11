@@ -403,12 +403,13 @@ def init_analytics(app):
     """Initialize analytics based on Flask configuration.
 
     This function should be called during Flask app initialization to set up
-    the analytics provider(s). Currently only Snowplow is supported.
+    the analytics provider(s). Supports Snowplow and Penguin Analytics providers.
 
     Args:
         app: The Flask application instance
     """
     from met_api.utils.snowplow_tracker import SnowplowTracker
+    from met_api.utils.penguin_tracker import PenguinTracker
 
     with app.app_context():
         try:
@@ -422,21 +423,35 @@ def init_analytics(app):
                 initialize_analytics(provider)
                 return
 
-            logger.info('Initializing analytics with Snowplow provider')
+            logger.info('Initializing analytics providers')
+            fallback_providers = []
 
-            # Initialize the Snowplow provider
-            provider = SnowplowTracker()
-            provider.initialize({
+            # Initialize the Snowplow provider (primary)
+            snowplow_provider = SnowplowTracker()
+            snowplow_provider.initialize({
                 'enabled': app.config.get('SNOWPLOW_ENABLED', False),
                 'collector': app.config.get('SNOWPLOW_COLLECTOR'),
                 'app_id': app.config.get('SNOWPLOW_APP_ID'),
                 'namespace': app.config.get('SNOWPLOW_NAMESPACE')
             })
 
-            # Initialize the global analytics manager
-            initialize_analytics(provider)
+            # Initialize the Penguin Analytics provider (fallback)
+            penguin_enabled = app.config.get('PENGUIN_ANALYTICS_ENABLED', False)
+            if penguin_enabled:
+                penguin_provider = PenguinTracker()
+                penguin_provider.initialize({
+                    'enabled': True,
+                    'api_url': app.config.get('PENGUIN_ANALYTICS_URL'),
+                    'source_app': app.config.get('PENGUIN_ANALYTICS_SOURCE_APP', 'met-web')
+                })
+                fallback_providers.append(penguin_provider)
+                logger.info('Penguin Analytics provider enabled')
 
-            logger.info('Analytics initialized successfully with Snowplow provider')
+            # Initialize the global analytics manager
+            initialize_analytics(snowplow_provider, fallback_providers if fallback_providers else None)
+
+            provider_names = ['Snowplow'] + (['Penguin'] if penguin_enabled else [])
+            logger.info(f'Analytics initialized successfully with providers: {", ".join(provider_names)}')
 
         except Exception as e:
             logger.error(f'Failed to initialize analytics: {e}', exc_info=True)

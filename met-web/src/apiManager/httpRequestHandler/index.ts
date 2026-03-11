@@ -1,24 +1,30 @@
 import axios, { AxiosRequestConfig } from 'axios';
 import UserService from 'services/userService';
 
+/**
+ * Get the analytics session ID for server-side event tracking.
+ * This enables the backend to send events with the same sessionId as frontend events.
+ */
+const getAnalyticsSessionId = (): string => {
+    return sessionStorage.getItem('penguin_session_id') || '';
+};
+
+/**
+ * Get default headers for authenticated API requests.
+ */
+const getDefaultHeaders = (): Record<string, string> => ({
+    'Content-type': 'application/json',
+    Authorization: `Bearer ${UserService.getToken()}`,
+    'tenant-id': `${sessionStorage.getItem('tenantId')}`,
+    'X-Analytics-Session-Id': getAnalyticsSessionId(),
+});
+
 const GetRequest = <T>(url: string, params = {}, headers = {}, responseType?: string) => {
-    const defaultHeaders: Record<string, string> = {
-        'Content-type': 'application/json',
-        Authorization: `Bearer ${UserService.getToken()}`,
-        'tenant-id': `${sessionStorage.getItem('tenantId')}`,
-    };
-
-    const finalHeaders = {
-        ...defaultHeaders,
-        ...headers,
-    };
-
     const requestOptions: AxiosRequestConfig = {
-        params: params,
-        headers: finalHeaders,
+        params,
+        headers: { ...getDefaultHeaders(), ...headers },
     };
 
-    // Conditionally add responseType to requestOptions if provided
     if (responseType) {
         requestOptions.responseType = responseType as AxiosRequestConfig['responseType'];
     }
@@ -27,64 +33,34 @@ const GetRequest = <T>(url: string, params = {}, headers = {}, responseType?: st
 };
 
 const PostRequest = <T>(url: string, data = {}, params = {}) => {
-    const headers: Record<string, string> = {
-        'Content-type': 'application/json',
-        Authorization: `Bearer ${UserService.getToken()}`,
-        'tenant-id': `${sessionStorage.getItem('tenantId')}`,
-    };
-
+    const headers = getDefaultHeaders();
     if (data instanceof FormData) {
         delete headers['Content-type'];
     }
 
-    return axios.post<T>(url, data, {
-        params,
-        headers,
-    });
+    return axios.post<T>(url, data, { params, headers });
 };
 
 const PutRequest = <T>(url: string, data = {}, params = {}) => {
-    const headers: Record<string, string> = {
-        'Content-type': 'application/json',
-        Authorization: `Bearer ${UserService.getToken()}`,
-        'tenant-id': `${sessionStorage.getItem('tenantId')}`,
-    };
-
+    const headers = getDefaultHeaders();
     if (data instanceof FormData) {
         delete headers['Content-type'];
     }
 
-    return axios.put<T>(url, data, {
-        params,
-        headers,
-    });
+    return axios.put<T>(url, data, { params, headers });
 };
 
 const PatchRequest = <T>(url: string, data = {}) => {
-    const headers: Record<string, string> = {
-        'Content-type': 'application/json',
-        Authorization: `Bearer ${UserService.getToken()}`,
-        'tenant-id': `${sessionStorage.getItem('tenantId')}`,
-    };
-
+    const headers = getDefaultHeaders();
     if (data instanceof FormData) {
         delete headers['Content-type'];
     }
 
-    return axios.patch<T>(url, data, {
-        headers,
-    });
+    return axios.patch<T>(url, data, { headers });
 };
 
 const DeleteRequest = <T>(url: string, params = {}) => {
-    return axios.delete<T>(url, {
-        params: params,
-        headers: {
-            'Content-type': 'application/json',
-            Authorization: `Bearer ${UserService.getToken()}`,
-            'tenant-id': `${sessionStorage.getItem('tenantId')}`,
-        },
-    });
+    return axios.delete<T>(url, { params, headers: getDefaultHeaders() });
 };
 
 interface OSSRequestOptions {
