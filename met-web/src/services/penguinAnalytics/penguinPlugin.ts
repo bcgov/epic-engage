@@ -124,7 +124,7 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
 
         page: ({ payload }: AnalyticsHookParams) => {
             const properties = payload.properties || {};
-            sendEvent('Page Viewed', {
+            sendEvent('page_view', {
                 page_name: properties.name,
                 path: window.location.pathname,
                 url: window.location.href,
@@ -138,7 +138,7 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
         },
 
         identify: ({ payload }: AnalyticsHookParams) => {
-            sendEvent('User Identified', {
+            sendEvent('user_identify', {
                 user_id: payload.userId,
                 traits: payload.traits || {},
                 session_start: true,

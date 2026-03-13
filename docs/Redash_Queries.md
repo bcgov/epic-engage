@@ -1,3 +1,13 @@
+# Redash Queries
+
+> **⚠️ Legacy System:** These SQL queries are used in the Redash dashboards for **analytics-api survey response data**.
+>
+> For **Penguin Analytics** queries (user journey metrics), see [docs/analytics/metrics-reference.md](analytics/metrics-reference.md).
+
+---
+
+## Queries
+
 Query Name: Engagement
 Select source_engagement_id from engagement where is_active = true
 
