@@ -1,3 +1,13 @@
+# Redash Customizations
+
+> **⚠️ Legacy System:** This documents the BC Gov fork of Redash used for **analytics-api survey response dashboards**.
+>
+> For **Penguin Analytics** (user journey event tracking), see [docs/analytics/](analytics/README.md).
+
+---
+
+## Code Changes
+
 File name: Dockerfile
 Comment: Changes made to fix the build error, Line 75
 existing: && curl "$databricks_odbc_driver_url" --output /tmp/simba_odbc.zip \
