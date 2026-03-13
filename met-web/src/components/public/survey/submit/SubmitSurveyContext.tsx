@@ -57,7 +57,7 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
         return sessionStorage.getItem(`participant_id_${surveyId}`) || undefined;
     });
 
-    const verifyToken = async () => {
+    const verifyToken = async (survey?: Survey) => {
         if (isLoggedIn) {
             setIsSurveyLoading(false);
             return;
@@ -82,7 +82,7 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
             // Track survey landing from email link (token links this to email_submitted event)
             analyticsService.track({
                 action: 'survey_start',
-                engagement_id: savedSurvey.engagement_id?.toString() || '',
+                engagement_id: (survey || savedSurvey).engagement_id?.toString() || '',
                 survey_id: surveyId,
                 verification_token: token,
                 participant_id: verification.participant_id?.toString(),
@@ -118,7 +118,7 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
             const loadedSurvey = await getSurvey(Number(surveyId));
             setSavedSurvey(loadedSurvey);
             setIsSurveyLoading(false);
-            verifyToken();
+            verifyToken(loadedSurvey);
         } catch (error) {
             if ((error as AxiosError)?.response?.status === 500) {
                 navigate('/not-available');

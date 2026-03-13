@@ -18,6 +18,7 @@ from met_api.models.engagement_metadata import EngagementMetadataModel
 from met_api.schemas.email_verification import EmailVerificationSchema
 from met_api.services.participant_service import ParticipantService
 from met_api.utils import notification
+from met_api.utils.analytics import track_email_verification
 from met_api.utils.template import Template
 from met_api.config import get_gc_notify_config
 
@@ -75,6 +76,18 @@ class EmailVerificationService:
         if email_verification.get('type', None) != EmailVerificationType.RejectedComment:
             cls._send_verification_email(
                 {**email_verification, 'verification_token': verification_token}, subscription_type)
+
+            # Track email_submitted event with verification_token for analytics
+            # This enables linking email_submitted → survey_start → survey_submit events
+            track_email_verification(
+                survey_id=email_verification.get('survey_id'),
+                engagement_id=survey.engagement_id,
+                verification_type='survey',
+                properties={
+                    'verification_token': str(verification_token),
+                    'participant_id': email_verification.get('participant_id'),
+                }
+            )
 
         return email_verification
 

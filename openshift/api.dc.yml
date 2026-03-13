@@ -216,6 +216,9 @@ objects:
     SNOWPLOW_COLLECTOR: ${SNOWPLOW_COLLECTOR}
     SNOWPLOW_APP_ID: ${SNOWPLOW_APP_ID}
     SNOWPLOW_NAMESPACE: ${SNOWPLOW_NAMESPACE}
+    PENGUIN_ANALYTICS_ENABLED: ${PENGUIN_ANALYTICS_ENABLED}
+    PENGUIN_ANALYTICS_URL: ${PENGUIN_ANALYTICS_URL}
+    PENGUIN_ANALYTICS_SOURCE_APP: ${PENGUIN_ANALYTICS_SOURCE_APP}
 - kind: Secret
   apiVersion: v1
   type: Opaque
@@ -341,3 +344,15 @@ parameters:
     description: "Snowplow namespace for environment"
     required: false
     value: 'met-api-dev'
+  - name: PENGUIN_ANALYTICS_ENABLED
+    description: "Enable Penguin Analytics tracking (true/false)"
+    required: false
+    value: 'false'
+  - name: PENGUIN_ANALYTICS_URL
+    description: "Penguin Analytics API endpoint (https://penguin-analytics-api-{projectId}-{env}.{domain}/analytics)"
+    required: false
+    value: ''
+  - name: PENGUIN_ANALYTICS_SOURCE_APP
+    description: "Source application identifier for Penguin Analytics events"
+    required: false
+    value: 'epic-engage'

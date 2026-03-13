@@ -235,6 +235,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     SNOWPLOW_APP_ID = os.getenv('SNOWPLOW_APP_ID', 'Snowplow_standalone_MET')
     SNOWPLOW_NAMESPACE = os.getenv('SNOWPLOW_NAMESPACE', 'met-api')
 
+    # Penguin Analytics Configuration (server-side event tracking)
+    PENGUIN_ANALYTICS_ENABLED = os.getenv('PENGUIN_ANALYTICS_ENABLED', 'False').lower() == 'true'
+    PENGUIN_ANALYTICS_URL = os.getenv('PENGUIN_ANALYTICS_URL', 'http://localhost:3000/analytics')
+    PENGUIN_ANALYTICS_SOURCE_APP = os.getenv('PENGUIN_ANALYTICS_SOURCE_APP', 'met-web')
+
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Dev Config."""
@@ -247,8 +252,6 @@ class DevConfig(_Config):  # pylint: disable=too-few-public-methods
 class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     """In support of testing only.used by the py.test suite."""
 
-    DEBUG = True
-    TESTING = True
     DEBUG = True
     TESTING = True
     # POSTGRESQL
