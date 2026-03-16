@@ -87,6 +87,20 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
                 verification_token: token,
                 participant_id: verification.participant_id?.toString(),
             });
+            // Snowplow tracking for survey start
+            try {
+                window.snowplow('trackSelfDescribingEvent', {
+                    schema: 'iglu:ca.bc.gov.met/action/jsonschema/1-0-0',
+                    data: {
+                        action: 'survey_start',
+                        survey_name: (survey || savedSurvey).name,
+                        survey_id: surveyId,
+                        participant_number: verification.participant_id,
+                    },
+                });
+            } catch (error) {
+                console.log(error);
+            }
         } catch (error) {
             dispatch(
                 openNotification({
