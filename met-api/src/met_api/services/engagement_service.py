@@ -43,7 +43,7 @@ class EngagementService:
     def get_engagement(self, engagement_id) -> EngagementSchema:
         """Get Engagement by the id."""
         engagement_model: EngagementModel = EngagementModel.find_by_id(engagement_id)
-        
+
         if not engagement_model:
             return None
 
