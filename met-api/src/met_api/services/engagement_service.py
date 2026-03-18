@@ -44,21 +44,23 @@ class EngagementService:
         """Get Engagement by the id."""
         engagement_model: EngagementModel = EngagementModel.find_by_id(engagement_id)
 
-        if engagement_model:
-            if TokenInfo.get_id() is None \
-                    and engagement_model.status_id not in (Status.Published.value, Status.Closed.value):
-                # Non authenticated users only have access to published and closed engagements
-                return None
-            if engagement_model.status_id in (Status.Draft.value, Status.Scheduled.value):
-                one_of_roles = (
-                    MembershipType.TEAM_MEMBER.name,
-                    MembershipType.REVIEWER.name,
-                    Role.VIEW_ALL_ENGAGEMENTS.value
-                )
-                authorization.check_auth(one_of_roles=one_of_roles, engagement_id=engagement_id)
+        if not engagement_model:
+            return None
 
-            engagement = EngagementSchema().dump(engagement_model)
-            engagement['banner_url'] = self.object_storage.get_url(engagement['banner_filename'])
+        if TokenInfo.get_id() is None \
+                and engagement_model.status_id not in (Status.Published.value, Status.Closed.value):
+            # Non authenticated users only have access to published and closed engagements
+            return None
+        if engagement_model.status_id in (Status.Draft.value, Status.Scheduled.value):
+            one_of_roles = (
+                MembershipType.TEAM_MEMBER.name,
+                MembershipType.REVIEWER.name,
+                Role.VIEW_ALL_ENGAGEMENTS.value
+            )
+            authorization.check_auth(one_of_roles=one_of_roles, engagement_id=engagement_id)
+
+        engagement = EngagementSchema().dump(engagement_model)
+        engagement['banner_url'] = self.object_storage.get_url(engagement['banner_filename'])
         return engagement
 
     def get_engagements_paginated(

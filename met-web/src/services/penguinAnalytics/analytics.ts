@@ -1,4 +1,5 @@
 import Analytics from 'analytics';
+import tabEventsPlugin from 'analytics-plugin-tab-events';
 import { penguinAnalyticsPlugin } from './penguinPlugin';
 import { AnalyticsService, AnalyticsEventProps } from './types';
 import { AppConfig } from 'config';
@@ -8,6 +9,7 @@ import { AppConfig } from 'config';
  *
  * Initialized with Penguin Analytics plugin that sends
  * events to /analytics proxy route to bypass ad blockers.
+ * Tab events plugin tracks when users switch tabs for accurate time measurement.
  */
 const analytics = Analytics({
     app: 'epic-engage',
@@ -17,6 +19,7 @@ const analytics = Analytics({
             apiUrl: AppConfig.penguinUrl || '/analytics',
             sourceApp: 'epic-engage',
         }),
+        tabEventsPlugin(),
     ],
 });
 

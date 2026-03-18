@@ -13,6 +13,8 @@ export interface PenguinPluginConfig {
  */
 export type AnalyticsAction =
     | 'page_view'
+    | 'tab_hidden'
+    | 'tab_visible'
     | 'survey_start'
     | 'completed_step'
     | 'survey_submit'
