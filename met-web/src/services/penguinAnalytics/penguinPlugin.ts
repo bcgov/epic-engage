@@ -83,6 +83,17 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
     }
 
     /**
+     * Get current page location properties
+     */
+    function getLocationProperties() {
+        return {
+            path: window.location.pathname,
+            url: window.location.href,
+            title: document.title,
+        };
+    }
+
+    /**
      * Send event to Penguin Analytics API
      */
     async function sendEvent(eventType: string, properties: Record<string, unknown> = {}) {
@@ -126,9 +137,7 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
             const properties = payload.properties || {};
             sendEvent('page_view', {
                 page_name: properties.name,
-                path: window.location.pathname,
-                url: window.location.href,
-                title: document.title,
+                ...getLocationProperties(),
                 ...properties,
             });
         },
@@ -143,6 +152,14 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
                 traits: payload.traits || {},
                 session_start: true,
             });
+        },
+
+        tabHidden: () => {
+            sendEvent('tab_hidden', getLocationProperties());
+        },
+
+        tabVisible: () => {
+            sendEvent('tab_visible', getLocationProperties());
         },
 
         loaded: () => true,
