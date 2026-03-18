@@ -129,7 +129,7 @@ const EmailPanel = ({ email, checkEmail, handleClose, updateEmail, isSaving, vis
                         <MetLabel>Email Address</MetLabel>
                         <TextField
                             onChange={(e) => {
-                                updateEmail(e.target.value);
+                                updateEmail(e.target.value.trim());
                                 setEmailFormError({ ...emailFormError, email: false });
                             }}
                             label=" "
