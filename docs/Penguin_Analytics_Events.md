@@ -14,10 +14,15 @@ graph TD
         R8[Row 8: Multiple Link Requests ✅]
         R11[Row 11: Landing Page Visit Rate ✅]
         R16[Row 16: Survey Completion Time ✅]
+        R17[Row 17: Survey Abandonment Point ✅]
+        R18[Row 18: Survey Abandonment Rate ✅]
+        R19[Row 19: Time on Each Page ✅]
+        R30[Engagement Page Metrics ✅]
     end
     
     subgraph Future[Future]
-        R9[Row 9-10: Survey Step Tracking 🔄]
+        R20[Click rates on links 🔄]
+        R31[Results Page Metrics 🔄]
     end
     
     subgraph Not_Possible[Not Possible]
@@ -28,7 +33,12 @@ graph TD
     style R8 fill:#c3e6cb
     style R11 fill:#c3e6cb
     style R16 fill:#c3e6cb
-    style R9 fill:#fff3cd
+    style R17 fill:#c3e6cb
+    style R18 fill:#c3e6cb
+    style R19 fill:#c3e6cb
+    style R30 fill:#c3e6cb
+    style R20 fill:#fff3cd
+    style R31 fill:#fff3cd
     style R6 fill:#f8d7da
 ```
 
@@ -37,10 +47,14 @@ graph TD
 | 5 | Email non-click rate | ✅ Implemented | [Email Non-Click Rate](#email-non-click-rate) |
 | 6 | Email open rate | ❌ Not Possible | [Email Open Rate](#email-open-rate) |
 | 8 | Multiple link request correlation | ✅ Implemented | [Multiple Link Request Correlation](#multiple-link-request-correlation) |
-| 9 | Track which step users drop off | 🔄 Future | [Survey Step Progression](#survey-step-progression) |
-| 10 | Track completion rate per step | 🔄 Future | [Survey Step Progression](#survey-step-progression) |
 | 11 | Landing page visit rate | ✅ Implemented | [Landing Page Visit Rate](#landing-page-visit-rate) |
 | 16 | Survey completion time | ✅ Implemented | [Survey Completion Time](#survey-completion-time) |
+| 17 | Survey abandonment point | ✅ Implemented | Step funnel + details |
+| 18 | Survey abandonment rate | ✅ Implemented | Rate + over time trend |
+| 19 | Time on each page | ✅ Implemented | By step + over time + details |
+| - | Engagement page referrals, active time, tab switches | ✅ Implemented | Engagement Page Metrics tab |
+| - | Click rates on links | 🔄 Future | Requires frontend link tracking in surveys |
+| - | Results page metrics | 🔄 Future | Requires new dashboard tab |
 
 ---
 
@@ -93,11 +107,18 @@ graph TB
 | `survey_start` | Frontend | Survey page loaded from email link | `verification_token`, `participant_id`, `survey_id`, `engagement_id` |
 | `completed_step` | Frontend | User completes a survey step | `step_number`, `step_name`, `step_count`, `survey_id`, `engagement_id` |
 | `survey_submit` | Frontend | Survey successfully submitted | `verification_token`, `participant_id`, `survey_id`, `engagement_id` |
+| `page_view` | Frontend | Page navigation (auto-tracked) | `page_name`, `path`, `engagement_id`, `user_type` |
+| `tab_hidden` | Frontend | User switches away from tab | `path`, `engagement_id`, `user_type` |
+| `tab_visible` | Frontend | User returns to tab | `path`, `engagement_id`, `user_type` |
+
+**Automatic Enrichment:**
+All events are enriched with `user_type` (`'public'` or `'admin'`) in `penguinPlugin.ts sendEvent()`. Classification uses `roles.length > 0` = admin, `roles.length === 0` = public (NOT `isLoggedIn`). Tab events inherit `engagement_id` and `user_type` from `sessionStorage`.
 
 **Correlation Keys:**
 - `verification_token` - Links email submission to survey landing (single journey)
 - `participant_id` - Identifies repeat users across multiple link requests
 - `session_id` - Groups all events in a browser session
+- `engagement_id` - Groups events by engagement page
 
 **Event Flow:**
 
@@ -307,48 +328,45 @@ ORDER BY s.submitted_at DESC;
 
 ---
 
-### Survey Step Progression (Future)
+### Survey Step Progression
 
-> **CSV Rows 9-10** - Track which step users drop off / Track completion rate per step
+> **CSV Rows 9-10, 17-19** - Survey abandonment and step tracking
 
-🔄 **Planned for future implementation.** Will track user progression through multi-page survey steps using `completed_step` events.
-
-**Available Data:**
-The `completed_step` event captures:
-- `step_number` - Current step (1-indexed)
-- `step_count` - Total steps in survey
-- `step_name` - Page title from form definition
-- `survey_id`, `engagement_id`
+✅ **Implemented.** The dashboard includes:
+- **Survey Abandonment Rate** (scalar + over time) - % of users who start but don't finish
+- **Survey Abandonment Point - Step Funnel** (funnel) - Drop-off at each step
+- **Survey Abandonment Point - Details** (table) - Per-step completion and drop-off counts
+- **Abandoned Surveys - Journey Details** (table) - Individual abandoned sessions
+- **Time on Each Page** (smartscalar + by step + over time + details) - Time per survey step
 
 ---
 
 ## Metabase Dashboard
 
-**Dashboard:** Engage Analytics
+**Dashboard:** Engage Analytics (Public)
 
 ### Tabs
 
 ```mermaid
 graph LR
-    A[Engage Analytics Dashboard]
+    A[Engage Analytics - Public]
     A --> B[Pre-Survey Entry<br/>8 cards]
-    A --> C[After Accessing a Survey<br/>6 cards]
-    A --> D[Engagement Page<br/>Future]
-    A --> E[Results<br/>Future]
+    A --> C[After Accessing a Survey<br/>15 cards]
+    A --> D[Engagement Page Metrics<br/>7 cards]
     
     style A fill:#ED8936,color:#fff
     style B fill:#e1f5ff
     style C fill:#e1f5ff
-    style D fill:#f0f0f0
-    style E fill:#f0f0f0
+    style D fill:#e1f5ff
 ```
 
 | Tab | Cards | Purpose |
 |-----|-------|---------|
 | Pre-Survey Entry | 8 | Email-to-survey conversion, non-clicks, repeat users |
-| After Accessing a Survey | 6 | Survey completion time and count metrics |
-| Engagement Page | - | (Future) |
-| Results | - | (Future) |
+| After Accessing a Survey | 15 | Completion time, abandonment rate/point, step funnel, time on each page |
+| Engagement Page Metrics | 7 | Referral sources, active time, tab switches, per-engagement breakdown |
+
+**Filters:** Date Range (default: past 7 days), Survey ID (dropdown populated from saved question)
 
 ### Deployment
 
@@ -407,7 +425,8 @@ graph LR
 | `src/components/public/survey/submit/SubmitSurveyContext.tsx` | `survey_start`, `survey_submit` | Survey context and submission |
 | `src/components/shared/form/FormBuilder/MultiPageForm.tsx` | `completed_step` | Multi-page form navigation |
 | `src/apiManager/httpRequestHandler/index.ts` | - | Sends `X-Analytics-Session-Id` header |
-| `src/services/analytics/analyticsService.ts` | - | Analytics service with Penguin plugin |
+| `src/services/penguinAnalytics/analytics.ts` | - | Analytics service wrapper (page accepts userType param) |
+| `src/components/public/engagement/view/EngagementView.tsx` | `page_view` | Tracks engagement page view with user_type based on roles |
 
 ---
 
@@ -428,7 +447,7 @@ PENGUIN_ANALYTICS_SOURCE_APP=met-api
 
 ### Frontend Configuration
 
-The frontend uses `analytics.js` with the `penguinAnalyticsPlugin`. Session ID is stored in `sessionStorage` as `penguin_session_id` and passed to the backend via the `X-Analytics-Session-Id` header.
+The frontend uses `analytics.js` with the `penguinAnalyticsPlugin`. Session ID is stored in `sessionStorage` as `penguin_session_id` and passed to the backend via the `X-Analytics-Session-Id` header. Additionally, `penguin_engagement_id` and `penguin_user_type` are stored in `sessionStorage` on page views and inherited by tab events.
 
 ---
 
