@@ -34,22 +34,50 @@ class ShapefileService:   # pylint: disable=too-few-public-methods
     def convert_to_geojson(file):
         """Convert to Geojson."""
         upload_folder = current_app.config.get('SHAPEFILE_UPLOAD_FOLDER')
-        shapefile_path = ShapefileService._unzip_file(file, upload_folder)
-        geojson_string = ShapefileService._get_geojson(shapefile_path)
+        shapefile_paths = ShapefileService._unzip_file(file, upload_folder)
+        geojson_string = ShapefileService._get_geojson(shapefile_paths)
         # Clean up uploaded files
         shutil.rmtree(os.path.join(upload_folder))
         return geojson_string
 
     @staticmethod
-    def _get_geojson(shapefile_path):
-        gdf = gpd.read_file(shapefile_path)
+    def _get_geojson(shapefile_paths):
+        if isinstance(shapefile_paths, str):
+            shapefile_paths = [shapefile_paths]
 
-        # Check if the GeoDataFrame's CRS is not EPSG:4326, if so transform it to EPSG:4326
-        if gdf.crs and gdf.crs.to_epsg() != 4326:
-            gdf = gdf.to_crs(epsg=4326)
+        merged_geojson = {
+            'type': 'FeatureCollection',
+            'features': [],
+        }
+        render_index = 0
 
-        geojson_dict = json.loads(gdf.to_json())
-        geojson_string = json.dumps(geojson_dict)
+        for shapefile_index, shapefile_path in enumerate(shapefile_paths):
+            gdf = gpd.read_file(shapefile_path)
+
+            # Check if the GeoDataFrame's CRS is not EPSG:4326, if so transform it to EPSG:4326
+            if gdf.crs and gdf.crs.to_epsg() != 4326:
+                gdf = gdf.to_crs(epsg=4326)
+
+            geojson_dict = json.loads(gdf.to_json())
+            features = geojson_dict.get('features', [])
+
+            if not features:
+                continue
+
+            for feature in features:
+                properties = feature.setdefault('properties', {})
+                properties['shape_group_index'] = shapefile_index
+                properties['shape_render_index'] = render_index
+
+                merged_geojson['features'].append(feature)
+                render_index += 1
+
+        if not merged_geojson.get('features'):
+            raise BusinessException(
+                error='No Valid shapefile found.',
+                status_code=HTTPStatus.BAD_REQUEST)
+
+        geojson_string = json.dumps(merged_geojson)
         return geojson_string
 
     @staticmethod
@@ -60,22 +88,23 @@ class ShapefileService:   # pylint: disable=too-few-public-methods
         file.save(file_path)
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
             zip_ref.extractall(upload_folder)
-            shapefile_name = ShapefileService._get_shapefile_name(zip_ref)
-            if not shapefile_name:
+            shapefile_names = ShapefileService._get_shapefile_names(zip_ref)
+            if not shapefile_names:
                 raise BusinessException(
                     error='No Valid shapefile found.',
                     status_code=HTTPStatus.BAD_REQUEST)
 
-        shapefile_path = os.path.join(upload_folder, shapefile_name)
-        return shapefile_path
+        shapefile_paths = [os.path.join(upload_folder, shapefile_name) for shapefile_name in shapefile_names]
+        return shapefile_paths
 
     @staticmethod
-    def _get_shapefile_name(zip_ref):
-        shapefile_name = None
+    def _get_shapefile_names(zip_ref):
+        shapefile_names = []
         for name in zip_ref.namelist():
-            if name.endswith('.shp') and 'MACOSX' not in name:
-                shapefile_name = name
-        return shapefile_name
+            normalized_name = name.lower()
+            if normalized_name.endswith('.shp') and 'macosx' not in normalized_name:
+                shapefile_names.append(name)
+        return shapefile_names
 
     @staticmethod
     def _create_upload_dir(upload_folder):
