@@ -117,6 +117,7 @@ describe('Penguin Analytics Service', () => {
                 properties: {
                     action: 'page_view',
                     engagement_id: undefined,
+                    user_type: 'public',
                 },
             });
         });
@@ -131,6 +132,7 @@ describe('Penguin Analytics Service', () => {
                 properties: {
                     action: 'page_view',
                     engagement_id: undefined,
+                    user_type: 'public',
                 },
             });
             expect(mockPage).toHaveBeenCalledTimes(1);
@@ -144,6 +146,7 @@ describe('Penguin Analytics Service', () => {
                 properties: {
                     action: 'page_view',
                     engagement_id: 'eng-456',
+                    user_type: 'public',
                 },
             });
         });
@@ -156,6 +159,33 @@ describe('Penguin Analytics Service', () => {
                 properties: {
                     action: 'page_view',
                     engagement_id: undefined,
+                    user_type: 'public',
+                },
+            });
+        });
+
+        it('should default user_type to public when not specified', () => {
+            analyticsService.page('Engagement Page', 'eng-456');
+
+            expect(mockPage).toHaveBeenCalledWith({
+                name: 'Engagement Page',
+                properties: {
+                    action: 'page_view',
+                    engagement_id: 'eng-456',
+                    user_type: 'public',
+                },
+            });
+        });
+
+        it('should pass user_type admin for staff users', () => {
+            analyticsService.page('Engagement Page', 'eng-456', 'admin');
+
+            expect(mockPage).toHaveBeenCalledWith({
+                name: 'Engagement Page',
+                properties: {
+                    action: 'page_view',
+                    engagement_id: 'eng-456',
+                    user_type: 'admin',
                 },
             });
         });
@@ -447,6 +477,96 @@ describe('Penguin Analytics Service', () => {
             const calls = mockTrack.mock.calls;
             expect(calls[0][1].verification_token).toBe(verificationToken);
             expect(calls[1][1].verification_token).toBe(verificationToken);
+        });
+    });
+
+    describe('Plugin: sessionStorage Context Persistence', () => {
+        const mockFetch = jest.fn();
+        let plugin: any;
+
+        beforeEach(() => {
+            sessionStorageMock.setItem.mockClear();
+            sessionStorageMock.getItem.mockClear();
+            mockFetch.mockClear();
+            mockFetch.mockResolvedValue({ ok: true });
+            global.fetch = mockFetch;
+
+            const { penguinAnalyticsPlugin } = require('services/penguinAnalytics');
+            plugin = penguinAnalyticsPlugin({ apiUrl: '/analytics', sourceApp: 'epic-engage' });
+            plugin.initialize?.({});
+            // Clear calls accumulated during initialize() (session ID creation)
+            sessionStorageMock.setItem.mockClear();
+            mockFetch.mockClear();
+        });
+
+        it('should store engagement_id in sessionStorage on page view', () => {
+            plugin.page({ payload: { properties: { engagement_id: '271', user_type: 'public' } } });
+
+            expect(sessionStorageMock.setItem).toHaveBeenCalledWith('penguin_engagement_id', '271');
+        });
+
+        it('should store user_type in sessionStorage on page view', () => {
+            plugin.page({ payload: { properties: { engagement_id: '271', user_type: 'admin' } } });
+
+            expect(sessionStorageMock.setItem).toHaveBeenCalledWith('penguin_user_type', 'admin');
+        });
+
+        it('should not store engagement_id when not provided', () => {
+            plugin.page({ payload: { properties: { user_type: 'public' } } });
+
+            expect(sessionStorageMock.setItem).not.toHaveBeenCalledWith('penguin_engagement_id', expect.anything());
+        });
+
+        it('tab_hidden should include engagement_id inherited from sessionStorage', async () => {
+            plugin.page({ payload: { properties: { engagement_id: '271', user_type: 'public' } } });
+            mockFetch.mockClear();
+
+            plugin.tabHidden();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            expect(mockFetch).toHaveBeenCalledTimes(1);
+            const sentEvent = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(sentEvent.properties.engagement_id).toBe('271');
+        });
+
+        it('tab_visible should include engagement_id inherited from sessionStorage', async () => {
+            plugin.page({ payload: { properties: { engagement_id: '271', user_type: 'public' } } });
+            mockFetch.mockClear();
+
+            plugin.tabVisible();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            const sentEvent = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(sentEvent.properties.engagement_id).toBe('271');
+        });
+
+        it('tab events should inherit user_type from sessionStorage', async () => {
+            plugin.page({ payload: { properties: { engagement_id: '271', user_type: 'admin' } } });
+            mockFetch.mockClear();
+
+            plugin.tabHidden();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            const sentEvent = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(sentEvent.properties.user_type).toBe('admin');
+        });
+
+        it('tab events should default user_type to public when sessionStorage is empty', async () => {
+            sessionStorageMock.clear();
+
+            plugin.tabHidden();
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            const sentEvent = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(sentEvent.properties.user_type).toBe('public');
+        });
+
+        it('all events should include user_type via sendEvent enrichment', async () => {
+            plugin.page({ payload: { properties: { engagement_id: '271', user_type: 'admin' } } });
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            const sentEvent = JSON.parse(mockFetch.mock.calls[0][1].body);
+            expect(sentEvent.properties.user_type).toBe('admin');
         });
     });
 });
