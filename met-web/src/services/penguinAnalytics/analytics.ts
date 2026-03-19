@@ -31,14 +31,16 @@ export const analyticsService: AnalyticsService = {
      * Track page view
      * @param pageName - Page name (optional)
      * @param engagementId - Engagement ID if viewing engagement content (optional)
+     * @param userType - 'public' for stakeholders, 'admin' for staff previewing (optional, defaults to 'public')
      */
-    page: (pageName?: string, engagementId?: string) => {
+    page: (pageName?: string, engagementId?: string, userType?: 'public' | 'admin') => {
         if (!AppConfig.penguinEnabled) return;
         analytics.page({
             name: pageName,
             properties: {
                 action: 'page_view',
                 engagement_id: engagementId,
+                user_type: userType || 'public',
             },
         });
     },

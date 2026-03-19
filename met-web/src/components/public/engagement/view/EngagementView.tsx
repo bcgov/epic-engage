@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Grid, useMediaQuery, Theme } from '@mui/material';
 import { EngagementViewContext } from './EngagementViewContext';
 import { EngagementContent } from './EngagementContent';
@@ -13,12 +13,14 @@ import { Else, If, Then } from 'react-if';
 import { PhasesWidget } from './widgets/PhasesWidget';
 import { PhasesWidgetMobile } from './widgets/PhasesWidget/PhasesWidgetMobile/PhasesWidgetMobile';
 import { EngagementBanner } from './EngagementBanner';
+import { analyticsService } from 'services/penguinAnalytics';
 
 export const EngagementView = () => {
     const { state } = useLocation() as RouteState;
     const [isEmailModalOpen, setEmailModalOpen] = useState(state ? state.open : false);
     const [defaultPanel, setDefaultPanel] = useState(state ? 'thank you' : 'email');
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
+    const roles = useAppSelector((state) => state.user.roles);
     const isPreview = isLoggedIn;
     const { savedEngagement } = useContext(EngagementViewContext);
     const surveyId = savedEngagement.surveys[0]?.id || '';
@@ -28,6 +30,15 @@ export const EngagementView = () => {
     window.history.replaceState({}, document.title);
 
     const isMediumScreen: boolean = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
+
+    // Track page view with engagement_id and user_type for analytics
+    // Uses roles.length (not isLoggedIn) to correctly classify authenticated public stakeholders as 'public'
+    useEffect(() => {
+        if (savedEngagement?.id) {
+            const userType = roles.length > 0 ? 'admin' : 'public';
+            analyticsService.page(savedEngagement.name || 'Engagement Page', String(savedEngagement.id), userType);
+        }
+    }, [savedEngagement?.id, savedEngagement?.name, roles]);
 
     const handleStartSurvey = () => {
         if (!isPreview) {

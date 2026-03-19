@@ -94,9 +94,11 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
     }
 
     /**
-     * Send event to Penguin Analytics API
+     * Send event to Penguin Analytics API.
+     * Enriches all events with user_type from properties or sessionStorage fallback.
      */
     async function sendEvent(eventType: string, properties: Record<string, unknown> = {}) {
+        const userType = (properties.user_type as string) || sessionStorage.getItem('penguin_user_type') || 'public';
         const event: PenguinEvent = {
             timestamp: new Date().toISOString(),
             eventType,
@@ -104,6 +106,7 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
             sourceApp: config.sourceApp,
             properties: {
                 ...properties,
+                user_type: userType,
                 ...getBrowserContext(),
             },
         };
@@ -135,6 +138,13 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
 
         page: ({ payload }: AnalyticsHookParams) => {
             const properties = payload.properties || {};
+            // Persist engagement context for tab events (which carry no payload)
+            if (properties.engagement_id) {
+                sessionStorage.setItem('penguin_engagement_id', String(properties.engagement_id));
+            }
+            if (properties.user_type) {
+                sessionStorage.setItem('penguin_user_type', String(properties.user_type));
+            }
             sendEvent('page_view', {
                 page_name: properties.name,
                 ...getLocationProperties(),
@@ -155,11 +165,19 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
         },
 
         tabHidden: () => {
-            sendEvent('tab_hidden', getLocationProperties());
+            const engagementId = sessionStorage.getItem('penguin_engagement_id');
+            sendEvent('tab_hidden', {
+                ...getLocationProperties(),
+                ...(engagementId && { engagement_id: engagementId }),
+            });
         },
 
         tabVisible: () => {
-            sendEvent('tab_visible', getLocationProperties());
+            const engagementId = sessionStorage.getItem('penguin_engagement_id');
+            sendEvent('tab_visible', {
+                ...getLocationProperties(),
+                ...(engagementId && { engagement_id: engagementId }),
+            });
         },
 
         loaded: () => true,
