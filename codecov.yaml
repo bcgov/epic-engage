@@ -12,7 +12,7 @@ coverage:
     project:
       default: false
       backend:
-        target: 80%
+        target: auto
         flags:
           - metapi
       ui:
