@@ -10,7 +10,7 @@ import { When } from 'react-if';
 
 export const SurveyForm = ({ handleClose }: SurveyFormProps) => {
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
-    const { isSurveyLoading, savedSurvey, handleSubmit, isSubmitting } = useContext(SubmitSurveyContext);
+    const { isSurveyLoading, savedSurvey, handleSubmit, isSubmitting, savedEngagement } = useContext(SubmitSurveyContext);
     const [submissionData, setSubmissionData] = useState<unknown>(null);
     const [isValid, setIsValid] = useState(false);
 
@@ -38,7 +38,9 @@ export const SurveyForm = ({ handleClose }: SurveyFormProps) => {
                     handleFormChange={handleChange}
                     handleFormSubmit={handleSubmit}
                     surveyId={savedSurvey.id?.toString()}
+                    surveyName={savedSurvey.name}
                     engagementId={savedSurvey.engagement_id?.toString()}
+                    engagementName={savedEngagement?.name}
                 />
             </Grid>
             <When condition={savedSurvey.form_json?.display === 'form'}>

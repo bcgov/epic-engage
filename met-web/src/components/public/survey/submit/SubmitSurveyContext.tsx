@@ -80,10 +80,12 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
                 sessionStorage.setItem(`participant_id_${surveyId}`, pid);
             }
             // Track survey landing from email link (token links this to email_submitted event)
+            const surveyForTracking = survey || savedSurvey;
             analyticsService.track({
                 action: 'survey_start',
-                engagement_id: (survey || savedSurvey).engagement_id?.toString() || '',
+                engagement_id: surveyForTracking.engagement_id?.toString() || '',
                 survey_id: surveyId,
+                survey_name: surveyForTracking.name,
                 verification_token: token,
                 participant_id: verification.participant_id?.toString(),
             });
@@ -217,7 +219,9 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
             analyticsService.track({
                 action: 'survey_submit',
                 engagement_id: savedSurvey.engagement_id?.toString() || '',
+                engagement_name: savedEngagement?.name,
                 survey_id: savedSurvey.id.toString(),
+                survey_name: savedSurvey.name,
                 verification_token: token || '',
                 participant_id: submittingParticipantId,
             });

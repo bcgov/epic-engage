@@ -86,6 +86,8 @@ class EmailVerificationService:
                 properties={
                     'verification_token': str(verification_token),
                     'participant_id': email_verification.get('participant_id'),
+                    'survey_name': survey.name,
+                    'engagement_name': engagement.name,
                 }
             )
 
