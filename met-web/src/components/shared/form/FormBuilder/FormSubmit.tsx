@@ -3,7 +3,15 @@ import { FormSubmitterProps } from './types';
 import SinglePageForm from './SinglePageForm';
 import MultiPageForm from './MultiPageForm';
 
-const FormSubmit = ({ handleFormChange, savedForm, handleFormSubmit, surveyId, engagementId }: FormSubmitterProps) => {
+const FormSubmit = ({
+    handleFormChange,
+    savedForm,
+    handleFormSubmit,
+    surveyId,
+    surveyName,
+    engagementId,
+    engagementName,
+}: FormSubmitterProps) => {
     const isMultiPage = savedForm && savedForm.display === 'wizard';
 
     return isMultiPage ? (
@@ -12,7 +20,9 @@ const FormSubmit = ({ handleFormChange, savedForm, handleFormSubmit, surveyId, e
             savedForm={savedForm}
             handleFormSubmit={handleFormSubmit}
             surveyId={surveyId}
+            surveyName={surveyName}
             engagementId={engagementId}
+            engagementName={engagementName}
         />
     ) : (
         <SinglePageForm handleFormChange={handleFormChange} savedForm={savedForm} handleFormSubmit={handleFormSubmit} />

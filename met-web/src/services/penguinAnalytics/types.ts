@@ -39,6 +39,8 @@ export interface AnalyticsEventProps {
     survey_id?: string;
     /** Engagement ID - links survey to parent engagement */
     engagement_id?: string;
+    /** Engagement name - human-readable label for the engagement */
+    engagement_name?: string;
     /** Name of the current step, where applicable */
     step_name?: string;
     /** Current step number (1-indexed), where applicable */

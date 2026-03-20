@@ -14,7 +14,9 @@ const MultiPageForm = ({
     savedForm,
     handleFormSubmit,
     surveyId,
+    surveyName,
     engagementId,
+    engagementName,
 }: FormSubmitterProps) => {
     const [currentPage, setCurrentPage] = useState(0);
     const totalPages = savedForm?.components?.length || 0;
@@ -42,7 +44,9 @@ const MultiPageForm = ({
                         analyticsService.track({
                             action: 'completed_step',
                             survey_id: surveyId,
+                            survey_name: surveyName,
                             engagement_id: engagementId,
+                            engagement_name: engagementName,
                             step_number: pageData.page,
                             step_count: totalPages,
                             step_name: pageName,
