@@ -82,9 +82,22 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
             }
             // Track survey landing from email link (token links this to email_submitted event)
             const surveyForTracking = survey || savedSurvey;
+            // Fetch engagement name for survey_start (engagement loads in parallel so we resolve it here)
+            let engagementNameForStart: string | undefined;
+            if (surveyForTracking.engagement_id) {
+                try {
+                    const eng = await getEngagement(Number(surveyForTracking.engagement_id));
+                    engagementNameForStart = eng.name;
+                    setSavedEngagement(eng);
+                    savedEngagementRef.current = eng;
+                } catch {
+                    // non-fatal: engagement_name will just be absent
+                }
+            }
             analyticsService.track({
                 action: 'survey_start',
                 engagement_id: surveyForTracking.engagement_id?.toString() || '',
+                engagement_name: engagementNameForStart,
                 survey_id: surveyId,
                 survey_name: surveyForTracking.name,
                 verification_token: token,
@@ -167,7 +180,10 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
 
         setIsEngagementLoading(true);
         try {
-            const loadedEngagement = await getEngagement(Number(savedSurvey.engagement_id));
+            // Skip fetch if verifyToken already loaded the engagement into the ref
+            const loadedEngagement = savedEngagementRef.current?.id === Number(savedSurvey.engagement_id)
+                ? savedEngagementRef.current
+                : await getEngagement(Number(savedSurvey.engagement_id));
             setSavedEngagement(loadedEngagement);
             savedEngagementRef.current = loadedEngagement;
             setIsEngagementLoading(false);
