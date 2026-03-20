@@ -1,7 +1,16 @@
 const webpack = require('webpack');
+const path = require('path');
 const wcConfig = require('./config-overrides-wc');
+
 module.exports = function override(config) {
-    const isWcBuild = process.argv.indexOf('--wc-build')!==-1;
+    const isWcBuild = process.argv.indexOf('--wc-build') !== -1;
+    
+    // Add alias for broken animation-frame-polyfill (Node 24 compatibility)
+    config.resolve.alias = {
+        ...config.resolve.alias,
+        'animation-frame-polyfill': path.resolve(__dirname, 'src/animation-frame-shim.js'),
+    };
+    
     const fallback = config.resolve.fallback || {};
     Object.assign(fallback, {
         crypto: require.resolve('crypto-browserify'),
@@ -22,15 +31,15 @@ module.exports = function override(config) {
     config.module.rules.unshift({
         test: /\.m?js$/,
         resolve: {
-            fullySpecified: false, // disable the behavior
+            fullySpecified: false,
         },
     });
-    if(isWcBuild) {
+    if (isWcBuild) {
         config.entry = wcConfig.entry;
         config.output = {
             ...config.output,
-            ...wcConfig.output
-        }   
+            ...wcConfig.output,
+        };
     }
     return config;
 };

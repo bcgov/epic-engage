@@ -3,7 +3,7 @@ A guide for developers.
 
 ## Pre Reqs
 Install 
-- [Node.js 18.x](https://nodejs.org/en/)
+- [Node.js 24.x](https://nodejs.org/en/)
 - [Python 3.12](https://www.python.org/)
 - [Docker](https://www.docker.com/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
