@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import { AxiosError } from 'axios';
 import { createDefaultSurvey, Survey } from 'models/survey';
 import { useAppDispatch, useAppSelector } from 'hooks';
@@ -50,6 +50,7 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
     const [isTokenValid, setTokenValid] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [savedEngagement, setSavedEngagement] = useState<Engagement | null>(null);
+    const savedEngagementRef = useRef<Engagement | null>(null);
     const [isEngagementLoading, setIsEngagementLoading] = useState(true);
     const [slug, setSlug] = useState<string>('');
     const [participantId, setParticipantId] = useState<string | undefined>(() => {
@@ -157,10 +158,9 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
     }, [savedSurvey]);
     const loadEngagement = async () => {
         if (isNaN(Number(savedSurvey.engagement_id)) || !savedSurvey.engagement_id) {
-            setSavedEngagement({
-                ...createDefaultEngagement(),
-                name: savedSurvey.name,
-            });
+            const defaultEngagement = { ...createDefaultEngagement(), name: savedSurvey.name };
+            setSavedEngagement(defaultEngagement);
+            savedEngagementRef.current = defaultEngagement;
             setIsEngagementLoading(false);
             return;
         }
@@ -169,6 +169,7 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
         try {
             const loadedEngagement = await getEngagement(Number(savedSurvey.engagement_id));
             setSavedEngagement(loadedEngagement);
+            savedEngagementRef.current = loadedEngagement;
             setIsEngagementLoading(false);
         } catch (error) {
             dispatch(
@@ -219,7 +220,7 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
             analyticsService.track({
                 action: 'survey_submit',
                 engagement_id: savedSurvey.engagement_id?.toString() || '',
-                engagement_name: savedEngagement?.name,
+                engagement_name: savedEngagementRef.current?.name,
                 survey_id: savedSurvey.id.toString(),
                 survey_name: savedSurvey.name,
                 verification_token: token || '',
