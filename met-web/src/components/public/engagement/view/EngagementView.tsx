@@ -42,6 +42,13 @@ export const EngagementView = () => {
 
     const handleStartSurvey = () => {
         if (!isPreview) {
+            const userType = roles.length > 0 ? 'admin' : 'public';
+            analyticsService.track({
+                action: 'cta_click',
+                engagement_id: String(savedEngagement.id),
+                text: 'Share Your Thoughts',
+                user_type: userType,
+            });
             setDefaultPanel('email');
             setEmailModalOpen(true);
             try {
