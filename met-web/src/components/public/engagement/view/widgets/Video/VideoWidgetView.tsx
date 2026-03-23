@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { MetPaper, MetHeader2, MetParagraph, AspectRatioContainer, ReactPlayerWrapper } from 'components/shared/common';
 import { Grid, Skeleton, Divider } from '@mui/material';
 import { Widget } from 'models/widget';
@@ -6,6 +6,7 @@ import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { VideoWidget } from 'models/videoWidget';
 import { fetchVideoWidgets } from 'services/widgetService/VideoService';
+import { analyticsService } from 'services/penguinAnalytics';
 
 interface VideoWidgetProps {
     widget: Widget;
@@ -15,6 +16,7 @@ const VideoWidgetView = ({ widget }: VideoWidgetProps) => {
     const dispatch = useAppDispatch();
     const [videoWidget, setVideoWidget] = useState<VideoWidget | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const hasPlayed = useRef(false);
 
     const playerConfig = {
         youtube: {
@@ -29,6 +31,7 @@ const VideoWidgetView = ({ widget }: VideoWidgetProps) => {
             const videos = await fetchVideoWidgets(widget.id);
             const video = videos[videos.length - 1];
             setVideoWidget(video);
+            hasPlayed.current = false;
             setIsLoading(false);
         } catch (error) {
             setIsLoading(false);
@@ -92,6 +95,17 @@ const VideoWidgetView = ({ widget }: VideoWidgetProps) => {
                             width="100%"
                             height={'100%'}
                             config={playerConfig}
+                            onPlay={() => {
+                                if (!hasPlayed.current) {
+                                    hasPlayed.current = true;
+                                    analyticsService.track({
+                                        action: 'video_play',
+                                        engagement_id: String(widget.engagement_id),
+                                        text: videoWidget.description,
+                                        widget_type: 'Video',
+                                    });
+                                }
+                            }}
                         />
                     </AspectRatioContainer>
                 </Grid>
