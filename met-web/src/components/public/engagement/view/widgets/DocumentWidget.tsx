@@ -7,6 +7,7 @@ import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import DocumentTree from 'components/admin/engagement/form/EngagementWidgets/Documents/TreeView';
 import { useLazyGetDocumentsQuery } from 'apiManager/apiSlices/documents';
+import { analyticsService } from 'services/penguinAnalytics';
 
 interface DocumentWidgetProps {
     widget: Widget;
@@ -56,7 +57,18 @@ const DocumentWidget = ({ widget }: DocumentWidgetProps) => {
                 {documents.map((document: DocumentItem) => {
                     return (
                         <Grid key={document.id} container item spacing={1} rowSpacing={1} xs={12} paddingTop={2}>
-                            <DocumentTree itemId={`${document.id}`} documentItem={document} />
+                            <DocumentTree
+                                itemId={`${document.id}`}
+                                documentItem={document}
+                                onDocumentClick={(title) =>
+                                    analyticsService.track({
+                                        action: 'document_open',
+                                        engagement_id: String(widget.engagement_id),
+                                        text: title,
+                                        widget_type: 'Documents',
+                                    })
+                                }
+                            />
                         </Grid>
                     );
                 })}

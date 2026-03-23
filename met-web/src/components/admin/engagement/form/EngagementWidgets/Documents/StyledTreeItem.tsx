@@ -20,6 +20,7 @@ type StyledTreeItemProps = TreeItemProps & {
     labelInfo?: string;
     labelText: string;
     innerDocument?: boolean;
+    onLinkClick?: (title: string, url: string) => void;
 };
 
 const StyledTreeItemRoot = styled(TreeItem)(({ theme }) => ({
@@ -53,7 +54,7 @@ const StyledTreeItemRoot = styled(TreeItem)(({ theme }) => ({
 }));
 
 export function StyledTreeItem(props: StyledTreeItemProps & DocumentTreeItemProps) {
-    const { labelUrl, labelIcon: LabelIcon, labelText, innerDocument, ...other } = props;
+    const { labelUrl, labelIcon: LabelIcon, labelText, innerDocument, onLinkClick, ...other } = props;
 
     return (
         <StyledTreeItemRoot
@@ -85,6 +86,7 @@ export function StyledTreeItem(props: StyledTreeItemProps & DocumentTreeItemProp
                                 }}
                                 target="_blank"
                                 href={`${labelUrl}`}
+                                onClick={() => onLinkClick?.(labelText, labelUrl ?? '')}
                             >
                                 {labelText}
                             </Link>
@@ -96,6 +98,7 @@ export function StyledTreeItem(props: StyledTreeItemProps & DocumentTreeItemProp
                                 }}
                                 target="_blank"
                                 href={`${labelUrl}`}
+                                onClick={() => onLinkClick?.(labelText, labelUrl ?? '')}
                             >
                                 <Box component={OpenInNew} color="inherit" sx={{ p: 0.5, mr: 1 }} />
                             </Link>

@@ -11,9 +11,10 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 
 type DocumentTreeProps = TreeItemProps & {
     documentItem: DocumentItem;
+    onDocumentClick?: (title: string, url: string) => void;
 };
 
-export default function DocumentTree({ documentItem }: DocumentTreeProps) {
+export default function DocumentTree({ documentItem, onDocumentClick }: DocumentTreeProps) {
     return (
         <SimpleTreeView
             aria-label="documentTree"
@@ -32,6 +33,7 @@ export default function DocumentTree({ documentItem }: DocumentTreeProps) {
                         itemId={`${documentItem.id}`}
                         labelText={documentItem.title}
                         labelIcon={FolderOutlinedIcon}
+                        onLinkClick={onDocumentClick}
                     >
                         {documentItem.children?.map((document: DocumentItem) => {
                             return (
@@ -46,6 +48,7 @@ export default function DocumentTree({ documentItem }: DocumentTreeProps) {
                                             : DescriptionOutlinedIcon
                                     }
                                     labelUrl={document.url}
+                                    onLinkClick={onDocumentClick}
                                 />
                             );
                         })}
@@ -57,6 +60,7 @@ export default function DocumentTree({ documentItem }: DocumentTreeProps) {
                         labelText={documentItem.title}
                         labelIcon={DescriptionOutlinedIcon}
                         labelUrl={documentItem.url}
+                        onLinkClick={onDocumentClick}
                     />
                 </Else>
             </If>
