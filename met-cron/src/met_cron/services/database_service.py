@@ -13,6 +13,7 @@
 # limitations under the License.
 """Service to do maintenance on Database."""
 
+from sqlalchemy import text
 from met_cron.models.db import db
 
 class DatabaseService:  # pylint: disable=too-few-public-methods
@@ -22,8 +23,8 @@ class DatabaseService:  # pylint: disable=too-few-public-methods
     def purge_event_logs():
         """Purge dagster event logs. Keep only last 7 days."""
         with db.engine.connect() as con:
-            con.execute("""
+            con.execute(text("""
                 DELETE FROM dagster.event_logs
                 WHERE timestamp < current_timestamp - interval '7 days';
-            """)
-            con.execution_options(isolation_level="AUTOCOMMIT").execute('VACUUM dagster.event_logs;')
+            """))
+            con.execution_options(isolation_level="AUTOCOMMIT").execute(text('VACUUM dagster.event_logs;'))
