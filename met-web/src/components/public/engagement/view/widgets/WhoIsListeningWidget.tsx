@@ -7,6 +7,7 @@ import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { When } from 'react-if';
 import { useLazyGetContactQuery } from 'apiManager/apiSlices/contacts';
+import { analyticsService } from 'services/penguinAnalytics';
 
 interface WhoIsListeningWidgetProps {
     widget: Widget;
@@ -132,14 +133,38 @@ const WhoIsListeningWidget = ({ widget }: WhoIsListeningWidgetProps) => {
                                 <MetBody bold sx={{ mr: 1 }}>
                                     Email:{' '}
                                 </MetBody>
-                                <Link href={`mailto:${contact.email}`}>{' ' + contact.email}</Link>
+                                <Link
+                                    href={`mailto:${contact.email}`}
+                                    onClick={() =>
+                                        analyticsService.track({
+                                            action: 'link_click',
+                                            engagement_id: String(widget.engagement_id),
+                                            text: contact.email,
+                                            widget_type: 'WhoIsListening',
+                                        })
+                                    }
+                                >
+                                    {' ' + contact.email}
+                                </Link>
                             </Grid>
                             <When condition={Boolean(contact.phone_number)}>
                                 <Grid container justifyContent={{ xs: 'center', md: 'flex-start' }} item xs={12}>
                                     <MetBody bold sx={{ mr: 1 }}>
                                         Phone:{' '}
                                     </MetBody>
-                                    <Link href={`tel:${contact.phone_number}`}>{' ' + contact.phone_number}</Link>
+                                    <Link
+                                        href={`tel:${contact.phone_number}`}
+                                        onClick={() =>
+                                            analyticsService.track({
+                                                action: 'link_click',
+                                                engagement_id: String(widget.engagement_id),
+                                                text: contact.phone_number,
+                                                widget_type: 'WhoIsListening',
+                                            })
+                                        }
+                                    >
+                                        {' ' + contact.phone_number}
+                                    </Link>
                                 </Grid>
                             </When>
                         </Grid>
