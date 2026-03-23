@@ -5,8 +5,9 @@ import { formatDate } from 'utils/helpers/dateHelper';
 import { EventProps } from './InPersonEvent';
 import { TIMEZONE_OPTIONS } from 'constants/timezones';
 import { getDateInTimezone } from 'components/admin/engagement/form/EngagementWidgets/Events/utils';
+import { analyticsService } from 'services/penguinAnalytics';
 
-const VirtualSession = ({ eventItem }: EventProps) => {
+const VirtualSession = ({ eventItem, engagementId }: EventProps) => {
     const justifyContent = { xs: 'center', md: 'flex-start' };
     return (
         <>
@@ -49,7 +50,18 @@ const VirtualSession = ({ eventItem }: EventProps) => {
                 </Grid>
             </Grid>
             <Grid container justifyContent={justifyContent} item xs={12} sx={{ whiteSpace: 'pre-line' }}>
-                <Link target="_blank" href={`${eventItem.url}`}>
+                <Link
+                    target="_blank"
+                    href={`${eventItem.url}`}
+                    onClick={() =>
+                        analyticsService.track({
+                            action: 'link_click',
+                            engagement_id: String(engagementId),
+                            text: eventItem.url_label,
+                            widget_type: 'Events',
+                        })
+                    }
+                >
                     {eventItem.url_label}
                 </Link>
             </Grid>
