@@ -7,9 +7,16 @@ import { getEditorStateFromRaw } from 'components/shared/common/RichTextEditor/u
 import { Editor } from 'react-draft-wysiwyg';
 import { Widget } from 'models/widget';
 import { getBaseUrl } from 'utils/helpers';
+import { analyticsService } from 'services/penguinAnalytics';
 
 const FormSignUpSection = ({ subscribeOption, widget }: { subscribeOption: SubscribeForm; widget: Widget }) => {
     const handleNavigate = () => {
+        analyticsService.track({
+            action: 'subscription_click',
+            engagement_id: String(widget.engagement_id),
+            text: subscribeOption.subscribe_items[0].call_to_action_text,
+            widget_type: 'Subscribe',
+        });
         const baseUrl = getBaseUrl();
         window.open(`${baseUrl}/engagements/${widget.engagement_id}/cacform/${widget.id}`, '_blank');
     };

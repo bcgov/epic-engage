@@ -8,6 +8,7 @@ import { getDateInTimezone } from 'components/admin/engagement/form/EngagementWi
 
 export interface EventProps {
     eventItem: EventItem;
+    engagementId: number;
 }
 
 const InPersonEvent = ({ eventItem }: EventProps) => {

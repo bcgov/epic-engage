@@ -11,6 +11,7 @@ import OpenWithIcon from '@mui/icons-material/OpenWith';
 import { ExpandModal } from './ExpandModal';
 import { When } from 'react-if';
 import { geoJSONDecode, calculateZoomLevel } from 'components/admin/engagement/form/EngagementWidgets/Map/utils';
+import { analyticsService } from 'services/penguinAnalytics';
 
 interface MapWidgetProps {
     widget: Widget;
@@ -25,6 +26,14 @@ const MapWidget = ({ widget }: MapWidgetProps) => {
     const isLargeScreen = useMediaQuery((theme: Theme) => theme.breakpoints.up('lg'));
     const [mapWidth, setMapWidth] = useState(250);
     const [mapHeight, setMapHeight] = useState(250);
+
+    const trackMapClick = () =>
+        analyticsService.track({
+            action: 'map_click',
+            engagement_id: String(widget.engagement_id),
+            text: map?.marker_label || 'Map',
+            widget_type: 'Map',
+        });
 
     const fetchMap = async () => {
         try {
@@ -110,12 +119,12 @@ const MapWidget = ({ widget }: MapWidgetProps) => {
                     <When condition={isLargeScreen}>
                         <Grid container item xs={12} alignItems={'center'} justifyContent={'flex-start'}>
                             <Grid item>
-                                <IconButton onClick={() => setOpen(true)}>
+                                <IconButton onClick={() => { trackMapClick(); setOpen(true); }}>
                                     <OpenWithIcon />
                                 </IconButton>
                             </Grid>
                             <Grid item>
-                                <Link onClick={() => setOpen(true)} component={MetLabel} sx={{ cursor: 'pointer' }}>
+                                <Link onClick={() => { trackMapClick(); setOpen(true); }} component={MetLabel} sx={{ cursor: 'pointer' }}>
                                     View Expanded Map
                                 </Link>
                             </Grid>
