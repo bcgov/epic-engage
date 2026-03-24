@@ -51,6 +51,8 @@ export interface AnalyticsEventProps {
     participant_id?: string;
     /** Contextual text: URL, video title, document name, widget name, or error message */
     text?: string;
+    /** Full href of a clicked link */
+    url?: string;
     /** Widget type for widget interactions */
     widget_type?: string;
     /** Verification token from email link - links email submission to survey landing */
