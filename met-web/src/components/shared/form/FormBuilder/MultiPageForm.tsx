@@ -28,39 +28,63 @@ const MultiPageForm = ({
         });
     };
 
+    const handleSurveyLinkClick = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (!surveyId) return;
+        const anchor = (event.target as HTMLElement).closest('a');
+        if (!anchor?.href) return;
+        const pageName = savedForm?.components?.[currentPage]?.title || `Page ${currentPage + 1}`;
+        analyticsService.track({
+            action: 'link_click',
+            widget_type: 'Survey',
+            survey_id: surveyId,
+            survey_name: surveyName,
+            engagement_id: engagementId,
+            engagement_name: engagementName,
+            step_name: pageName,
+            step_number: currentPage + 1,
+            step_count: totalPages,
+            text: anchor.textContent?.trim() || anchor.href,
+            url: anchor.href,
+        });
+    };
+
+    const handleNextPage = (pageData: PageData) => {
+        setCurrentPage(pageData.page);
+        handleScrollUp();
+        if (surveyId) {
+            const pageName = savedForm?.components?.[pageData.page - 1]?.title || `Page ${pageData.page}`;
+            analyticsService.track({
+                action: 'completed_step',
+                survey_id: surveyId,
+                survey_name: surveyName,
+                engagement_id: engagementId,
+                engagement_name: engagementName,
+                step_number: pageData.page,
+                step_count: totalPages,
+                step_name: pageName,
+            });
+        }
+    };
+
+    const handlePrevPage = (pageData: PageData) => {
+        setCurrentPage(pageData.page);
+        handleScrollUp();
+    };
+
+    const handleSubmit = (form: unknown) => {
+        handleFormSubmit((form as FormSubmissionData).data);
+    };
+
     return (
-        <div className="formio">
+        <div className="formio" onClick={handleSurveyLinkClick}>
             <FormStepper currentPage={currentPage} pages={savedForm?.components ?? []} />
             <Form
                 form={savedForm || { display: 'wizard' }}
                 options={{ noAlerts: true }}
                 onChange={(form: unknown) => handleFormChange(form as FormSubmissionData)}
-                onNextPage={(pageData: PageData) => {
-                    setCurrentPage(pageData.page);
-                    handleScrollUp();
-                    // Track step completion
-                    if (surveyId) {
-                        const pageName = savedForm?.components?.[pageData.page - 1]?.title || `Page ${pageData.page}`;
-                        analyticsService.track({
-                            action: 'completed_step',
-                            survey_id: surveyId,
-                            survey_name: surveyName,
-                            engagement_id: engagementId,
-                            engagement_name: engagementName,
-                            step_number: pageData.page,
-                            step_count: totalPages,
-                            step_name: pageName,
-                        });
-                    }
-                }}
-                onPrevPage={(pageData: PageData) => {
-                    setCurrentPage(pageData.page);
-                    handleScrollUp();
-                }}
-                onSubmit={(form: unknown) => {
-                    const formSubmissionData = form as FormSubmissionData;
-                    handleFormSubmit(formSubmissionData.data);
-                }}
+                onNextPage={handleNextPage}
+                onPrevPage={handlePrevPage}
+                onSubmit={handleSubmit}
             />
         </div>
     );
