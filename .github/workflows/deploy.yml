@@ -27,7 +27,7 @@ jobs:
     environment: 
       name: ${{ github.event.inputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install OpenShift CLI
         run: |
