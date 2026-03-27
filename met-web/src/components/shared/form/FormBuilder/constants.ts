@@ -30,4 +30,5 @@ export const formioOptions = {
             default: true,
         },
     },
+    iconset: 'fa',
 };

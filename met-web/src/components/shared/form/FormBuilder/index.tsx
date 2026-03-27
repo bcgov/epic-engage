@@ -4,13 +4,17 @@ import './formio.scss';
 import { formioOptions } from './constants';
 import { FormBuilderData, FormBuilderProps } from './types';
 
-const FormBuilder = ({ handleFormChange, savedForm }: FormBuilderProps) => {
+const FormBuilder = ({ handleFormChange, savedForm, isLoading }: FormBuilderProps) => {
+    if (isLoading) {
+        return <div className="formio">Loading...</div>;
+    }
+
     return (
         <div className="formio">
             <FormioFormBuilder
-                form={savedForm || { display: 'form' }}
+                key={JSON.stringify(savedForm)}
+                initialForm={savedForm || { display: 'form' }}
                 options={formioOptions}
-                saveText={'Create Form'}
                 onChange={(form: unknown) => handleFormChange(form as FormBuilderData)}
             />
         </div>

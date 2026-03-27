@@ -11,6 +11,7 @@ export interface FormSubmitterProps {
 export interface FormBuilderProps {
     handleFormChange: (form: FormBuilderData) => void;
     savedForm?: FormBuilderData;
+    isLoading?: boolean;
 }
 
 export interface FormInfo {

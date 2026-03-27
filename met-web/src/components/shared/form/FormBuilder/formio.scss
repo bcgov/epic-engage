@@ -1,8 +1,10 @@
 @charset "UTF-8";
 
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
 @import './formio-bootstrap.scss';
 
-@import '~formiojs/dist/formio.full.min.css';
+@import '@formio/js/dist/formio.full.min.css';
 
 @import '~met-formio/dist/met-formio-components.css';
 
@@ -59,7 +61,7 @@ h4 {
     top: 0;
     bottom: 0;
 }
-.input-group .input-group-addon {
+.input-group .input-group-text {
     position: absolute;
     right: 5px;
     top: 7px;
@@ -268,9 +270,9 @@ i.fa.fa-question-circle.text-muted {
     z-index: 10;
 }
 .d-md-none .dropup,
-.d-md-none .dropright,
+.d-md-none .dropend,
 .d-md-none .dropdown,
-.d-md-none .dropleft {
+.d-md-none .dropstart {
     position: initial;
 }
 .d-md-none .nav-dropdown .dropdown-menu {
@@ -655,4 +657,23 @@ div[disabled] {
 
 .formio-component-simplesurvey {
     overflow-y: scroll;
+}
+
+.formio .formcomponents .formcomponent {
+    background-color: $btn-primary-main;
+    border-color: $btn-primary-main;
+    color: $text-primary;
+    
+    &:hover {
+        background-color: $btn-primary-light;
+        border-color: $btn-primary-light;
+    }
+}
+
+.formio .builder-group-button {
+    color: $btn-primary-main;
+    
+    &:hover {
+        background-color: rgba(0, 51, 102, 0.1);
+    }
 }
