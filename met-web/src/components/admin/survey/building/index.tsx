@@ -102,7 +102,9 @@ const SurveyFormBuilder = () => {
         try {
             const loadedSurvey = await getSurvey(Number(surveyId));
             setSavedSurvey(loadedSurvey);
-            setFormDefinition(loadedSurvey?.form_json || { display: 'form', components: [] });
+            const loadedFormJson = loadedSurvey?.form_json || { display: 'form', components: [] };
+            setFormDefinition(loadedFormJson);
+            setFormData(loadedFormJson);
             setName(loadedSurvey.name);
             setIsHiddenSurvey(loadedSurvey.is_hidden);
             setIsTemplateSurvey(loadedSurvey.is_template);
@@ -363,7 +365,7 @@ const SurveyFormBuilder = () => {
                 </Stack>
             </Grid>
             <Grid item xs={12}>
-                <FormBuilder handleFormChange={handleFormChange} savedForm={formDefinition} />
+                <FormBuilder handleFormChange={handleFormChange} savedForm={formDefinition} isLoading={loading} />
             </Grid>
             <Grid item xs={12}>
                 <Stack direction="row">
