@@ -137,8 +137,10 @@ class EmailVerificationService:
         )
         try:
             # user hasn't been created yet.so create token using SA.
+            # Pass verification_token as reference so GC Notify echoes it in delivery callbacks.
             notification.send_email(
-                subject=subject, email=email_to, html_body=body, args=args, template_id=template_id)
+                subject=subject, email=email_to, html_body=body, args=args, template_id=template_id,
+                reference=email_verification.get('verification_token'))
         except Exception as exc:  # noqa: B902
             current_app.logger.error(
                 '<Notification for registration failed', exc)

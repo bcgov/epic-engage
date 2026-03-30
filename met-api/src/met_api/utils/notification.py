@@ -22,7 +22,7 @@ def get_tenant_site_url(tenant_id, path=''):
         return site_url + path
 
 
-def send_email(subject, email, html_body, args, template_id):
+def send_email(subject, email, html_body, args, template_id, reference=None):
     """Send the email asynchronously, using the given details."""
     if not email or not is_valid_email(email):
         return
@@ -39,6 +39,8 @@ def send_email(subject, email, html_body, args, template_id):
         'args': args,
         'template_id': template_id,
     }
+    if reference is not None:
+        payload['reference'] = str(reference)
     response = requests.post(send_email_endpoint,
                              headers={
                                  'Content-Type': 'application/json',

@@ -30,12 +30,14 @@ class EmailGCNotify(EmailBaseService):  # pylint: disable=too-few-public-methods
         notifications_client = NotificationsAPIClient(api_key=api_key, base_url=gc_notify_url)
         email_to = ','.join(email_payload.get('to'))
         args = email_payload.get('args')
+        reference = email_payload.get('reference')
         try:
             response = notifications_client.send_email_notification(
                 email_address=email_to,
                 template_id=email_template_id,
-                personalisation=args)
-            print(response)
+                personalisation=args,
+                reference=reference)
+            return response
 
         except Exception as e:  # noqa: B902
             print(e)

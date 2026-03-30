@@ -30,5 +30,6 @@ class EmailNotification(Resource):
     def post():
         """Send email notification."""
         email_payload = request.get_json(force=True)
-        get_email_service().send(email_payload)
-        return jsonify({})
+        response = get_email_service().send(email_payload)
+        notification_id = response.get('id') if response else None
+        return jsonify({'notification_id': notification_id})
