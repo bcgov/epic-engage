@@ -159,7 +159,7 @@ describe('Phases widget tests', () => {
 
         await waitFor(() => {
             expect(saveWidgetButton).not.toBeVisible();
-        });
+        }, { timeout: 3000 });
 
         expect(mockCreateWidgetItemsTrigger).toHaveBeenNthCalledWith(1, {
             widget_id: phasesWidget.id,

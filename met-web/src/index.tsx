@@ -6,7 +6,7 @@ import { store } from './redux/store';
 import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
 import { BaseTheme } from 'styles/Theme';
 import { Formio } from '@formio/js';
-import MetFormioComponents from 'met-formio';
+import MetFormioComponents from 'met-formio/lib/index.js';
 import '@bcgov/bc-sans/css/BCSans.css';
 import { HelmetProvider } from 'react-helmet-async';
 

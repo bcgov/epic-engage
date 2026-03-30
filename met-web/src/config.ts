@@ -3,38 +3,38 @@ import { ITenantDetail } from 'constants/types';
 declare global {
     interface Window {
         _env_: {
-            REACT_APP_API_URL: string;
-            REACT_APP_PUBLIC_URL: string;
-            REACT_APP_REDASH_PUBLIC_URL: string;
-            REACT_APP_REDASH_COMMENTS_PUBLIC_URL: string;
+            VITE_API_URL: string;
+            VITE_PUBLIC_URL: string;
+            VITE_REDASH_PUBLIC_URL: string;
+            VITE_REDASH_COMMENTS_PUBLIC_URL: string;
 
             // Analytics
-            REACT_APP_ANALYTICS_API_URL: string;
+            VITE_ANALYTICS_API_URL: string;
 
             // Penguin Analytics (event tracking)
-            REACT_APP_PENGUIN_URL: string;
-            REACT_APP_PENGUIN_ENABLED: string;
+            VITE_PENGUIN_URL: string;
+            VITE_PENGUIN_ENABLED: string;
 
             // Formio
-            REACT_APP_API_PROJECT_URL: string;
-            REACT_APP_FORM_ID: string;
-            REACT_APP_FORMIO_JWT_SECRET: string;
-            REACT_APP_USER_RESOURCE_FORM_ID: string;
-            REACT_APP_FORMIO_ANONYMOUS_USER: string;
-            REACT_APP_ANONYMOUS_ID: string;
+            VITE_API_PROJECT_URL: string;
+            VITE_FORM_ID: string;
+            VITE_FORMIO_JWT_SECRET: string;
+            VITE_USER_RESOURCE_FORM_ID: string;
+            VITE_FORMIO_ANONYMOUS_USER: string;
+            VITE_ANONYMOUS_ID: string;
 
             // Keycloak
-            REACT_APP_KEYCLOAK_URL: string;
-            REACT_APP_KEYCLOAK_CLIENT: string;
-            REACT_APP_KEYCLOAK_REALM: string;
-            REACT_APP_KEYCLOAK_ADMIN_ROLE: string;
+            VITE_KEYCLOAK_URL: string;
+            VITE_KEYCLOAK_CLIENT: string;
+            VITE_KEYCLOAK_REALM: string;
+            VITE_KEYCLOAK_ADMIN_ROLE: string;
 
             // Constants
-            REACT_APP_ENGAGEMENT_PROJECT_TYPES: string;
+            VITE_ENGAGEMENT_PROJECT_TYPES: string;
 
             //tenant
-            REACT_APP_IS_SINGLE_TENANT_ENVIRONMENT: string;
-            REACT_APP_DEFAULT_TENANT: string;
+            VITE_IS_SINGLE_TENANT_ENVIRONMENT: string;
+            VITE_DEFAULT_TENANT: string;
 
             [key: string]: string;
         };
@@ -45,41 +45,45 @@ export const getEnv = (key: string, defaultValue = ''): string => {
     if (typeof window !== 'undefined' && window._env_ && window._env_[key] !== undefined) {
         return window._env_[key];
     }
-    return process.env[key] || defaultValue;
+    // For Jest and Node environments, use process.env
+    if (typeof process !== 'undefined' && process.env && process.env[key]) {
+        return process.env[key] as string;
+    }
+    return defaultValue;
 };
 
 // adding localStorage to access the MET API from external sources(eg: web-components)
-const API_URL = localStorage.getItem('met-api-url') || getEnv('REACT_APP_API_URL');
-const PUBLIC_URL = localStorage.getItem('met-public-url') || getEnv('REACT_APP_PUBLIC_URL');
-const REDASH_DASHBOARD_URL = getEnv('REACT_APP_REDASH_PUBLIC_URL');
-const REDASH_CMNTS_DASHBOARD_URL = getEnv('REACT_APP_REDASH_COMMENTS_PUBLIC_URL');
-const CENTRE_API_URL = getEnv('REACT_APP_CENTRE_API_URL');
+const API_URL = localStorage.getItem('met-api-url') || getEnv('VITE_API_URL');
+const PUBLIC_URL = localStorage.getItem('met-public-url') || getEnv('VITE_PUBLIC_URL');
+const REDASH_DASHBOARD_URL = getEnv('VITE_REDASH_PUBLIC_URL');
+const REDASH_CMNTS_DASHBOARD_URL = getEnv('VITE_REDASH_COMMENTS_PUBLIC_URL');
+const CENTRE_API_URL = getEnv('VITE_CENTRE_API_URL');
 
 // adding localStorage to access the MET Analytics API from external sources(eg: web-components)
-const REACT_APP_ANALYTICS_API_URL = localStorage.getItem('analytics-api-url') || getEnv('REACT_APP_ANALYTICS_API_URL');
+const ANALYTICS_API_URL = localStorage.getItem('analytics-api-url') || getEnv('VITE_ANALYTICS_API_URL');
 
 // Penguin Analytics (event tracking)
-const PENGUIN_ANALYTICS_URL = getEnv('REACT_APP_PENGUIN_URL', '/analytics');
-const PENGUIN_ENABLED = getEnv('REACT_APP_PENGUIN_ENABLED', 'false') === 'true';
+const PENGUIN_ANALYTICS_URL = getEnv('VITE_PENGUIN_URL', '/analytics');
+const PENGUIN_ENABLED = getEnv('VITE_PENGUIN_ENABLED', 'false') === 'true';
 
 // Formio Environment Variables
-const FORMIO_PROJECT_URL = getEnv('REACT_APP_API_PROJECT_URL');
-const FORMIO_API_URL = getEnv('REACT_APP_API_PROJECT_URL');
-const FORMIO_FORM_ID = getEnv('REACT_APP_FORM_ID');
-const FORMIO_JWT_SECRET = getEnv('REACT_APP_FORMIO_JWT_SECRET');
-const FORMIO_USER_RESOURCE_FORM_ID = getEnv('REACT_APP_USER_RESOURCE_FORM_ID');
-const FORMIO_ANONYMOUS_USER = getEnv('REACT_APP_FORMIO_ANONYMOUS_USER');
-const FORMIO_ANONYMOUS_ID = getEnv('REACT_APP_ANONYMOUS_ID');
+const FORMIO_PROJECT_URL = getEnv('VITE_API_PROJECT_URL');
+const FORMIO_API_URL = getEnv('VITE_API_PROJECT_URL');
+const FORMIO_FORM_ID = getEnv('VITE_FORM_ID');
+const FORMIO_JWT_SECRET = getEnv('VITE_FORMIO_JWT_SECRET');
+const FORMIO_USER_RESOURCE_FORM_ID = getEnv('VITE_USER_RESOURCE_FORM_ID');
+const FORMIO_ANONYMOUS_USER = getEnv('VITE_FORMIO_ANONYMOUS_USER');
+const FORMIO_ANONYMOUS_ID = getEnv('VITE_ANONYMOUS_ID');
 
 // Keycloak Environment Variables
-const KC_URL = getEnv('REACT_APP_KEYCLOAK_URL');
-const KC_CLIENT = getEnv('REACT_APP_KEYCLOAK_CLIENT');
-const KC_REALM = getEnv('REACT_APP_KEYCLOAK_REALM');
-const KC_ADMIN_ROLE = getEnv('REACT_APP_KEYCLOAK_ADMIN_ROLE');
+const KC_URL = getEnv('VITE_KEYCLOAK_URL');
+const KC_CLIENT = getEnv('VITE_KEYCLOAK_CLIENT');
+const KC_REALM = getEnv('VITE_KEYCLOAK_REALM');
+const KC_ADMIN_ROLE = getEnv('VITE_KEYCLOAK_ADMIN_ROLE');
 
 // App constants
 const ENGAGEMENT_PROJECT_TYPES: string[] = getEnv(
-    'REACT_APP_ENGAGEMENT_PROJECT_TYPES',
+    'VITE_ENGAGEMENT_PROJECT_TYPES',
     'Energy-Electricity,Energy - Petroleum & Natural Gas,' +
         'Food Processing,' +
         'Industrial,' +
@@ -92,12 +96,12 @@ const ENGAGEMENT_PROJECT_TYPES: string[] = getEnv(
 ).split(',');
 
 // tenant config
-const IS_SINGLE_TENANT_ENVIRONMENT = getEnv('REACT_APP_IS_SINGLE_TENANT_ENVIRONMENT', 'true') === 'true';
-const DEFAULT_TENANT = getEnv('REACT_APP_DEFAULT_TENANT');
+const IS_SINGLE_TENANT_ENVIRONMENT = getEnv('VITE_IS_SINGLE_TENANT_ENVIRONMENT', 'true') === 'true';
+const DEFAULT_TENANT = getEnv('VITE_DEFAULT_TENANT');
 
 export const AppConfig = {
     apiUrl: API_URL,
-    analyticsApiUrl: REACT_APP_ANALYTICS_API_URL,
+    analyticsApiUrl: ANALYTICS_API_URL,
     publicUrl: PUBLIC_URL,
     redashDashboardUrl: REDASH_DASHBOARD_URL,
     redashCmntsDashboardUrl: REDASH_CMNTS_DASHBOARD_URL,
@@ -130,7 +134,7 @@ export const AppConfig = {
 };
 
 export const getTenantDetail = (): ITenantDetail => ({
-    realm: getEnv('REACT_APP_KEYCLOAK_REALM'),
-    url: getEnv('REACT_APP_KEYCLOAK_URL'),
-    clientId: getEnv('REACT_APP_KEYCLOAK_CLIENT'),
+    realm: getEnv('VITE_KEYCLOAK_REALM'),
+    url: getEnv('VITE_KEYCLOAK_URL'),
+    clientId: getEnv('VITE_KEYCLOAK_CLIENT'),
 });

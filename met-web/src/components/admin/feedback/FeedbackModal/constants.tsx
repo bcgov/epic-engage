@@ -1,13 +1,13 @@
 import * as React from 'react';
 import { SvgIcon } from '@mui/material';
-import { ReactComponent as ExclamationIcon } from 'assets/images/exclamation.svg';
-import { ReactComponent as LightbulbIcon } from 'assets/images/lightbulb.svg';
-import { ReactComponent as ThinkingIcon } from 'assets/images/thinking.svg';
-import { ReactComponent as VeryDissatisfiedIcon } from 'assets/images/emojiVeryDissatisfied.svg';
-import { ReactComponent as DissatisfiedIcon } from 'assets/images/emojiDissatisfied.svg';
-import { ReactComponent as NeutralIcon } from 'assets/images/emojiNeutral.svg';
-import { ReactComponent as SatisfiedIcon } from 'assets/images/emojiSatisfied.svg';
-import { ReactComponent as VerySatisfiedIcon } from 'assets/images/emojiVerySatisfied.svg';
+import ExclamationIcon from 'assets/images/exclamation.svg?react';
+import LightbulbIcon from 'assets/images/lightbulb.svg?react';
+import ThinkingIcon from 'assets/images/thinking.svg?react';
+import VeryDissatisfiedIcon from 'assets/images/emojiVeryDissatisfied.svg?react';
+import DissatisfiedIcon from 'assets/images/emojiDissatisfied.svg?react';
+import NeutralIcon from 'assets/images/emojiNeutral.svg?react';
+import SatisfiedIcon from 'assets/images/emojiSatisfied.svg?react';
+import VerySatisfiedIcon from 'assets/images/emojiVerySatisfied.svg?react';
 
 export const customRatings: {
     [index: number]: {

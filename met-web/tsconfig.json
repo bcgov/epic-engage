@@ -3,7 +3,7 @@
         /* Visit https://aka.ms/tsconfig.json to read more about this file */
         "target": "es2017",
         "lib": ["es2017", "dom", "dom.iterable"],
-        "jsx": "react",
+        "jsx": "react-jsx",
         "module": "esnext",
         "baseUrl": "src",
         "typeRoots": [
@@ -11,6 +11,7 @@
             "./node_modules/@types"
         ],
         "types": [
+            "vite/client",
             "jest",
             "@testing-library/jest-dom",
             "node"

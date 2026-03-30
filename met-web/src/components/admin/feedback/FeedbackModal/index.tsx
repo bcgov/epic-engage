@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import * as React from 'react';
 import CloseIcon from '@mui/icons-material/Close';
-import { ReactComponent as CheckIcon } from 'assets/images/check.svg';
+import CheckIcon from 'assets/images/check.svg?react';
 import { useState } from 'react';
 import { MetBody, MetHeader3, MetLabel, modalStyle, PrimaryButton, MetDisclaimer } from 'components/shared/common';
 import { CommentTypeEnum, createDefaultFeedback, RatingTypeEnum } from 'models/feedback';

@@ -6,7 +6,7 @@ import Button from '@mui/material/Button';
 import UserService from 'services/userService';
 import { HeaderTitle } from 'components/shared/common';
 import EnvironmentBanner from './EnvironmentBanner';
-import { ReactComponent as BCLogo } from 'assets/images/BritishColumbiaLogoDark.svg';
+import BCLogo from 'assets/images/BritishColumbiaLogoDark.svg?react';
 import { When } from 'react-if';
 import { useAppSelector, useAppTranslation } from 'hooks';
 import { useNavigate } from 'react-router-dom';

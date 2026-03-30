@@ -13,7 +13,6 @@ COPY package.json ./
 COPY package-lock.json ./
 
 RUN npm install --silent
-RUN npm install react-scripts@3.4.1 -g --silent
 
 # create and set user permissions to app folder
 RUN mkdir -p node_modules/.cache && chmod -R 777 node_modules/.cache
@@ -33,7 +32,7 @@ RUN mkdir /app
 ARG user=nginx
 RUN usermod -a -G root $user
 
-COPY --from=build-stage /app/build /usr/share/nginx/html
+COPY --from=build-stage /app/dist /usr/share/nginx/html
 COPY /nginx/*.conf /etc/nginx/
 COPY /nginx/docker-entrypoint.sh /
 

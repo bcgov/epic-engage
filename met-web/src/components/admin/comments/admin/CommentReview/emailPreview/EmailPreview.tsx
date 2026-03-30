@@ -1,7 +1,7 @@
 import { Box, Grid, Stack, Link } from '@mui/material';
 import * as React from 'react';
 import { MetBody } from 'components/shared/common';
-import { ReactComponent as BCLogo } from 'assets/images/BritishColumbiaLogoDark.svg';
+import BCLogo from 'assets/images/BritishColumbiaLogoDark.svg?react';
 import { Survey } from 'models/survey';
 import { formatDate } from 'utils/helpers/dateHelper';
 import { useAppSelector } from 'hooks';
