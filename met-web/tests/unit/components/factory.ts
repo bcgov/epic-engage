@@ -108,6 +108,7 @@ const mockEventItem: EventItem = {
     updated_by: 'test',
     created_date: 'test date',
     updated_date: 'test date',
+    timezone: 'America/Vancouver',
 };
 
 const mockEvent: Event = {

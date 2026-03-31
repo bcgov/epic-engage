@@ -14,6 +14,7 @@ module.exports = {
         'dnd-core': 'dnd-core-cjs',
         '\\.(css|scss)$': '<rootDir>/tests/unit/components/styleMock.tsx',
         '^keycloak-js$': '<rootDir>/tests/unit/__mocks__/keycloak-js.ts',
+        '\\.svg\\?react$': '<rootDir>/tests/unit/__mocks__/svgMock.tsx',
     },
     preset: 'ts-jest',
     roots: ['<rootDir>'],
@@ -33,7 +34,7 @@ module.exports = {
         '^.+\\.svg$': 'jest-transform-stub',
     },
     transformIgnorePatterns: [
-        'node_modules/(?!(@turf|concaveman|rbush|quickselect|quick-lru|tinyqueue|robust-predicates|d3-.*|keycloak-js)/)',
+        'node_modules/(?!(@turf|concaveman|rbush|quickselect|quick-lru|tinyqueue|robust-predicates|d3-.*|keycloak-js|kdbush|supercluster|geojson|geokdbush)/)',
     ],
     modulePaths: ['src'],
 };

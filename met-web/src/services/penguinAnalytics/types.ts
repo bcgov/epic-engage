@@ -57,6 +57,8 @@ export interface AnalyticsEventProps {
     widget_type?: string;
     /** Verification token from email link - links email submission to survey landing */
     verification_token?: string;
+    /** User type: 'admin' or 'public' */
+    user_type?: string;
 }
 
 /**

@@ -1,7 +1,7 @@
 import { Box, Divider, Grid, Link, Stack } from '@mui/material';
 import { MetBody, MetLabel, SocialIconButton } from 'components/shared/common';
 import React from 'react';
-import { ReactComponent as BCLogo } from 'assets/images/BritishColumbiaLogoDark.svg';
+import BCLogo from 'assets/images/BritishColumbiaLogoDark.svg?react';
 import { Palette } from 'styles/Theme';
 import XIcon from '@mui/icons-material/X';
 import UserService from 'services/userService';
@@ -56,7 +56,7 @@ const Footer = () => {
                                 height: '5em',
                                 width: '15em',
                             }}
-                            alt="British Columbia Logo"
+                            aria-label="British Columbia Logo"
                         />
                     </Grid>
                     <Grid item xs={12}>

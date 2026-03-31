@@ -25,6 +25,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import { When } from 'react-if';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import * as turf from '@turf/turf';
+import type { FeatureCollection, Point } from 'geojson';
 import { WidgetTitle } from '../WidgetTitle';
 
 const schema = yup
@@ -145,10 +146,10 @@ const MapForm = () => {
             methods.setValue('shapefile', files[0]);
             previewGeoJson = (await previewShapeFile({
                 file: files[0],
-            })) as unknown as turf.FeatureCollection<turf.Point>;
+            })) as unknown as FeatureCollection<Point>;
             setCalculatingZoom(true);
             updateZoom(previewGeoJson);
-            const centerPoint = turf.center(previewGeoJson as turf.FeatureCollection<turf.Point>);
+            const centerPoint = turf.center(previewGeoJson as FeatureCollection<Point>);
             methods.setValue('longitude', centerPoint.geometry.coordinates[0]);
             methods.setValue('latitude', centerPoint.geometry.coordinates[1]);
             setCalculatingZoom(false);

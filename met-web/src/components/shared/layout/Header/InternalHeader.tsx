@@ -8,7 +8,7 @@ import SideNav from '../SideNav/SideNav';
 import { Palette } from 'styles/Theme';
 import EnvironmentBanner from './EnvironmentBanner';
 import { HeaderTitle } from 'components/shared/common';
-import { ReactComponent as BCLogo } from 'assets/images/BritishColumbiaLogoDark.svg';
+import BCLogo from 'assets/images/BritishColumbiaLogoDark.svg?react';
 import { HeaderProps } from './types';
 import { useAppTranslation } from 'hooks';
 
@@ -85,7 +85,7 @@ const InternalHeader = ({ drawerWidth = 280 }: HeaderProps) => {
                             onClick={() => {
                                 navigate('/');
                             }}
-                            alt="British Columbia Logo"
+                            aria-label="British Columbia Logo"
                         />
                     </When>
                     {isMediumScreen ? (

@@ -1,7 +1,7 @@
 import { Box, Grid, Stack, Link } from '@mui/material';
 import * as React from 'react';
 import { MetBody } from 'components/shared/common';
-import { ReactComponent as BCLogo } from 'assets/images/BritishColumbiaLogoDark.svg';
+import BCLogo from 'assets/images/BritishColumbiaLogoDark.svg?react';
 import { Survey } from 'models/survey';
 import { formatDate } from 'utils/helpers/dateHelper';
 import { useAppSelector } from 'hooks';
@@ -32,7 +32,7 @@ export default function EmailPreview({
                             width: { xs: '4em', md: '5em' },
                             marginRight: { xs: '0.5em', md: '0.5em' },
                         }}
-                        alt="British Columbia Logo"
+                        aria-label="British Columbia Logo"
                     />
                 </Stack>
                 <Grid item xs={12}>
