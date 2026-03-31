@@ -82,7 +82,8 @@ class SurveyService:
         user_id,
         pagination_options: PaginationOptions,
         search_options: SurveySearchOptions,
-        reduce_data: bool
+        reduce_data: bool,
+        include_from_json: bool = False,
     ):
         """Get engagements paginated."""
         # check if user has view all surveys access to view hidden surveys as well
@@ -101,10 +102,11 @@ class SurveyService:
             pagination_options,
             search_options,
         )
-        # surveys_schema = ReducedSurveySchema(many=True) if reduced_data else SurveySchema(many=True)
 
         if reduce_data:
             surveys_schema = SurveySchema(many=True, only=('id', 'name'))
+        elif not include_from_json:
+            surveys_schema = SurveySchema(many=True, exclude=('form_json',))
         else:
             surveys_schema = SurveySchema(many=True)
 

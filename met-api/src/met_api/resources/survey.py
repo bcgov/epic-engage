@@ -112,12 +112,15 @@ class Surveys(Resource):
 
             reduce_data = args.get('reduce_data', default=False, type=lambda v: v.lower() == 'true')
 
+            include_form_json = args.get('include_form_json', default=False, type=lambda v: v.lower() == 'true')
+
             survey_records = SurveyService()\
                 .get_surveys_paginated(
                     user_id,
                     pagination_options,
                     search_options,
                     reduce_data,
+                    include_form_json
             )
             return survey_records, HTTPStatus.OK
         except ValueError as err:

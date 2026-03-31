@@ -9,6 +9,7 @@ interface FetchSurveyParams {
     exclude_hidden?: boolean;
     exclude_template?: boolean;
     reduce_data?: boolean;
+    include_form_json?: boolean;
 }
 export const fetchSurveys = async (params: FetchSurveyParams = {}): Promise<Survey[]> => {
     const responseData = await http.GetRequest<Page<Survey>>(Endpoints.Survey.GET_LIST, { ...params });
