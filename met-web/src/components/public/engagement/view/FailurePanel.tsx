@@ -12,7 +12,7 @@ const FailurePanel = ({ email, handleClose, tryAgain, visibility }: FailurePanel
             direction="row"
             justifyContent="flex-start"
             alignItems="flex-start"
-            sx={{ ...modalStyle }}
+            sx={{ ...modalStyle, pb: {xs: 8, sm: 3} }}
             spacing={2}
         >
             <Grid item xs={12}>
@@ -42,7 +42,7 @@ const FailurePanel = ({ email, handleClose, tryAgain, visibility }: FailurePanel
                 </MetBody>
             </Grid>
             <Grid item container xs={12} direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: '1em' }}>
-                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} width="100%" justifyContent="flex-end">
+                <Stack direction={{ xs: 'column-reverse', sm: 'row' }} spacing={{xs: 4, sm: 1}} width="100%" justifyContent="flex-end">
                     <SecondaryButton onClick={handleClose}>Go back to Engagement</SecondaryButton>
                     <PrimaryButton onClick={tryAgain}>Try Again</PrimaryButton>
                 </Stack>

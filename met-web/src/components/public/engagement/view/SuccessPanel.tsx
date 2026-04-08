@@ -10,7 +10,7 @@ const SuccessPanel = ({ email, handleClose }: SuccessPanelProps) => {
             direction="row"
             justifyContent="flex-start"
             alignItems="space-between"
-            sx={{ ...modalStyle }}
+            sx={{ ...modalStyle, pb: {xs: 8, sm: 3} }}
             rowSpacing={2}
         >
             <Grid container direction="row" item xs={12}>

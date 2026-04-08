@@ -50,7 +50,7 @@ const EmailPanel = ({ email, checkEmail, handleClose, updateEmail, isSaving, vis
             <Grid
                 container
                 direction="row"
-                sx={{ ...modalStyle }}
+                sx={{ ...modalStyle, pb: {xs: 8, sm: 3} }}
                 alignItems="flex-start"
                 justifyContent="flex-start"
                 rowSpacing={2}
@@ -153,8 +153,8 @@ const EmailPanel = ({ email, checkEmail, handleClose, updateEmail, isSaving, vis
                 </When>
                 <Grid item container xs={12} direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: '1em' }}>
                     <Stack
-                        direction={{ md: 'column-reverse', lg: 'row' }}
-                        spacing={1}
+                        direction={{ xs: 'column-reverse', sm: 'row' }}
+                        spacing={{xs: 4, sm: 1}}
                         width="100%"
                         justifyContent="flex-end"
                     >

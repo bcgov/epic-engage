@@ -44,7 +44,7 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
     const handleSubmit = async () => {
         try {
             setSaving(true);
-            const verification = await createEmailVerification({
+            await createEmailVerification({
                 email_address: email,
                 survey_id: savedEngagement.surveys[0].id,
                 type: EmailVerificationType.Survey,
