@@ -1,15 +1,11 @@
 import React from 'react';
-import { Grid, Paper as MuiPaper, CircularProgress, Typography, Stack, IconButton, Toolbar, Box } from '@mui/material';
+import { Grid, Paper as MuiPaper, CircularProgress, Typography, Stack, IconButton, Box } from '@mui/material';
 import { styled } from '@mui/system';
 import EditIcon from '@mui/icons-material/Edit';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { Palette } from 'styles/Theme';
 import { When } from 'react-if';
 import { MetHeader3 } from './Headers';
-
-export const MobileToolbar = styled(Toolbar)(() => ({
-    marginBottom: '40px',
-}));
 
 const StyledPaper = styled(MuiPaper)(() => ({
     border: '1px solid #cdcdcd',

@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import './App.scss';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import UserService from './services/userService';
 import { useAppSelector, useAppDispatch, useRecordAnalyticsWithRetry } from './hooks';
-import { MidScreenLoader, MobileToolbar } from './components/shared/common';
-import { Box, Container, useMediaQuery, Theme, Toolbar } from '@mui/material';
+import { MidScreenLoader } from './components/shared/common';
+import { Box, Container, Toolbar } from '@mui/material';
 import InternalHeader from 'components/shared/layout/Header/InternalHeader';
 import PublicHeader from 'components/shared/layout/Header/PublicHeader';
 import { UnauthenticatedRoutes } from 'routes';
@@ -26,7 +26,6 @@ import DocumentTitle from 'DocumentTitle';
 
 const App = () => {
     const drawerWidth = 280;
-    const isMediumScreen: boolean = useMediaQuery((theme: Theme) => theme.breakpoints.up('md'));
     const dispatch = useAppDispatch();
     const roles = useAppSelector((state) => state.user.roles);
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
@@ -174,21 +173,6 @@ const App = () => {
         );
     }
 
-    if (!isMediumScreen) {
-        return (
-            <Router basename={tenant.basename}>
-                <DocumentTitle />
-                <InternalHeader />
-                <Container>
-                    <MobileToolbar />
-                    <AuthenticatedRoutes />
-                    <FeedbackModal />
-                    <Footer />
-                </Container>
-            </Router>
-        );
-    }
-
     return (
         <Router basename={tenant.basename}>
             <DocumentTitle />
@@ -196,8 +180,15 @@ const App = () => {
                 <InternalHeader drawerWidth={drawerWidth} />
                 <Notification />
                 <NotificationModal />
-                <Box component="main" sx={{ flexGrow: 1, width: `calc(100% - ${drawerWidth}px)`, marginTop: '17px' }}>
-                    <Toolbar />
+                <Box
+                    component="main"
+                    sx={{
+                        flexGrow: 1,
+                        width: { xs: '100%', md: `calc(100% - ${drawerWidth}px)` },
+                        marginTop: '17px',
+                    }}
+                >
+                    <Toolbar sx={{ marginBottom: { xs: '40px', md: 0 } }} />
                     <AuthenticatedRoutes />
                     <FeedbackModal />
                 </Box>
