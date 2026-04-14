@@ -2,6 +2,8 @@
 from datetime import timedelta
 from http import HTTPStatus
 
+from flask import g
+
 from met_api.constants.engagement_status import Status
 from met_api.constants.membership_type import MembershipType
 from met_api.models import Engagement as EngagementModel
@@ -140,6 +142,13 @@ class SurveyService:
         """Create survey."""
         cls.validate_create_fields(survey_data)
 
+        tenant_id = getattr(g, 'tenant_id', None)
+        if not tenant_id:
+            raise BusinessException(
+                'Tenant context is required to create a survey',
+                HTTPStatus.BAD_REQUEST
+            )
+
         return SurveyModel.create_survey({
             'name': survey_data.get('name'),
             'form_json': {
@@ -147,6 +156,7 @@ class SurveyService:
                 'components': [],
             },
             'engagement_id': survey_data.get('engagement_id', None),
+            'tenant_id': tenant_id,
         })
 
     @classmethod
@@ -164,10 +174,18 @@ class SurveyService:
         authorization.check_auth(one_of_roles=(MembershipType.TEAM_MEMBER.name,
                                                Role.CLONE_SURVEY.value), engagement_id=eng_id)
 
+        tenant_id = getattr(g, 'tenant_id', None)
+        if not tenant_id:
+            raise BusinessException(
+                'Tenant context is required to clone a survey',
+                HTTPStatus.BAD_REQUEST
+            )
+
         cloned_survey = SurveyModel.create_survey({
             'name': data.get('name'),
             'form_json': survey_to_clone.get('form_json'),
             'engagement_id': data.get('engagement_id', None),
+            'tenant_id': tenant_id,
         })
 
         cls.create_report_setting(survey_to_clone.get('id'), cloned_survey.id)

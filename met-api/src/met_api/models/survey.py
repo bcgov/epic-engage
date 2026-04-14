@@ -140,6 +140,7 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
             created_by=survey.get('created_by', None),
             updated_by=survey.get('updated_by', None),
             engagement_id=survey.get('engagement_id', None),
+            tenant_id=survey.get('tenant_id', None),
             is_hidden=survey.get('is_hidden', False),
             is_template=survey.get('is_template', False),
             generate_dashboard=survey.get('generate_dashboard', True),
