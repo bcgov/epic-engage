@@ -36,10 +36,7 @@ interface GenerateCommentsSheetParams {
 }
 export const getStaffCommentSheet = async ({ survey_id }: GenerateCommentsSheetParams) => {
     const url = replaceUrl(Endpoints.Comment.GET_STAFF_SPREAD_SHEET, 'survey_id', String(survey_id));
-    const headers = {
-        'Content-type': 'text/csv; charset=utf-8',
-    };
-    return http.GetRequest<Blob>(url, {}, headers);
+    return http.GetRequest<Blob>(url, {}, {}, 'arraybuffer');
 };
 
 export const getProponentCommentSheet = async ({ survey_id }: GenerateCommentsSheetParams) => {
