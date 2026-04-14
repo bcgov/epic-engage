@@ -76,12 +76,14 @@ class GeneratedStaffCommentsSheet(Resource):
 
             response = CommentService().export_comments_to_spread_sheet_staff(survey_id)
             response_headers = dict(response.headers)
+            bom = b'\xef\xbb\xbf'
+            content = response.content if response.content.startswith(bom) else bom + response.content
             headers = {
-                'content-type': response_headers.get('content-type'),
+                'content-type': 'text/csv; charset=utf-8',
                 'content-disposition': response_headers.get('content-disposition'),
             }
             return Response(
-                response=response.content,
+                response=content,
                 status=response.status_code,
                 headers=headers
             )

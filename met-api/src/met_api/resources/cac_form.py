@@ -53,7 +53,7 @@ class CACForm(Resource):
 @cors_preflight('GET, OPTIONS')
 @API.route('/sheet')
 class GeneratedCommentsSheet(Resource):
-    """Resource for exorting cac form submissions."""
+    """Resource for exporting cac form submissions."""
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
@@ -64,12 +64,14 @@ class GeneratedCommentsSheet(Resource):
 
             response = CACFormService().export_cac_form_submissions_to_spread_sheet(engagement_id)
             response_headers = dict(response.headers)
+            bom = b'\xef\xbb\xbf'
+            content = response.content if response.content.startswith(bom) else bom + response.content
             headers = {
-                'content-type': response_headers.get('content-type'),
+                'content-type': 'text/csv; charset=utf-8',
                 'content-disposition': response_headers.get('content-disposition'),
             }
             return Response(
-                response=response.content,
+                response=content,
                 status=response.status_code,
                 headers=headers
             )

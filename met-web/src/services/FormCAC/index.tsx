@@ -31,8 +31,5 @@ interface GenerateFormsSheetParams {
 }
 export const getFormsSheet = async ({ engagement_id }: GenerateFormsSheetParams) => {
     const url = replaceUrl(Endpoints.CACForm.GET_SHEET, 'engagement_id', String(engagement_id));
-    const headers = {
-        'Content-type': 'text/csv; charset=utf-8',
-    };
-    return http.GetRequest<Blob>(url, {}, headers);
+    return http.GetRequest<Blob>(url, {}, {}, 'arraybuffer');
 };
