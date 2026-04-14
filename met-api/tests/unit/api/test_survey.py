@@ -42,6 +42,8 @@ surveys_url = '/api/surveys/'
 def test_create_survey(client, jwt, session, survey_info):  # pylint:disable=unused-argument
     """Assert that an survey can be POSTed."""
     headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    tenant_short_name = current_app.config.get('DEFAULT_TENANT_SHORT_NAME')
+    headers[TENANT_ID_HEADER] = tenant_short_name
     data = {
         'name': survey_info.get('name'),
         'display': survey_info.get('form_json').get('display'),
