@@ -70,6 +70,11 @@ const SurveyFormBuilder = () => {
         return savedEngagement?.status_id === EngagementStatus.Unpublished && today < savedEngagement?.start_date;
     }, [savedEngagement]);
 
+    const engagementScheduledToGoLive = useMemo(() => {
+        const today = format(new Date(), 'yyyy-MM-dd');
+        return savedEngagement?.status_id === EngagementStatus.Scheduled && today < savedEngagement?.start_date;
+    }, [savedEngagement]);
+
     const [autoSaveNotificationOpen, setAutoSaveNotificationOpen] = useState(false);
     const AUTO_SAVE_INTERVAL = 5000;
 
@@ -78,13 +83,25 @@ const SurveyFormBuilder = () => {
     }, []);
 
     useEffect(() => {
-        if (savedEngagement && hasPublishedEngagement && !engagementUnpublishedBeforeGoLive) {
-            dispatch(
-                openNotification({
-                    severity: 'warning',
-                    text: 'Engagement already published. Please be careful while editing the survey.',
-                }),
-            );
+        if (savedEngagement && hasPublishedEngagement) {
+            // Engagement scheduled to go live in the future
+            if (engagementScheduledToGoLive) {
+                dispatch(
+                    openNotification({
+                        severity: 'warning',
+                        text: 'Engagement is scheduled to go live. Please be careful while editing the survey.',
+                    }),
+                );
+            }
+            // Engagement already published/was live
+            else if (!engagementUnpublishedBeforeGoLive) {
+                dispatch(
+                    openNotification({
+                        severity: 'warning',
+                        text: 'Engagement already published. Please be careful while editing the survey.',
+                    }),
+                );
+            }
         }
     }, [savedEngagement]);
 
