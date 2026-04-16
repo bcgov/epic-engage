@@ -6,7 +6,7 @@ oc project $2-tools
 SOURCE_TAG="${SOURCE_TAG:-dev}"
 
 # Create backup tags for production deployments
-if [ "$1" == "prod" ]; then
+if [ "$1" = "prod" ]; then
   echo "Creating backup tags before production deployment..."
   BACKUP_TAG="prod-backup-$(date +%Y%m%d-%H%M%S)"
   
@@ -30,5 +30,13 @@ oc tag met-web:$SOURCE_TAG met-web:$1
 oc tag met-analytics:$SOURCE_TAG met-analytics:$1
 oc tag dagster-etl:$SOURCE_TAG dagster-etl:$1
 
-oc rollout status dc/met-api -n $2-$1 -w
-oc rollout status dc/met-web -n $2-$1 -w
+# Restart deployments to pick up new images (no image stream triggers)
+oc rollout restart deployment/met-api -n $2-$1
+oc rollout restart deployment/met-web -n $2-$1
+oc rollout restart deployment/notify-api -n $2-$1
+oc rollout restart deployment/analytics-api -n $2-$1
+oc rollout restart deployment/met-cron -n $2-$1
+
+# Wait for critical services to be ready
+oc rollout status deployment/met-api -n $2-$1 -w
+oc rollout status deployment/met-web -n $2-$1 -w

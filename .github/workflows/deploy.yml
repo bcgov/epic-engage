@@ -50,4 +50,4 @@ jobs:
           else
             export SOURCE_TAG=dev
           fi
-          sh deploy.sh ${{ github.event.inputs.environment }} ${{env.OPENSHIFT_REPOSITORY }}
+          bash deploy.sh ${{ github.event.inputs.environment }} ${{env.OPENSHIFT_REPOSITORY }}
