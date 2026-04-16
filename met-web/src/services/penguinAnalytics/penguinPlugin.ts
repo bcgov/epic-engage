@@ -137,7 +137,13 @@ export function penguinAnalyticsPlugin(config: PenguinPluginConfig) {
         },
 
         page: ({ payload }: AnalyticsHookParams) => {
-            const properties = payload.properties || {};
+            const rawProperties = payload.properties || {};
+            // analytics.js nests the original page() properties under a `properties` key;
+            // flatten them so engagement_id, user_type, etc. appear at the top level
+            const nestedProps = (rawProperties.properties as Record<string, unknown>) || {};
+            const properties = { ...rawProperties, ...nestedProps };
+            delete properties.properties;
+
             // Persist engagement context for tab events (which carry no payload)
             if (properties.engagement_id) {
                 sessionStorage.setItem('penguin_engagement_id', String(properties.engagement_id));
