@@ -36,7 +36,7 @@ export const EngagementView = () => {
     useEffect(() => {
         if (savedEngagement?.id) {
             const userType = roles.length > 0 ? 'admin' : 'public';
-            analyticsService.page(savedEngagement.name || 'Engagement Page', String(savedEngagement.id), userType);
+            analyticsService.page(savedEngagement.name || 'Engagement Page', String(savedEngagement.id), userType, savedEngagement.name);
         }
     }, [savedEngagement?.id, savedEngagement?.name, roles]);
 
@@ -46,6 +46,7 @@ export const EngagementView = () => {
             analyticsService.track({
                 action: 'cta_click',
                 engagement_id: String(savedEngagement.id),
+                engagement_name: savedEngagement.name,
                 text: 'Share Your Thoughts',
                 user_type: userType,
             });
