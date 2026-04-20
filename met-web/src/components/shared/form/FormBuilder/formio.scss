@@ -663,7 +663,7 @@ div[disabled] {
     background-color: $btn-primary-main;
     border-color: $btn-primary-main;
     color: $text-primary;
-    
+
     &:hover {
         background-color: $btn-primary-light;
         border-color: $btn-primary-light;
@@ -672,8 +672,22 @@ div[disabled] {
 
 .formio .builder-group-button {
     color: $btn-primary-main;
-    
+
     &:hover {
         background-color: rgba(0, 51, 102, 0.1);
+    }
+}
+
+.formio .formcomponents {
+    position: sticky;
+    top: 100px; // Account for header height (toolbar with 5em logo + environment banner)
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    z-index: 100;
+
+    &::-webkit-scrollbar {
+        display: none;
     }
 }
