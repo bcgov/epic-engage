@@ -28,7 +28,7 @@ class SurveySchema(Schema):
     engagement_id = fields.Str(data_key='engagement_id')
     is_hidden = fields.Bool(data_key='is_hidden')
     is_template = fields.Bool(data_key='is_template')
-    engagement = fields.Nested(EngagementSchema)
+    engagement = fields.Nested(EngagementSchema(exclude=('surveys',)))
     comments_meta_data = fields.Method('get_comments_meta_data')
     tenant_id = fields.Str(data_key='tenant_id')
 
