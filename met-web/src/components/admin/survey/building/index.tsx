@@ -94,7 +94,10 @@ const SurveyFormBuilder = () => {
                 );
             }
             // Engagement already published/was live
-            else if (savedEngagement.status_id === EngagementStatus.Published || savedEngagement.status_id === EngagementStatus.Unpublished) {
+            else if (
+                savedEngagement.status_id === EngagementStatus.Published ||
+                savedEngagement.status_id === EngagementStatus.Unpublished
+            ) {
                 dispatch(
                     openNotification({
                         severity: 'warning',
