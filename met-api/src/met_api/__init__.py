@@ -21,9 +21,9 @@ from met_api.utils.util import allowedorigins
 csp = (
     secure.ContentSecurityPolicy()
     .default_src("'self'")
-    .script_src("'self'", "'unsafe-inline'")
-    .style_src("'self'", "'unsafe-inline'")
-    .img_src("'self'", "data:")
+    .script_src("'self'", "'unsafe-inline'")  # noqa: Q000
+    .style_src("'self'", "'unsafe-inline'")  # noqa: Q000
+    .img_src("'self'", "data:")  # noqa: Q000
     .object_src("'self'")
     .connect_src("'self'")
 )
