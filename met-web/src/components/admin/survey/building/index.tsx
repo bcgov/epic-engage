@@ -61,7 +61,7 @@ const SurveyFormBuilder = () => {
     const isMultiPage = formDefinition.display === 'wizard';
     const hasEngagement = Boolean(savedSurvey?.engagement_id);
     const isEngagementDraft = savedEngagement?.status_id === EngagementStatus.Draft;
-    const hasPublishedEngagement = hasEngagement && !isEngagementDraft;
+    const isNonDraftEngagement = hasEngagement && !isEngagementDraft;
     const [isHiddenSurvey, setIsHiddenSurvey] = useState(savedSurvey ? savedSurvey.is_hidden : false);
     const [isTemplateSurvey, setIsTemplateSurvey] = useState(savedSurvey ? savedSurvey.is_template : false);
 
@@ -83,9 +83,9 @@ const SurveyFormBuilder = () => {
     }, []);
 
     useEffect(() => {
-        if (savedEngagement && hasPublishedEngagement) {
+        if (savedEngagement && isNonDraftEngagement) {
             // Engagement scheduled to go live in the future
-            if (engagementScheduledToGoLive) {
+            if (engagementScheduledToGoLive || engagementUnpublishedBeforeGoLive) {
                 dispatch(
                     openNotification({
                         severity: 'warning',
@@ -94,7 +94,10 @@ const SurveyFormBuilder = () => {
                 );
             }
             // Engagement already published/was live
-            else if (!engagementUnpublishedBeforeGoLive) {
+            else if (
+                savedEngagement.status_id === EngagementStatus.Published ||
+                savedEngagement.status_id === EngagementStatus.Unpublished
+            ) {
                 dispatch(
                     openNotification({
                         severity: 'warning',
