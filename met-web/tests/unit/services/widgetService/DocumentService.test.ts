@@ -18,11 +18,7 @@ const mockDocument = {
     title: 'Test Document',
     type: 'file' as DocumentType,
     url: 'https://example.com/doc.pdf',
-    parent_document_id: null,
     is_uploaded: true,
-    sort_index: 0,
-    widget_id: 1,
-    children: [],
 };
 
 beforeEach(() => {

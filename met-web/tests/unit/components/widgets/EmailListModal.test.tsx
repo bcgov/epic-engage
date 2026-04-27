@@ -11,6 +11,7 @@ import {
 } from 'models/engagement';
 import EmailListModal from 'components/public/engagement/view/widgets/Subscribe/EmailListModal';
 import { openEngagement } from '../factory';
+import { SubmissionStatus } from 'constants/engagementStatus';
 
 jest.mock('axios');
 jest.mock('services/emailVerificationService', () => ({
@@ -43,7 +44,6 @@ const mockContextValue = {
     },
     engagementMetadata: {
         ...createDefaultEngagementMetadata(),
-        project_id: null,
     },
     engagementSettings: createDefaultEngagementSettings(),
     isEngagementLoading: false,
@@ -54,7 +54,7 @@ const mockContextValue = {
     unpublishEngagement: jest.fn(),
     republishEngagement: jest.fn(),
     widgets: [],
-    mockStatus: undefined,
+    mockStatus: SubmissionStatus.Open,
     updateMockStatus: jest.fn(),
 };
 

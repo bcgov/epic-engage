@@ -12,7 +12,7 @@ const mockAxios = axios as jest.Mocked<typeof axios>;
 const mockReportSetting = {
     id: 1,
     survey_id: 1,
-    question_id: 'q1',
+    question_id: 1,
     question_key: 'question_1',
     question_type: 'text',
     question: 'What do you think?',

@@ -17,7 +17,7 @@ import { SubscribeTypeLabel } from 'models/subscription';
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
 
-const mockSubscription = { id: 1, participant_id: 1, engagement_id: 1, type: 'EMAIL_LIST' };
+const mockSubscription = { id: 1, participant_id: 1, engagement_id: 1, type: 'EMAIL_LIST', is_subscribed: true };
 const mockSubscribeForm = {
     id: 1,
     widget_id: 1,
@@ -82,7 +82,7 @@ describe('subscriptionService - confirmSubscription', () => {
 
 describe('subscriptionService - unSubscribe', () => {
     test('returns unsubscribe response on success', async () => {
-        const mockUnsubscribe = { participant_id: 1, engagement_id: 1, is_subscribed: false };
+        const mockUnsubscribe = { participant_id: 1, is_subscribed: false };
         mockAxios.patch.mockResolvedValueOnce({ data: mockUnsubscribe });
         const result = await unSubscribe(mockUnsubscribe);
         expect(result).toEqual(mockUnsubscribe);
@@ -91,7 +91,7 @@ describe('subscriptionService - unSubscribe', () => {
     test('rejects on network error', async () => {
         const error = new Error('Network error');
         mockAxios.patch.mockRejectedValueOnce(error);
-        await expect(unSubscribe({ participant_id: 1, engagement_id: 1, is_subscribed: false })).rejects.toEqual(error);
+        await expect(unSubscribe({ participant_id: 1, is_subscribed: false })).rejects.toEqual(error);
     });
 });
 

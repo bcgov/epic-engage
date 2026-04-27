@@ -15,9 +15,7 @@ const mockEvent: Event = {
     sort_index: 0,
     created_by: 'test',
     updated_by: 'test',
-    created_date: '2024-01-01',
-    updated_date: '2024-01-01',
-    items: [
+    event_items: [
         {
             id: 1,
             description: 'Event description',
@@ -25,6 +23,7 @@ const mockEvent: Event = {
             location_address: '123 Main St',
             start_date: '2024-06-01',
             end_date: '2024-06-02',
+            timezone: 'America/Vancouver',
             url: 'https://example.com',
             url_label: 'Event Link',
             sort_index: 0,
