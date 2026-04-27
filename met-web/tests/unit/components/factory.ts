@@ -8,7 +8,7 @@ import {
     EngagementMetadata,
     EngagementSettings,
 } from 'models/engagement';
-import { EngagementStatus } from 'constants/engagementStatus';
+import { EngagementStatus, SubmissionStatus } from 'constants/engagementStatus';
 import { WidgetType, Widget, WidgetItem } from 'models/widget';
 import { Event, EventItem } from 'models/event';
 import { WidgetMap } from 'models/widgetMap';
@@ -53,6 +53,7 @@ const closedEngagement = {
     ...draftEngagement,
     id: 3,
     name: 'Closed Engagement',
+    submission_status: SubmissionStatus.Closed,
     engagement_status: {
         id: EngagementStatus.Closed,
         status_name: 'Closed',
@@ -177,11 +178,94 @@ const engagementSlugData = {
     slug: 'test-engagement-slug',
 };
 
+// Engagement with full status_block for testing SurveyBlock states
+const openEngagementWithStatusBlock = {
+    ...openEngagement,
+    status_block: [
+        {
+            id: 1,
+            survey_status: 'Upcoming',
+            block_text: '{"blocks":[{"key":"upcoming","text":"This engagement is coming soon.","type":"unstyled","depth":0,"inlineStyleRanges":[],"entityRanges":[],"data":{}}],"entityMap":{}}',
+        },
+        {
+            id: 2,
+            survey_status: 'Open',
+            block_text: '{"blocks":[{"key":"open","text":"Share your thoughts with us!","type":"unstyled","depth":0,"inlineStyleRanges":[],"entityRanges":[],"data":{}}],"entityMap":{}}',
+        },
+        {
+            id: 3,
+            survey_status: 'Closed',
+            block_text: '{"blocks":[{"key":"closed","text":"This engagement is now closed.","type":"unstyled","depth":0,"inlineStyleRanges":[],"entityRanges":[],"data":{}}],"entityMap":{}}',
+        },
+    ],
+};
+
+// Upcoming engagement for dashboard tests
+const upcomingEngagement = {
+    ...draftEngagement,
+    id: 4,
+    name: 'Upcoming Engagement',
+    engagement_status: {
+        id: 4, // Scheduled
+        status_name: 'Scheduled',
+    },
+    submission_status: 1, // Upcoming
+    start_date: '2025-12-01',
+    end_date: '2025-12-31',
+};
+
+// Email verification mock data
+const mockEmailVerification = {
+    id: 1,
+    email_address: 'test@example.com',
+    survey_id: 1,
+    engagement_id: 1,
+    verification_token: 'test-token-123',
+    is_active: true,
+};
+
+// Widget mock data for testing
+const whoIsListeningWidget = {
+    id: 2,
+    title: 'Who is Listening',
+    widget_type_id: 2, // WhoIsListening
+    engagement_id: 1,
+    items: [],
+};
+
+const subscribeWidget = {
+    id: 3,
+    title: 'Subscribe',
+    widget_type_id: 7, // Subscribe
+    engagement_id: 1,
+    items: [],
+};
+
+const documentWidget = {
+    id: 4,
+    title: 'Documents',
+    widget_type_id: 5, // Document
+    engagement_id: 1,
+    items: [],
+};
+
+const videoWidget = {
+    id: 5,
+    title: 'Video',
+    widget_type_id: 8, // Video
+    engagement_id: 1,
+    items: [],
+};
+
+const allWidgets = [eventWidget, mapWidget, whoIsListeningWidget, subscribeWidget, documentWidget, videoWidget];
+
 export {
     tenant,
     draftEngagement,
     openEngagement,
     closedEngagement,
+    upcomingEngagement,
+    openEngagementWithStatusBlock,
     surveys,
     mockEvent,
     mockEventItem,
@@ -189,7 +273,13 @@ export {
     mockMap,
     eventWidgetItem,
     eventWidget,
+    whoIsListeningWidget,
+    subscribeWidget,
+    documentWidget,
+    videoWidget,
+    allWidgets,
     engagementMetadata,
     engagementSlugData,
     engagementSetting,
+    mockEmailVerification,
 };

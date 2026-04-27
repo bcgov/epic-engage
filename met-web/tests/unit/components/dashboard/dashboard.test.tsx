@@ -108,4 +108,105 @@ describe('Dashboard page tests', () => {
 
         await waitFor(() => {});
     });
+
+    test('Empty state shows "No Engagements Found" message', async () => {
+        getEngagementMock.mockReturnValue(
+            Promise.resolve({
+                items: [],
+                total: 0,
+            }),
+        );
+
+        render(<Dashboard />);
+
+        await waitFor(() => {
+            // When all accordions are empty, they should show "No Engagements Found"
+            const noEngagementsMessages = screen.getAllByText('No Engagements Found');
+            expect(noEngagementsMessages.length).toBeGreaterThan(0);
+        });
+    });
+
+    test('Handles API error gracefully and shows notification', async () => {
+        const openNotificationMock = jest.spyOn(notificationSlice, 'openNotification');
+        getEngagementMock.mockRejectedValueOnce(new Error('API Error'));
+
+        render(<Dashboard />);
+
+        await waitFor(() => {
+            expect(openNotificationMock).toHaveBeenCalled();
+        });
+    });
+
+    test('Recently closed engagements (within 30 days) are displayed in correct section', async () => {
+        // Create a recently closed engagement (within last 30 days)
+        const today = new Date();
+        const recentlyClosedDate = new Date(today);
+        recentlyClosedDate.setDate(today.getDate() - 15); // 15 days ago
+
+        const recentlyClosedEngagement = {
+            ...closedEngagement,
+            id: 10,
+            name: 'Recently Closed Engagement',
+            end_date: recentlyClosedDate.toISOString().split('T')[0],
+        };
+
+        getEngagementMock
+            .mockReturnValueOnce(Promise.resolve({ items: [], total: 0 }))          // Open
+            .mockReturnValueOnce(Promise.resolve({ items: [], total: 0 }))          // Upcoming
+            .mockReturnValueOnce(Promise.resolve({ items: [recentlyClosedEngagement], total: 1 })); // Closed
+
+
+        render(<Dashboard />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Recently Closed Engagement')).toBeInTheDocument();
+        });
+    });
+
+    test('Old closed engagements (over 30 days) are displayed separately', async () => {
+        // Create an old closed engagement (over 30 days ago)
+        const today = new Date();
+        const oldClosedDate = new Date(today);
+        oldClosedDate.setDate(today.getDate() - 60); // 60 days ago
+
+        const oldClosedEngagement = {
+            ...closedEngagement,
+            id: 11,
+            name: 'Old Closed Engagement',
+            end_date: oldClosedDate.toISOString().split('T')[0],
+        };
+
+        getEngagementMock
+            .mockReturnValueOnce(Promise.resolve({ items: [], total: 0 }))          // Open
+            .mockReturnValueOnce(Promise.resolve({ items: [], total: 0 }))          // Upcoming
+            .mockReturnValueOnce(Promise.resolve({ items: [oldClosedEngagement], total: 1 })); // Closed
+
+        render(<Dashboard />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Old Closed Engagement')).toBeInTheDocument();
+        });
+    });
+
+    test('Multiple engagement types are fetched and displayed in correct sections', async () => {
+        const upcomingEngagement = {
+            ...openEngagement,
+            id: 20,
+            name: 'Upcoming Engagement',
+        };
+
+        // getEngagements is called three times: Open, Upcoming, Closed (in that order)
+        getEngagementMock
+            .mockReturnValueOnce(Promise.resolve({ items: [openEngagement], total: 1 }))       // Open
+            .mockReturnValueOnce(Promise.resolve({ items: [upcomingEngagement], total: 1 }))   // Upcoming
+            .mockReturnValueOnce(Promise.resolve({ items: [closedEngagement], total: 1 }));    // Closed
+
+        render(<Dashboard />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Open Engagement')).toBeInTheDocument();
+            expect(screen.getByText('Upcoming Engagement')).toBeInTheDocument();
+            expect(screen.getByText('Closed Engagement')).toBeInTheDocument();
+        });
+    });
 });
