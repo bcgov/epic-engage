@@ -7,7 +7,6 @@ import {
     SubscribeForm,
     SubscribeTypeLabel,
     Unsubscribe,
-    UnsubscribeByToken,
     UnsubscribeByTokenResponse,
 } from 'models/subscription';
 
