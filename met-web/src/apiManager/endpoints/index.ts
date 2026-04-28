@@ -59,6 +59,7 @@ const Endpoints = {
         GET: `${AppConfig.apiUrl}/subscription/participant_id`,
         CREATE: `${AppConfig.apiUrl}/subscription/`,
         UNSUBSCRIBE: `${AppConfig.apiUrl}/subscription/`,
+        UNSUBSCRIBE_BY_TOKEN: `${AppConfig.apiUrl}/subscription/unsubscribe/token`,
         CREATE_UPDATE: `${AppConfig.apiUrl}/subscription/manage`,
         CREATE_FORM: `${AppConfig.apiUrl}/widgets/widget_id/subscribe`,
         GET_FORM_LIST: `${AppConfig.apiUrl}/widgets/widget_id/subscribe`,

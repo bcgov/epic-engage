@@ -19,6 +19,7 @@ from flask import request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
+from met_api.services.email_verification_service import EmailVerificationService
 from met_api.services.subscription_service import SubscriptionService
 from met_api.utils.util import allowedorigins, cors_preflight
 
@@ -114,3 +115,44 @@ class ManageSubscriptions(Resource):
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
         except ValueError as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@cors_preflight('PATCH, OPTIONS')
+@API.route('/unsubscribe/<token>')
+class UnsubscribeByToken(Resource):
+    """Resource for secure token-based subscription management."""
+
+    @staticmethod
+    @cross_origin(origins=allowedorigins())
+    def patch(token):
+        """Update subscription status using a secure token.
+
+        This endpoint validates the unsubscribe token and updates the subscription
+        for the specific engagement associated with that token. The token remains
+        active to allow toggling between subscribed/unsubscribed states.
+        """
+        try:
+            # Validate token and get participant/engagement context
+            email_verification = EmailVerificationService.get_unsubscribe_verification(token)
+            participant_id = email_verification.get('participant_id')
+            engagement_id = email_verification.get('engagement_id')
+
+            # Get desired subscription state from request body
+            request_json = request.get_json() or {}
+            is_subscribed = request_json.get('is_subscribed', False)
+
+            # Update subscription for this specific engagement
+            subscription_data = {
+                'participant_id': participant_id,
+                'engagement_id': engagement_id,
+                'is_subscribed': is_subscribed,
+            }
+            result = SubscriptionService.update_subscription_for_participant_eng(subscription_data)
+
+            return {
+                'is_subscribed': result.get('is_subscribed', False),
+                'engagement_id': engagement_id,
+            }, HTTPStatus.OK
+
+        except ValueError as err:
+            return {'message': str(err)}, HTTPStatus.BAD_REQUEST

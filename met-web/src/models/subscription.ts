@@ -22,6 +22,16 @@ export interface Unsubscribe {
     is_subscribed: boolean;
 }
 
+export interface UnsubscribeByToken {
+    token: string;
+    is_subscribed: boolean;
+}
+
+export interface UnsubscribeByTokenResponse {
+    is_subscribed: boolean;
+    engagement_id: number;
+}
+
 export const SUBSCRIBE_TYPE: { [x in SubscribeTypeLabel]: SubscribeTypeLabel } = {
     EMAIL_LIST: 'EMAIL_LIST',
     SIGN_UP: 'SIGN_UP',

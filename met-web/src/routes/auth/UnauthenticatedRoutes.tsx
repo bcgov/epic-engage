@@ -23,6 +23,10 @@ const UnauthenticatedRoutes = () => {
                     path="/engagements/:engagementId/:subscriptionStatus/:scriptionKey"
                     element={<ManageSubscription />}
                 />
+                <Route
+                    path="/engagements/unsubscribe/:token"
+                    element={<ManageSubscription />}
+                />
                 <Route path="/engagements/:engagementId/view" element={<EngagementView />} />
                 <Route path="/:slug" element={<EngagementView />} />
                 <Route path="/engagements/:engagementId/dashboard/:dashboardType" element={<PublicDashboard />} />

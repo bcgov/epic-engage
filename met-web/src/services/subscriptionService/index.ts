@@ -1,7 +1,15 @@
 import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
 import { replaceUrl, replaceAllInURL } from 'utils/helpers';
-import { Subscribe, Subscription, SubscribeForm, SubscribeTypeLabel, Unsubscribe } from 'models/subscription';
+import {
+    Subscribe,
+    Subscription,
+    SubscribeForm,
+    SubscribeTypeLabel,
+    Unsubscribe,
+    UnsubscribeByToken,
+    UnsubscribeByTokenResponse,
+} from 'models/subscription';
 
 export const getSubscription = async (participant_id: number): Promise<Subscribe> => {
     if (!participant_id) {
@@ -36,6 +44,19 @@ export const confirmSubscription = async (request: Subscribe): Promise<Subscribe
 export const unSubscribe = async (request: Unsubscribe): Promise<Unsubscribe> => {
     try {
         const response = await http.PatchRequest<Unsubscribe>(Endpoints.Subscription.UNSUBSCRIBE, request);
+        return response.data;
+    } catch (err) {
+        return Promise.reject(err);
+    }
+};
+
+export const unSubscribeByToken = async (
+    token: string,
+    is_subscribed: boolean,
+): Promise<UnsubscribeByTokenResponse> => {
+    try {
+        const url = replaceUrl(Endpoints.Subscription.UNSUBSCRIBE_BY_TOKEN, 'token', token);
+        const response = await http.PatchRequest<UnsubscribeByTokenResponse>(url, { is_subscribed });
         return response.data;
     } catch (err) {
         return Promise.reject(err);

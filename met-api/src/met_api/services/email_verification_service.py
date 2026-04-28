@@ -178,8 +178,11 @@ class EmailVerificationService:
         template = Template.get_template('subscribe_email.html')
         confirm_path = current_app.config.get('SUBSCRIBE_PATH'). \
             format(engagement_id=engagement.id, token=token)
+        # Generate secure unsubscribe token instead of using plain participant_id
+        unsubscribe_token = EmailVerificationService.create_unsubscribe_token(
+            participant_id, engagement.id)
         unsubscribe_path = current_app.config.get('UNSUBSCRIBE_PATH'). \
-            format(engagement_id=engagement.id, participant_id=participant_id)
+            format(token=unsubscribe_token)
         confirm_url = notification.get_tenant_site_url(
             engagement.tenant_id, confirm_path)
         unsubscribe_url = notification.get_tenant_site_url(
@@ -312,3 +315,48 @@ class EmailVerificationService:
 
         if any(empty_fields):
             raise ValueError('Some required fields are empty')
+
+    @classmethod
+    def create_unsubscribe_token(cls, participant_id: int, engagement_id: int) -> str:
+        """Create an unsubscribe verification token for a participant and engagement.
+
+        If an active token already exists, return it. Otherwise create a new one.
+        Unsubscribe tokens do not expire and remain active for re-subscribe capability.
+        """
+        # Check for existing active token
+        existing = EmailVerification.get_active_by_participant_and_engagement(
+            participant_id, engagement_id, EmailVerificationType.Unsubscribe
+        )
+        if existing:
+            return existing.verification_token
+
+        # Create new token
+        verification_token = str(uuid.uuid4())
+        EmailVerification.create({
+            'verification_token': verification_token,
+            'participant_id': participant_id,
+            'engagement_id': engagement_id,
+            'type': EmailVerificationType.Unsubscribe,
+        })
+        return verification_token
+
+    @classmethod
+    def get_unsubscribe_verification(cls, verification_token: str) -> dict:
+        """Get and validate an unsubscribe verification token.
+
+        Unlike other verification types, unsubscribe tokens do not expire
+        and remain active to allow re-subscribe via the same link.
+        """
+        db_email_verification = EmailVerification.get(verification_token)
+        if not db_email_verification:
+            raise ValueError('Invalid unsubscribe token')
+
+        email_verification = EmailVerificationSchema().dump(db_email_verification)
+
+        if email_verification.get('type') != EmailVerificationType.Unsubscribe:
+            raise ValueError('Invalid unsubscribe token')
+
+        if not email_verification.get('is_active'):
+            raise ValueError('Unsubscribe token is no longer active')
+
+        return email_verification

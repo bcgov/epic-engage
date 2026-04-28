@@ -18,14 +18,19 @@ Test-Suite to ensure that the UserService is working as expected.
 """
 from unittest.mock import patch
 
-from faker import Faker
 import pytest
+from faker import Faker
 
 from met_api.exceptions.business_exception import BusinessException
 from met_api.services.email_verification_service import EmailVerificationService
 from met_api.utils import notification
 from tests.utilities.factory_scenarios import TestEngagementSlugInfo
-from tests.utilities.factory_utils import factory_engagement_slug_model, factory_survey_and_eng_model, set_global_tenant
+from tests.utilities.factory_utils import (
+    factory_engagement_slug_model,
+    factory_survey_and_eng_model,
+    set_global_tenant,
+    setup_participant_and_engagement,
+)
 
 
 fake = Faker()
@@ -72,3 +77,49 @@ def test_create_email_verification_exception(client, jwt, session, ):  # pylint:
         with patch.object(notification, 'send_email', side_effect=Exception('mocked error')):
             EmailVerificationService().create(to_dict)
     assert exception.type == BusinessException
+
+
+# Test create_unsubscribe_token
+def test_create_unsubscribe_token(session):
+    """Test creating a new unsubscribe token."""
+    participant, engagement = setup_participant_and_engagement(session)
+
+    token = EmailVerificationService.create_unsubscribe_token(
+        participant.id, engagement.id
+    )
+
+    assert token is not None
+    assert len(token) == 36  # UUID format
+
+
+def test_create_unsubscribe_token_reuses_existing(session):
+    """Test that existing active token is reused."""
+    participant, engagement = setup_participant_and_engagement(session)
+
+    token1 = EmailVerificationService.create_unsubscribe_token(
+        participant.id, engagement.id
+    )
+    token2 = EmailVerificationService.create_unsubscribe_token(
+        participant.id, engagement.id
+    )
+
+    assert token1 == token2  # Same token returned
+
+
+def test_get_unsubscribe_verification_valid(session):
+    """Test validating a valid unsubscribe token."""
+    participant, engagement = setup_participant_and_engagement(session)
+    token = EmailVerificationService.create_unsubscribe_token(
+        participant.id, engagement.id
+    )
+
+    result = EmailVerificationService.get_unsubscribe_verification(token)
+
+    assert result['participant_id'] == participant.id
+    assert result['engagement_id'] == engagement.id
+
+
+def test_get_unsubscribe_verification_invalid_token(session):
+    """Test validating an invalid token raises error."""
+    with pytest.raises(ValueError, match='Invalid unsubscribe token'):
+        EmailVerificationService.get_unsubscribe_verification('invalid-token')

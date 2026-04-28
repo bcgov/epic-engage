@@ -27,6 +27,7 @@ class EmailVerification(BaseModel):  # pylint: disable=too-few-public-methods
     survey_id = db.Column(db.Integer, ForeignKey('survey.id'), nullable=True)
     submission_id = db.Column(db.Integer, ForeignKey('submission.id'), nullable=True)
     tenant_id = db.Column(db.Integer, db.ForeignKey('tenant.id'), nullable=True)
+    engagement_id = db.Column(db.Integer, ForeignKey('engagement.id'), nullable=True)
 
     @classmethod
     def get(cls, verification_token) -> EmailVerification:
@@ -46,6 +47,7 @@ class EmailVerification(BaseModel):  # pylint: disable=too-few-public-methods
             type=email_verification.get('type'),
             survey_id=email_verification.get('survey_id', None),
             submission_id=email_verification.get('submission_id', None),
+            engagement_id=email_verification.get('engagement_id', None),
             created_date=datetime.utcnow(),
             created_by=email_verification.get('created_by', None),
         )
@@ -73,3 +75,15 @@ class EmailVerification(BaseModel):  # pylint: disable=too-few-public-methods
         if session is None:
             db.session.commit()
         return query.first()
+
+    @classmethod
+    def get_active_by_participant_and_engagement(
+        cls, participant_id: int, engagement_id: int, verification_type: EmailVerificationType
+    ) -> EmailVerification:
+        """Get an active email verification for a participant and engagement."""
+        return db.session.query(EmailVerification).filter_by(
+            participant_id=participant_id,
+            engagement_id=engagement_id,
+            type=verification_type,
+            is_active=True
+        ).first()
