@@ -8,7 +8,7 @@ import path from 'path';
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), 'VITE_');
-    
+
     return {
         plugins: [
             react(),
@@ -45,12 +45,15 @@ export default defineConfig(({ mode }) => {
                     // Force pre-bundle these CommonJS packages to convert to ESM
                     '@formio/js',
                     '@formio/react',
-                    'met-formio > @formio/js',
+                    '@formio/core',
+                    'met-formio',
+                    // Pre-bundle map libraries together to avoid circular dependency issues
+                    'maplibre-gl',
+                    'react-map-gl',
                 ],
                 esbuildOptions: {
                     mainFields: ['module', 'main'],
                 },
-                force: true, // Force re-optimization - remove this line after first successful run
             },
         server: {
             port: 3000,
@@ -64,8 +67,19 @@ export default defineConfig(({ mode }) => {
             sourcemap: true,
             commonjsOptions: {
                 include: [/met-formio/, /node_modules/],
-                exclude: [/node_modules\/react-map-gl\//],
                 transformMixedEsModules: true,
+            },
+            rollupOptions: {
+                output: {
+                    manualChunks: {
+                        // Keep maplibre and react-map-gl in the same chunk to avoid
+                        // initialization order issues with spatial indexing dependencies
+                        maplibre: ['maplibre-gl', 'react-map-gl'],
+                        // Keep Formio packages together to ensure validators initialize properly
+                        // Note: met-formio excluded due to invalid package.json "module" field causing alias issues
+                        formio: ['@formio/js', '@formio/react', '@formio/core'],
+                    },
+                },
             },
         },
         define: {
