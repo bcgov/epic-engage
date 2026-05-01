@@ -59,8 +59,11 @@ class EmailService:  # pylint: disable=too-few-public-methods
             project_name = metadata_model.project_metadata.get('project_name')
         view_path = current_app.config.get('ENGAGEMENT_VIEW_PATH'). \
             format(engagement_id=engagement.id)
+        # Generate secure unsubscribe token instead of using plain participant_id
+        unsubscribe_token = EmailVerificationService.create_unsubscribe_token(
+            participant.id, engagement.id)
         unsubscribe_url = current_app.config.get('UNSUBSCRIBE_PATH'). \
-            format(engagement_id=engagement.id, participant_id=participant.id)
+            format(token=unsubscribe_token)
         email_environment = current_app.config.get('EMAIL_ENVIRONMENT', '')
         args = {
             'project_name': project_name if project_name else engagement.name,

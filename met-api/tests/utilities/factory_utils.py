@@ -367,3 +367,30 @@ def factory_engagement_setting_model(engagement_id):
     )
     setting.save()
     return setting
+
+
+def setup_participant_and_engagement(session=None):
+    """Set up a participant and engagement for subscription tests."""
+    set_global_tenant()
+    participant = factory_participant_model()
+    engagement = factory_engagement_model(status=Status.Published.value)
+    return participant, engagement
+
+
+def factory_subscription_model_with_ids(participant_id, engagement_id):
+    """Produce a subscription model with specific participant and engagement."""
+    subscription = SubscriptionModel(
+        engagement_id=engagement_id,
+        participant_id=participant_id,
+        is_subscribed=True,
+    )
+    subscription.save()
+    return subscription
+
+
+def factory_unsubscribe_token(participant_id, engagement_id):
+    """Create an unsubscribe verification token."""
+    from met_api.services.email_verification_service import EmailVerificationService
+    return EmailVerificationService.create_unsubscribe_token(
+        participant_id, engagement_id
+    )

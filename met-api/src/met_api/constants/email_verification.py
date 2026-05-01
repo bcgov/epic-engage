@@ -24,3 +24,4 @@ class EmailVerificationType(IntEnum):
     Survey = 0
     RejectedComment = 1
     Subscribe = 2
+    Unsubscribe = 3

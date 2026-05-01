@@ -9,16 +9,17 @@ import { openNotification } from 'services/notificationService/notificationSlice
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import { SubscriptionType } from './subscribe';
 import { verifyEmailVerification } from 'services/emailVerificationService';
-import { confirmSubscription, unSubscribe } from 'services/subscriptionService';
+import { confirmSubscription, unSubscribe, unSubscribeByToken } from 'services/subscriptionService';
 
 export type SubscriptionParams = {
-    engagementId: string;
-    subscriptionStatus: string;
+    engagementId?: string;
+    subscriptionStatus?: string;
     scriptionKey?: string;
+    token?: string;
 };
 
 export const Subscription = () => {
-    const { engagementId, subscriptionStatus, scriptionKey } = useParams<SubscriptionParams>();
+    const { engagementId, subscriptionStatus, scriptionKey, token } = useParams<SubscriptionParams>();
     const [subscriptionText, setSubscriptionText] = useState(['']);
 
     const dispatch = useAppDispatch();
@@ -27,16 +28,30 @@ export const Subscription = () => {
 
     useEffect(() => {
         verifySubscribeKey();
-    }, [scriptionKey]);
+    }, [scriptionKey, token]);
 
     const verifySubscribeKey = async () => {
         try {
+            // Handle new token-based unsubscribe route
+            if (token) {
+                await unSubscribeByToken(token, false);
+                setSubscriptionText([
+                    'We are sorry to see you go.',
+                    '',
+                    'We wanted to confirm that you have been successfully unsubscribed.',
+                    'You will no longer receive communications for this engagement.',
+                    '',
+                    'Thank you.',
+                ]);
+                return;
+            }
+
             if (!scriptionKey) {
                 return;
             }
             if (subscriptionStatus == SubscriptionType.SUBSCRIBE) {
-                const token = scriptionKey;
-                const subscribed_email = await verifyEmailVerification(token);
+                const subscribeToken = scriptionKey;
+                const subscribed_email = await verifyEmailVerification(subscribeToken);
                 const subscribed = JSON.stringify(subscribed_email);
                 await confirmSubscription({
                     engagement_id: parseInt(engagementId ?? ''),
@@ -46,6 +61,8 @@ export const Subscription = () => {
                 setSubscriptionText(['You have successfully confirmed your subscription. Thank you.']);
             }
             if (subscriptionStatus == SubscriptionType.UNSUBSCRIBE) {
+                // Legacy unsubscribe flow - kept for backwards compatibility
+                // New emails will use the token-based route
                 const participant_id = scriptionKey;
                 await unSubscribe({
                     participant_id: parseInt(participant_id ?? ''),
@@ -61,7 +78,7 @@ export const Subscription = () => {
                 ]);
             }
         } catch (error) {
-            dispatch(openNotification({ severity: 'error', text: 'Error Subscribing to Engagement' }));
+            dispatch(openNotification({ severity: 'error', text: 'Error processing subscription request' }));
             return Promise.reject(error);
         }
     };

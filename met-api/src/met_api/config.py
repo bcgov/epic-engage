@@ -152,7 +152,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     SUBMISSION_PATH = os.getenv('SUBMISSION_PATH', '/engagements/{engagement_id}/edit/{token}')
     SURVEY_PATH = os.getenv('SURVEY_PATH', '/surveys/submit/{survey_id}/{token}')
     SUBSCRIBE_PATH = os.getenv('SUBSCRIBE_PATH', '/engagements/{engagement_id}/subscribe/{token}')
-    UNSUBSCRIBE_PATH = os.getenv('UNSUBSCRIBE_PATH', '/engagements/{engagement_id}/unsubscribe/{participant_id}')
+    UNSUBSCRIBE_PATH = os.getenv('UNSUBSCRIBE_PATH', '/engagements/unsubscribe/{token}')
     ENGAGEMENT_PATH = os.getenv('ENGAGEMENT_PATH', '/engagements/{engagement_id}/view')
     ENGAGEMENT_PATH_SLUG = os.getenv('ENGAGEMENT_PATH_SLUG', '/{slug}')
     # engagement dashboard path is used to pass the survey result to the public user.
