@@ -148,16 +148,25 @@ export const AssignRoleModal = () => {
             );
         } else {
             await addUserToGroup({ user_id: user?.external_id, group: data.group });
-            await addTeamMemberToEngagement({
-                user_id: user?.external_id,
-                engagement_id: data.engagement?.id,
-            });
-            dispatch(
-                openNotification({
-                    severity: 'success',
-                    text: `You have successfully added ${user?.first_name} ${user?.last_name} as a ${data.group} on ${data.engagement?.name}.`,
-                }),
-            );
+            if (data.engagement) {
+                await addTeamMemberToEngagement({
+                    user_id: user?.external_id,
+                    engagement_id: data.engagement?.id,
+                });
+                dispatch(
+                    openNotification({
+                        severity: 'success',
+                        text: `You have successfully added ${user?.first_name} ${user?.last_name} as a ${data.group} on ${data.engagement?.name}.`,
+                    }),
+                );
+            } else {
+                dispatch(
+                    openNotification({
+                        severity: 'warning',
+                        text: `${user?.first_name} ${user?.last_name} added as a team member, no engagement linked.`,
+                    }),
+                );
+            }
         }
     };
 
