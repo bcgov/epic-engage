@@ -4,8 +4,8 @@
 0 * * * * default cd /met-cron && ./run_met_etl.sh
 # ENGAGEMENT CLOSEOUT Runs At 17:00 on every day-of-week from Monday through Friday (UTC).
 0 17 * * 1-5 default cd /met-cron && ./run_met_closeout.sh
-# ENGAGEMENT PUBLISH Runs At every 5 minutes.
-*/5 * * * * default cd /met-cron && ./run_met_publish.sh
+# ENGAGEMENT PUBLISH Runs every 5 minutes, offset by -1 minute (:59, :04, etc.)
+4-54/5,59 * * * * default cd /met-cron && ./run_met_publish.sh
 # ENGAGEMENT PUBLISH EMAIL Runs At every 5 minutes.
 */5 * * * * default cd /met-cron && ./run_met_publish_email.sh
 # PURGE Runs at midnight Wednesday and Sunday.

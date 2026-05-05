@@ -5,7 +5,7 @@ Manages the engagement
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from sqlalchemy import and_, asc, desc, or_
@@ -172,18 +172,22 @@ class Engagement(BaseModel):
     @classmethod
     def publish_scheduled_engagements_due(cls) -> List[Engagement]:
         """Update scheduled engagements to published."""
-        datetime_due = datetime.utcnow()
+        now = datetime.utcnow()
+        # Truncate to the current minute and add 2 minutes to capture engagements
+        # due within the window. The cron fires at :59 but this function runs ~45s
+        # later, so we need to look ahead to catch scheduled times reliably.
+        datetime_due = now.replace(second=0, microsecond=0) + timedelta(minutes=2)
         print('Publish due date ------------------------', datetime_due)
         update_fields = {
             'status_id': Status.Published.value,
-            'published_date': datetime.utcnow(),
-            'updated_date': datetime.utcnow(),
+            'published_date': now,
+            'updated_date': now,
             'updated_by': SYSTEM_USER
         }
-        # Publish scheduled engagements where scheduled datetime is prior than now (UTC)
+        # Publish scheduled engagements where scheduled datetime is within the look-ahead window (UTC)
         query = Engagement.query \
             .filter(Engagement.status_id == Status.Scheduled.value) \
-            .filter(Engagement.scheduled_date <= datetime_due)
+            .filter(Engagement.scheduled_date < datetime_due)
         records = query.all()
         if records:
             query.update(update_fields)

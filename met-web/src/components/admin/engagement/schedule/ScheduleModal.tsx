@@ -26,13 +26,14 @@ const createPacificDisplayDate = (pacificDate?: Date) => {
     const pacificTime = utcToZonedTime(sourceDate, TIMEZONES.CANADA_PACIFIC);
 
     // Create a new Date with these components but in local context for the pickers
+    // Zero out seconds
     return new Date(
         pacificTime.getFullYear(),
         pacificTime.getMonth(),
         pacificTime.getDate(),
         pacificTime.getHours(),
         pacificTime.getMinutes(),
-        pacificTime.getSeconds(),
+        0,
     );
 };
 
@@ -49,10 +50,10 @@ const convertPickerDateToPacificUTC = (pickerDate: Date) => {
     const day = date.getDate();
     const hours = date.getHours();
     const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
 
     // Create a date with these values (this will be in local timezone context)
-    const localDate = new Date(year, month, day, hours, minutes, seconds);
+    // Seconds are zeroed to ensure scheduled_date is always on the minute,
+    const localDate = new Date(year, month, day, hours, minutes, 0);
 
     // Convert this to UTC assuming it represents Pacific time
     const pacificUTC = zonedTimeToUtc(localDate, TIMEZONES.CANADA_PACIFIC);
