@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import and_, asc, desc, or_
+from sqlalchemy import and_, asc, case, desc, or_
 from sqlalchemy.dialects.postgresql import JSON
 from sqlalchemy.sql import text
 from sqlalchemy.sql.schema import ForeignKey
@@ -192,6 +192,37 @@ class Engagement(BaseModel):
 
     @staticmethod
     def _get_sort_order(pagination_options):
+        if pagination_options.sort_key == 'display_status':
+            now = local_datetime()
+            display_status_order = case(
+                # Open: Published and start_date has passed
+                (
+                    and_(
+                        Engagement.status_id == Status.Published.value,
+                        Engagement.start_date <= now,
+                    ),
+                    1,
+                ),
+                # Scheduled
+                (Engagement.status_id == Status.Scheduled.value, 2),
+                # Draft
+                (Engagement.status_id == Status.Draft.value, 3),
+                # Upcoming: Published but start_date in the future
+                (
+                    and_(
+                        Engagement.status_id == Status.Published.value,
+                        Engagement.start_date > now,
+                    ),
+                    4,
+                ),
+                # Closed
+                (Engagement.status_id == Status.Closed.value, 5),
+                # Unpublished
+                (Engagement.status_id == Status.Unpublished.value, 6),
+                else_=7,
+            )
+            sort_dir = asc if pagination_options.sort_order == 'asc' else desc
+            return sort_dir(display_status_order)
         sort = asc(text(pagination_options.sort_key)) if pagination_options.sort_order == 'asc' \
             else desc(text(pagination_options.sort_key))
         return sort
