@@ -47,7 +47,7 @@ const EngagementListing = () => {
     const [paginationOptions, setPaginationOptions] = useState<PaginationOptions<Engagement>>({
         page: Number(pageFromURL) || 1,
         size: Number(sizeFromURL) || 10,
-        sort_key: 'display_status',
+        sort_key: 'status_id',
         nested_sort_key: 'display_status',
         sort_order: 'asc',
     });
