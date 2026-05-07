@@ -288,7 +288,7 @@ class EmailVerificationService:
         if not is_active:
             raise ValueError('Email verification already verified')
 
-        if email_verification.get('type') == EmailVerificationType.Subscribe:
+        if email_verification.get('type') in (EmailVerificationType.Subscribe, EmailVerificationType.Unsubscribe):
             return
 
         if email_verification.get('type') == EmailVerificationType.Survey:
