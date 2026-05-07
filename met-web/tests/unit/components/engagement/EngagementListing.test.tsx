@@ -85,7 +85,7 @@ jest.mock('components/shared/common', () => ({
         return <button {...rest}>{children}</button>;
     },
 }));
-    
+
 jest.mock('components/shared/permissionsGate', () => ({
     ...jest.requireActual('components/shared/permissionsGate'),
     PermissionsGate: ({ children }: { children: ReactNode }) => {
@@ -164,8 +164,8 @@ describe('Engagement form page tests', () => {
             expect(getEngagementMock).lastCalledWith({
                 page: 1,
                 size: 10,
-                sort_key: 'engagement.created_date',
-                sort_order: 'desc',
+                sort_key: 'display_status',
+                sort_order: 'asc',
                 search_text: 'Engagement One',
                 engagement_status: [],
                 application_number: '',
@@ -206,8 +206,8 @@ describe('Engagement form page tests', () => {
             expect(getEngagementMock).lastCalledWith({
                 page: 1,
                 size: 10,
-                sort_key: 'engagement.created_date',
-                sort_order: 'desc',
+                sort_key: 'display_status',
+                sort_order: 'asc',
                 search_text: '',
                 engagement_status: [1],
                 application_number: '',
