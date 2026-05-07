@@ -2,6 +2,7 @@ from dagster import Out, Output, op
 from sqlalchemy import func
 from datetime import datetime
 
+from met_api.constants.email_verification import EmailVerificationType
 from met_api.models.email_verification import EmailVerification as MetEmailVerificationModel
 from met_api.models.survey import Survey as MetSurveyModel
 from analytics_api.models.email_verification import EmailVerification as EtlEmailVerificationModel
@@ -50,14 +51,18 @@ def extract_email_ver(context, email_ver_last_run_cycle_datetime, email_ver_new_
     for last_run_cycle_time in email_ver_last_run_cycle_datetime:
 
         context.log.info("started extracting new data from email_verification table")
+        # Ignore tokens/verifications used for unsubscribing
         new_email_ver = session.query(MetEmailVerificationModel).filter(
-            MetEmailVerificationModel.created_date > last_run_cycle_time).all()
+            MetEmailVerificationModel.created_date > last_run_cycle_time,
+            MetEmailVerificationModel.type != EmailVerificationType.Unsubscribe
+        ).all()
 
         if last_run_cycle_time > default_datetime:
             context.log.info("started extracting updated data from email_verification table")
             updated_email_ver = session.query(MetEmailVerificationModel).filter(
                 MetEmailVerificationModel.updated_date > last_run_cycle_time,
-                MetEmailVerificationModel.updated_date != MetEmailVerificationModel.created_date).all()
+                MetEmailVerificationModel.updated_date != MetEmailVerificationModel.created_date,
+                MetEmailVerificationModel.type != EmailVerificationType.Unsubscribe).all()
 
     yield Output(new_email_ver, "new_email_ver")
 
