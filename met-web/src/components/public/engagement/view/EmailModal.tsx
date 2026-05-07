@@ -15,6 +15,7 @@ import ThankYouPanel from './ThankYouPanel';
 import { EmailVerificationType } from 'models/emailVerification';
 import { INTERNAL_EMAIL_DOMAIN } from 'constants/emailVerification';
 import { EngagementVisibility } from 'constants/engagementVisibility';
+import { analyticsService } from 'services/penguinAnalytics';
 
 const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
     const dispatch = useAppDispatch();
@@ -30,11 +31,25 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
 
     const updateTabValue = () => {
         if (!checkEmail(email)) {
+            analyticsService.track({
+                action: 'error',
+                engagement_id: String(savedEngagement.id),
+                engagement_name: savedEngagement.name,
+                survey_id: String(savedEngagement.surveys[0]?.id || ''),
+                text: 'Invalid email format',
+            });
             setFormIndex('error');
         } else if (
             savedEngagement.visibility == EngagementVisibility.Internal &&
             !email.endsWith(INTERNAL_EMAIL_DOMAIN)
         ) {
+            analyticsService.track({
+                action: 'error',
+                engagement_id: String(savedEngagement.id),
+                engagement_name: savedEngagement.name,
+                survey_id: String(savedEngagement.surveys[0]?.id || ''),
+                text: 'Invalid domain for internal engagement',
+            });
             setFormIndex('error');
         } else {
             handleSubmit();
@@ -67,6 +82,13 @@ const EmailModal = ({ defaultPanel, open, handleClose }: EmailModalProps) => {
             );
             setFormIndex('success');
         } catch (error) {
+            analyticsService.track({
+                action: 'error',
+                engagement_id: String(savedEngagement.id),
+                engagement_name: savedEngagement.name,
+                survey_id: String(savedEngagement.surveys[0]?.id || ''),
+                text: 'Email verification failed',
+            });
             dispatch(
                 openNotification({
                     severity: 'error',
