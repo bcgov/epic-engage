@@ -90,7 +90,10 @@ class Engagement(BaseModel):
 
         sort = cls._get_sort_order(pagination_options)
 
-        query = query.order_by(sort)
+        if isinstance(sort, tuple):
+            query = query.order_by(*sort)
+        else:
+            query = query.order_by(sort)
 
         no_pagination_options = not pagination_options.page or not pagination_options.size
         if no_pagination_options:
@@ -193,39 +196,44 @@ class Engagement(BaseModel):
     @staticmethod
     def _get_sort_order(pagination_options):
         if pagination_options.sort_key == 'display_status':
-            now = local_datetime()
-            display_status_order = case(
-                # Open: Published and start_date has passed
-                (
-                    and_(
-                        Engagement.status_id == Status.Published.value,
-                        Engagement.start_date <= now,
-                    ),
-                    1,
-                ),
-                # Scheduled
-                (Engagement.status_id == Status.Scheduled.value, 2),
-                # Draft
-                (Engagement.status_id == Status.Draft.value, 3),
-                # Upcoming: Published but start_date in the future
-                (
-                    and_(
-                        Engagement.status_id == Status.Published.value,
-                        Engagement.start_date > now,
-                    ),
-                    4,
-                ),
-                # Closed
-                (Engagement.status_id == Status.Closed.value, 5),
-                # Unpublished
-                (Engagement.status_id == Status.Unpublished.value, 6),
-                else_=7,
-            )
-            sort_dir = asc if pagination_options.sort_order == 'asc' else desc
-            return sort_dir(display_status_order)
+            return Engagement._get_custom_sort_order(pagination_options)
         sort = asc(text(pagination_options.sort_key)) if pagination_options.sort_order == 'asc' \
             else desc(text(pagination_options.sort_key))
         return sort
+
+    @staticmethod
+    def _get_custom_sort_order(pagination_options):
+        """Sort by display status with a secondary sort by created_date descending."""
+        now = local_datetime()
+        display_status_order = case(
+            # Open: Published and start_date has passed
+            (
+                and_(
+                    Engagement.status_id == Status.Published.value,
+                    Engagement.start_date <= now,
+                ),
+                1,
+            ),
+            # Scheduled
+            (Engagement.status_id == Status.Scheduled.value, 2),
+            # Draft
+            (Engagement.status_id == Status.Draft.value, 3),
+            # Upcoming: Published but start_date in the future
+            (
+                and_(
+                    Engagement.status_id == Status.Published.value,
+                    Engagement.start_date > now,
+                ),
+                4,
+            ),
+            # Closed
+            (Engagement.status_id == Status.Closed.value, 5),
+            # Unpublished
+            (Engagement.status_id == Status.Unpublished.value, 6),
+            else_=7,
+        )
+        sort_dir = asc if pagination_options.sort_order == 'asc' else desc
+        return sort_dir(display_status_order), desc(Engagement.created_date)
 
     @staticmethod
     def _filter_by_engagement_status(query, search_options):
