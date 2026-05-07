@@ -84,7 +84,13 @@ export interface PenguinEvent {
  */
 export interface AnalyticsService {
     /** Track page view */
-    page: (pageName?: string, engagementId?: string, userType?: 'public' | 'admin', engagementName?: string) => void;
+    page: (
+        pageName?: string,
+        engagementId?: string,
+        userType?: 'public' | 'admin',
+        engagementName?: string,
+        engagementStatus?: string,
+    ) => void;
     /** Track custom event */
     track: (props: AnalyticsEventProps) => void;
     /** Identify user */

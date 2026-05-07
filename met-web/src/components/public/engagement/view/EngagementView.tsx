@@ -14,6 +14,7 @@ import { PhasesWidget } from './widgets/PhasesWidget';
 import { PhasesWidgetMobile } from './widgets/PhasesWidget/PhasesWidgetMobile/PhasesWidgetMobile';
 import { EngagementBanner } from './EngagementBanner';
 import { analyticsService } from 'services/penguinAnalytics';
+import { SubmissionStatus } from 'constants/engagementStatus';
 
 export const EngagementView = () => {
     const { state } = useLocation() as RouteState;
@@ -36,9 +37,10 @@ export const EngagementView = () => {
     useEffect(() => {
         if (savedEngagement?.id) {
             const userType = roles.length > 0 ? 'admin' : 'public';
-            analyticsService.page(savedEngagement.name || 'Engagement Page', String(savedEngagement.id), userType, savedEngagement.name);
+            const status = SubmissionStatus[savedEngagement.submission_status] || 'Unknown';
+            analyticsService.page(savedEngagement.name || 'Engagement Page', String(savedEngagement.id), userType, savedEngagement.name, status);
         }
-    }, [savedEngagement?.id, savedEngagement?.name, roles]);
+    }, [savedEngagement?.id, savedEngagement?.name, savedEngagement?.submission_status, roles]);
 
     const handleStartSurvey = () => {
         if (!isPreview) {

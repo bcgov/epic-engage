@@ -344,7 +344,8 @@ describe('EngagementView Integration Tests', () => {
                     'Open Engagement for Testing',
                     '2',
                     'public',
-                    'Open Engagement for Testing'
+                    'Open Engagement for Testing',
+                    'Open'
                 );
             });
         });
