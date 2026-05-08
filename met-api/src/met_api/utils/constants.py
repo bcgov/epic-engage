@@ -23,6 +23,7 @@ class Groups(Enum):
     EAO_TEAM_MEMBER = 'Team Member'
     EAO_REVIEWER = 'Reviewer'
     EAO_IT_VIEWER = 'Viewer'
+    ENGAGE_NO_ROLE = 'No Role'
 
     @staticmethod
     def get_name_by_value(value):

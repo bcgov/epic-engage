@@ -125,8 +125,10 @@ class StaffUserService:
                     user['main_group'] = Groups.EAO_TEAM_MEMBER.value
                 elif Groups.EAO_REVIEWER.value in user['groups']:
                     user['main_group'] = Groups.EAO_REVIEWER.value
+                elif Groups.EAO_IT_VIEWER.value in user['groups']:
+                    user['main_group'] = Groups.EAO_IT_VIEWER.value
                 else:
-                    user['main_group'] = user['groups'][0]
+                    user['main_group'] = Groups.ENGAGE_NO_ROLE.value
 
     @classmethod
     def find_users(
