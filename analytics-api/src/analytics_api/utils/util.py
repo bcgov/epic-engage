@@ -68,6 +68,7 @@ class FormIoComponentType(Enum):
     SELECTLIST = 'simpleselect'
     SURVEY = 'simplesurvey'
     TEXT = 'simpletextarea'
+    RANKING = 'simpleranking'
 
 
 class ContentType(Enum):

@@ -24,6 +24,7 @@ export const formioOptions = {
                 categorycommentcontainer: false,
                 simplehtmlelement: true,
                 simplecontent: true,
+                simpleranking: true,
                 simplesurvey: true,
                 simpleselect: true,
             },

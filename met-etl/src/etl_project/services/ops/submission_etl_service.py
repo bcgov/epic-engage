@@ -184,6 +184,9 @@ def _extract_submission(form_questions, met_survey, metsession, submission, met_
                 elif component_type == FormIoComponentType.SURVEY.value:
                     _save_survey(met_etl_session, context, answer_key, component, etl_survey, user, submission,
                                    submission_new_runcycleid)
+                elif component_type == FormIoComponentType.RANKING.value:
+                    _save_ranking(met_etl_session, context, answer_key, component, etl_survey, user, submission,
+                                   submission_new_runcycleid)
                 else:
                     context.log.info('No Mapping Found for .Type for submission id : %s. is %s .Skipping',
                                      submission.id, component_type)
@@ -298,6 +301,46 @@ def _save_survey(met_etl_session, context, answer_key, component, survey, partic
             )
 
             met_etl_session.add(radio_response)
+
+
+# load responses for a ranking type question
+def _save_ranking(met_etl_session, context, answer_key, component, survey, participant, submission, submission_new_runcycleid):
+    """Save ranking responses.
+    
+    answer_key is an array of objects: [{statementId, statement, rank}, ...]
+    Each item represents a statement and the rank assigned by the user.
+    """
+    context.log.info('Input type Ranking is created:survey id: %s. request_key is %s ',
+                     survey.id, component['key'])
+
+    if answer_key is None or not isinstance(answer_key, list):
+        return
+
+    for item in answer_key:
+        statement_id = str(item.get('statementId', ''))
+        rank = item.get('rank')
+        
+        if not statement_id or rank is None or rank == '':
+            continue
+        
+        context.log.info('Input type Ranking is created:survey id: %s. '
+                         'request_key is %s value:%s request_id:%s', survey.id, 
+                         component['key'] + '-' + statement_id,
+                         str(rank), component['id'] + '-' + statement_id)
+
+        ranking_response = EtlResponseTypeOptionModel(
+            survey_id=survey.id,
+            request_key=component['key'] + '-' + statement_id,
+            value=str(rank),
+            request_id=component['id'] + '-' + statement_id,
+            participant_id=getattr(participant, 'id', None),
+            is_active=True,
+            runcycle_id=submission_new_runcycleid,
+            created_date=submission.created_date,
+            updated_date=submission.updated_date
+        )
+
+        met_etl_session.add(ranking_response)
 
 
 def _save_options(met_etl_session, survey, component, value, participant, submission_new_runcycleid, submission):

@@ -204,6 +204,28 @@ def _do_etl_survey_inputs(session, survey_id, component, component_type, survey_
             session.add(model_name)
 
             session.commit()
+    elif component_type == FormIoComponentType.RANKING.value:
+        statements = component.get('statements', None)
+
+        if not statements:
+            return position
+
+        for statement in statements:
+            position = position + 1
+            statement_id = str(statement['id'])
+            model_name = EtlRequestTypeOption(survey_id=survey_id,
+                                              request_id=component['id'] + '-' + statement_id,
+                                              label=statement['label'],
+                                              is_active=True,
+                                              key=component['key'] + '-' + statement_id,
+                                              type=component['type'],
+                                              runcycle_id=survey_new_runcycleid,
+                                              position=position
+                                              )
+
+            session.add(model_name)
+
+            session.commit()
     else:
         model_name = EtlRequestTypeOption(survey_id=survey_id,
                                           request_id=component['id'],
@@ -229,6 +251,8 @@ def _load_available_response_option(context, session, survey_id, component, comp
         _load_survey_available_response(session, component, survey_id, survey_new_runcycleid)
     elif component_type == FormIoComponentType.SELECTLIST.value:
         _load_selectlist_available_response(session, component, survey_id, survey_new_runcycleid)
+    elif component_type == FormIoComponentType.RANKING.value:
+        _load_ranking_available_response(session, component, survey_id, survey_new_runcycleid)
     else:
         _load_default_available_response(session, component, survey_id, survey_new_runcycleid)
 
@@ -268,6 +292,37 @@ def _load_default_available_response(session, component, survey_id, survey_new_r
                                     request_key, survey_new_runcycleid)
 
 
+def _load_ranking_available_response(session, component, survey_id, survey_new_runcycleid):
+    """Load available response options for ranking components.
+    
+    For ranking, the available responses are rank values (1, 2, 3, etc.)
+    based on the number of statements.
+    """
+    statements = component.get('statements', None)
+    if not statements:
+        return
+    
+    num_statements = len(statements)
+    
+    for statement in statements:
+        statement_id = str(statement['id'])
+        request_key = component['key'] + '-' + statement_id
+        
+        # Create available response options for each possible rank value
+        for rank in range(1, num_statements + 1):
+            model_name = EtlAvailableResponseOption(
+                survey_id=survey_id,
+                request_key=request_key,
+                value=str(rank),
+                request_id=component['id'] + '-' + statement_id,
+                is_active=True,
+                runcycle_id=survey_new_runcycleid
+            )
+            session.add(model_name)
+    
+    session.commit()
+
+
 def _do_etl_available_response_data(session, component, survey_id, values, request_key, survey_new_runcycleid):
     for value in values:
         model_name = EtlAvailableResponseOption(survey_id=survey_id,
@@ -286,7 +341,8 @@ def _validate_form_type(context, component_type):
     component_type = component_type.lower()
 
     if component_type in (FormIoComponentType.RADIO.value, FormIoComponentType.CHECKBOX.value,
-                          FormIoComponentType.SELECTLIST.value, FormIoComponentType.SURVEY.value):
+                          FormIoComponentType.SELECTLIST.value, FormIoComponentType.SURVEY.value,
+                          FormIoComponentType.RANKING.value):
         return True
     else:
         context.log.info('*************Component Type Missed to match %s', component_type)
