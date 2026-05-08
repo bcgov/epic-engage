@@ -24,3 +24,4 @@ class FormIoComponentType(Enum):
     SURVEY = 'simplesurvey'
     TEXTAREA = 'simpletextarea'
     TEXTFIELD = 'simpletextfield'
+    RANKING = 'simpleranking'

@@ -74,7 +74,8 @@ class ReportSettingService:
 
         if component_type in (FormIoComponentType.RADIO.value, FormIoComponentType.CHECKBOX.value,
                               FormIoComponentType.SELECTLIST.value, FormIoComponentType.SURVEY.value,
-                              FormIoComponentType.TEXTAREA.value, FormIoComponentType.TEXTFIELD.value):
+                              FormIoComponentType.TEXTAREA.value, FormIoComponentType.TEXTFIELD.value,
+                              FormIoComponentType.RANKING.value):
             return True
 
         return False

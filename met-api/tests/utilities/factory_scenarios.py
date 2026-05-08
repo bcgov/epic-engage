@@ -116,6 +116,63 @@ class TestSurveyInfo(dict, Enum):
         'is_hidden': False,
         'is_template': True
     }
+    survey_with_ranking = {
+        'name': fake.name(),
+        'created_date': datetime.now().strftime('%Y-%m-%d'),
+        'updated_date': datetime.now().strftime('%Y-%m-%d'),
+        'created_by': '123',
+        'updated_by': '123',
+        'form_json': {
+            'display': 'form',
+            'components': [{
+                'id': 'ranking1',
+                'key': 'simpleranking',
+                'type': 'simpleranking',
+                'label': 'Rank the following items',
+                'statements': [
+                    {'id': '1', 'label': 'Statement 1'},
+                    {'id': '2', 'label': 'Statement 2'},
+                    {'id': '3', 'label': 'Statement 3'}
+                ]
+            }]
+        },
+        'is_hidden': False,
+        'is_template': False
+    }
+    survey_with_multiple_rankings = {
+        'name': fake.name(),
+        'created_date': datetime.now().strftime('%Y-%m-%d'),
+        'updated_date': datetime.now().strftime('%Y-%m-%d'),
+        'created_by': '123',
+        'updated_by': '123',
+        'form_json': {
+            'display': 'form',
+            'components': [
+                {
+                    'id': 'ranking1',
+                    'key': 'simpleranking',
+                    'type': 'simpleranking',
+                    'label': 'Ranking A',
+                    'statements': [
+                        {'id': '1', 'label': 'Option A1'},
+                        {'id': '2', 'label': 'Option A2'}
+                    ]
+                },
+                {
+                    'id': 'ranking2',
+                    'key': 'simpleranking1',
+                    'type': 'simpleranking',
+                    'label': 'Ranking B',
+                    'statements': [
+                        {'id': '1', 'label': 'Option B1'},
+                        {'id': '2', 'label': 'Option B2'}
+                    ]
+                }
+            ]
+        },
+        'is_hidden': False,
+        'is_template': False
+    }
 
 
 class KeycloakScenario:
@@ -529,6 +586,23 @@ class TestSubmissionInfo(dict, Enum):
         'review_date': datetime.now().strftime('%Y-%m-%d'),
     }
 
+    ranking_submission = {
+        'submission_json': {
+            'simpleranking': [
+                {'statementId': 1, 'statement': 'Statement 1', 'rank': 2},
+                {'statementId': 2, 'statement': 'Statement 2', 'rank': 1},
+                {'statementId': 3, 'statement': 'Statement 3', 'rank': 3}
+            ]
+        },
+        'created_by': '123',
+        'updated_by': '123',
+        'created_date': datetime.now().strftime('%Y-%m-%d'),
+        'updated_date': datetime.now().strftime('%Y-%m-%d'),
+        'comment_status_id': CommentStatus.Approved.value,
+        'review_by': 'Auto Approver',
+        'review_date': datetime.now().strftime('%Y-%m-%d'),
+    }
+
 
 class TestCommentInfo(dict, Enum):
     """Test scenarios of comment."""
@@ -651,6 +725,20 @@ class TestReportSettingInfo(dict, Enum):
         'question_id': str(fake.pyint()),
         'question_key': 'simpletextarea',
         'question_type': 'simpletextarea',
+        'survey_id': 1,
+        'updated_by': str(fake.pyint()),
+        'updated_date': datetime.now().strftime('%Y-%m-%d')
+    }
+
+    report_setting_ranking = {
+        'created_by': str(fake.pyint()),
+        'created_date': datetime.now().strftime('%Y-%m-%d'),
+        'display': True,
+        'id': 2,
+        'question': 'Rank the following items',
+        'question_id': 'ranking1',
+        'question_key': 'simpleranking',
+        'question_type': 'simpleranking',
         'survey_id': 1,
         'updated_by': str(fake.pyint()),
         'updated_date': datetime.now().strftime('%Y-%m-%d')
