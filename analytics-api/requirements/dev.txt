@@ -7,7 +7,6 @@ astroid>=3.0.0
 pylint-flask
 pytest
 pytest-cov
-pytest-env
 pytest-dotenv
 pytest-mock
 requests
