@@ -33,3 +33,42 @@ def test_refresh_report_setting(session):  # pylint:disable=unused-argument
     report_settings = ReportSettingService.get_report_setting(survey.id)
     assert len(report_settings) == 1
     assert report_settings[0].get('survey_id') == survey.id
+
+
+def test_refresh_report_setting_with_ranking(session):  # pylint:disable=unused-argument
+    """Assert a ranking component creates a single report setting row."""
+    survey, _ = factory_survey_and_eng_model(TestSurveyInfo.survey_with_ranking)
+    survey_data = {
+        'id': survey.id,
+        'form_json': survey.form_json,
+    }
+    result = ReportSettingService.refresh_report_setting(survey_data)
+    assert result == survey_data
+
+    report_settings = ReportSettingService.get_report_setting(survey.id)
+    # Ranking appears as a single row (not expanded per statement)
+    assert len(report_settings) == 1
+    assert report_settings[0].get('survey_id') == survey.id
+    assert report_settings[0].get('question_type') == 'simpleranking'
+    assert report_settings[0].get('question_key') == 'simpleranking'
+    assert report_settings[0].get('question_id') == 'ranking1'
+
+
+def test_refresh_report_setting_with_multiple_rankings(session):  # pylint:disable=unused-argument
+    """Assert multiple ranking components with unique keys create separate report setting rows."""
+    survey, _ = factory_survey_and_eng_model(TestSurveyInfo.survey_with_multiple_rankings)
+    survey_data = {
+        'id': survey.id,
+        'form_json': survey.form_json,
+    }
+    ReportSettingService.refresh_report_setting(survey_data)
+
+    report_settings = ReportSettingService.get_report_setting(survey.id)
+    assert len(report_settings) == 2
+
+    keys = [s.get('question_key') for s in report_settings]
+    assert 'simpleranking' in keys
+    assert 'simpleranking1' in keys
+
+    types = [s.get('question_type') for s in report_settings]
+    assert all(t == 'simpleranking' for t in types)
