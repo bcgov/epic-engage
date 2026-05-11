@@ -43,7 +43,7 @@ class EngagementSchema(Schema):
     rich_content = fields.Str(data_key='rich_content')
     banner_filename = fields.Str(data_key='banner_filename')
     engagement_status = fields.Nested(EngagementStatusSchema)
-    surveys = fields.List(fields.Nested(EngagementSurveySchema))
+    surveys = fields.List(fields.Nested(EngagementSurveySchema(exclude=['form_json'])))
     submission_status = fields.Method('get_submission_status')
     submissions_meta_data = fields.Method('get_submissions_meta_data')
     status_block = fields.List(fields.Nested(EngagementStatusBlockSchema))
