@@ -207,7 +207,7 @@ class Engagement(BaseModel):
 
     @staticmethod
     def _get_custom_sort_order(pagination_options):
-        """Sort by display status with a secondary sort by created_date descending."""
+        """Sort by display status with a secondary sort by published_date (falling back to created_date)."""
         now = local_datetime()
         display_status_order = case(
             # Open: Published and start_date has passed
@@ -237,7 +237,12 @@ class Engagement(BaseModel):
             else_=7,
         )
         sort_dir = asc if pagination_options.sort_order == 'asc' else desc
-        return sort_dir(display_status_order), desc(Engagement.created_date)
+        # Secondary sort: use published_date if available, otherwise fall back to created_date
+        secondary_sort_key = case(
+            (Engagement.published_date.isnot(None), Engagement.published_date),
+            else_=Engagement.created_date,
+        )
+        return sort_dir(display_status_order), desc(secondary_sort_key)
 
     @staticmethod
     def _filter_by_engagement_status(query, search_options):
