@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Form } from '@formio/react';
 import { FormSubmissionData, FormSubmitterProps } from './types';
 import FormStepper from 'components/public/survey/submit/Stepper';
@@ -7,6 +7,20 @@ import { analyticsService } from 'services/penguinAnalytics';
 interface PageData {
     page: number;
     submission: unknown;
+}
+
+interface FormioComponent {
+    checkValidity: (data: unknown, dirty: boolean, rowData?: unknown) => boolean;
+    type: string;
+    key: string;
+}
+
+interface FormioInstance {
+    data: Record<string, unknown>;
+    everyComponent: (callback: (component: FormioComponent) => void) => void;
+    showErrors: (errors?: unknown, triggerEvent?: boolean) => void;
+    nextPage: () => Promise<unknown>;
+    submit: (...args: unknown[]) => Promise<unknown>;
 }
 
 const MultiPageForm = ({
@@ -20,6 +34,50 @@ const MultiPageForm = ({
 }: FormSubmitterProps) => {
     const [currentPage, setCurrentPage] = useState(0);
     const totalPages = savedForm?.components?.length || 0;
+    const formioRef = useRef<FormioInstance | null>(null);
+
+    // Validate all components by calling their checkValidity methods
+    const validateAllComponents = (): boolean => {
+        if (!formioRef.current) return true;
+
+        const formio = formioRef.current;
+        let allComponentsValid = true;
+
+        formio.everyComponent((component: FormioComponent) => {
+            const componentValid = component.checkValidity(formio.data, true);
+            if (!componentValid) {
+                allComponentsValid = false;
+            }
+        });
+
+        if (!allComponentsValid) {
+            formio.showErrors();
+        }
+
+        return allComponentsValid;
+    };
+
+    const handleFormReady = (formio: FormioInstance) => {
+        formioRef.current = formio;
+
+        // Override the nextPage method to add validation
+        const originalNextPage = formio.nextPage.bind(formio);
+        formio.nextPage = function () {
+            if (!validateAllComponents()) {
+                return Promise.resolve();
+            }
+            return originalNextPage();
+        };
+
+        // Override the submit method to add validation
+        const originalSubmit = formio.submit.bind(formio);
+        formio.submit = function (...args: unknown[]) {
+            if (!validateAllComponents()) {
+                return Promise.resolve();
+            }
+            return originalSubmit(...args);
+        };
+    };
 
     const handleScrollUp = () => {
         window.scrollTo({
@@ -81,6 +139,7 @@ const MultiPageForm = ({
             <Form
                 form={savedForm || { display: 'wizard' }}
                 options={{ noAlerts: true }}
+                formReady={handleFormReady}
                 onChange={(form: unknown) => handleFormChange(form as FormSubmissionData)}
                 onNextPage={handleNextPage}
                 onPrevPage={handlePrevPage}
