@@ -1,8 +1,8 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useRef } from 'react';
 import { Skeleton, Grid, Stack } from '@mui/material';
 import { SubmitSurveyContext } from './SubmitSurveyContext';
 import FormSubmit from 'components/shared/form/FormBuilder/FormSubmit';
-import { FormSubmissionData } from 'components/shared/form/FormBuilder/types';
+import { FormSubmitHandle } from 'components/shared/form/FormBuilder/types';
 import { useAppSelector } from 'hooks';
 import { PrimaryButton, SecondaryButton } from 'components/shared/common';
 import { SurveyFormProps } from 'components/admin/survey/types';
@@ -11,17 +11,16 @@ import { When } from 'react-if';
 export const SurveyForm = ({ handleClose }: SurveyFormProps) => {
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
     const { isSurveyLoading, savedSurvey, handleSubmit, isSubmitting, savedEngagement } = useContext(SubmitSurveyContext);
-    const [submissionData, setSubmissionData] = useState<unknown>(null);
-    const [isValid, setIsValid] = useState(false);
-
-    const handleChange = (filledForm: FormSubmissionData) => {
-        setSubmissionData(filledForm.data);
-        setIsValid(filledForm.isValid);
-    };
+    const formRef = useRef<FormSubmitHandle>(null);
 
     if (isSurveyLoading) {
         return <Skeleton variant="rectangular" height="50em" width="100%" />;
     }
+
+    const handleFormSubmitClick = async () => {
+        // Trigger FormIO validation and submit
+        const result = await formRef.current?.triggerSubmit();
+    };
 
     return (
         <Grid
@@ -34,8 +33,9 @@ export const SurveyForm = ({ handleClose }: SurveyFormProps) => {
         >
             <Grid item xs={12}>
                 <FormSubmit
+                    ref={formRef}
                     savedForm={savedSurvey.form_json}
-                    handleFormChange={handleChange}
+                    handleFormChange={() => {}}
                     handleFormSubmit={handleSubmit}
                     surveyId={savedSurvey.id?.toString()}
                     surveyName={savedSurvey.name}
@@ -53,8 +53,8 @@ export const SurveyForm = ({ handleClose }: SurveyFormProps) => {
                     >
                         <SecondaryButton onClick={() => handleClose()}>Cancel</SecondaryButton>
                         <PrimaryButton
-                            disabled={!isValid || isLoggedIn || isSubmitting}
-                            onClick={() => handleSubmit(submissionData)}
+                            disabled={isLoggedIn || isSubmitting}
+                            onClick={handleFormSubmitClick}
                             loading={isSubmitting}
                         >
                             Submit

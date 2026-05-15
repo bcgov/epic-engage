@@ -8,6 +8,11 @@ export interface FormSubmitterProps {
     engagementName?: string;
 }
 
+export interface FormSubmitHandle {
+    /** Triggers FormIO validation and submits if valid. Returns true if submitted, false if validation failed. */
+    triggerSubmit: () => Promise<boolean>;
+}
+
 export interface FormBuilderProps {
     handleFormChange: (form: FormBuilderData) => void;
     savedForm?: FormBuilderData;
