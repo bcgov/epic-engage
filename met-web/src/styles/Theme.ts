@@ -15,7 +15,7 @@ export const Palette = {
         light: '#4C81AF',
     },
     text: {
-        primary: '#494949',
+        primary: '#2D2D2D',
     },
     action: {
         active: '#1A5A96',
@@ -30,6 +30,23 @@ export const Palette = {
     publicHeader: {
         backgroundColor: '#FFFFFF',
         color: '#292929',
+    },
+    button: {
+        primary: {
+            backgroundColor: '#003366',
+            hoverBackgroundColor: '#1E5189',
+            color: '#FFFFFF',
+        },
+        secondary: {
+            backgroundColor: '#FFFFFF',
+            hoverBackgroundColor: '#EDEBE9',
+            color: '#000000',
+        },
+        tertiary: {
+            backgroundColor: '#FFFFFF',
+            hoverBackgroundColor: '#ECEAE8',
+            color: '#003366',
+        },
     },
     dashboard: {
         upcoming: {

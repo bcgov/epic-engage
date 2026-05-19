@@ -68,9 +68,9 @@ export const CommentListingContext = createContext<CommentListingContextState>({
     paginationOptions: {
         page: 1,
         size: 10,
-        sort_key: 'id',
-        nested_sort_key: 'submission.id',
-        sort_order: 'desc',
+        sort_key: 'comment_status_id',
+        nested_sort_key: 'submission.comment_status_id',
+        sort_order: 'asc',
     },
     setPagination: () => {
         throw new Error('setPagination not implemented');
@@ -109,9 +109,9 @@ export const CommentListingContextProvider = ({ children }: CommentListingContex
     const [paginationOptions, setPagination] = useState<PaginationOptions<SurveySubmission>>({
         page: Number(pageFromURL) || 1,
         size: Number(sizeFromURL) || 10,
-        sort_key: 'id',
-        nested_sort_key: 'submission.id',
-        sort_order: 'desc',
+        sort_key: 'comment_status_id',
+        nested_sort_key: 'submission.comment_status_id',
+        sort_order: 'asc',
     });
     const [pageInfo, setPageInfo] = useState<PageInfo>({
         total: 0,
