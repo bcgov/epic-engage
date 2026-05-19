@@ -99,7 +99,6 @@ const CommentReview = () => {
 
     const fetchNextPending = async (currentId: number) => {
         try {
-            console.log('[fetchNextPending] currentId:', currentId, 'surveyId:', surveyId);
             const result = await getSubmissionPage({
                 survey_id: Number(surveyId),
                 queryParams: {
