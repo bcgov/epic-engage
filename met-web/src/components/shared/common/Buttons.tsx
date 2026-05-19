@@ -18,28 +18,42 @@ export const MetTooltip = styled(({ className, ...props }: TooltipProps) => (
 }));
 
 const StyledPrimaryButton = styled(LoadingButton)(() => ({
-    backgroundColor: Palette.primary.main,
-    color: '#fff',
+    backgroundColor: Palette.button.primary.backgroundColor,
+    color: Palette.button.primary.color,
     lineHeight: '1.1rem',
     '&:hover': {
         opacity: '0.8',
-        backgroundColor: Palette.primary.main,
-        color: '#fff',
-        textDecoration: 'underline',
+        backgroundColor: Palette.button.primary.hoverBackgroundColor,
+        color: Palette.button.primary.color,
+        textDecoration: 'none',
     },
 }));
 
 const StyledSecondaryButton = styled(LoadingButton)(() => ({
-    backgroundColor: 'transparent',
-    color: Palette.primary.main,
+    backgroundColor: Palette.button.secondary.backgroundColor,
+    color: Palette.button.secondary.color,
     lineHeight: '1.1rem',
-    border: `2px solid ${Palette.primary.main}`,
+    border: `2px solid ${Palette.button.secondary.color}`,
     '&:hover': {
         opacity: '0.8',
-        textDecoration: 'underline',
-        backgroundColor: Palette.primary.main,
-        color: '#FFFFFF',
-        border: `2px solid ${Palette.primary.main}`,
+        textDecoration: 'none',
+        backgroundColor: Palette.button.secondary.hoverBackgroundColor,
+        color: Palette.button.secondary.color,
+        border: `2px solid ${Palette.button.secondary.color}`,
+    },
+}));
+
+const StyledTertiaryButton = styled(LoadingButton)(() => ({
+    backgroundColor: Palette.button.tertiary.backgroundColor,
+    color: Palette.button.tertiary.color,
+    lineHeight: '1.1rem',
+    border: 'none',
+    '&:hover': {
+        opacity: '0.8',
+        textDecoration: 'none',
+        backgroundColor: Palette.button.tertiary.hoverBackgroundColor,
+        color: Palette.button.tertiary.color,
+        border: 'none',
     },
 }));
 
@@ -120,6 +134,32 @@ export const SecondaryButton = ({
         >
             {children}
         </StyledSecondaryButton>
+    );
+};
+
+export const TertiaryButton = ({
+    children,
+    disabled = false,
+    ...rest
+}: {
+    children: React.ReactNode;
+    [prop: string]: unknown;
+}) => {
+    if (disabled) {
+        return (
+            <PrimaryButton {...rest} disabled>
+                {children}
+            </PrimaryButton>
+        );
+    }
+    return (
+        <StyledTertiaryButton
+            {...rest}
+            variant="outlined"
+            loadingIndicator={<CircularProgress color="primary" size={'1.8em'} />}
+        >
+            {children}
+        </StyledTertiaryButton>
     );
 };
 

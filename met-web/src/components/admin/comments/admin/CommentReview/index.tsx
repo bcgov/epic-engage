@@ -14,7 +14,7 @@ import {
     Link,
     IconButton,
 } from '@mui/material';
-import { getSubmission, reviewComments } from 'services/submissionService';
+import { getSubmission, getSubmissionPage, reviewComments } from 'services/submissionService';
 import { useAppDispatch, useAppTranslation } from 'hooks';
 import { useParams, useNavigate } from 'react-router-dom';
 import { openNotification } from 'services/notificationService/notificationSlice';
@@ -24,6 +24,7 @@ import {
     MetPageGridContainer,
     PrimaryButton,
     SecondaryButton,
+    TertiaryButton,
     MetHeader3,
     MetHeader4,
     MetSmallText,
@@ -70,6 +71,7 @@ const CommentReview = () => {
     const [survey, setSurvey] = useState<Survey>(createDefaultSurvey());
     const [isEditingThreatContact, setIsEditingThreatContact] = useState(false);
     const [threatContact, setThreatContact] = useState<ThreatContact | null>(null);
+    const [nextPendingId, setNextPendingId] = useState<number | null>(null);
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
     const { t: translate } = useAppTranslation();
@@ -93,6 +95,26 @@ const CommentReview = () => {
                 </When>
             </EmailPreview>
         );
+    };
+
+    const fetchNextPending = async (currentId: number) => {
+        try {
+            console.log('[fetchNextPending] currentId:', currentId, 'surveyId:', surveyId);
+            const result = await getSubmissionPage({
+                survey_id: Number(surveyId),
+                queryParams: {
+                    page: 1,
+                    size: 10,
+                    status: CommentStatus.Pending,
+                    sort_key: 'submission.id',
+                    sort_order: 'asc',
+                },
+            });
+            const next = result.items.find((s) => Number(s.id) !== currentId);
+            setNextPendingId(next?.id ?? null);
+        } catch (err) {
+            setNextPendingId(null);
+        }
     };
 
     const fetchSubmission = async () => {
@@ -130,7 +152,19 @@ const CommentReview = () => {
     };
 
     useEffect(() => {
+        const currentId = Number(submissionId);
+        setIsLoading(true);
+        setNextPendingId(null);
+        setReview(CommentStatus.Approved);
+        setHasOtherReason(false);
+        setOtherReason('');
+        setHasPersonalInfo(false);
+        setHasProfanity(false);
+        setHasThreat(false);
+        setNotifyEmail(true);
+        setHasError(false);
         fetchSubmission();
+        fetchNextPending(currentId);
     }, [submissionId]);
 
     useEffect(() => {
@@ -195,6 +229,33 @@ const CommentReview = () => {
             setIsSaving(false);
             dispatch(openNotification({ severity: 'success', text: 'Comments successfully reviewed.' }));
             navigate(`/surveys/${submission.survey_id}/comments`);
+        } catch (error) {
+            dispatch(openNotification({ severity: 'error', text: 'Error occurred while sending comments review.' }));
+            setIsSaving(false);
+        }
+    };
+
+    const handleSaveAndNext = async () => {
+        const isValid = validate();
+        setHasError(!isValid);
+        if (!isValid) {
+            return;
+        }
+        setIsSaving(true);
+        try {
+            await reviewComments({
+                submission_id: Number(submissionId),
+                status_id: review,
+                has_personal_info: hasPersonalInfo,
+                has_profanity: hasProfanity,
+                has_threat: hasThreat,
+                rejected_reason_other: otherReason,
+                notify_email: notifyEmail,
+                staff_note: updatedStaffNote,
+            });
+            setIsSaving(false);
+            dispatch(openNotification({ severity: 'success', text: 'Comments successfully reviewed.' }));
+            navigate(`/surveys/${surveyId}/submissions/${nextPendingId}/review`);
         } catch (error) {
             dispatch(openNotification({ severity: 'error', text: 'Error occurred while sending comments review.' }));
             setIsSaving(false);
@@ -601,11 +662,28 @@ const CommentReview = () => {
                         </When>
                         <Grid item xs={12}>
                             <Stack direction="row" spacing={2}>
-                                <PrimaryButton loading={isSaving} onClick={handleSave}>
-                                    {'Save & Continue'}
-                                </PrimaryButton>
-
-                                <SecondaryButton onClick={() => navigate(-1)}>Cancel</SecondaryButton>
+                                {nextPendingId !== null ? (
+                                    <>
+                                        <PrimaryButton loading={isSaving} onClick={handleSaveAndNext}>
+                                            {'Save & Review Next'}
+                                        </PrimaryButton>
+                                        <SecondaryButton loading={isSaving} onClick={handleSave}>
+                                            {'Save & Close'}
+                                        </SecondaryButton>
+                                        <TertiaryButton onClick={() => navigate(`/surveys/${surveyId}/comments`)}>
+                                            {'Cancel'}
+                                        </TertiaryButton>
+                                    </>
+                                ) : (
+                                    <>
+                                        <PrimaryButton loading={isSaving} onClick={handleSave}>
+                                            {'Save & Close'}
+                                        </PrimaryButton>
+                                        <SecondaryButton onClick={() => navigate(`/surveys/${surveyId}/comments`)}>
+                                            {'Cancel'}
+                                        </SecondaryButton>
+                                    </>
+                                )}
                             </Stack>
                         </Grid>
                     </Else>
