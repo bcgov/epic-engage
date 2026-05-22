@@ -20,6 +20,7 @@ import SurveyBarPrintable from './SurveyBarPrintable';
 import { generateDashboardPdf } from 'components/shared/analytics/util';
 import { Map } from 'models/analytics/map';
 import { When } from 'react-if';
+import { analyticsService } from 'services/penguinAnalytics';
 
 const Dashboard = () => {
     const { slug } = useParams();
@@ -112,6 +113,12 @@ const Dashboard = () => {
                                             </PrimaryButton>
                                             <SecondaryButton
                                                 onClick={() => {
+                                                    analyticsService.track({
+                                                        action: 'pdf_export',
+                                                        engagement_id: String(engagement.id),
+                                                        engagement_name: engagement.name,
+                                                        dashboard_type: dashboardType,
+                                                    });
                                                     setIsPrinting(true);
                                                 }}
                                                 loading={isPrinting}

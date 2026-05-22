@@ -25,6 +25,7 @@ export type AnalyticsAction =
     | 'map_click'
     | 'cta_click'
     | 'email_submitted'
+    | 'pdf_export'
     | 'error';
 
 /**
@@ -59,6 +60,8 @@ export interface AnalyticsEventProps {
     verification_token?: string;
     /** User type: 'admin' or 'public' */
     user_type?: string;
+    /** Dashboard type: 'public' or 'internal' */
+    dashboard_type?: string;
 }
 
 /**
