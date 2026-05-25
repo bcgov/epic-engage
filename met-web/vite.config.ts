@@ -39,6 +39,9 @@ export default defineConfig(({ mode }) => {
                 // This will handle both 'met-formio' imports and 'met-formio/dist/...' paths
                 'met-formio': path.resolve(__dirname, 'node_modules/met-formio'),
             },
+            // Force all chunks to share a single React instance; prevents "undefined is not
+            // a non-null object" crashes when formio and met-formio land in separate chunks
+            dedupe: ['react', 'react-dom'],
         },
         optimizeDeps: {
                 include: [
@@ -72,6 +75,9 @@ export default defineConfig(({ mode }) => {
             rollupOptions: {
                 output: {
                     manualChunks: {
+                        // Single shared React chunk — all other chunks import from here,
+                        // preventing duplicate-React crashes across async/formio chunks
+                        react: ['react', 'react-dom'],
                         // Keep maplibre and react-map-gl in the same chunk to avoid
                         // initialization order issues with spatial indexing dependencies
                         maplibre: ['maplibre-gl', 'react-map-gl'],
