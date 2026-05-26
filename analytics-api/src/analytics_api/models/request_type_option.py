@@ -2,14 +2,80 @@
 
 Manages the option type questions (radio/checkbox) on a survey
 """
+from collections import defaultdict
+
 from sqlalchemy import and_, func, or_
 from sqlalchemy.sql.expression import true
+
 from analytics_api.models.available_response_option import AvailableResponseOption as AvailableResponseOptionModel
 from analytics_api.models.survey import Survey as SurveyModel
 from analytics_api.models.response_type_option import ResponseTypeOption as ResponseTypeOptionModel
+from analytics_api.utils.util import FormIoComponentType
 from .base_model import BaseModel
 from .db import db
 from .request_mixin import RequestMixin
+
+_MATRIX_TYPES = frozenset([FormIoComponentType.SURVEY.value, FormIoComponentType.RANKING.value])
+
+
+def _fetch_available_by_key(analytics_survey_id):
+    """Fetch available responses grouped by request_key, preserving fomrio insertion order."""
+    rows = (db.session.query(AvailableResponseOptionModel.request_key, AvailableResponseOptionModel.value)
+            .filter(AvailableResponseOptionModel.survey_id.in_(analytics_survey_id),  # pylint: disable=no-member
+                    AvailableResponseOptionModel.is_active == true())
+            .order_by(AvailableResponseOptionModel.id)
+            .all())
+    result = defaultdict(list)
+    for aro in rows:
+        result[aro.request_key].append(aro.value)
+    return result
+
+
+def _fetch_count_map(analytics_survey_id):
+    """Fetch response counts keyed by (request_key, value)."""
+    rows = (db.session.query(ResponseTypeOptionModel.request_key, ResponseTypeOptionModel.value,
+                             func.count(ResponseTypeOptionModel.request_key).label('count'))
+            .filter(ResponseTypeOptionModel.survey_id.in_(analytics_survey_id),  # pylint: disable=no-member
+                    ResponseTypeOptionModel.is_active == true())
+            .group_by(ResponseTypeOptionModel.request_key, ResponseTypeOptionModel.value)
+            .all())
+    return {(r.request_key, r.value): r.count for r in rows}
+
+
+def _build_matrix_entry(parent, all_questions, avail_by_key, count_map):
+    """Build a grouped matrix result entry for a simplesurvey or simpleranking parent row."""
+    is_ranking = parent.type == FormIoComponentType.RANKING.value
+    children = sorted(
+        [c for c in all_questions if c.request_id.startswith(parent.request_id + '-')],
+        key=lambda c: c.position,
+    )
+    matrix_rows = []
+    for child in children:
+        scale_values = list(avail_by_key.get(child.key, []))
+        if not scale_values:
+            continue
+        if is_ranking:
+            scale_values.sort(key=lambda v: int(v) if v.isdigit() else 0)
+        counts = [count_map.get((child.key, v), 0) for v in scale_values]
+        total = sum(counts)
+        pcts = [round(c * 100 / total) if total > 0 else 0 for c in counts]
+        matrix_rows.append({'label': child.label, 'pcts': pcts, 'n': total})
+    if not matrix_rows:
+        return None
+    return {'position': parent.position, 'question': parent.label, 'key': parent.key,
+            'type': parent.type, 'result': matrix_rows}
+
+
+def _build_flat_entry(q, avail_by_key, count_map):
+    """Build a flat value/count result entry for a non-matrix or orphaned matrix question."""
+    scale_values = avail_by_key.get(q.key)
+    if scale_values:
+        result = [{'value': v, 'count': count_map.get((q.key, v), 0)} for v in scale_values]
+    else:
+        result = [{'value': val, 'count': cnt} for (key, val), cnt in count_map.items() if key == q.key]
+    if not result:
+        return None
+    return {'position': q.position, 'question': q.label, 'key': q.key, 'type': q.type, 'result': result}
 
 
 class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-public-methods
@@ -116,3 +182,57 @@ class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-pub
                 return survey_result.all()
 
         return None  # Return None indicating no records
+
+    @classmethod
+    def get_survey_result_with_type(cls, engagement_id, can_view_all_survey_results):
+        """Return survey results with question type and page key included.
+
+        Matrix questions (simplesurvey, simpleranking) are returned as a single
+        entry with a nested pcts/n result.
+        Orphaned sub-question rows (old ETL data with no parent) fall back to flat output.
+        """
+        analytics_survey_id = (
+            db.session.query(SurveyModel.id)
+            .filter(and_(SurveyModel.engagement_id == engagement_id, SurveyModel.is_active == true()))
+            .subquery()
+        )
+
+        base_filter = [
+            RequestTypeOption.survey_id.in_(analytics_survey_id),  # pylint: disable=no-member
+            RequestTypeOption.is_active == true(),
+        ]
+        if not can_view_all_survey_results:
+            base_filter.append(or_(RequestTypeOption.display == true(), RequestTypeOption.display.is_(None)))
+
+        all_questions = (
+            db.session.query(RequestTypeOption.position, RequestTypeOption.label,
+                             RequestTypeOption.key, RequestTypeOption.type, RequestTypeOption.request_id)
+            .filter(*base_filter)
+            .order_by(RequestTypeOption.position)
+            .all()
+        )
+
+        if not all_questions:
+            return None
+
+        matrix_rids = {q.request_id for q in all_questions if q.type in _MATRIX_TYPES}
+        parent_rids = {rid for rid in matrix_rids
+                       if any(other.startswith(rid + '-') for other in matrix_rids if other != rid)}
+        child_rids = matrix_rids - parent_rids
+
+        avail_by_key = _fetch_available_by_key(analytics_survey_id)
+        count_map = _fetch_count_map(analytics_survey_id)
+
+        results = []
+        for q in all_questions:
+            if q.request_id in child_rids and any(q.request_id.startswith(p + '-') for p in parent_rids):
+                continue  # rolled up into parent matrix entry
+            if q.request_id in parent_rids:
+                entry = _build_matrix_entry(q, all_questions, avail_by_key, count_map)
+            else:
+                entry = _build_flat_entry(q, avail_by_key, count_map)
+            if entry:
+                results.append(entry)
+
+        results.sort(key=lambda r: r['position'] or 0)
+        return results or None
