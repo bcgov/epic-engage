@@ -12,4 +12,6 @@ class SurveyResultSchema(Schema):
 
     position = fields.Int(data_key='position')
     question = fields.Str(data_key='label')
+    key = fields.Str()
+    type = fields.Str()
     result = fields.List(fields.Dict(data_key='response'))
