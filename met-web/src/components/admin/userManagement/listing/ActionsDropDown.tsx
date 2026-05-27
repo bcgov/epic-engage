@@ -38,6 +38,13 @@ export const ActionsDropDown = ({ selectedUser }: { selectedUser: User }) => {
         return false;
     };
 
+    const isNoRole = (): boolean => {
+        if (selectedUser?.main_group == USER_GROUP.NO_ROLE.label) {
+            return true;
+        }
+        return false;
+    };
+
     const ITEMS: ActionDropDownItem[] = useMemo(
         () => [
             {
@@ -48,7 +55,7 @@ export const ActionsDropDown = ({ selectedUser }: { selectedUser: User }) => {
                     setassignRoleModalOpen(true);
                 },
                 condition:
-                    hasNoRole() &&
+                    isNoRole() &&
                     roles?.includes(USER_ROLES.EDIT_MEMBERS) &&
                     selectedUser.status_id == USER_STATUS.ACTIVE.value &&
                     selectedUser.id != userDetail?.user?.id,
@@ -76,6 +83,7 @@ export const ActionsDropDown = ({ selectedUser }: { selectedUser: User }) => {
                 },
                 condition:
                     !hasNoRole() &&
+                    !isNoRole() &&
                     roles?.includes(USER_ROLES.UPDATE_USER_GROUP) &&
                     selectedUser.status_id == USER_STATUS.ACTIVE.value &&
                     selectedUser.id != userDetail?.user?.id,
