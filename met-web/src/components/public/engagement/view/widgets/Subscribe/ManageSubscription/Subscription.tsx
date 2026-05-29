@@ -4,7 +4,7 @@ import { Grid } from '@mui/material';
 import { MetHeader1, MetParagraph, MetLabel } from 'components/shared/common';
 import { Banner } from 'components/shared/banner/Banner';
 import LandingPageBanner from 'assets/images/LandingPageBanner.png';
-import { useAppDispatch, useAppSelector } from 'hooks';
+import { useAppDispatch, useAppTranslation } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import { SubscriptionType } from './subscribe';
@@ -23,8 +23,7 @@ export const Subscription = () => {
     const [subscriptionText, setSubscriptionText] = useState(['']);
 
     const dispatch = useAppDispatch();
-
-    const tenant = useAppSelector((state) => state.tenant);
+    const { t: translate } = useAppTranslation();
 
     useEffect(() => {
         verifySubscribeKey();
@@ -117,10 +116,10 @@ export const Subscription = () => {
                             rowSpacing={2}
                         >
                             <Grid item xs={12}>
-                                <MetHeader1>{tenant?.name}</MetHeader1>
+                                <MetHeader1>{translate('landing.banner.header')}</MetHeader1>
                             </Grid>
                             <Grid item xs={12}>
-                                <MetParagraph>{'Description'}</MetParagraph>
+                                <MetParagraph>{translate('landing.banner.description')}</MetParagraph>
                             </Grid>
                         </Grid>
                     </Grid>
