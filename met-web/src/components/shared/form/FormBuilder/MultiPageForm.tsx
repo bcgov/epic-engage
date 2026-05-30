@@ -19,6 +19,7 @@ interface FormioInstance {
     data: Record<string, unknown>;
     everyComponent: (callback: (component: FormioComponent) => void) => void;
     showErrors: (errors?: unknown, triggerEvent?: boolean) => void;
+    validateCurrentPage: () => boolean;
     nextPage: () => Promise<unknown>;
     submit: (...args: unknown[]) => Promise<unknown>;
 }
@@ -36,43 +37,31 @@ const MultiPageForm = ({
     const totalPages = savedForm?.components?.length || 0;
     const formioRef = useRef<FormioInstance | null>(null);
 
-    // Validate all components by calling their checkValidity methods
-    const validateAllComponents = (): boolean => {
-        if (!formioRef.current) return true;
-
-        const formio = formioRef.current;
-        let allComponentsValid = true;
-
-        formio.everyComponent((component: FormioComponent) => {
-            const componentValid = component.checkValidity(formio.data, true);
-            if (!componentValid) {
-                allComponentsValid = false;
-            }
-        });
-
-        if (!allComponentsValid) {
-            formio.showErrors();
-        }
-
-        return allComponentsValid;
-    };
-
     const handleFormReady = (formio: FormioInstance) => {
         formioRef.current = formio;
 
-        // Override the nextPage method to add validation
         const originalNextPage = formio.nextPage.bind(formio);
         formio.nextPage = function () {
-            if (!validateAllComponents()) {
+            if (!formio.validateCurrentPage()) {
+                formio.showErrors();
                 return Promise.resolve();
             }
             return originalNextPage();
         };
 
-        // Override the submit method to add validation
         const originalSubmit = formio.submit.bind(formio);
         formio.submit = function (...args: unknown[]) {
-            if (!validateAllComponents()) {
+            let allComponentsValid = true;
+
+            formio.everyComponent((component: FormioComponent) => {
+                const componentValid = component.checkValidity(formio.data, true);
+                if (!componentValid) {
+                    allComponentsValid = false;
+                }
+            });
+
+            if (!allComponentsValid) {
+                formio.showErrors();
                 return Promise.resolve();
             }
             return originalSubmit(...args);
