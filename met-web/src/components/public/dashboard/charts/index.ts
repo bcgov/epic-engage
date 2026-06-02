@@ -9,3 +9,6 @@ export type { LikertRow } from './LikertChart';
 
 export { RankOrderChart } from './RankOrderChart';
 export type { RankOrderItem } from './RankOrderChart';
+
+export { Comments } from './Comments';
+export type { CommentResponse } from './Comments';
