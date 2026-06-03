@@ -1,6 +1,7 @@
 @charset "UTF-8";
 
 @import 'bootstrap-icons/font/bootstrap-icons.css';
+@import 'font-awesome/css/font-awesome.css';
 
 @import './formio-bootstrap.scss';
 
@@ -515,6 +516,11 @@ div[disabled] {
 // Hide formio managed success messages so they can be handled in MET
 .alert-success {
     display: none;
+}
+
+// formio generates 'fa fa-move' for the builder drag handle but FA4 uses 'fa-arrows' (\f047)
+.fa-move:before {
+    content: '\f047';
 }
 
 .BC-Gov-SecondaryButton {
