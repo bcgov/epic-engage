@@ -11,15 +11,19 @@ interface PageData {
 
 interface FormioComponent {
     checkValidity: (data: unknown, dirty: boolean, rowData?: unknown) => boolean;
+    setCustomValidity: (message: string, dirty: boolean) => void;
+    dataValue: unknown;
+    component: { validate?: { required?: boolean } };
     type: string;
     key: string;
 }
 
 interface FormioInstance {
     data: Record<string, unknown>;
+    page: number;
+    pages: Array<{ everyComponent: (callback: (component: FormioComponent) => void) => void }>;
     everyComponent: (callback: (component: FormioComponent) => void) => void;
     showErrors: (errors?: unknown, triggerEvent?: boolean) => void;
-    validateCurrentPage: () => boolean;
     nextPage: () => Promise<unknown>;
     submit: (...args: unknown[]) => Promise<unknown>;
 }
@@ -40,9 +44,50 @@ const MultiPageForm = ({
     const handleFormReady = (formio: FormioInstance) => {
         formioRef.current = formio;
 
+        // simplecheckboxes falls through so check it here explicitly.
+        const isSimpleCheckboxesRequiredEmpty = (component: FormioComponent): boolean => {
+            if (component.type !== 'simplecheckboxes' || !component.component.validate?.required) {
+                return false;
+            }
+            const value = component.dataValue as Record<string, boolean> | null | undefined;
+            return !value || !Object.values(value).some(Boolean);
+        };
+
+        // simplesurvey falls through to generic required which passes if any one question
+        // has a value. Check that every question is answered instead.
+        const isSimpleSurveyRequiredIncomplete = (component: FormioComponent): boolean => {
+            if (component.type !== 'simplesurvey' || !component.component.validate?.required) {
+                return false;
+            }
+            const value = component.dataValue as Record<string, string> | null | undefined;
+            const questions = (component.component as { questions?: Array<{ value: string }> }).questions ?? [];
+            return !value || !questions.every((q) => value[q.value]);
+        };
+
+        const validateComponentsValid = (component: FormioComponent): boolean => {
+            const valid = component.checkValidity(formio.data, true);
+            if (isSimpleCheckboxesRequiredEmpty(component)) {
+                component.setCustomValidity('This field is required.', true);
+                return false;
+            }
+            if (isSimpleSurveyRequiredIncomplete(component)) {
+                component.setCustomValidity('This field is required.', true);
+                return false;
+            }
+            return valid;
+        };
+
         const originalNextPage = formio.nextPage.bind(formio);
         formio.nextPage = function () {
-            if (!formio.validateCurrentPage()) {
+            let currentPageValid = true;
+
+            formio.pages[formio.page].everyComponent((component: FormioComponent) => {
+                if (!validateComponentsValid(component)) {
+                    currentPageValid = false;
+                }
+            });
+
+            if (!currentPageValid) {
                 formio.showErrors();
                 return Promise.resolve();
             }
@@ -54,8 +99,7 @@ const MultiPageForm = ({
             let allComponentsValid = true;
 
             formio.everyComponent((component: FormioComponent) => {
-                const componentValid = component.checkValidity(formio.data, true);
-                if (!componentValid) {
+                if (!validateComponentsValid(component)) {
                     allComponentsValid = false;
                 }
             });
