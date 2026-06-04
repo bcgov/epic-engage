@@ -1,5 +1,6 @@
 import { Box } from '@mui/material';
-import { MetPaper, MetHeader2, MetDescription, MetIconText } from 'components/shared/common';
+import { MetPaper, MetHeader4, MetDescription, MetIconText } from 'components/shared/common';
+import { QuestionTypeLabel } from './QuestionTypeLabel';
 
 const SCROLL_HEIGHT = 310;
 
@@ -7,6 +8,7 @@ interface CommentsProps {
     question: string;
     subText: string;
     responses: string[];
+    questionType?: string;
 }
 
 const renderResponses = (responses: string[]) =>
@@ -38,10 +40,11 @@ const renderResponses = (responses: string[]) =>
         </Box>
     ));
 
-export const Comments = ({ question, subText, responses }: CommentsProps) => {
+export const Comments = ({ question, subText, responses, questionType }: CommentsProps) => {
     return (
         <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
-            <MetHeader2 sx={{ lineHeight: 1.4 }}>{question}</MetHeader2>
+            {questionType && <QuestionTypeLabel label={questionType} />}
+            <MetHeader4 sx={{ lineHeight: 1.4 }}>{question}</MetHeader4>
             <MetDescription sx={{mb: "18px" }}>Open text • {responses.length} respondents provided comments</MetDescription>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
                 <Box sx={{ width: 10, height: 10, backgroundColor: '#11467a', borderRadius: '2px' }} />
