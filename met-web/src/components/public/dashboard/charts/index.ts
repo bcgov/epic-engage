@@ -11,4 +11,6 @@ export { RankOrderChart } from './RankOrderChart';
 export type { RankOrderItem } from './RankOrderChart';
 
 export { Comments } from './Comments';
-export type { CommentResponse } from './Comments';
+
+export { CheckboxChart } from './CheckboxChart';
+export type { CheckboxChartItem } from './CheckboxChart';

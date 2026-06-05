@@ -10,6 +10,7 @@ import {
     SecondaryButton,
 } from 'components/shared/common';
 import { ReportBanner } from './ReportBanner';
+import { ChartPreview } from './ChartPreview';
 import SurveysCompleted from 'components/shared/analytics//KPI/SurveysCompleted';
 import ProjectLocation from 'components/shared/analytics//KPI/ProjectLocation';
 import SurveyEmailsSent from 'components/shared/analytics//KPI/SurveyEmailsSent';
@@ -209,6 +210,13 @@ const Dashboard = () => {
                                         </Box>
                                         <SurveyBar
                                             readComments={handleReadComments}
+                                            engagement={engagement}
+                                            engagementIsLoading={isEngagementLoading}
+                                            dashboardType={dashboardType}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <ChartPreview
                                             engagement={engagement}
                                             engagementIsLoading={isEngagementLoading}
                                             dashboardType={dashboardType}
