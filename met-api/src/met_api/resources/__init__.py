@@ -42,6 +42,7 @@ from .settings import API as SETTINGS_API
 from .shape_file import API as SHAPEFILE_API
 from .staff_user import API as USER_API
 from .submission import API as SUBMISSION_API
+from .submission_version import API as SUBMISSION_VERSION_API
 from .subscription import API as SUBSCRIPTION_API
 from .survey import API as SURVEY_API
 from .tenant import API as TENANT_API
@@ -74,6 +75,7 @@ API.add_namespace(USER_API)
 API.add_namespace(DOCUMENT_API)
 API.add_namespace(SURVEY_API)
 API.add_namespace(SUBMISSION_API)
+API.add_namespace(SUBMISSION_VERSION_API)
 API.add_namespace(SUBSCRIPTION_API)
 API.add_namespace(COMMENT_API)
 API.add_namespace(EMAIL_VERIFICATION_API)

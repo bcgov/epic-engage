@@ -8,6 +8,7 @@ import SurveyListing from 'components/admin/survey/listing';
 import CreateSurvey from 'components/admin/survey/create';
 import SurveyFormBuilder from 'components/admin/survey/building';
 import SubmitSurvey from 'components/public/survey/submit';
+import EditSurvey from 'components/admin/survey/edit';
 import CommentReview from 'components/admin/comments/admin/CommentReview';
 import CommentReviewListing from 'components/admin/comments/admin/SubmissionListing';
 import CommentTextListing from 'components/admin/comments/admin/CommentTextListing';
@@ -55,6 +56,8 @@ const AuthenticatedRoutes = () => {
                     <Route path="/engagements/:engagementId/form" element={<EngagementForm />} />
                 </Route>
                 <Route path="/engagements/:engagementId/view" element={<EngagementView />} />
+                <Route path="/engagements/:engagementId/edit/:token" element={<EditSurvey />} />
+                <Route path="/:slug/edit/:token" element={<EditSurvey />} />
                 <Route path="/:slug" element={<EngagementView />} />
                 <Route path="/engagements/:engagementId/comments/:dashboardType" element={<EngagementComments />} />
                 <Route path="/:slug/dashboard/:dashboardType" element={<PublicDashboard />} />

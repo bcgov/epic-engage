@@ -182,6 +182,9 @@ class Comment(BaseModel):
         if status := advanced_search_filters.get('status'):
             query = query.filter(Submission.comment_status_id == status)
 
+        if advanced_search_filters.get('is_resubmission'):
+            query = query.filter(Submission.is_resubmission.is_(True))
+
         if comment_date_to := advanced_search_filters.get('comment_date_to'):
             query = query.filter(Submission.created_date <= comment_date_to)
 

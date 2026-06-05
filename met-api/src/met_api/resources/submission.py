@@ -142,6 +142,7 @@ class SurveySubmissions(Resource):
                 'reviewer': args.get('reviewer', None, str),
                 'reviewed_date_from': args.get('reviewed_date_from', None, str),
                 'reviewed_date_to': args.get('reviewed_date_to', None, str),
+                'is_resubmission': args.get('is_resubmission', None, str),
             }
             submission_page = SubmissionService()\
                 .get_paginated(

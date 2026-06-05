@@ -9,6 +9,7 @@ from met_api.constants.user import SYSTEM_USER
 from met_api.models.comment import Comment as MetCommentModel
 from met_api.models.engagement import Engagement as MetEngagementModel
 from met_api.models.submission import Submission as MetSubmissionModel
+from met_api.models.submission_version import SubmissionVersion as MetSubmissionVersionModel
 from met_cron.models.db import db, session_scope
 from sqlalchemy import and_
 
@@ -28,16 +29,17 @@ class CommentRedactService:  # pylint: disable=too-few-public-methods
         submissions = CommentRedactService._find_submissions_for_n_days_closed_engagements(days=current_app.config.get('N_DAYS', 14))
         if not submissions:
             current_app.logger.info(f'>>>>>No Submissions for Engagements closed for {current_app.config.get("N_DAYS", 14)} days found.')
-            return        
+            return
         current_app.logger.info('>>>>>Total Submissions to redact found: %s.', len(submissions))
         submissions_ids = [submission.id for submission in submissions]
         with session_scope() as session:
             CommentRedactService._redact_comments_by_submission_ids(submissions_ids, session)
             CommentRedactService._redact_submission_json_comments(submissions_ids, session)
+            CommentRedactService._redact_version_history_comments(submissions_ids, session)
 
 
     @staticmethod
-    def _find_submissions_for_n_days_closed_engagements(days) -> List[MetSubmissionModel]:        
+    def _find_submissions_for_n_days_closed_engagements(days) -> List[MetSubmissionModel]:
         current_app.logger.info(f'>>>>>Finding submissions for Engagements closed for {days} days.')
         n_days_ago = datetime.utcnow().date() - timedelta(days=days)
         return db.session.query(MetSubmissionModel)\
@@ -57,7 +59,7 @@ class CommentRedactService:  # pylint: disable=too-few-public-methods
         .filter(MetCommentModel.submission_id.in_(submission_ids))\
         .update(
             {
-                MetCommentModel.text: current_app.config.get('REDACTION_TEXT', '[Comment Redacted]'),                
+                MetCommentModel.text: current_app.config.get('REDACTION_TEXT', '[Comment Redacted]'),
                 MetCommentModel.updated_by: SYSTEM_USER,
                 MetCommentModel.updated_date: datetime.utcnow(),
             },
@@ -84,4 +86,22 @@ class CommentRedactService:  # pylint: disable=too-few-public-methods
             submission.submission_json = new_submission_json
             submission.updated_by = SYSTEM_USER
             submission.updated_date = datetime.utcnow()
+
+    @staticmethod
+    def _redact_version_history_comments(submission_ids: List[int], session):
+        """Redact comment text in version history snapshots for the given submissions."""
+        current_app.logger.info(f'>>>>>Redacting version history comments for submissions: {submission_ids}')
+        redaction_text = current_app.config.get('REDACTION_TEXT', '[Comment Redacted]')
+        versions = session.query(MetSubmissionVersionModel)\
+            .filter(MetSubmissionVersionModel.submission_id.in_(submission_ids))\
+            .all()
+        for version in versions:
+            if version.comment_json:
+                redacted_comments = []
+                for comment in version.comment_json:
+                    redacted_comment = {**comment, 'text': redaction_text}
+                    redacted_comments.append(redacted_comment)
+                version.comment_json = redacted_comments
+                version.updated_by = SYSTEM_USER
+                version.updated_date = datetime.utcnow()
 
