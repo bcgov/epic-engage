@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState } from 'react';
+import { createContext, useEffect, useState, ReactNode } from 'react';
 import { PageInfo, PaginationOptions } from 'components/shared/common/Table/types';
 import { CommentStatus } from 'constants/commentStatus';
 import { useAppDispatch } from 'hooks';
@@ -11,7 +11,7 @@ import { getSurvey } from 'services/surveyService';
 import { updateURLWithPagination } from 'components/shared/common/Table/utils';
 
 export interface AdvancedSearchFilters {
-    status: CommentStatus | null;
+    status: CommentStatus | 'resubmitted' | null;
     commentDateFrom: string;
     commentDateTo: string;
     reviewer: string;
@@ -88,7 +88,7 @@ export const CommentListingContext = createContext<CommentListingContextState>({
 });
 
 interface CommentListingContextProviderProps {
-    children: React.ReactNode;
+    children: ReactNode;
 }
 export const CommentListingContextProvider = ({ children }: CommentListingContextProviderProps) => {
     const [searchFilter, setSearchFilter] = useState({
@@ -136,13 +136,16 @@ export const CommentListingContextProvider = ({ children }: CommentListingContex
 
     const loadSubmissions = async () => {
         try {
+            const isResubmittedFilter = advancedSearchFilters.status === 'resubmitted';
+            const status = isResubmittedFilter ? undefined : advancedSearchFilters.status || undefined;
             const queryParams = {
                 page,
                 size,
                 sort_key: nested_sort_key || sort_key,
                 sort_order,
                 search_text: searchFilter.value,
-                status: advancedSearchFilters.status || undefined,
+                status: status as Exclude<typeof status, 'resubmitted'>,
+                is_resubmission: isResubmittedFilter ? 'true' : undefined,
                 comment_date_from: advancedSearchFilters.commentDateFrom,
                 comment_date_to: advancedSearchFilters.commentDateTo,
                 reviewer: advancedSearchFilters.reviewer,

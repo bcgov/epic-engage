@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useContext, useState } from 'react';
 import { Grid, MenuItem, Stack, TextField } from '@mui/material';
 import { MetLabel, PrimaryButton, SecondaryButton } from 'components/shared/common';
 import { COMMENTS_STATUS, CommentStatus } from 'constants/commentStatus';
 import { AdvancedSearchFilters, CommentListingContext, initialSearchFilters } from './CommentListingContext';
 
 export const AdvancedSearch = () => {
-    const { advancedSearchFilters, setAdvancedSearchFilters } = React.useContext(CommentListingContext);
+    const { advancedSearchFilters, setAdvancedSearchFilters } = useContext(CommentListingContext);
     const [searchFilters, setSearchFilters] = useState<AdvancedSearchFilters>(advancedSearchFilters);
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,6 +60,7 @@ export const AdvancedSearch = () => {
                         <MenuItem value={CommentStatus.NeedsFurtherReview}>
                             {COMMENTS_STATUS[CommentStatus.NeedsFurtherReview]}
                         </MenuItem>
+                        <MenuItem value={'resubmitted'}>Resubmitted</MenuItem>
                     </TextField>
                 </Grid>
                 <Grid item xs={12} sm={6} md={4} lg={4}>

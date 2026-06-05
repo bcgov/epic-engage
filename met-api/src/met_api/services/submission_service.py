@@ -124,9 +124,12 @@ class SubmissionService:
         if SubmissionService.is_unpublished(submission.engagement_id):
             return {}
 
-        submission.comment_status_id = Status.Pending
-
         with session_scope() as session:
+            # Snapshot the current state before overwriting (version history)
+            submission.comment_status_id = Status.Pending.value
+            submission.is_resubmission = True
+            session.add(submission)
+            session.flush()
             EmailVerificationService().verify(
                 token, submission.survey_id, submission.id, session)
             comments_result = [Comment.update(

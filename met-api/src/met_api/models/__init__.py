@@ -38,6 +38,7 @@ from .settings import Settings
 from .staff_note import StaffNote
 from .staff_user import StaffUser
 from .submission import Submission
+from .submission_version import SubmissionVersion
 from .subscribe_item import SubscribeItem
 from .subscription import Subscription
 from .survey import Survey

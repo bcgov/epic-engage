@@ -37,6 +37,7 @@ class SubmissionSchema(Schema):
     rejected_reason_other = fields.Str(data_key='rejected_reason_other')
     survey_name = fields.Pluck(SurveySchema, 'name')
     notify_email = fields.Bool(data_key='notify_email')
+    is_resubmission = fields.Bool(data_key='is_resubmission')
     comments = fields.List(fields.Nested(CommentSchema))
     staff_note = fields.List(fields.Nested(StaffNoteSchema))
 
