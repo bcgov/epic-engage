@@ -58,7 +58,7 @@ class RestService:
         if additional_headers:
             headers.update(additional_headers)
 
-        if content_type == ContentType.JSON:
+        if content_type == ContentType.JSON and data is not None:
             data = json.dumps(data)
 
         current_app.logger.debug(f'Endpoint: {endpoint}')
