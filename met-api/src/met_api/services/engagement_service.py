@@ -151,6 +151,7 @@ class EngagementService:
                 email_util.publish_to_email_queue(SourceType.ENGAGEMENT.value, engagement.id,
                                                   SourceAction.PUBLISHED.value, True)
                 print('Engagements published added to email queue: ', engagement.id)
+            ProjectService.update_project_info(engagement.id)
         return engagements
 
     @staticmethod
@@ -166,6 +167,7 @@ class EngagementService:
         email_util.publish_to_email_queue(SourceType.ENGAGEMENT.value, eng_model.id, SourceAction.CREATED.value, True)
         EngagementSlugService.create_engagement_slug(eng_model.id)
         EngagementSettingsService.create_default_settings(eng_model.id)
+        ProjectService.update_project_info(eng_model.id)
         return eng_model.find_by_id(eng_model.id)
 
     @staticmethod
@@ -253,9 +255,7 @@ class EngagementService:
             if not updated_engagement:
                 raise ValueError('Engagement to update was not found')
 
-            has_epic_fields_getting_updated = 'end_date' in data or 'start_date' in data
-            if has_epic_fields_getting_updated:
-                ProjectService.update_project_info(updated_engagement.id)
+            ProjectService.update_project_info(updated_engagement.id)
 
         if survey_block:
             EngagementService._save_or_update_eng_block(engagement_id, survey_block)
@@ -343,4 +343,5 @@ class EngagementService:
         if not engagement:
             raise ValueError('Engagement to delete was not found')
 
+        ProjectService.delete_from_epic(engagement_id)
         EngagementModel.delete_engagement(engagement_id)

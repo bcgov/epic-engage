@@ -112,6 +112,12 @@ class RestService:
         return RestService._invoke('put', **kwargs)
 
     @staticmethod
+    def delete(endpoint, **kwargs):
+        """DELETE service."""
+        kwargs['endpoint'] = endpoint
+        return RestService._invoke('delete', **kwargs)
+
+    @staticmethod
     def get_service_account_token(kc_service_id: str = None, kc_secret: str = None, issuer_url: str = None) -> str:
         """Generate a service account token."""
         kc_service_id = kc_service_id or current_app.config.get('KEYCLOAK_SERVICE_ACCOUNT_ID')
