@@ -19,6 +19,7 @@ from flask import request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
+from met_api.auth import jwt as _jwt
 from met_api.services.email_verification_service import EmailVerificationService
 from met_api.services.subscription_service import SubscriptionService
 from met_api.utils.util import allowedorigins, cors_preflight
@@ -37,6 +38,7 @@ class Subscription(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def get(participant_id):
         """Fetch a subscription matching the provided participant id."""
         try:
