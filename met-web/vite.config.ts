@@ -39,15 +39,9 @@ export default defineConfig(({ mode }) => {
                 // This will handle both 'met-formio' imports and 'met-formio/dist/...' paths
                 'met-formio': path.resolve(__dirname, 'node_modules/met-formio'),
             },
-            // Force all chunks to share a single React instance; prevents "undefined is not
-            // a non-null object" crashes when formio and met-formio land in separate chunks.
-            // dayjs must also be deduped — @mui/x-date-pickers validators blow up with the
-            // same error if dayjs lands in a different chunk than the adapter.
-            // redux must be deduped — if duplicated, useSelector/useDispatch hooks won't
-            // see the store that Provider wraps, causing silent stale/empty state.
-            // i18next must be deduped — hooks get an uninitialized instance if duplicated,
-            // causing all t() calls to return the raw key string.
-            dedupe: ['react', 'react-dom', 'dayjs', 'redux', 'i18next'],
+            // Force all chunks to share single instances of libraries that are singletons or
+            // have adapter/validator relationships that break when duplicated across chunks.
+            dedupe: ['react', 'react-dom', '@formio/js', '@formio/react', '@formio/core', 'dayjs', 'redux', 'i18next'],
         },
         optimizeDeps: {
                 include: [
@@ -80,26 +74,47 @@ export default defineConfig(({ mode }) => {
             },
             rollupOptions: {
                 output: {
-                    manualChunks: {
-                        // Single shared React chunk — all other chunks import from here,
-                        // preventing duplicate-React crashes across async/formio chunks
-                        react: ['react', 'react-dom'],
-                        // Keep maplibre and react-map-gl in the same chunk to avoid
-                        // initialization order issues with spatial indexing dependencies
-                        maplibre: ['maplibre-gl', 'react-map-gl'],
-                        // Keep Formio packages together to ensure validators initialize properly
-                        // Note: met-formio excluded due to invalid package.json "module" field causing alias issues
-                        formio: ['@formio/js', '@formio/react', '@formio/core'],
-                        // Keep dayjs and date pickers together — validateDay.js throws
-                        // "undefined is not a non-null object" if dayjs is in a separate chunk
-                        datepickers: ['dayjs', '@mui/x-date-pickers'],
-                        // Keep redux ecosystem in one chunk — store must be a single instance;
-                        // splitting react-redux from redux causes useSelector/useDispatch to
-                        // reference a different store than the one Provider wraps
-                        redux: ['redux', 'react-redux', '@reduxjs/toolkit'],
-                        // Keep i18next and react-i18next together — i18next is initialized once
-                        // via i18n.init(); duplicating it means hooks get an uninitialized copy
-                        i18n: ['i18next', 'react-i18next'],
+                    // Function form required so met-formio can be matched by resolved path.
+                    // The object form can't handle it because met-formio's package.json has
+                    // an invalid "module": "node" field — the alias resolves it to a directory,
+                    // so Rollup can't use it as a named entry point in the object form.
+                    manualChunks(id) {
+                        // React — must be a single shared instance across all chunks
+                        if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/')) {
+                            return 'react';
+                        }
+                        // Formio — met-formio imports Components/Formio from @formio/js and calls
+                        // Object.defineProperty on them at init time; splitting them causes
+                        // "undefined is not a non-null object" because the chunk with met-formio
+                        // runs before @formio/js has initialized its exports
+                        if (
+                            id.includes('/node_modules/@formio/') ||
+                            id.includes('/node_modules/met-formio/')
+                        ) {
+                            return 'formio';
+                        }
+                        // Map libraries — keep together to avoid spatial index init ordering issues
+                        if (id.includes('/node_modules/maplibre-gl/') || id.includes('/node_modules/react-map-gl/')) {
+                            return 'maplibre';
+                        }
+                        // Date pickers — validateDay.js throws if dayjs is in a separate chunk
+                        if (id.includes('/node_modules/dayjs/') || id.includes('/node_modules/@mui/x-date-pickers/')) {
+                            return 'datepickers';
+                        }
+                        // Redux — store must be a single instance; splitting react-redux from redux
+                        // causes useSelector/useDispatch to reference a different store than Provider
+                        if (
+                            id.includes('/node_modules/redux/') ||
+                            id.includes('/node_modules/react-redux/') ||
+                            id.includes('/node_modules/@reduxjs/')
+                        ) {
+                            return 'redux';
+                        }
+                        // i18next — initialized once via i18n.init(); duplicating it means hooks
+                        // get an uninitialized copy and t() returns raw keys
+                        if (id.includes('/node_modules/i18next/') || id.includes('/node_modules/react-i18next/')) {
+                            return 'i18n';
+                        }
                     },
                 },
             },
