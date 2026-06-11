@@ -64,6 +64,29 @@ def test_construct_epic_payload_is_published(app, status_id, expected_published)
         assert payload['isMet'] is True  # must be bool, not string
 
 
+def test_construct_epic_payload_fields(app):
+    """Payload includes informationLabel (name) and instructions (description)."""
+    with app.app_context():
+        with patch('met_api.services.project_service.notification') as mock_notif, \
+             patch('met_api.services.project_service.EmailVerificationService') as mock_evs, \
+             patch('met_api.services.project_service.convert_and_format_to_utc_str', return_value='2024-01-01'), \
+             patch('met_api.services.project_service.ObjectStorageService') as mock_oss:
+            mock_notif.get_tenant_site_url.return_value = 'https://engage.test/'
+            mock_evs.get_engagement_path.return_value = '/engagements/test'
+            mock_oss().get_url.return_value = 'https://image.test/banner.webp'
+
+            eng = _make_engagement()
+            eng.name = 'Test Engagement'
+            eng.description = 'Test Description'
+            eng.banner_filename = 'banner.webp'
+
+            payload = ProjectService._construct_epic_payload(eng, PROJECT_ID)
+
+        assert payload['informationLabel'] == 'Test Engagement'
+        assert payload['instructions'] == 'Test Description'
+        assert payload['metBannerImageUrl'] == 'https://image.test/banner.webp'
+
+
 def test_update_project_info_stores_underscore_id(app, session):
     """Tracking ID stored from _id (not id) in eagle-api POST response."""
     with app.app_context():
