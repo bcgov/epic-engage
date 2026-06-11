@@ -8,6 +8,7 @@ from met_api.constants.engagement_status import Status
 from met_api.models.engagement import Engagement as EngagementModel
 from met_api.models.engagement_metadata import EngagementMetadataModel
 from met_api.services.email_verification_service import EmailVerificationService
+from met_api.services.object_storage_service import ObjectStorageService
 from met_api.services.rest_service import RestService
 from met_api.utils import notification
 from met_api.utils.datetime import convert_and_format_to_utc_str
@@ -96,10 +97,13 @@ class ProjectService:
         # Only mark the CP as published when the engagement itself is publicly visible.
         is_published = engagement.status_id not in _NON_PUBLIC_STATUSES
 
+        banner_image_url = ObjectStorageService().get_url(engagement.banner_filename)
+
         return {
             'isMet': True,
             'metURL': f'{site_url}{EmailVerificationService.get_engagement_path(engagement, is_public_url=True)}',
             'metURLAdmin': f'{site_url}{EmailVerificationService.get_engagement_path(engagement, is_public_url=False)}',
+            'metBannerImageUrl': banner_image_url,
             'dateCompleted': end_date_utc,
             'dateStarted': start_date_utc,
             'instructions': '',
