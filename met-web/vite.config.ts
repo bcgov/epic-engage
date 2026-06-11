@@ -83,15 +83,22 @@ export default defineConfig(({ mode }) => {
                         if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/')) {
                             return 'react';
                         }
-                        // Formio — met-formio imports Components/Formio from @formio/js and calls
-                        // Object.defineProperty on them at init time; splitting them causes
-                        // "undefined is not a non-null object" because the chunk with met-formio
-                        // runs before @formio/js has initialized its exports
-                        if (
-                            id.includes('/node_modules/@formio/') ||
-                            id.includes('/node_modules/met-formio/')
-                        ) {
+                        // Formio core packages — kept together so @formio/core initializes
+                        // before @formio/js, and @formio/js registers its built-in components
+                        // before anything tries to extend them
+                        if (id.includes('/node_modules/@formio/')) {
                             return 'formio';
+                        }
+                        // met-formio is intentionally in a SEPARATE chunk from @formio/js.
+                        // Its component modules access Components.components.textfield at
+                        // evaluation time (not lazily). If met-formio is co-bundled with
+                        // @formio/js, the whole chunk evaluates together and there is no way
+                        // to guarantee @formio/js has registered its components first.
+                        // Keeping it separate means the dynamic import in index.tsx can load
+                        // the formio chunk first (fully initializing the registry), then load
+                        // this chunk — at which point Components.components.textfield exists.
+                        if (id.includes('/node_modules/met-formio/')) {
+                            return 'met-formio';
                         }
                         // Map libraries — keep together to avoid spatial index init ordering issues
                         if (id.includes('/node_modules/maplibre-gl/') || id.includes('/node_modules/react-map-gl/')) {
