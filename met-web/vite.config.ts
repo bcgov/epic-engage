@@ -40,8 +40,14 @@ export default defineConfig(({ mode }) => {
                 'met-formio': path.resolve(__dirname, 'node_modules/met-formio'),
             },
             // Force all chunks to share a single React instance; prevents "undefined is not
-            // a non-null object" crashes when formio and met-formio land in separate chunks
-            dedupe: ['react', 'react-dom'],
+            // a non-null object" crashes when formio and met-formio land in separate chunks.
+            // dayjs must also be deduped — @mui/x-date-pickers validators blow up with the
+            // same error if dayjs lands in a different chunk than the adapter.
+            // redux must be deduped — if duplicated, useSelector/useDispatch hooks won't
+            // see the store that Provider wraps, causing silent stale/empty state.
+            // i18next must be deduped — hooks get an uninitialized instance if duplicated,
+            // causing all t() calls to return the raw key string.
+            dedupe: ['react', 'react-dom', 'dayjs', 'redux', 'i18next'],
         },
         optimizeDeps: {
                 include: [
@@ -84,6 +90,16 @@ export default defineConfig(({ mode }) => {
                         // Keep Formio packages together to ensure validators initialize properly
                         // Note: met-formio excluded due to invalid package.json "module" field causing alias issues
                         formio: ['@formio/js', '@formio/react', '@formio/core'],
+                        // Keep dayjs and date pickers together — validateDay.js throws
+                        // "undefined is not a non-null object" if dayjs is in a separate chunk
+                        datepickers: ['dayjs', '@mui/x-date-pickers'],
+                        // Keep redux ecosystem in one chunk — store must be a single instance;
+                        // splitting react-redux from redux causes useSelector/useDispatch to
+                        // reference a different store than the one Provider wraps
+                        redux: ['redux', 'react-redux', '@reduxjs/toolkit'],
+                        // Keep i18next and react-i18next together — i18next is initialized once
+                        // via i18n.init(); duplicating it means hooks get an uninitialized copy
+                        i18n: ['i18next', 'react-i18next'],
                     },
                 },
             },
