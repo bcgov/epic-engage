@@ -16,6 +16,8 @@
 
 Test-Suite to ensure that the Report setting endpoint is working as expected.
 """
+import json
+
 from met_api.utils.enums import ContentType
 from tests.utilities.factory_scenarios import TestJwtClaims, TestReportSettingInfo, TestSurveyInfo
 from tests.utilities.factory_utils import (
@@ -40,3 +42,45 @@ def test_get_report_setting(client, jwt, session):  # pylint:disable=unused-argu
     )
 
     assert rv.status_code == 200
+
+
+def test_patch_report_setting_authorized(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a user with edit_survey role can update report setting."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    survey, _ = factory_survey_and_eng_model(TestSurveyInfo.survey3)
+
+    report_setting_data = {
+        **TestReportSettingInfo.report_setting_1,
+        'survey_id': survey.id,
+    }
+    setting = factory_survey_report_setting_model(report_setting_data)
+
+    rv = client.patch(
+        f'/api/surveys/{survey.id}/reportsettings',
+        data=json.dumps([{'id': setting.id, 'display': False}]),
+        headers=headers,
+        content_type=ContentType.JSON.value
+    )
+
+    assert rv.status_code == 200
+
+
+def test_patch_report_setting_unauthorized(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a user without edit access cannot update another tenant's report setting."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.public_user_role)
+    survey, _ = factory_survey_and_eng_model(TestSurveyInfo.survey3)
+
+    report_setting_data = {
+        **TestReportSettingInfo.report_setting_1,
+        'survey_id': survey.id,
+    }
+    setting = factory_survey_report_setting_model(report_setting_data)
+
+    rv = client.patch(
+        f'/api/surveys/{survey.id}/reportsettings',
+        data=json.dumps([{'id': setting.id, 'display': False}]),
+        headers=headers,
+        content_type=ContentType.JSON.value
+    )
+
+    assert rv.status_code == 403
