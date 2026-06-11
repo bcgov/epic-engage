@@ -1,9 +1,12 @@
 """Service for report setting management."""
 
+from met_api.constants.membership_type import MembershipType
 from met_api.constants.report_setting_type import FormIoComponentType
 from met_api.models.report_setting import ReportSetting as ReportSettingModel
 from met_api.models.survey import Survey as SurveyModel
 from met_api.schemas.report_setting import ReportSettingSchema
+from met_api.services import authorization
+from met_api.utils.roles import Role
 
 
 class ReportSettingService:
@@ -162,6 +165,12 @@ class ReportSettingService:
         survey = SurveyModel.find_by_id(survey_id)
         if not survey:
             raise KeyError(f'No survey found for {survey_id}')
+
+        one_of_roles = (
+            MembershipType.TEAM_MEMBER.name,
+            Role.EDIT_SURVEY.value
+        )
+        authorization.check_auth(one_of_roles=one_of_roles, engagement_id=survey.engagement_id)
 
         report_settings_update_mapping = [{
             'id': setting.get('id', None),
