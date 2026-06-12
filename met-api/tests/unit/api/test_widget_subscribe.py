@@ -38,7 +38,7 @@ def test_create_subscribe(client, jwt, session):  # pylint:disable=unused-argume
 
     subscribe_info = TestSubscribeInfo.subscribe_info_1.value
 
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
 
     # Preparing data
     data = {
@@ -68,7 +68,7 @@ def test_get_subscribe(client, jwt, session):  # pylint:disable=unused-argument
 
     subscribe_info = TestSubscribeInfo.subscribe_info_1.value
 
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
 
     # Preparing data
     data = {
@@ -97,3 +97,27 @@ def test_get_subscribe(client, jwt, session):  # pylint:disable=unused-argument
     # Checking GET response
     assert rv.status_code == 200
     assert rv.json[0].get('type') == subscribe_info.get('type')
+
+
+def test_create_subscribe_unauthorized(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that an anonymous user cannot POST a widget subscribe."""
+    engagement = factory_engagement_model()
+
+    TestWidgetInfo.widget1['engagement_id'] = engagement.id
+    widget = factory_widget_model(TestWidgetInfo.widget1)
+
+    subscribe_info = TestSubscribeInfo.subscribe_info_1.value
+
+    data = {
+        **subscribe_info,
+        'widget_id': widget.id,
+    }
+
+    # Sending POST request without auth headers
+    rv = client.post(
+        f'/api/widgets/{widget.id}/subscribe',
+        data=json.dumps(data),
+        content_type=ContentType.JSON.value,
+    )
+
+    assert rv.status_code == 401
