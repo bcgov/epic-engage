@@ -41,7 +41,10 @@ export default defineConfig(({ mode }) => {
             },
             // Force all chunks to share single instances of libraries that are singletons or
             // have adapter/validator relationships that break when duplicated across chunks.
-            dedupe: ['react', 'react-dom', '@formio/js', '@formio/react', '@formio/core', 'dayjs', 'redux', 'i18next'],
+            // redux intentionally excluded — react-querybuilder has a nested @reduxjs/toolkit
+            // v2.x that requires redux v5 (isPlainObject, isAction); deduping would force it
+            // onto the top-level redux v4 and break the build.
+            dedupe: ['react', 'react-dom', '@formio/js', '@formio/react', '@formio/core', 'dayjs', 'i18next'],
         },
         optimizeDeps: {
                 include: [
@@ -83,22 +86,10 @@ export default defineConfig(({ mode }) => {
                         if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/')) {
                             return 'react';
                         }
-                        // Formio core packages — kept together so @formio/core initializes
-                        // before @formio/js, and @formio/js registers its built-in components
-                        // before anything tries to extend them
-                        if (id.includes('/node_modules/@formio/')) {
+                        // Formio — met-formio uses a lazy getter for component registry access
+                        // (fixed in met-formio), so it's safe to co-bundle with @formio/js
+                        if (id.includes('/node_modules/@formio/') || id.includes('/node_modules/met-formio/')) {
                             return 'formio';
-                        }
-                        // met-formio is intentionally in a SEPARATE chunk from @formio/js.
-                        // Its component modules access Components.components.textfield at
-                        // evaluation time (not lazily). If met-formio is co-bundled with
-                        // @formio/js, the whole chunk evaluates together and there is no way
-                        // to guarantee @formio/js has registered its components first.
-                        // Keeping it separate means the dynamic import in index.tsx can load
-                        // the formio chunk first (fully initializing the registry), then load
-                        // this chunk — at which point Components.components.textfield exists.
-                        if (id.includes('/node_modules/met-formio/')) {
-                            return 'met-formio';
                         }
                         // Map libraries — keep together to avoid spatial index init ordering issues
                         if (id.includes('/node_modules/maplibre-gl/') || id.includes('/node_modules/react-map-gl/')) {
@@ -109,11 +100,16 @@ export default defineConfig(({ mode }) => {
                             return 'datepickers';
                         }
                         // Redux — store must be a single instance; splitting react-redux from redux
-                        // causes useSelector/useDispatch to reference a different store than Provider
+                        // causes useSelector/useDispatch to reference a different store than Provider.
+                        // Exclude react-querybuilder's nested copies: it uses @reduxjs/toolkit v2 +
+                        // redux v5 internally, which is a different major from the app's redux v4.
                         if (
-                            id.includes('/node_modules/redux/') ||
-                            id.includes('/node_modules/react-redux/') ||
-                            id.includes('/node_modules/@reduxjs/')
+                            !id.includes('/node_modules/react-querybuilder/') &&
+                            (
+                                id.includes('/node_modules/redux/') ||
+                                id.includes('/node_modules/react-redux/') ||
+                                id.includes('/node_modules/@reduxjs/')
+                            )
                         ) {
                             return 'redux';
                         }
