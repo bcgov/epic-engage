@@ -69,7 +69,6 @@ class KeycloakService:  # pylint: disable=too-few-public-methods
             return {}
 
         user_ids_set = set(user_ids)
-        all_groups = list(KeycloakService._flatten_groups(groups_response.json()))
 
         def _fetch_members(group_id_name):
             gid, gname = group_id_name
@@ -83,7 +82,9 @@ class KeycloakService:  # pylint: disable=too-few-public-methods
 
         user_group_mapping = {}
         with ThreadPoolExecutor() as executor:
-            for group_name, members in executor.map(_fetch_members, all_groups):
+            for group_name, members in executor.map(
+                _fetch_members, KeycloakService._flatten_groups(groups_response.json())
+            ):
                 for member in members:
                     member_id = member.get('id')
                     if member_id in user_ids_set:
