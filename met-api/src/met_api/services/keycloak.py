@@ -14,11 +14,13 @@
 """Utils for keycloak administration."""
 
 import json
+from concurrent.futures import ThreadPoolExecutor
 from typing import List
 
 from flask import current_app
 import requests
 
+from met_api.utils.cache import cache
 from met_api.utils.enums import ContentType
 
 
@@ -45,10 +47,8 @@ class KeycloakService:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def get_users_groups(user_ids: List):
-        """Get user groups from Keycloak by user ids.For bulk purposes."""
-        # TODO if List is bigger than a number ; if so reject.
+        """Get user groups from Keycloak. Fetches per-group member lists (O(groups) vs O(users))."""
         base_url = current_app.config.get('KEYCLOAK_BASE_URL')
-        # TODO fix this during tests and remove below
         if not base_url:
             return {}
         realm = current_app.config.get('KEYCLOAK_REALMNAME')
@@ -58,19 +58,47 @@ class KeycloakService:  # pylint: disable=too-few-public-methods
             'Content-Type': ContentType.JSON.value,
             'Authorization': f'Bearer {admin_token}'
         }
-        user_group_mapping = {}
-        # Get the user and return
-        for user_id in user_ids:
-            query_user_url = f'{base_url}/auth/admin/realms/{realm}/users/{user_id}/groups'
-            response = requests.get(query_user_url, headers=headers, timeout=timeout)
 
-            if response.status_code == 200:
-                if (groups := response.json()) is not None:
-                    user_group_mapping[user_id] = [group.get('name') for group in groups]
-            else:
-                user_group_mapping[user_id] = []
+        groups_response = requests.get(
+            f'{base_url}/auth/admin/realms/{realm}/groups',
+            params={'max': 1000},
+            headers=headers,
+            timeout=timeout,
+        )
+        if groups_response.status_code != 200:
+            return {}
+
+        user_ids_set = set(user_ids)
+
+        def _fetch_members(group_id_name):
+            gid, gname = group_id_name
+            resp = requests.get(
+                f'{base_url}/auth/admin/realms/{realm}/groups/{gid}/members',
+                params={'max': 1000},
+                headers=headers,
+                timeout=timeout,
+            )
+            return gname, resp.json() if resp.status_code == 200 else []
+
+        user_group_mapping = {}
+        with ThreadPoolExecutor() as executor:
+            for group_name, members in executor.map(
+                _fetch_members, KeycloakService._flatten_groups(groups_response.json())
+            ):
+                for member in members:
+                    member_id = member.get('id')
+                    if member_id in user_ids_set:
+                        user_group_mapping.setdefault(member_id, []).append(group_name)
 
         return user_group_mapping
+
+    @staticmethod
+    def _flatten_groups(groups):
+        """Yield (id, name) for every group and subgroup in the Keycloak group hierarchy."""
+        for group in groups:
+            yield group['id'], group['name']
+            if group.get('subGroups'):
+                yield from KeycloakService._flatten_groups(group['subGroups'])
 
     @staticmethod
     def _get_group_id(admin_token: str, group_name: str):
@@ -99,12 +127,15 @@ class KeycloakService:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def _get_admin_token():
-        """Create an admin token."""
+        """Return a cached admin token, refreshing when it nears expiry."""
+        cached = cache.get('keycloak_admin_token')
+        if cached:
+            return cached
+
         config = current_app.config
         base_url = config.get('KEYCLOAK_BASE_URL')
         realm = config.get('KEYCLOAK_REALMNAME')
-        admin_client_id = config.get(
-            'KEYCLOAK_ADMIN_USERNAME')
+        admin_client_id = config.get('KEYCLOAK_ADMIN_USERNAME')
         admin_secret = config.get('KEYCLOAK_ADMIN_SECRET')
         timeout = config.get('CONNECT_TIMEOUT', 60)
         headers = {
@@ -116,7 +147,10 @@ class KeycloakService:  # pylint: disable=too-few-public-methods
                                  data=f'client_id={admin_client_id}&grant_type=client_credentials'
                                  f'&client_secret={admin_secret}', headers=headers,
                                  timeout=timeout)
-        return response.json().get('access_token')
+        token = response.json().get('access_token')
+        # Cache for 55 s — Keycloak client-credentials tokens typically live 60 s
+        cache.set('keycloak_admin_token', token, timeout=55)
+        return token
 
     @staticmethod
     def _remove_user_from_group(user_id: str, group_name: str):
