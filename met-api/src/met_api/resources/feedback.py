@@ -21,11 +21,12 @@ from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
 from met_api.auth import auth
-from met_api.auth import jwt as _jwt
 from met_api.constants.feedback import FeedbackStatusType
 from met_api.models.pagination_options import PaginationOptions
 from met_api.schemas import utils as schema_utils
 from met_api.services.feedback_service import FeedbackService
+from met_api.utils.roles import Role
+from met_api.utils.tenant_validator import require_role
 from met_api.utils.token_info import TokenInfo
 from met_api.utils.util import allowedorigins, cors_preflight
 
@@ -42,7 +43,7 @@ class FeedbackList(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @_jwt.requires_auth
+    @require_role([Role.VIEW_FEEDBACKS.value])
     def get():
         """Fetch feedbacks page."""
         try:
@@ -91,7 +92,7 @@ class FeedbackById(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @_jwt.requires_auth
+    @require_role([Role.VIEW_FEEDBACKS.value])
     def delete(feedback_id):
         """Remove Feedback for an engagement."""
         try:
@@ -106,7 +107,7 @@ class FeedbackById(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @_jwt.requires_auth
+    @require_role([Role.VIEW_FEEDBACKS.value])
     def patch(feedback_id):
         """Update feedback by ID."""
         feedback_data = request.get_json()
