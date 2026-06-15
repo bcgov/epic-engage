@@ -5,7 +5,6 @@ Manages the feedback
 from datetime import datetime
 
 from sqlalchemy import TEXT, asc, cast, desc
-from sqlalchemy.sql import text
 
 from met_api.constants.feedback import CommentType, FeedbackSourceType, FeedbackStatusType, RatingType
 from met_api.models.pagination_options import PaginationOptions
@@ -43,8 +42,16 @@ class Feedback(BaseModel):
             query = query.filter(
                 cast(Feedback.id, TEXT).like('%' + search_text + '%'))
 
-        sort = asc(text(pagination_options.sort_key)) if pagination_options.sort_order == 'asc'\
-            else desc(text(pagination_options.sort_key))
+        _sort_columns = {
+            'id': Feedback.id,
+            'status': Feedback.status,
+            'rating': Feedback.rating,
+            'comment': Feedback.comment,
+            'comment_type': Feedback.comment_type,
+            'source': Feedback.source,
+        }
+        col = _sort_columns.get(pagination_options.sort_key, Feedback.id)
+        sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
 
         query = query.order_by(sort)
 
