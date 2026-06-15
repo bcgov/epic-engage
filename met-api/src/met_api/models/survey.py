@@ -10,7 +10,6 @@ from typing import Optional
 
 from sqlalchemy import ForeignKey, and_, asc, desc, func, or_
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.sql import text
 
 from met_api.constants.engagement_status import Status
 from met_api.models.engagement import Engagement
@@ -76,8 +75,17 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
 
         query = cls.filter_by_search_options(survey_search_options, query)
 
-        sort = asc(text(pagination_options.sort_key)) if pagination_options.sort_order == 'asc'\
-            else desc(text(pagination_options.sort_key))
+        _sort_columns = {
+            'name': Survey.name,
+            'survey.name': Survey.name,
+            'created_date': Survey.created_date,
+            'survey.created_date': Survey.created_date,
+            'engagement.published_date': Engagement.published_date,
+            'engagement.status_id': Engagement.status_id,
+            'engagement.name': Engagement.name,
+        }
+        col = _sort_columns.get(pagination_options.sort_key, Survey.name)
+        sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
 
         query = query.order_by(sort)
 

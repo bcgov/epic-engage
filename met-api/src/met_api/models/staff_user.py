@@ -8,7 +8,6 @@ from typing import Optional
 
 from sqlalchemy import Column, ForeignKey, String, asc, desc, func
 from sqlalchemy.orm import column_property
-from sqlalchemy.sql import text
 from sqlalchemy.sql.operators import ilike_op
 
 from met_api.utils.enums import UserStatus
@@ -40,11 +39,15 @@ class StaffUser(BaseModel):
         """Fetch list of users by access type."""
         query = cls.query
         query = cls._add_tenant_filter(query)
-        if pagination_options.sort_key:
-            sort = asc(text(pagination_options.sort_key)) if pagination_options.sort_order == 'asc' \
-                else desc(text(pagination_options.sort_key))
-
-            query = query.order_by(sort)
+        _sort_columns = {
+            'first_name': StaffUser.first_name,
+            'last_name': StaffUser.last_name,
+            'email_address': StaffUser.email_address,
+            'username': StaffUser.username,
+        }
+        col = _sort_columns.get(pagination_options.sort_key, StaffUser.first_name)
+        sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
+        query = query.order_by(sort)
 
         if search_text:
             query = query.filter(ilike_op(StaffUser.full_name, '%' + search_text + '%'))
