@@ -413,7 +413,8 @@ class TestJwtClaims(dict, Enum):
                 'export_all_to_csv',
                 'update_user_group',
                 'export_proponent_comment_sheet',
-                'export_internal_comment_sheet'
+                'export_internal_comment_sheet',
+                'view_feedbacks'
             ]
         }
     }
