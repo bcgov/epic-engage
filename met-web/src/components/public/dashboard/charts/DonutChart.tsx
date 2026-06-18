@@ -167,7 +167,7 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
                     }}
                 >
                     <span>{categoryLabel}</span>
-                    <Box sx={{ textAlign: 'right' }}>%</Box>
+                    <Box sx={{ textAlign: 'right' }}>% of Respondents</Box>
                     <Box sx={{ textAlign: 'right' }}>Count</Box>
                 </Box>
                 {sorted.map((item, i) => {

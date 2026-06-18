@@ -91,7 +91,7 @@ const QuestionChart = ({ question }: QuestionChartProps) => {
                 <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
                     <QuestionTypeLabel label={TYPE_LABELS[type]} />
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
-                    <LikertChart data={rows} axisLabels={['Negative', 'Positive']} />
+                    <LikertChart data={rows} axisLabels={['Not Effective', 'Effective']} />
                 </MetPaper>
             );
         }
