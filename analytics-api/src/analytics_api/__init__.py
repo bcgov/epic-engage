@@ -12,6 +12,7 @@ from flask_cors import CORS
 from analytics_api.auth import jwt
 from analytics_api.config import get_named_config
 from analytics_api.models import db, ma, migrate
+from analytics_api.utils.util import allowedorigins
 
 
 hsts = secure.StrictTransportSecurity().include_subdomains().preload().max_age(31536000)
@@ -37,7 +38,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'development')):
     # All configuration are in config file
     app.config.from_object(get_named_config(run_mode))
 
-    CORS(app, supports_credentials=True)
+    CORS(app, origins=allowedorigins(), supports_credentials=True)
 
     # Register blueprints
     app.register_blueprint(API_BLUEPRINT)
