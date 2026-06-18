@@ -24,18 +24,25 @@ import urllib
 
 from enum import Enum
 
+from flask import request
+
 
 def cors_preflight(methods):
     """Render an option method on the class."""
 
     def wrapper(f):
         def options(self, *args, **kwargs):  # pylint: disable=unused-argument
-            return {'Allow': 'GET, DELETE, PUT, POST'}, 200, \
-                   {
-                       'Access-Control-Allow-Origin': '*',
-                       'Access-Control-Allow-Methods': methods,
-                       'Access-Control-Allow-Headers': 'Authorization, Content-Type, registries-trace-id, '
-                                                       'invitation_token'}
+            origin = request.headers.get('Origin', '')
+            allowed = allowedorigins()
+            headers = {
+                'Access-Control-Allow-Methods': methods,
+                'Access-Control-Allow-Headers': 'Authorization, Content-Type, registries-trace-id, '
+                                                'invitation_token',
+            }
+            if origin and origin in allowed:
+                headers['Access-Control-Allow-Origin'] = origin
+                headers['Access-Control-Allow-Credentials'] = 'true'
+            return {'Allow': 'GET, DELETE, PUT, POST'}, 200, headers
 
         setattr(f, 'options', options)
         return f
