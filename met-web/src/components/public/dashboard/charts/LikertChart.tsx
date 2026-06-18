@@ -17,7 +17,7 @@ const PAD_L = 12;
 const PAD_R = 12;
 const CORNER_R = 3;
 
-const DEFAULT_SCALE_LABELS = ['Negative', 'Neutral', 'Somewhat positive', 'Positive', 'Strongly positive'];
+const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
 
 export interface LikertRow {
     label: string;
@@ -128,13 +128,13 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
 
                         {/* Column headers */}
                         <text x={PAD_L} y={18} fontSize={10} fontWeight={600} fill="#474543" letterSpacing={0.5}>
-                            RESPONSE OPTION
+                            RESPONSE
                         </text>
                         <text x={cx} y={18} fontSize={10} fontWeight={600} fill="#474543" letterSpacing={0.5} textAnchor="middle">
                             {`← ${axisLabels[0].toUpperCase()}  |  ${axisLabels[1].toUpperCase()} →`}
                         </text>
                         <text x={barRight + BAR_GAP} y={18} fontSize={10} fontWeight={600} fill="#474543" letterSpacing={0.5}>
-                            N
+                            COUNT
                         </text>
                         <line x1={PAD_L} y1={PAD_TOP - 4} x2={totalW - PAD_R} y2={PAD_TOP - 4} stroke="#D8D8D8" strokeWidth={1} />
 
