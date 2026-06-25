@@ -24,6 +24,7 @@ from met_api.models.pagination_options import PaginationOptions
 from met_api.models.participant import Participant as ParticipantModel
 from met_api.models.staff_note import StaffNote
 from met_api.models.submission import Submission as SubmissionModel
+from met_api.models.submission_version import SubmissionVersion
 from met_api.schemas.submission import PublicSubmissionSchema, SubmissionSchema
 from met_api.services import authorization
 from met_api.services.comment_service import CommentService
@@ -126,6 +127,11 @@ class SubmissionService:
 
         with session_scope() as session:
             # Snapshot the current state before overwriting (version history)
+            comments = Comment.get_by_submission(submission.id)
+            staff_notes = StaffNote.get_staff_note_by_submission(submission.id)
+            SubmissionVersion.create_version_snapshot(
+                submission, comments, staff_notes, session)
+
             submission.comment_status_id = Status.Pending.value
             submission.is_resubmission = True
             session.add(submission)
