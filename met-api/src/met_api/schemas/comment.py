@@ -6,6 +6,32 @@ Manages the comment
 from marshmallow import EXCLUDE, Schema, fields
 
 
+def _find_component_label(components, component_id):
+    """Recursively search a form.io component tree for a component's label.
+
+    Handles wizard pages and nested containers (panels, columns, well, etc.)
+    where the components/columns are nested arbitrarily deep.
+    """
+    for component in components or []:
+        if component.get('key', None) == component_id:
+            return component.get('label', None)
+
+        # Recurse into nested components (panels, wells, wizard pages, ...)
+        nested = component.get('components', None)
+        if nested:
+            label = _find_component_label(nested, component_id)
+            if label is not None:
+                return label
+
+        # Recurse into column layouts which hold their own components list
+        for column in component.get('columns', []) or []:
+            label = _find_component_label(column.get('components', []), component_id)
+            if label is not None:
+                return label
+
+    return None
+
+
 class CommentSchema(Schema):
     """Schema for comment."""
 
@@ -36,43 +62,13 @@ class CommentSchema(Schema):
         return obj.submission.reviewed_by
 
     def get_comment_label(self, obj):
-        """Check the value for display type to categorize the form as a single/multi page."""
-        """Forms' are stored with a display type as 'form' for single page and 'wizard' for multi page"""
-        form_type = obj.survey.form_json.get('display')
-        is_single_page_survey = form_type == 'form'
-        is_multi_page_survey = form_type == 'wizard'
+        """Get the associated label of the comment.
 
-        """Get the associated label of the comment for a single page survey."""
-        form_type = obj.survey.form_json.get('display')
-        if is_single_page_survey:
-            components = list(obj.survey.form_json.get('components', []))
-            if len(components) == 0:
-                return None
-            component_label = CommentSchema.loop_through_comment_label(self, obj, components)
-            if len(component_label) == 0:
-                return None
-            return component_label[0]
-
-        """Get the associated label of the comment for a multi page survey."""
-        if is_multi_page_survey:
-            pages = list(obj.survey.form_json.get('components', []))
-            for page in pages:
-                components = list(page['components'])
-                if len(components) == 0:
-                    return None
-                component_label = CommentSchema.loop_through_comment_label(self, obj, components)
-                if len(component_label) != 0:
-                    return component_label[0]
-
-    def loop_through_comment_label(self, obj, components):
-        """Loop through the component list to extract the label."""
-        component_label = [
-            component.get(
-                'label',
-                None) for component in components if component.get(
-                'key',
-                None) == obj.component_id]
-        return component_label
+        Recursively walks the form_json so it works for both single page ('form')
+        and multi page ('wizard') surveys, as well as nested components.
+        """
+        components = obj.survey.form_json.get('components', [])
+        return _find_component_label(components, obj.component_id)
 
 
 class PublicCommentSchema(Schema):
@@ -88,16 +84,10 @@ class PublicCommentSchema(Schema):
     label = fields.Method('get_comment_label')
 
     def get_comment_label(self, obj):
-        """Get the associated label of the comment."""
-        components = list(obj.survey.form_json.get('components', []))
-        if len(components) == 0:
-            return None
-        component_label = [
-            component.get(
-                'label',
-                None) for component in components if component.get(
-                'key',
-                None) == obj.component_id]
-        if len(component_label) == 0:
-            return None
-        return component_label[0]
+        """Get the associated label of the comment.
+
+        Recursively walks the form_json so it works for both single page ('form')
+        and multi page ('wizard') surveys, as well as nested components.
+        """
+        components = obj.survey.form_json.get('components', [])
+        return _find_component_label(components, obj.component_id)
