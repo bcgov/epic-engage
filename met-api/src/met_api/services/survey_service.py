@@ -80,6 +80,41 @@ class SurveyService:
         return survey
 
     @staticmethod
+    def _collect_question_keys(component: dict, keys: list):
+        """Recursively collect input component keys nested under a formio component."""
+        if isinstance(component, dict):
+            key = component.get('key')
+            if key and component.get('input') and key not in keys:
+                keys.append(key)
+            for child in component.get('components', []) or []:
+                SurveyService._collect_question_keys(child, keys)
+            for column in component.get('columns', []) or []:
+                SurveyService._collect_question_keys(column, keys)
+
+    @classmethod
+    def get_for_dashboard(cls, survey_id):
+        """Get a reduced survey form for the public results dashboard.
+
+        Only the page structure is exposed (page title + the question keys on each page),
+        not the question text, options or any other survey content. Question keys are
+        already surfaced through the analytics survey result, so no extra data is leaked.
+        """
+        survey_model = SurveyModel.get_for_dashboard(survey_id)
+        if not survey_model:
+            raise KeyError(f'Survey with id {survey_id} not found')
+
+        form_json = survey_model.form_json or {}
+        display = form_json.get('display')
+        pages = []
+        if display == 'wizard':
+            for page in form_json.get('components', []) or []:
+                keys = []
+                cls._collect_question_keys(page, keys)
+                pages.append({'title': page.get('title', ''), 'questions': keys})
+
+        return {'id': survey_model.id, 'display': display, 'pages': pages}
+
+    @staticmethod
     def get_surveys_paginated(
         user_id,
         pagination_options: PaginationOptions,

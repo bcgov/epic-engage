@@ -32,7 +32,7 @@ from met_api.utils.enums import ContentType, MembershipStatus
 from tests.utilities.factory_scenarios import TestJwtClaims, TestSurveyInfo, TestTenantInfo, TestUserInfo
 from tests.utilities.factory_utils import (
     factory_auth_header, factory_engagement_model, factory_membership_model, factory_staff_user_model,
-    factory_survey_model, factory_tenant_model, set_global_tenant)
+    factory_survey_and_eng_model, factory_survey_model, factory_tenant_model, set_global_tenant)
 
 
 surveys_url = '/api/surveys/'
@@ -339,3 +339,58 @@ def test_surveys_clone_team_member(mocker, client, jwt, session, survey_info):
     # Assert the response status code and data
     assert response.status_code == HTTPStatus.OK
     assert response.get_json().get('form_json') == survey.form_json
+
+
+wizard_survey_info = {
+    **TestSurveyInfo.survey1.value,
+    'form_json': {
+        'display': 'wizard',
+        'components': [
+            {
+                'type': 'panel', 'title': 'Page 1', 'key': 'page1', 'input': False,
+                'components': [{'key': 'question1', 'input': True, 'type': 'simpletextfield'}],
+            },
+            {
+                'type': 'panel', 'title': 'Page 2', 'key': 'page2', 'input': False,
+                'components': [{'key': 'question2', 'input': True, 'type': 'simplecheckboxes'}],
+            },
+        ],
+    },
+}
+
+
+def test_get_survey_dashboard(client, session):  # pylint:disable=unused-argument
+    """Assert that the dashboard endpoint returns the wizard page structure without auth."""
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('display') == 'wizard'
+    pages = rv.json.get('pages')
+    assert pages == [
+        {'title': 'Page 1', 'questions': ['question1']},
+        {'title': 'Page 2', 'questions': ['question2']},
+    ]
+
+
+def test_get_survey_dashboard_non_wizard(client, session):  # pylint:disable=unused-argument
+    """Assert that a single page survey returns no pages for the dashboard."""
+    survey, _ = factory_survey_and_eng_model()
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('pages') == []
+
+
+def test_get_survey_dashboard_draft_engagement(client, session):  # pylint:disable=unused-argument
+    """Assert that the dashboard endpoint hides surveys of unpublished engagements."""
+    eng = factory_engagement_model(status=Status.Draft.value)
+    survey = factory_survey_model()
+    survey.engagement_id = eng.id
+    survey.save()
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
