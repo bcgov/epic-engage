@@ -198,7 +198,7 @@ const SubmissionTrend = ({ engagement, engagementIsLoading }: SubmissionTrendPro
                                 <Stack flexDirection={'column'} alignItems={'flex-start'}>
                                     <MetLabel>To: </MetLabel>
                                     <DatePicker
-                                        value={fromDate}
+                                        value={toDate}
                                         onChange={(newDate: Dayjs | null) => setToDate(newDate)}
                                         label="mm/dd/yyyy"
                                         inputFormat="MM/DD/YYYY"
