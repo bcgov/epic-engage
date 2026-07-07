@@ -76,6 +76,25 @@ class Survey(Resource):
             return str(err), HTTPStatus.BAD_REQUEST
 
 
+@cors_preflight('GET,OPTIONS')
+@API.route('/<survey_id>/dashboard')
+class SurveyDashboard(Resource):
+    """Resource for fetching a survey form for the public results dashboard."""
+
+    @staticmethod
+    @cross_origin(origins=allowedorigins())
+    @auth.optional
+    def get(survey_id):
+        """Fetch a survey form for a published or closed engagement's dashboard."""
+        try:
+            survey_record = SurveyService().get_for_dashboard(survey_id)
+            return survey_record, HTTPStatus.OK
+        except KeyError:
+            return 'Survey was not found', HTTPStatus.NOT_FOUND
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @cors_preflight('GET, POST, PUT, OPTIONS')
 @API.route('/')
 class Surveys(Resource):

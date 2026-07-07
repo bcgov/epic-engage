@@ -4,10 +4,13 @@ import { MetPaper, MetHeader4, MetDescription } from 'components/shared/common';
 import { DonutChart, LikertChart, RankOrderChart, Comments, CheckboxChart } from './charts';
 import { QuestionTypeLabel } from './charts/QuestionTypeLabel';
 import { getSurveyResultData } from 'services/analytics/surveyResult';
+import { getSurveyForDashboard } from 'services/surveyService';
 import { TypedSurveyData, TypedSurveyResultData, FlatResultItem, MatrixResultRow } from 'models/analytics/surveyResult';
 import { Engagement } from 'models/engagement';
 import { ErrorBox } from 'components/shared/analytics/ErrorBox';
 import { NoData } from 'components/shared/analytics/NoData';
+import FormStepper from 'components/public/survey/submit/Stepper';
+import { buildResultPages, ResultPage, DashboardSurveyForm } from './surveyPages';
 import axios from 'axios';
 
 const COMPONENT_TYPE = {
@@ -134,6 +137,8 @@ interface ChartPreviewProps {
 
 export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }: ChartPreviewProps) => {
     const [data, setData] = useState<TypedSurveyResultData | null>(null);
+    const [form, setForm] = useState<DashboardSurveyForm | undefined>(undefined);
+    const [currentPage, setCurrentPage] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
 
@@ -141,8 +146,13 @@ export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }:
         setIsLoading(true);
         setIsError(false);
         try {
-            const response = await getSurveyResultData(Number(engagement.id), dashboardType);
+            const surveyId = engagement.surveys?.[0]?.id;
+            const [response, survey] = await Promise.all([
+                getSurveyResultData(Number(engagement.id), dashboardType),
+                surveyId ? getSurveyForDashboard(Number(surveyId)).catch(() => undefined) : Promise.resolve(undefined),
+            ]);
             setData(response as unknown as TypedSurveyResultData);
+            setForm(survey);
         } catch (error) {
             if (axios.isAxiosError(error) && error.response?.status === 404) {
                 setData(null);
@@ -176,15 +186,22 @@ export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }:
     if (!data?.data?.length) {
         return <NoData sx={{ mt: 4 }} />;
     }
-
+    const pages: ResultPage[] | null = buildResultPages(form, data.data);
+    const safePage = pages ? Math.min(currentPage, pages.length - 1) : 0;
+    const questionsToShow = pages ? pages[safePage].questions : data.data;
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 4 }}>
             <Divider sx={{ mb: 1 }}>
                 <MetDescription sx={{ color: '#9F9D9C', fontSize: 12 }}>Survey Results</MetDescription>
             </Divider>
-            {data.data.map((question) => (
-                <QuestionChart key={question.key} question={question} />
-            ))}
+            {pages && pages.length > 1 && (
+                <FormStepper currentPage={safePage} pages={pages} onStepClick={(index) => setCurrentPage(index)} />
+            )}
+            {questionsToShow.length ? (
+                questionsToShow.map((question) => <QuestionChart key={question.key} question={question} />)
+            ) : (
+                <NoData />
+            )}
         </Box>
     );
 };
