@@ -96,7 +96,8 @@ class BaseModel(db.Model):
     def _add_tenant_filter(cls, query):
         tenant_id = get_authorized_tenant_id()
         if hasattr(cls, TENANT_ID) and tenant_id:
-            return query.filter(getattr(cls, TENANT_ID) == tenant_id)
+            tenant_column = getattr(cls, TENANT_ID)
+            return query.filter((tenant_column == tenant_id) | (tenant_column.is_(None)))
         return query
 
     def delete(self):
