@@ -159,6 +159,9 @@ class Comment(BaseModel):
             'submission.id': Submission.id,
             'submission.comment_status_id': Submission.comment_status_id,
             'comment_status_id': Submission.comment_status_id,
+            'created_date': Submission.created_date,
+            'reviewed_by': Submission.reviewed_by,
+            'review_date': Submission.review_date,
         }
         col = _sort_columns.get(pagination_options.sort_key, Submission.id)
         sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
