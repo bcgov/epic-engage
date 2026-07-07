@@ -12,7 +12,6 @@ from met_api.models.engagement import Engagement as EngagementModel
 from met_api.models.membership import Membership as MembershipModel
 from met_api.models.staff_user import StaffUser as StaffUserModel
 from met_api.utils.enums import MembershipStatus
-from met_api.utils.tenant_validator import get_authorized_tenant_id
 from met_api.utils.user_context import UserContext, user_context
 
 
@@ -44,8 +43,6 @@ def check_auth(**kwargs):
 
 def _validate_tenant(eng_id, tenant_id):
     """Validate users tenant id with engagements tenant id."""
-    # Reject a tenant-id header that disagrees with the JWT claim
-    get_authorized_tenant_id()
     if not eng_id:
         return
     engagement_tenant_id = EngagementModel.find_tenant_id_by_id(eng_id)
