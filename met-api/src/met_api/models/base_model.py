@@ -14,10 +14,10 @@
 """Super class to handle all operations related to base model."""
 from datetime import datetime
 
-from flask import g
-from sqlalchemy import Column
+from sqlalchemy import Column, inspect
 from sqlalchemy.ext.declarative import declared_attr
 
+from ..utils.tenant_validator import get_authorized_tenant_id
 from ..utils.token_info import TokenInfo
 from .db import db
 
@@ -53,8 +53,14 @@ class BaseModel(db.Model):
 
     @classmethod
     def find_by_id(cls, identifier: int):
-        """Return model by id."""
-        return cls.query.get(identifier)
+        """Return model by id, scoped to the authorized tenant."""
+        primary_key = inspect(cls).primary_key[0]
+        query = cls.query.filter(primary_key == identifier)
+        tenant_id = get_authorized_tenant_id()
+        if hasattr(cls, TENANT_ID) and tenant_id:
+            tenant_column = getattr(cls, TENANT_ID)
+            query = query.filter((tenant_column == tenant_id) | (tenant_column.is_(None)))
+        return query.one_or_none()
 
     @staticmethod
     def commit():
@@ -81,17 +87,16 @@ class BaseModel(db.Model):
 
     def _set_tenant_id(self):
         # add tenant id to the model if the child model has tenant id column
-        has_tenant_id = hasattr(g, 'tenant_id') and g.tenant_id
-        if has_tenant_id and hasattr(self, TENANT_ID):
+        tenant_id = get_authorized_tenant_id()
+        if tenant_id and hasattr(self, TENANT_ID):
             if not getattr(self, TENANT_ID):
-                setattr(self, TENANT_ID, g.tenant_id)
+                setattr(self, TENANT_ID, tenant_id)
 
     @classmethod
     def _add_tenant_filter(cls, query):
-        has_tenant_id = hasattr(cls, TENANT_ID)
-        has_g_tenant_id = hasattr(g, 'tenant_id') and g.tenant_id
-        if has_tenant_id and has_g_tenant_id:
-            return query.filter(getattr(cls, TENANT_ID) == g.tenant_id)
+        tenant_id = get_authorized_tenant_id()
+        if hasattr(cls, TENANT_ID) and tenant_id:
+            return query.filter(getattr(cls, TENANT_ID) == tenant_id)
         return query
 
     def delete(self):
