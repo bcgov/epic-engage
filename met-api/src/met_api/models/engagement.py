@@ -202,9 +202,12 @@ class Engagement(BaseModel):
             return Engagement._get_custom_sort_order(pagination_options)
         _sort_columns = {
             'name': Engagement.name,
+            'id': Engagement.id,
+            'engagement.id': Engagement.id,
             'created_date': Engagement.created_date,
             'engagement.created_date': Engagement.created_date,
             'published_date': Engagement.published_date,
+            'engagement.published_date': Engagement.published_date,
             'status_id': Engagement.status_id,
             'start_date': Engagement.start_date,
             'end_date': Engagement.end_date,

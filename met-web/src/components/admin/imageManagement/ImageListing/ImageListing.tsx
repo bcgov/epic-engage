@@ -43,7 +43,7 @@ const ImageListing = () => {
             key: 'url',
             label: '',
             disablePadding: true,
-            allowSort: true,
+            allowSort: false,
             numeric: false,
             renderCell: (row: ImageInfo) => {
                 return (
@@ -85,7 +85,7 @@ const ImageListing = () => {
             key: 'url',
             label: 'Copy URL',
             disablePadding: true,
-            allowSort: true,
+            allowSort: false,
             numeric: false,
             renderCell: (row: ImageInfo) => (
                 <Grid container direction={'row'} gap={1} alignItems={'center'}>

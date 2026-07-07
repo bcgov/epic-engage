@@ -44,6 +44,8 @@ class StaffUser(BaseModel):
             'last_name': StaffUser.last_name,
             'email_address': StaffUser.email_address,
             'username': StaffUser.username,
+            'created_date': StaffUser.created_date,
+            'status_id': StaffUser.status_id,
         }
         col = _sort_columns.get(pagination_options.sort_key, StaffUser.first_name)
         sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)

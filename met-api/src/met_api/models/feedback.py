@@ -50,6 +50,7 @@ class Feedback(BaseModel):
             'comment': Feedback.comment,
             'comment_type': Feedback.comment_type,
             'source': Feedback.source,
+            'created_date': Feedback.created_date,
         }
         col = _sort_columns.get(pagination_options.sort_key, Feedback.id)
         sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
