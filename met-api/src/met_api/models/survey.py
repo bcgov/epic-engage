@@ -68,6 +68,26 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
         return survey
 
     @classmethod
+    def get_for_dashboard(cls, survey_id) -> Survey:
+        """Get a survey whose engagement has been opened to the public.
+
+        Used by the public results dashboard. The engagement must be published or
+        closed AND have already started (start_date passed), so the survey must have
+        been open at some point. Unlike get_open this does not enforce the submission
+        cut-off, so the form structure stays available after close for grouping
+        dashboard results into pages.
+        """
+        now = local_datetime().date()
+        return (
+            db.session.query(Survey).filter_by(id=survey_id)
+            .join(Engagement)
+            .filter(or_(Engagement.status_id == Status.Published.value,
+                        Engagement.status_id == Status.Closed.value))
+            .filter(func.date(Engagement.start_date) <= now)
+            .first()
+        )
+
+    @classmethod
     def get_surveys_paginated(cls, pagination_options: PaginationOptions,
                               survey_search_options: SurveySearchOptions):
         """Get surveys paginated."""

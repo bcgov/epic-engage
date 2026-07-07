@@ -43,6 +43,7 @@ const Endpoints = {
         LINK_TO_ENGAGEMENT: `${AppConfig.apiUrl}/surveys/survey_id/link/engagement/engagement_id`,
         UNLINK_FROM_ENGAGEMENT: `${AppConfig.apiUrl}/surveys/survey_id/unlink/engagement/engagement_id`,
         GET: `${AppConfig.apiUrl}/surveys/survey_id`,
+        GET_DASHBOARD: `${AppConfig.apiUrl}/surveys/survey_id/dashboard`,
         DELETE: `${AppConfig.apiUrl}/surveys/survey_id`,
     },
     SurveySubmission: {
