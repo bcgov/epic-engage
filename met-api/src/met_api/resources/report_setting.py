@@ -15,7 +15,7 @@
 
 from http import HTTPStatus
 
-from flask import current_app, jsonify, request
+from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 from marshmallow import ValidationError
@@ -44,9 +44,10 @@ class ReportSetting(Resource):
         try:
             report_setting = ReportSettingService.get_report_setting(survey_id)
             return jsonify(report_setting), HTTPStatus.OK
-        except (KeyError, ValueError) as err:
-            current_app.logger.error('Error fetching report setting: %s', err)
-            return 'Error fetching report setting', HTTPStatus.INTERNAL_SERVER_ERROR
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
@@ -58,9 +59,9 @@ class ReportSetting(Resource):
             report_setting = ReportSettingService().update_report_setting(survey_id, new_report_settings)
 
             return jsonify(report_setting), HTTPStatus.OK
-        except (KeyError, ValueError) as err:
-            current_app.logger.error('Error updating report setting: %s', err)
-            return 'Error updating report setting', HTTPStatus.INTERNAL_SERVER_ERROR
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
         except ValidationError as err:
-            current_app.logger.error('Validation error updating report setting: %s', err.messages)
-            return 'Invalid report setting data', HTTPStatus.INTERNAL_SERVER_ERROR
+            return str(err.messages), HTTPStatus.INTERNAL_SERVER_ERROR

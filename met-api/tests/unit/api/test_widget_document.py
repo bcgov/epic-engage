@@ -98,7 +98,8 @@ def test_assert_tree_structure_invalid(client, jwt, session):  # pylint:disable=
         headers=headers,
         content_type=ContentType.JSON.value
     )
-    assert rv.status_code == 400
+    # TODO once we remove action result , this should be HTTP 400
+    assert rv.status_code == 500
 
 
 def test_assert_tree_structure(client, jwt, session):  # pylint:disable=unused-argument

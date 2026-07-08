@@ -15,7 +15,7 @@
 
 from http import HTTPStatus
 
-from flask import current_app, request
+from flask import request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
@@ -50,8 +50,7 @@ class Subscription(Resource):
         except KeyError:
             return 'Subscription not found', HTTPStatus.INTERNAL_SERVER_ERROR
         except ValueError as err:
-            current_app.logger.error('Error fetching subscription: %s', err)
-            return 'Error fetching subscription', HTTPStatus.INTERNAL_SERVER_ERROR
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @cors_preflight('POST, PATCH, OPTIONS')
@@ -68,9 +67,10 @@ class Subscriptions(Resource):
             request_json = request.get_json()
             SubscriptionService().create_subscription(request_json)
             return {}, HTTPStatus.OK
-        except (KeyError, ValueError) as err:
-            current_app.logger.error('Error creating subscription: %s', err)
-            return 'Error creating subscription', HTTPStatus.INTERNAL_SERVER_ERROR
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
@@ -80,9 +80,10 @@ class Subscriptions(Resource):
             request_json = request.get_json()
             SubscriptionService().update_subscription_for_participant(request_json)
             return {}, HTTPStatus.OK
-        except (KeyError, ValueError) as err:
-            current_app.logger.error('Error updating subscription: %s', err)
-            return 'Error updating subscription', HTTPStatus.INTERNAL_SERVER_ERROR
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @cors_preflight('POST, OPTIONS')
@@ -99,9 +100,10 @@ class ManageSubscriptions(Resource):
             request_json = request.get_json()
             SubscriptionService().create_or_update_subscription(request_json)
             return {}, HTTPStatus.OK
-        except (KeyError, ValueError) as err:
-            current_app.logger.error('Error creating/updating subscription: %s', err)
-            return 'Error creating/updating subscription', HTTPStatus.INTERNAL_SERVER_ERROR
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
@@ -111,9 +113,10 @@ class ManageSubscriptions(Resource):
             request_json = request.get_json()
             SubscriptionService().update_subscription_for_participant_eng(request_json)
             return {}, HTTPStatus.OK
-        except (KeyError, ValueError) as err:
-            current_app.logger.error('Error updating subscription: %s', err)
-            return 'Error updating subscription', HTTPStatus.INTERNAL_SERVER_ERROR
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @cors_preflight('PATCH, OPTIONS')
