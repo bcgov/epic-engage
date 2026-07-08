@@ -15,7 +15,7 @@
 
 from http import HTTPStatus
 
-from flask import jsonify, request
+from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
@@ -44,7 +44,8 @@ class WidgetDocuments(Resource):
             documents = WidgetDocumentService().get_documents_by_widget_id(widget_id)
             return jsonify(documents), HTTPStatus.OK
         except (KeyError, ValueError) as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+            current_app.logger.error('Error fetching widget documents: %s', err)
+            return 'Error fetching widget documents', HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
@@ -56,7 +57,7 @@ class WidgetDocuments(Resource):
             document = WidgetDocumentService.create_document(widget_id, request_json)
             return WidgetDocumentsSchema().dump(document), HTTPStatus.OK
         except BusinessException as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+            return err.error, err.status_code
 
 
 @cors_preflight('GET, POST, OPTIONS')
@@ -74,7 +75,7 @@ class WidgetDocumentsOrder(Resource):
             WidgetDocumentService.sort_documents(widget_id, request_json.get('documents', []))
             return 'Documents successfully ordered', HTTPStatus.OK
         except BusinessException as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+            return err.error, err.status_code
 
 
 @cors_preflight('PATCH, DELETE')
@@ -92,7 +93,7 @@ class WidgetDocumentsChanges(Resource):
             document = WidgetDocumentService.edit_document(widget_id, document_id, request_json)
             return WidgetDocumentsSchema().dump(document), HTTPStatus.OK
         except BusinessException as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+            return err.error, err.status_code
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
