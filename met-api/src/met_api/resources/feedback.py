@@ -16,7 +16,7 @@
 
 from http import HTTPStatus
 
-from flask import current_app, request
+from flask import request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
@@ -63,8 +63,7 @@ class FeedbackList(Resource):
 
             return feedback_records, HTTPStatus.OK
         except ValueError as err:
-            current_app.logger.error('Error fetching feedbacks: %s', err)
-            return 'Error fetching feedbacks', HTTPStatus.INTERNAL_SERVER_ERROR
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
@@ -83,8 +82,7 @@ class FeedbackList(Resource):
         except KeyError:
             return 'feedback was not found', HTTPStatus.INTERNAL_SERVER_ERROR
         except ValueError as err:
-            current_app.logger.error('Error creating feedback: %s', err)
-            return 'Error creating feedback', HTTPStatus.INTERNAL_SERVER_ERROR
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @cors_preflight('DELETE, PATCH')
@@ -102,9 +100,10 @@ class FeedbackById(Resource):
             if result:
                 return 'Feedback successfully removed', HTTPStatus.OK
             return 'Feedback not found', HTTPStatus.NOT_FOUND
-        except (KeyError, ValueError) as err:
-            current_app.logger.error('Error removing feedback: %s', err)
-            return 'Error removing feedback', HTTPStatus.INTERNAL_SERVER_ERROR
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
     @cross_origin(origins=allowedorigins())

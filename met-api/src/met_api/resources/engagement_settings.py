@@ -15,7 +15,7 @@
 
 from http import HTTPStatus
 
-from flask import current_app, request
+from flask import request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 from marshmallow import ValidationError
@@ -49,8 +49,7 @@ class EngagementMetadata(Resource):
         except KeyError:
             return 'Engagement metadata was not found', HTTPStatus.INTERNAL_SERVER_ERROR
         except ValueError as err:
-            current_app.logger.error('Error fetching engagement settings: %s', err)
-            return 'Error fetching engagement settings', HTTPStatus.INTERNAL_SERVER_ERROR
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @cors_preflight('PATCH, OPTIONS')
@@ -72,9 +71,9 @@ class EngagementsMetadata(Resource):
             setting_schema.load(requestjson, partial=True)
             setting = EngagementSettingsService().update_settings(requestjson)
             return setting_schema.dump(setting), HTTPStatus.OK
-        except (KeyError, ValueError) as err:
-            current_app.logger.error('Error updating engagement settings: %s', err)
-            return 'Error updating engagement settings', HTTPStatus.INTERNAL_SERVER_ERROR
+        except KeyError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
         except ValidationError as err:
-            current_app.logger.error('Validation error updating engagement settings: %s', err.messages)
-            return 'Invalid engagement settings data', HTTPStatus.INTERNAL_SERVER_ERROR
+            return str(err.messages), HTTPStatus.INTERNAL_SERVER_ERROR
