@@ -114,14 +114,7 @@ const QuestionChart = ({ question }: QuestionChartProps) => {
         case COMPONENT_TYPE.TEXTAREA:
         case COMPONENT_TYPE.TEXTFIELD: {
             const responses = toFlatItems(result).map((r) => r.value);
-            return (
-                <Comments
-                    question={label}
-                    subText="Submitted responses"
-                    responses={responses}
-                    questionType={TYPE_LABELS[type]}
-                />
-            );
+            return <Comments question={label} responses={responses} questionType={TYPE_LABELS[type]} />;
         }
 
         default:
