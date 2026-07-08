@@ -1,4 +1,5 @@
 import { createTheme } from '@mui/material';
+import { CommentStatus } from 'constants/commentStatus';
 
 export const Palette = {
     primary: {
@@ -183,4 +184,27 @@ export const PublicTheme = createTheme(BaseTheme, {
 
 export const ZIndex = {
     footer: BaseTheme.zIndex.drawer + 1,
+};
+
+export const statusStyles: Record<number | string, { borderColor: string; background: string }> = {
+    [CommentStatus.Pending]: {
+        borderColor: '#F8BB47',
+        background: '#FEF1D8',
+    },
+    [CommentStatus.Approved]: {
+        borderColor: '#77eb52',
+        background: '#E8F5E9',
+    },
+    [CommentStatus.Rejected]: {
+        borderColor: '#CE3E39',
+        background: '#F4E1E2',
+    },
+    [CommentStatus.NeedsFurtherReview]: {
+        borderColor: '#FCB02F',
+        background: '#FCE0B9',
+    },
+    resubmitted: {
+        borderColor: '#9B6BDA',
+        background: '#F6E4FF',
+    },
 };

@@ -107,7 +107,7 @@ export const EngagementView = () => {
                                 container
                                 item
                                 xs={12}
-                                lg={8}
+                                md={8}
                                 direction="row"
                                 justifyContent={'flex-start'}
                                 alignItems="flex-start"
@@ -121,7 +121,7 @@ export const EngagementView = () => {
                                     <SurveyBlock startSurvey={handleStartSurvey} />
                                 </Grid>
                             </Grid>
-                            <Grid item data-testid={'widget-block'} xs={12} lg={4}>
+                            <Grid item data-testid={'widget-block'} xs={12} md={4}>
                                 <WidgetBlock />
                             </Grid>
                         </Then>

@@ -16,16 +16,17 @@
 
 from http import HTTPStatus
 
-from flask import request
+from flask import current_app, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
 from met_api.auth import auth
-from met_api.auth import jwt as _jwt
 from met_api.constants.feedback import FeedbackStatusType
 from met_api.models.pagination_options import PaginationOptions
 from met_api.schemas import utils as schema_utils
 from met_api.services.feedback_service import FeedbackService
+from met_api.utils.roles import Role
+from met_api.utils.tenant_validator import require_role
 from met_api.utils.token_info import TokenInfo
 from met_api.utils.util import allowedorigins, cors_preflight
 
@@ -42,7 +43,7 @@ class FeedbackList(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @_jwt.requires_auth
+    @require_role([Role.VIEW_FEEDBACKS.value])
     def get():
         """Fetch feedbacks page."""
         try:
@@ -51,7 +52,7 @@ class FeedbackList(Resource):
             pagination_options = PaginationOptions(
                 page=args.get('page', None, int),
                 size=args.get('size', None, int),
-                sort_key=args.get('sort_key', 'name', str),
+                sort_key=args.get('sort_key', 'id', str),
                 sort_order=args.get('sort_order', 'asc', str),
             )
             status_int = args.get(
@@ -62,7 +63,8 @@ class FeedbackList(Resource):
 
             return feedback_records, HTTPStatus.OK
         except ValueError as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+            current_app.logger.error('Error fetching feedbacks: %s', err)
+            return 'Error fetching feedbacks', HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
@@ -81,7 +83,8 @@ class FeedbackList(Resource):
         except KeyError:
             return 'feedback was not found', HTTPStatus.INTERNAL_SERVER_ERROR
         except ValueError as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+            current_app.logger.error('Error creating feedback: %s', err)
+            return 'Error creating feedback', HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @cors_preflight('DELETE, PATCH')
@@ -91,7 +94,7 @@ class FeedbackById(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @_jwt.requires_auth
+    @require_role([Role.VIEW_FEEDBACKS.value])
     def delete(feedback_id):
         """Remove Feedback for an engagement."""
         try:
@@ -99,14 +102,13 @@ class FeedbackById(Resource):
             if result:
                 return 'Feedback successfully removed', HTTPStatus.OK
             return 'Feedback not found', HTTPStatus.NOT_FOUND
-        except KeyError as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
-        except ValueError as err:
-            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+        except (KeyError, ValueError) as err:
+            current_app.logger.error('Error removing feedback: %s', err)
+            return 'Error removing feedback', HTTPStatus.INTERNAL_SERVER_ERROR
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @_jwt.requires_auth
+    @require_role([Role.VIEW_FEEDBACKS.value])
     def patch(feedback_id):
         """Update feedback by ID."""
         feedback_data = request.get_json()

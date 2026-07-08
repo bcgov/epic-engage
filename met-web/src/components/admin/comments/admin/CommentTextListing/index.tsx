@@ -200,7 +200,7 @@ const CommentTextListing = () => {
             numeric: true,
             disablePadding: false,
             label: 'Content',
-            allowSort: true,
+            allowSort: false,
             renderCell: (row: SurveySubmission) => (
                 <Grid container rowSpacing={2} sx={{ pt: 1.5 }}>
                     {row.comments?.map((comment, index) => {

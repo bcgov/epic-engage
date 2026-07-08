@@ -19,6 +19,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
+from met_api.auth import jwt as _jwt
 from met_api.exceptions.business_exception import BusinessException
 from met_api.schemas.subscribe_item import SubscribeItemSchema
 from met_api.schemas.widget_subscribe import WidgetSubscribeSchema
@@ -50,6 +51,7 @@ class WidgetSubscribe(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def post(widget_id):
         """Add new subscribe to the widgets."""
         request_json = request.get_json()
@@ -67,6 +69,7 @@ class WidgetSubscribeItems(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def post(widget_id, subscribe_id):
         """Add new subscribe to the widgets."""
         request_json = request.get_json()
@@ -85,6 +88,7 @@ class SubscribeItems(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def patch(widget_id, subscribe_id, item_id):
         """Update subscribe item."""
         request_json = request.get_json()
@@ -103,6 +107,7 @@ class WidgetSubscribeSort(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def patch(widget_id):
         """Sort subscribe for an subscribe widget."""
         try:
@@ -121,6 +126,7 @@ class WidgetEvent(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def delete(widget_id, subscribe_id):
         """Delete  an subscribe ."""
         try:

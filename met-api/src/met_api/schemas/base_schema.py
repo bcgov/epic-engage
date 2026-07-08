@@ -31,13 +31,13 @@ class BaseSchema(SQLAlchemyAutoSchema):  # pylint: disable=too-many-ancestors
         datetimeformat = '%Y-%m-%dT%H:%M:%S+00:00'  # Default output date format.
 
     created_by = fields.Function(
-        lambda obj: f'{obj.created_by.firstname} {obj.created_by.lastname}' if getattr(obj, 'created_by',
-                                                                                       None) else None
+        lambda obj: f'{obj.created_by.firstname} {obj.created_by.lastname}'
+        if getattr(obj, 'created_by', None) and hasattr(obj.created_by, 'firstname') else None
     )
 
     updated_by = fields.Function(
-        lambda obj: f'{obj.updated_by.firstname} {obj.updated_by.lastname}' if getattr(obj, 'updated_by',
-                                                                                       None) else None
+        lambda obj: f'{obj.updated_by.firstname} {obj.updated_by.lastname}'
+        if getattr(obj, 'updated_by', None) and hasattr(obj.updated_by, 'firstname') else None
     )
 
     @post_dump

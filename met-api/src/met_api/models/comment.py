@@ -9,7 +9,6 @@ from operator import or_
 
 from sqlalchemy import and_, asc, desc
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.sql import text
 from sqlalchemy.sql.expression import true
 from sqlalchemy.sql.schema import ForeignKey
 
@@ -75,8 +74,14 @@ class Comment(BaseModel):
         if search_text:
             query = query.filter(Comment.text.ilike('%' + search_text + '%'))
 
-        sort = asc(text(pagination_options.sort_key)) if pagination_options.sort_order == 'asc'\
-            else desc(text(pagination_options.sort_key))
+        _sort_columns = {
+            'id': Comment.id,
+            'text': Comment.text,
+            'submission_date': Comment.submission_date,
+            'submission.id': Comment.submission_id,
+        }
+        col = _sort_columns.get(pagination_options.sort_key, Comment.id)
+        sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
 
         query = query.order_by(sort)
 
@@ -149,8 +154,17 @@ class Comment(BaseModel):
         if advanced_search_filters:
             query = cls._filter_by_advanced_filters(query, advanced_search_filters)
 
-        sort = asc(text(pagination_options.sort_key)) if pagination_options.sort_order == 'asc'\
-            else desc(text(pagination_options.sort_key))
+        _sort_columns = {
+            'id': Submission.id,
+            'submission.id': Submission.id,
+            'submission.comment_status_id': Submission.comment_status_id,
+            'comment_status_id': Submission.comment_status_id,
+            'created_date': Submission.created_date,
+            'reviewed_by': Submission.reviewed_by,
+            'review_date': Submission.review_date,
+        }
+        col = _sort_columns.get(pagination_options.sort_key, Submission.id)
+        sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
 
         query = query.order_by(sort)
 
@@ -181,6 +195,9 @@ class Comment(BaseModel):
     def _filter_by_advanced_filters(query, advanced_search_filters: dict):
         if status := advanced_search_filters.get('status'):
             query = query.filter(Submission.comment_status_id == status)
+
+        if advanced_search_filters.get('is_resubmission'):
+            query = query.filter(Submission.is_resubmission.is_(True))
 
         if comment_date_to := advanced_search_filters.get('comment_date_to'):
             query = query.filter(Submission.created_date <= comment_date_to)

@@ -18,7 +18,10 @@ Test-Suite to ensure that the /Feedbacks endpoint is working as expected.
 """
 import json
 
+from flask import current_app
+
 from met_api.constants.feedback import FeedbackSourceType, FeedbackStatusType
+from met_api.utils.constants import TENANT_ID_HEADER
 from met_api.utils.enums import ContentType
 from tests.utilities.factory_scenarios import TestJwtClaims
 from tests.utilities.factory_utils import factory_auth_header, factory_feedback_model
@@ -76,26 +79,54 @@ def test_invalid_feedback(client, jwt, session):  # pylint:disable=unused-argume
     assert rating_error_msg in rv.json.get('message')
 
 
-def test_patch_feedback(client, jwt, session):  # pylint:disable=unused-argument
-    """Assert that feedback can be updated via PATCH."""
-    # Setup: Create a new feedback first
-    claims = TestJwtClaims.public_user_role
-    feedback = factory_feedback_model()
+def _create_feedback(client, jwt, feedback):
+    """Create a feedback scoped to the default tenant and return its id."""
     feedback_creation = {
         'status': feedback.status,
         'rating': feedback.rating,
         'comment_type': feedback.comment_type,
         'comment': feedback.comment
     }
-    headers = factory_auth_header(jwt=jwt, claims=claims)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.public_user_role)
+    headers[TENANT_ID_HEADER] = current_app.config.get('DEFAULT_TENANT_SHORT_NAME')
     rv = client.post('/api/feedbacks/', data=json.dumps(feedback_creation),
                      headers=headers, content_type=ContentType.JSON.value)
-    feedback_id = rv.json.get('id')
-
     assert rv.status_code == 200
+    return rv.json.get('id'), feedback_creation
+
+
+def test_get_feedback_requires_role(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that fetching feedbacks requires the view_feedbacks role."""
+    # A user without the view_feedbacks role is forbidden.
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.public_user_role)
+    headers[TENANT_ID_HEADER] = current_app.config.get('DEFAULT_TENANT_SHORT_NAME')
+    rv = client.get('/api/feedbacks/', headers=headers, content_type=ContentType.JSON.value)
+    assert rv.status_code == 401
+
+    # A staff user with the view_feedbacks role can fetch feedbacks.
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    headers[TENANT_ID_HEADER] = current_app.config.get('DEFAULT_TENANT_SHORT_NAME')
+    rv = client.get('/api/feedbacks/', headers=headers, content_type=ContentType.JSON.value)
+    assert rv.status_code == 200
+
+
+def test_patch_feedback(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that feedback can be updated via PATCH."""
+    # Setup: Create a new feedback first
+    feedback = factory_feedback_model()
+    feedback_id, feedback_creation = _create_feedback(client, jwt, feedback)
 
     feedback_creation['status'] = FeedbackStatusType.Archived.value
 
+    # A user without the view_feedbacks role cannot update feedback.
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.public_user_role)
+    headers[TENANT_ID_HEADER] = current_app.config.get('DEFAULT_TENANT_SHORT_NAME')
+    rv = client.patch(f'/api/feedbacks/{feedback_id}', data=json.dumps(feedback_creation),
+                      headers=headers, content_type=ContentType.JSON.value)
+    assert rv.status_code == 401
+
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    headers[TENANT_ID_HEADER] = current_app.config.get('DEFAULT_TENANT_SHORT_NAME')
     rv = client.patch(f'/api/feedbacks/{feedback_id}', data=json.dumps(feedback_creation),
                       headers=headers, content_type=ContentType.JSON.value)
     assert rv.status_code == 200
@@ -106,19 +137,17 @@ def test_patch_feedback(client, jwt, session):  # pylint:disable=unused-argument
 def test_delete_feedback(client, jwt, session):  # pylint:disable=unused-argument
     """Assert that feedback can be deleted."""
     # Setup: Create a new feedback first
-    claims = TestJwtClaims.public_user_role
     feedback = factory_feedback_model()
-    feedback_creation = {
-        'status': feedback.status,
-        'rating': feedback.rating,
-        'comment_type': feedback.comment_type,
-        'comment': feedback.comment
-    }
-    headers = factory_auth_header(jwt=jwt, claims=claims)
-    rv = client.post('/api/feedbacks/', data=json.dumps(feedback_creation),
-                     headers=headers, content_type=ContentType.JSON.value)
-    feedback_id = rv.json.get('id')
-    assert rv.status_code == 200
-    # Now, delete this feedback
+    feedback_id, _ = _create_feedback(client, jwt, feedback)
+
+    # A user without the view_feedbacks role cannot delete feedback.
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.public_user_role)
+    headers[TENANT_ID_HEADER] = current_app.config.get('DEFAULT_TENANT_SHORT_NAME')
+    rv = client.delete(f'/api/feedbacks/{feedback_id}', headers=headers)
+    assert rv.status_code == 401
+
+    # Now, delete this feedback as a staff user with the view_feedbacks role.
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    headers[TENANT_ID_HEADER] = current_app.config.get('DEFAULT_TENANT_SHORT_NAME')
     rv = client.delete(f'/api/feedbacks/{feedback_id}', headers=headers)
     assert rv.status_code == 200

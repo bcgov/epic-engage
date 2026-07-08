@@ -11,12 +11,17 @@ interface PageData {
 
 interface FormioComponent {
     checkValidity: (data: unknown, dirty: boolean, rowData?: unknown) => boolean;
+    setCustomValidity: (message: string, dirty: boolean) => void;
+    dataValue: unknown;
+    component: { validate?: { required?: boolean } };
     type: string;
     key: string;
 }
 
 interface FormioInstance {
     data: Record<string, unknown>;
+    page: number;
+    pages: Array<{ everyComponent: (callback: (component: FormioComponent) => void) => void }>;
     everyComponent: (callback: (component: FormioComponent) => void) => void;
     showErrors: (errors?: unknown, triggerEvent?: boolean) => void;
     nextPage: () => Promise<unknown>;
@@ -36,43 +41,71 @@ const MultiPageForm = ({
     const totalPages = savedForm?.components?.length || 0;
     const formioRef = useRef<FormioInstance | null>(null);
 
-    // Validate all components by calling their checkValidity methods
-    const validateAllComponents = (): boolean => {
-        if (!formioRef.current) return true;
-
-        const formio = formioRef.current;
-        let allComponentsValid = true;
-
-        formio.everyComponent((component: FormioComponent) => {
-            const componentValid = component.checkValidity(formio.data, true);
-            if (!componentValid) {
-                allComponentsValid = false;
-            }
-        });
-
-        if (!allComponentsValid) {
-            formio.showErrors();
-        }
-
-        return allComponentsValid;
-    };
-
     const handleFormReady = (formio: FormioInstance) => {
         formioRef.current = formio;
 
-        // Override the nextPage method to add validation
+        // simplecheckboxes falls through so check it here explicitly.
+        const isSimpleCheckboxesRequiredEmpty = (component: FormioComponent): boolean => {
+            if (component.type !== 'simplecheckboxes' || !component.component.validate?.required) {
+                return false;
+            }
+            const value = component.dataValue as Record<string, boolean> | null | undefined;
+            return !value || !Object.values(value).some(Boolean);
+        };
+
+        // simplesurvey falls through to generic required which passes if any one question
+        // has a value. Check that every question is answered instead.
+        const isSimpleSurveyRequiredIncomplete = (component: FormioComponent): boolean => {
+            if (component.type !== 'simplesurvey' || !component.component.validate?.required) {
+                return false;
+            }
+            const value = component.dataValue as Record<string, string> | null | undefined;
+            const questions = (component.component as { questions?: Array<{ value: string }> }).questions ?? [];
+            return !value || !questions.every((q) => value[q.value]);
+        };
+
+        const validateComponentsValid = (component: FormioComponent): boolean => {
+            const valid = component.checkValidity(formio.data, true);
+            if (isSimpleCheckboxesRequiredEmpty(component)) {
+                component.setCustomValidity('This field is required.', true);
+                return false;
+            }
+            if (isSimpleSurveyRequiredIncomplete(component)) {
+                component.setCustomValidity('This field is required.', true);
+                return false;
+            }
+            return valid;
+        };
+
         const originalNextPage = formio.nextPage.bind(formio);
         formio.nextPage = function () {
-            if (!validateAllComponents()) {
+            let currentPageValid = true;
+
+            formio.pages[formio.page].everyComponent((component: FormioComponent) => {
+                if (!validateComponentsValid(component)) {
+                    currentPageValid = false;
+                }
+            });
+
+            if (!currentPageValid) {
+                formio.showErrors();
                 return Promise.resolve();
             }
             return originalNextPage();
         };
 
-        // Override the submit method to add validation
         const originalSubmit = formio.submit.bind(formio);
         formio.submit = function (...args: unknown[]) {
-            if (!validateAllComponents()) {
+            let allComponentsValid = true;
+
+            formio.everyComponent((component: FormioComponent) => {
+                if (!validateComponentsValid(component)) {
+                    allComponentsValid = false;
+                }
+            });
+
+            if (!allComponentsValid) {
+                formio.showErrors();
                 return Promise.resolve();
             }
             return originalSubmit(...args);

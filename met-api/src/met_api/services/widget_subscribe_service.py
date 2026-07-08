@@ -2,13 +2,31 @@
 from http import HTTPStatus
 from typing import List
 
+from met_api.constants.membership_type import MembershipType
 from met_api.exceptions.business_exception import BusinessException
 from met_api.models.subscribe_item import SubscribeItem as SubscribeItemsModel
+from met_api.models.widget import Widget as WidgetModel
 from met_api.models.widgets_subscribe import WidgetSubscribe as WidgetSubscribeModel
+from met_api.services import authorization
+from met_api.utils.roles import Role
 
 
 class WidgetSubscribeService:
     """Widget Subscribe management service."""
+
+    @staticmethod
+    def _check_authorization(widget_id):
+        """Ensure the user can edit the engagement that owns this widget."""
+        widget = WidgetModel.get_widget_by_id(widget_id)
+        if not widget:
+            raise BusinessException(
+                error='Widget not found',
+                status_code=HTTPStatus.NOT_FOUND)
+        one_of_roles = (
+            MembershipType.TEAM_MEMBER.name,
+            Role.EDIT_ENGAGEMENT.value
+        )
+        authorization.check_auth(one_of_roles=one_of_roles, engagement_id=widget.engagement_id)
 
     @staticmethod
     def get_subscribe_by_widget_id(widget_id):
@@ -19,6 +37,7 @@ class WidgetSubscribeService:
     @staticmethod
     def create_subscribe(widget_id, subscribe_details: dict):
         """Create subscribe form."""
+        WidgetSubscribeService._check_authorization(widget_id)
         # Retrieve the type from the incoming request data
         subscribe_type = subscribe_details.get('type')
 
@@ -44,6 +63,7 @@ class WidgetSubscribeService:
     @staticmethod
     def create_subscribe_items(widget_id, subscribe_id, subscribe_item_details):
         """Get subscribe form item."""
+        WidgetSubscribeService._check_authorization(widget_id)
         subscribe: WidgetSubscribeModel = WidgetSubscribeModel.find_by_id(
             subscribe_id)
         if subscribe.widget_id != widget_id:
@@ -110,6 +130,7 @@ class WidgetSubscribeService:
     @staticmethod
     def update_subscribe_item(widget_id, subscribe_id, item_id, request_json):
         """Update subscribe form."""
+        WidgetSubscribeService._check_authorization(widget_id)
         subscribe: WidgetSubscribeModel = WidgetSubscribeModel.find_by_id(
             subscribe_id)
         if subscribe.widget_id != widget_id:
@@ -132,6 +153,7 @@ class WidgetSubscribeService:
     @staticmethod
     def delete_subscribe(subscribe_id, widget_id) -> None:
         """Delete subscribe form."""
+        WidgetSubscribeService._check_authorization(widget_id)
         subscribe: WidgetSubscribeModel = WidgetSubscribeModel.find_by_id(
             subscribe_id)
         if subscribe.widget_id != widget_id:
@@ -167,6 +189,7 @@ class WidgetSubscribeService:
 
     def save_widget_subscribes_bulk(self, widget_id, widget_subscribes: list, user_id):
         """Save new order for subscribe forms."""
+        self._check_authorization(widget_id)
         self.update_widget_subscribes_sorting(
             widget_id, widget_subscribes, user_id)
         return widget_subscribes

@@ -10,7 +10,6 @@ from typing import List, Optional
 
 from sqlalchemy import and_, asc, case, desc, or_
 from sqlalchemy.dialects.postgresql import JSON
-from sqlalchemy.sql import text
 from sqlalchemy.sql.schema import ForeignKey
 
 from met_api.constants.engagement_status import EngagementDisplayStatus, Status
@@ -201,8 +200,20 @@ class Engagement(BaseModel):
     def _get_sort_order(pagination_options):
         if pagination_options.sort_key == 'display_status':
             return Engagement._get_custom_sort_order(pagination_options)
-        sort = asc(text(pagination_options.sort_key)) if pagination_options.sort_order == 'asc' \
-            else desc(text(pagination_options.sort_key))
+        _sort_columns = {
+            'name': Engagement.name,
+            'id': Engagement.id,
+            'engagement.id': Engagement.id,
+            'created_date': Engagement.created_date,
+            'engagement.created_date': Engagement.created_date,
+            'published_date': Engagement.published_date,
+            'engagement.published_date': Engagement.published_date,
+            'status_id': Engagement.status_id,
+            'start_date': Engagement.start_date,
+            'end_date': Engagement.end_date,
+        }
+        col = _sort_columns.get(pagination_options.sort_key, Engagement.name)
+        sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
         return sort
 
     @staticmethod

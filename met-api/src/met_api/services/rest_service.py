@@ -58,7 +58,7 @@ class RestService:
         if additional_headers:
             headers.update(additional_headers)
 
-        if content_type == ContentType.JSON:
+        if content_type == ContentType.JSON and data is not None:
             data = json.dumps(data)
 
         current_app.logger.debug(f'Endpoint: {endpoint}')
@@ -110,6 +110,12 @@ class RestService:
         """PUT service."""
         kwargs['endpoint'] = endpoint
         return RestService._invoke('put', **kwargs)
+
+    @staticmethod
+    def delete(endpoint, **kwargs):
+        """DELETE service."""
+        kwargs['endpoint'] = endpoint
+        return RestService._invoke('delete', **kwargs)
 
     @staticmethod
     def get_service_account_token(kc_service_id: str = None, kc_secret: str = None, issuer_url: str = None) -> str:

@@ -5,7 +5,6 @@ Manages the feedback
 from datetime import datetime
 
 from sqlalchemy import TEXT, asc, cast, desc
-from sqlalchemy.sql import text
 
 from met_api.constants.feedback import CommentType, FeedbackSourceType, FeedbackStatusType, RatingType
 from met_api.models.pagination_options import PaginationOptions
@@ -35,6 +34,7 @@ class Feedback(BaseModel):
                           ):
         """Get feedback paginated."""
         query = db.session.query(Feedback)
+        query = cls._add_tenant_filter(query)
 
         query = query.filter_by(status=status)
 
@@ -43,8 +43,17 @@ class Feedback(BaseModel):
             query = query.filter(
                 cast(Feedback.id, TEXT).like('%' + search_text + '%'))
 
-        sort = asc(text(pagination_options.sort_key)) if pagination_options.sort_order == 'asc'\
-            else desc(text(pagination_options.sort_key))
+        _sort_columns = {
+            'id': Feedback.id,
+            'status': Feedback.status,
+            'rating': Feedback.rating,
+            'comment': Feedback.comment,
+            'comment_type': Feedback.comment_type,
+            'source': Feedback.source,
+            'created_date': Feedback.created_date,
+        }
+        col = _sort_columns.get(pagination_options.sort_key, Feedback.id)
+        sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
 
         query = query.order_by(sort)
 
@@ -72,14 +81,14 @@ class Feedback(BaseModel):
             comment_type=feedback.get('comment_type', None),
             source=feedback.get('source', None)
         )
-        db.session.add(new_feedback)
-        db.session.commit()
+        # save() sets tenant_id from the request context (g.tenant_id)
+        new_feedback.save()
         return new_feedback
 
     @classmethod
     def delete_by_id(cls, feedback_id):
         """Delete feedback by ID."""
-        feedback = cls.query.get(feedback_id)
+        feedback = cls._add_tenant_filter(cls.query).filter_by(id=feedback_id).first()
         if feedback:
             db.session.delete(feedback)
             db.session.commit()
@@ -89,7 +98,7 @@ class Feedback(BaseModel):
     @classmethod
     def update_feedback(cls, feedback_id, feedback_data):
         """Update feedback by ID."""
-        feedback = cls.query.get(feedback_id)
+        feedback = cls._add_tenant_filter(cls.query).filter_by(id=feedback_id).first()
         if not feedback:
             return None  # Feedback not found
 

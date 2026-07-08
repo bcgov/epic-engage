@@ -37,6 +37,7 @@ class Submission(BaseModel):  # pylint: disable=too-few-public-methods
     rejected_reason_other = db.Column(db.String(500), nullable=False)
     has_threat = db.Column(db.Boolean, nullable=True)
     notify_email = db.Column(db.Boolean(), default=True)
+    is_resubmission = db.Column(db.Boolean(), default=False, nullable=False, server_default='false')
     comments = db.relationship('Comment', backref='submission', cascade='all, delete')
     staff_note = db.relationship('StaffNote', backref='submission', cascade='all, delete')
 
@@ -142,6 +143,7 @@ class Submission(BaseModel):  # pylint: disable=too-few-public-methods
             'review_date': datetime.utcnow(),
             'updated_by': comment.get('participant_id'),
             'updated_date': datetime.utcnow(),
+            'is_resubmission': False,
         }
 
         query.update(update_fields)

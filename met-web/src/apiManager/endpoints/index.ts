@@ -50,6 +50,7 @@ const Endpoints = {
         REVIEW: `${AppConfig.apiUrl}/submissions/submission_id`,
         GET_LIST: `${AppConfig.apiUrl}/submissions/survey/survey_id`,
         GET: `${AppConfig.apiUrl}/submissions/submission_id`,
+        GET_VERSIONS: `${AppConfig.apiUrl}/submissions/submission_id/versions`,
     },
     SurveyReportSetting: {
         GET_LIST: `${AppConfig.apiUrl}/surveys/survey_id/reportsettings`,

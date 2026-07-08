@@ -4,7 +4,6 @@ Manages the ImageInfo
 """
 
 from sqlalchemy import asc, desc
-from sqlalchemy.sql import text
 
 from met_api.models import db
 from met_api.models.base_model import BaseModel
@@ -51,8 +50,14 @@ class ImageInfo(BaseModel):
 
     @staticmethod
     def _get_sort_order(pagination_options):
-        sort = asc(text(pagination_options.sort_key)) if pagination_options.sort_order == 'asc' \
-            else desc(text(pagination_options.sort_key))
+        _sort_columns = {
+            'id': ImageInfo.id,
+            'unique_name': ImageInfo.unique_name,
+            'display_name': ImageInfo.display_name,
+            'date_uploaded': ImageInfo.date_uploaded,
+        }
+        col = _sort_columns.get(pagination_options.sort_key, ImageInfo.date_uploaded)
+        sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
         return sort
 
     @classmethod

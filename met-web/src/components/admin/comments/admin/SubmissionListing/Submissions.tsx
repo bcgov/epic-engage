@@ -1,11 +1,11 @@
-import React, { useState, useContext } from 'react';
+import { useState, useContext } from 'react';
 import MetTable from 'components/shared/common/Table';
 import Grid from '@mui/material/Grid';
 import { Link, useLocation } from 'react-router-dom';
 import { MetPageGridContainer, PrimaryButton, MetHeader1, SecondaryButton } from 'components/shared/common';
 import { HeadCell, PaginationOptions } from 'components/shared/common/Table/types';
 import { formatDate } from 'utils/helpers/dateHelper';
-import { Collapse, Link as MuiLink } from '@mui/material';
+import { Collapse, Link as MuiLink, Box, Stack as MuiStack } from '@mui/material';
 import TextField from '@mui/material/TextField';
 import SearchIcon from '@mui/icons-material/Search';
 import Stack from '@mui/material/Stack';
@@ -17,6 +17,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useAppSelector } from 'hooks';
 import { USER_ROLES } from 'services/userService/constants';
 import { USER_GROUP } from 'models/user';
+import { statusStyles } from 'styles/Theme';
 
 const Submissions = () => {
     const {
@@ -95,7 +96,34 @@ const Submissions = () => {
             disablePadding: true,
             label: 'Status',
             allowSort: true,
-            renderCell: (row) => COMMENTS_STATUS[row.comment_status_id as CommentStatus] || '',
+            renderCell: (row) => (
+                <MuiStack direction="row" spacing={0.5} alignItems="flex-start">
+                    <Box
+                        sx={{
+                            borderRadius: '2px',
+                            border: `1px solid ${statusStyles[row.comment_status_id]?.borderColor || '#ccc'}`,
+                            background: statusStyles[row.comment_status_id]?.background || '#f5f5f5',
+                            px: 1.5,
+                            py: 0.25,
+                        }}
+                    >
+                        {COMMENTS_STATUS[row.comment_status_id as CommentStatus] || ''}
+                    </Box>
+                    {row.is_resubmission && row.comment_status_id === CommentStatus.Pending && (
+                        <Box
+                            sx={{
+                                borderRadius: '2px',
+                                border: `1px solid ${statusStyles.resubmitted.borderColor}`,
+                                background: statusStyles.resubmitted.background,
+                                px: 1.5,
+                                py: 0.25,
+                            }}
+                        >
+                            Resubmitted
+                        </Box>
+                    )}
+                </MuiStack>
+            ),
         },
     ];
 

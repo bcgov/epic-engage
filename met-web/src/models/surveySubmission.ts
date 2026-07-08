@@ -14,6 +14,7 @@ export interface SurveySubmission {
     has_threat?: boolean;
     rejected_reason_other?: string;
     notify_email?: boolean;
+    is_resubmission?: boolean;
     comments?: Comment[];
     staff_note: StaffNote[];
     engagement_id: number;

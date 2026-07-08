@@ -5,6 +5,7 @@ import { PublicSubmission, SurveySubmission } from 'models/surveySubmission';
 import { Comment } from 'models/comment';
 import { Page } from 'services/type';
 import { CommentStatus } from 'constants/commentStatus';
+import { SubmissionVersion } from 'models/submissionVersion';
 
 interface ReviewCommentRequest {
     submission_id: number;
@@ -34,6 +35,7 @@ interface GetSubmissionsParams {
         sort_order?: 'asc' | 'desc';
         search_text?: string;
         status?: CommentStatus;
+        is_resubmission?: string;
         comment_date_from?: string;
         comment_date_to?: string;
         reviewer?: string;
@@ -105,5 +107,18 @@ export const updateSubmission = async (token: string, requestData: UpdateSubmiss
         return Promise.resolve();
     } catch (err) {
         return Promise.reject('Failed to update submission');
+    }
+};
+
+export const getSubmissionVersions = async (submissionId: number): Promise<SubmissionVersion[]> => {
+    const url = replaceUrl(Endpoints.SurveySubmission.GET_VERSIONS, 'submission_id', String(submissionId));
+    try {
+        const response = await http.GetRequest<SubmissionVersion[]>(url);
+        if (response.data) {
+            return response.data;
+        }
+        return [];
+    } catch (err) {
+        return Promise.reject('Failed to fetch submission versions');
     }
 };

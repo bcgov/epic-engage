@@ -39,6 +39,12 @@ export default defineConfig(({ mode }) => {
                 // This will handle both 'met-formio' imports and 'met-formio/dist/...' paths
                 'met-formio': path.resolve(__dirname, 'node_modules/met-formio'),
             },
+            // Force all chunks to share single instances of libraries that are singletons or
+            // have adapter/validator relationships that break when duplicated across chunks.
+            // redux intentionally excluded — react-querybuilder has a nested @reduxjs/toolkit
+            // v2.x that requires redux v5 (isPlainObject, isAction); deduping would force it
+            // onto the top-level redux v4 and break the build.
+            dedupe: ['react', 'react-dom', '@formio/js', '@formio/react', '@formio/core', 'dayjs', 'i18next'],
         },
         optimizeDeps: {
                 include: [
@@ -71,13 +77,47 @@ export default defineConfig(({ mode }) => {
             },
             rollupOptions: {
                 output: {
-                    manualChunks: {
-                        // Keep maplibre and react-map-gl in the same chunk to avoid
-                        // initialization order issues with spatial indexing dependencies
-                        maplibre: ['maplibre-gl', 'react-map-gl'],
-                        // Keep Formio packages together to ensure validators initialize properly
-                        // Note: met-formio excluded due to invalid package.json "module" field causing alias issues
-                        formio: ['@formio/js', '@formio/react', '@formio/core'],
+                    // Function form required so met-formio can be matched by resolved path.
+                    // The object form can't handle it because met-formio's package.json has
+                    // an invalid "module": "node" field — the alias resolves it to a directory,
+                    // so Rollup can't use it as a named entry point in the object form.
+                    manualChunks(id) {
+                        // React — must be a single shared instance across all chunks
+                        if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/')) {
+                            return 'react';
+                        }
+                        // Formio — met-formio uses a lazy getter for component registry access
+                        // (fixed in met-formio), so it's safe to co-bundle with @formio/js
+                        if (id.includes('/node_modules/@formio/') || id.includes('/node_modules/met-formio/')) {
+                            return 'formio';
+                        }
+                        // Map libraries — keep together to avoid spatial index init ordering issues
+                        if (id.includes('/node_modules/maplibre-gl/') || id.includes('/node_modules/react-map-gl/')) {
+                            return 'maplibre';
+                        }
+                        // Date pickers — validateDay.js throws if dayjs is in a separate chunk
+                        if (id.includes('/node_modules/dayjs/') || id.includes('/node_modules/@mui/x-date-pickers/')) {
+                            return 'datepickers';
+                        }
+                        // Redux — store must be a single instance; splitting react-redux from redux
+                        // causes useSelector/useDispatch to reference a different store than Provider.
+                        // Exclude react-querybuilder's nested copies: it uses @reduxjs/toolkit v2 +
+                        // redux v5 internally, which is a different major from the app's redux v4.
+                        if (
+                            !id.includes('/node_modules/react-querybuilder/') &&
+                            (
+                                id.includes('/node_modules/redux/') ||
+                                id.includes('/node_modules/react-redux/') ||
+                                id.includes('/node_modules/@reduxjs/')
+                            )
+                        ) {
+                            return 'redux';
+                        }
+                        // i18next — initialized once via i18n.init(); duplicating it means hooks
+                        // get an uninitialized copy and t() returns raw keys
+                        if (id.includes('/node_modules/i18next/') || id.includes('/node_modules/react-i18next/')) {
+                            return 'i18n';
+                        }
                     },
                 },
             },

@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom';
 import { TextDecoder, TextEncoder } from 'util';
 import { randomUUID } from 'crypto';
+import React from 'react';
+
+// Make React available globally for components that use JSX without importing React
+global.React = React;
 
 global.TextDecoder = TextDecoder as any;
 global.TextEncoder = TextEncoder as any;

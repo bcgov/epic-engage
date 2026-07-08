@@ -72,6 +72,33 @@ def require_role(role, skip_tenant_check_for_admin=False):
     return decorator
 
 
+def get_authorized_tenant_id():
+    """Return the tenant id the current request is authorized to act within."""
+    header_tenant_id = getattr(g, 'tenant_id', None)
+
+    # Single-tenant deployments don't isolate data by tenant.
+    if current_app.config.get('IS_SINGLE_TENANT_ENVIRONMENT'):
+        return header_tenant_id
+
+    token_info: Dict = _get_token_info() or {}
+
+    # Anonymous request (no token) or global admin: trust the header.
+    if not token_info or is_met_global_admin(token_info):
+        return header_tenant_id
+
+    claim_tenant_id = token_info.get(TENANT_ID_JWT_CLAIM, None)
+
+    # An authenticated caller may not point a tenant header at another tenant.
+    if claim_tenant_id is not None and header_tenant_id is not None \
+            and str(header_tenant_id) != str(claim_tenant_id):
+        current_app.logger.debug(
+            f'Aborting. Tenant header/claim mismatch. '
+            f'header: {header_tenant_id} claim: {claim_tenant_id}')
+        abort(HTTPStatus.FORBIDDEN, description='The user has no access to this tenant')
+
+    return claim_tenant_id if claim_tenant_id is not None else header_tenant_id
+
+
 def _get_token_info() -> Dict:
     return g.jwt_oidc_token_info if g and 'jwt_oidc_token_info' in g else {}
 
