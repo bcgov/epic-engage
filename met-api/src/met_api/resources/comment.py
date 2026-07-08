@@ -63,6 +63,23 @@ class SurveyComments(Resource):
 
 
 @cors_preflight('GET, OPTIONS')
+@API.route('/survey/<survey_id>/grouped')
+class SurveyCommentsGrouped(Resource):
+    """Resource for free-text comments grouped by question."""
+
+    @staticmethod
+    @cross_origin(origins=allowedorigins())
+    @auth.optional
+    def get(survey_id):
+        """Get free-text comments grouped by question."""
+        try:
+            records = CommentService().get_comments_grouped_by_question(survey_id)
+            return records, HTTPStatus.OK
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@cors_preflight('GET, OPTIONS')
 @API.route('/survey/<survey_id>/sheet/staff')
 class GeneratedStaffCommentsSheet(Resource):
     """Resource for managing multiple comments."""

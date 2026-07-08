@@ -11,6 +11,14 @@ export interface Comment {
     is_displayed: boolean;
 }
 
+export interface GroupedComment {
+    key: string;
+    label: string;
+    type: string;
+    comments: string[];
+    count: number;
+}
+
 export const createDefaultComment = (): Comment => {
     return {
         id: 0,
