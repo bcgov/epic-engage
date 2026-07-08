@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Grid, Link as MuiLink, useMediaQuery, Stack, Tab, Tabs, Theme, Box, Backdrop } from '@mui/material';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -32,9 +32,9 @@ const Dashboard = () => {
     const isTablet = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
     const navigate = useNavigate();
     const { engagement, isEngagementLoading, dashboardType } = useContext(DashboardContext);
-    const [isPrinting, setIsPrinting] = React.useState(false);
-    const [projectMapData, setProjectMapData] = React.useState<Map | null>(null);
-    const [pdfExportProgress, setPdfExportProgress] = React.useState(0);
+    const [isPrinting, setIsPrinting] = useState(false);
+    const [projectMapData, setProjectMapData] = useState<Map | null>(null);
+    const [pdfExportProgress, setPdfExportProgress] = useState(0);
     const [activeTab, setActiveTab] = useState(RESULTS_TAB);
     const [hasViewedComments, setHasViewedComments] = useState(false);
     const basePath = slug ? `/${slug}` : `/engagements/${engagement?.id}`;
