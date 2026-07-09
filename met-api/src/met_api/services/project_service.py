@@ -35,6 +35,7 @@ class ProjectService:
 
             if not engagement_metadata or not (project_id := engagement_metadata.project_id):
                 # EPIC is not interested in the data without project Id. Skip.
+                logger.debug('No project Id, skipping EPIC update.')
                 return
 
             epic_comment_period_payload = ProjectService._construct_epic_payload(engagement, project_id)
