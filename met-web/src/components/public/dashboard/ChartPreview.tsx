@@ -1,17 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Box, Divider, Skeleton } from '@mui/material';
 import { MetPaper, MetHeader4, MetDescription } from 'components/shared/common';
 import { DonutChart, LikertChart, RankOrderChart, Comments, CheckboxChart } from './charts';
 import { QuestionTypeLabel } from './charts/QuestionTypeLabel';
-import { getSurveyResultData } from 'services/analytics/surveyResult';
-import { getSurveyForDashboard } from 'services/surveyService';
-import { TypedSurveyData, TypedSurveyResultData, FlatResultItem, MatrixResultRow } from 'models/analytics/surveyResult';
+import { TypedSurveyData, FlatResultItem, MatrixResultRow } from 'models/analytics/surveyResult';
 import { Engagement } from 'models/engagement';
 import { ErrorBox } from 'components/shared/analytics/ErrorBox';
 import { NoData } from 'components/shared/analytics/NoData';
 import FormStepper from 'components/public/survey/submit/Stepper';
-import { buildResultPages, ResultPage, DashboardSurveyForm } from './surveyPages';
-import axios from 'axios';
+import { useSurveyResultPages } from './hooks/useSurveyResultPages';
 
 const COMPONENT_TYPE = {
     RADIO: 'simpleradios',
@@ -136,39 +133,13 @@ interface ChartPreviewProps {
 }
 
 export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }: ChartPreviewProps) => {
-    const [data, setData] = useState<TypedSurveyResultData | null>(null);
-    const [form, setForm] = useState<DashboardSurveyForm | undefined>(undefined);
     const [currentPage, setCurrentPage] = useState(0);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isError, setIsError] = useState(false);
-
-    const fetchData = async () => {
-        setIsLoading(true);
-        setIsError(false);
-        try {
-            const surveyId = engagement.surveys?.[0]?.id;
-            const [response, survey] = await Promise.all([
-                getSurveyResultData(Number(engagement.id), dashboardType),
-                surveyId ? getSurveyForDashboard(Number(surveyId)).catch(() => undefined) : Promise.resolve(undefined),
-            ]);
-            setData(response as unknown as TypedSurveyResultData);
-            setForm(survey);
-        } catch (error) {
-            if (axios.isAxiosError(error) && error.response?.status === 404) {
-                setData(null);
-            } else {
-                setIsError(true);
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        if (Number(engagement.id)) {
-            fetchData();
-        }
-    }, [engagement.id]);
+    const surveyId = engagement.surveys?.[0]?.id;
+    const { data, pages, isLoading, isError, refetch } = useSurveyResultPages(
+        Number(engagement.id),
+        surveyId ? Number(surveyId) : undefined,
+        dashboardType,
+    );
 
     if (isLoading || engagementIsLoading) {
         return (
@@ -180,13 +151,12 @@ export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }:
     }
 
     if (isError) {
-        return <ErrorBox sx={{ mt: 4 }} onClick={fetchData} />;
+        return <ErrorBox sx={{ mt: 4 }} onClick={refetch} />;
     }
 
     if (!data?.data?.length) {
         return <NoData sx={{ mt: 4 }} />;
     }
-    const pages: ResultPage[] | null = buildResultPages(form, data.data);
     const safePage = pages ? Math.min(currentPage, pages.length - 1) : 0;
     const questionsToShow = pages ? pages[safePage].questions : data.data;
     return (

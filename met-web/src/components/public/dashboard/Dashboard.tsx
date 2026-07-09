@@ -1,5 +1,5 @@
-import React, { useContext, useEffect } from 'react';
-import { Grid, Link as MuiLink, useMediaQuery, Stack, Theme, Box, Backdrop } from '@mui/material';
+import { useContext, useEffect, useState } from 'react';
+import { Grid, Link as MuiLink, useMediaQuery, Stack, Tab, Tabs, Theme, Box, Backdrop } from '@mui/material';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
     CircularProgressWithLabel,
@@ -11,6 +11,7 @@ import {
 } from 'components/shared/common';
 import { ReportBanner } from './ReportBanner';
 import { ChartPreview } from './ChartPreview';
+import { CommentsTab } from './comments/CommentsTab';
 import SurveysCompleted from 'components/shared/analytics//KPI/SurveysCompleted';
 import ProjectLocation from 'components/shared/analytics//KPI/ProjectLocation';
 import SurveyEmailsSent from 'components/shared/analytics//KPI/SurveyEmailsSent';
@@ -23,14 +24,19 @@ import { Map } from 'models/analytics/map';
 import { When } from 'react-if';
 import { analyticsService } from 'services/penguinAnalytics';
 
+const RESULTS_TAB = 'results';
+const COMMENTS_TAB = 'comments';
+
 const Dashboard = () => {
     const { slug } = useParams();
     const isTablet = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
     const navigate = useNavigate();
     const { engagement, isEngagementLoading, dashboardType } = useContext(DashboardContext);
-    const [isPrinting, setIsPrinting] = React.useState(false);
-    const [projectMapData, setProjectMapData] = React.useState<Map | null>(null);
-    const [pdfExportProgress, setPdfExportProgress] = React.useState(0);
+    const [isPrinting, setIsPrinting] = useState(false);
+    const [projectMapData, setProjectMapData] = useState<Map | null>(null);
+    const [pdfExportProgress, setPdfExportProgress] = useState(0);
+    const [activeTab, setActiveTab] = useState(RESULTS_TAB);
+    const [hasViewedComments, setHasViewedComments] = useState(false);
     const basePath = slug ? `/${slug}` : `/engagements/${engagement?.id}`;
     const mapExists = projectMapData?.latitude !== null && projectMapData?.longitude !== null;
 
@@ -216,11 +222,35 @@ const Dashboard = () => {
                                         />
                                     </Grid>
                                     <Grid item xs={12}>
-                                        <ChartPreview
-                                            engagement={engagement}
-                                            engagementIsLoading={isEngagementLoading}
-                                            dashboardType={dashboardType}
-                                        />
+                                        <Tabs
+                                            value={activeTab}
+                                            onChange={(_event, value: string) => {
+                                                setActiveTab(value);
+                                                if (value === COMMENTS_TAB) {
+                                                    setHasViewedComments(true);
+                                                }
+                                            }}
+                                            sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+                                        >
+                                            <Tab label="Survey Results" value={RESULTS_TAB} />
+                                            <Tab label="Comments" value={COMMENTS_TAB} />
+                                        </Tabs>
+                                        <Box sx={{ display: activeTab === RESULTS_TAB ? 'block' : 'none' }}>
+                                            <ChartPreview
+                                                engagement={engagement}
+                                                engagementIsLoading={isEngagementLoading}
+                                                dashboardType={dashboardType}
+                                            />
+                                        </Box>
+                                        <When condition={activeTab === COMMENTS_TAB || hasViewedComments}>
+                                            <Box sx={{ display: activeTab === COMMENTS_TAB ? 'block' : 'none' }}>
+                                                <CommentsTab
+                                                    engagement={engagement}
+                                                    engagementIsLoading={isEngagementLoading}
+                                                    dashboardType={dashboardType}
+                                                />
+                                            </Box>
+                                        </When>
                                     </Grid>
                                     <When condition={isPrinting}>
                                         <Grid item xs={12}>

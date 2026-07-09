@@ -7,7 +7,8 @@ from __future__ import annotations
 from datetime import datetime
 from operator import or_
 
-from sqlalchemy import and_, asc, desc
+from sqlalchemy import and_, asc, desc, func
+from sqlalchemy.dialects.postgresql import aggregate_order_by
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.expression import true
 from sqlalchemy.sql.schema import ForeignKey
@@ -25,6 +26,9 @@ from met_api.schemas.submission import SubmissionSchema
 from .base_model import BaseModel
 from .comment_status import CommentStatus as CommentStatusModel
 from .db import db
+
+
+_FREE_TEXT_QUESTION_TYPES = ('simpletextarea', 'simpletextfield')
 
 
 class Comment(BaseModel):
@@ -132,6 +136,45 @@ class Comment(BaseModel):
         page = db.paginate(query, page=pagination_options.page, per_page=pagination_options.size, error_out=False)
 
         return page.items, page.total
+
+    @classmethod
+    def get_comments_grouped_by_question(cls, survey_id, can_view_all_comments=False):
+        """Get approved, report-visible free-text comments grouped by question.
+
+        Mirrors the join/visibility filters of get_accepted_comments_by_survey_id_paginated,
+        restricted to free-text (comment) questions and aggregated by question instead of
+        returned as flat rows.
+        """
+        query = db.session.query(
+            ReportSetting.question_key.label('key'),
+            ReportSetting.question.label('label'),
+            ReportSetting.question_type.label('type'),
+            func.array_agg(aggregate_order_by(Comment.text, Comment.id.asc())).label('comments'),
+        )\
+            .join(Submission, Submission.id == Comment.submission_id)\
+            .join(CommentStatusModel, Submission.comment_status_id == CommentStatusModel.id)\
+            .join(Survey, Survey.id == Submission.survey_id)\
+            .join(Engagement, Engagement.id == Survey.engagement_id)\
+            .join(EngagementSettingsModel, Engagement.id == EngagementSettingsModel.engagement_id)\
+            .join(ReportSetting, and_(Comment.survey_id == ReportSetting.survey_id,
+                                      Comment.component_id == ReportSetting.question_key))\
+            .filter(
+                and_(
+                    Comment.survey_id == survey_id,
+                    CommentStatusModel.id == CommentStatus.Approved.value,
+                    ReportSetting.display == true(),
+                    ReportSetting.question_type.in_(_FREE_TEXT_QUESTION_TYPES),
+                ))
+
+        if not can_view_all_comments:
+            query = query.filter(
+                Engagement.status_id != EngagementStatus.Unpublished.value,
+                EngagementSettingsModel.send_report.is_(True)
+            )
+
+        query = query.group_by(ReportSetting.id).order_by(ReportSetting.id.asc())
+
+        return query.all()
 
     @classmethod
     def get_by_survey_id_paginated(
