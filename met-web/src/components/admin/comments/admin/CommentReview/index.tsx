@@ -306,7 +306,7 @@ const CommentReview = () => {
     };
 
     const defaultVerdict = comment_status_id !== CommentStatus.Pending ? comment_status_id : CommentStatus.Approved;
-    const isResubmission = versions.length > 0 && comment_status_id === CommentStatus.Pending;
+    const isResubmission = versions.length > 0;
 
     return (
         <MetPageGridContainer>
