@@ -32,7 +32,7 @@ import {
     MetSmallText,
     MetTooltip,
 } from 'components/shared/common';
-import { CommentStatus } from 'constants/commentStatus';
+import { CommentStatus, COMMENTS_STATUS } from 'constants/commentStatus';
 import { StaffNoteType } from 'constants/staffNoteType';
 import { formatDate } from 'utils/helpers/dateHelper';
 import { CommentReviewSkeleton } from './CommentReviewSkeleton';
@@ -404,8 +404,10 @@ const CommentReview = () => {
                                         >
                                             <MetParagraph>
                                                 {viewingVersion
-                                                    ? CommentStatus[selectedVersion?.comment_status_id as CommentStatus]
-                                                    : CommentStatus[comment_status_id]}
+                                                    ? COMMENTS_STATUS[
+                                                          selectedVersion?.comment_status_id as CommentStatus
+                                                      ]
+                                                    : COMMENTS_STATUS[comment_status_id as CommentStatus]}
                                             </MetParagraph>
                                         </Box>
                                         {!viewingVersion && isResubmission && (
