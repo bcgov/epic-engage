@@ -109,7 +109,7 @@ const Submissions = () => {
                     >
                         {COMMENTS_STATUS[row.comment_status_id as CommentStatus] || ''}
                     </Box>
-                    {row.is_resubmission && row.comment_status_id === CommentStatus.Pending && (
+                    {row.is_resubmission && (
                         <Box
                             sx={{
                                 borderRadius: '2px',
