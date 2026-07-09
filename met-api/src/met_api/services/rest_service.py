@@ -63,6 +63,7 @@ class RestService:
 
         current_app.logger.debug(f'Endpoint: {endpoint}')
         current_app.logger.debug(f'headers: {headers}')
+        current_app.logger.debug(f'data: {data}')
 
         response = None
         try:
@@ -93,10 +94,11 @@ class RestService:
     @staticmethod
     def __log_response(response):
         if response is not None:
+            current_app.logger.info(f'Response Status: {response.status_code}')
             current_app.logger.info(f'Response Headers {response.headers}')
             if response.headers and isinstance(response.headers, Iterable) and \
                     'Content-Type' in response.headers and \
-                    response.headers['Content-Type'] == ContentType.JSON.value:
+                    response.headers['Content-Type'].startswith(ContentType.JSON.value):
                 current_app.logger.info(f"response: {response.text if response else ''}")
 
     @staticmethod
