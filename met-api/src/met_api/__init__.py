@@ -44,7 +44,7 @@ secure_headers = secure.Secure(
 def create_app(run_mode: str = None):
     """Create flask app."""
     if run_mode is None:
-        run_mode = os.getenv('FLASK_ENV', 'development')
+        run_mode = os.getenv('FLASK_ENV', 'production')
 
     from met_api.resources import API_BLUEPRINT  # pylint: disable=import-outside-toplevel
 

@@ -21,6 +21,8 @@ All services have 2 defaults sets of endpoints:
 That are used to expose operational health information about the service, and meta information.
 """
 
+import os
+
 from flask import Blueprint
 
 from .apihelper import Api
@@ -61,11 +63,16 @@ __all__ = ('API_BLUEPRINT',)
 URL_PREFIX = '/api/'
 API_BLUEPRINT = Blueprint('API', __name__, url_prefix=URL_PREFIX)
 
+# Only expose the Swagger UI / schema in non-production run modes.
+RUN_MODE = os.getenv('FLASK_ENV', 'production')
+SWAGGER_DOC = '/' if RUN_MODE in ('development', 'testing', 'docker') else False
+
 API = Api(
     API_BLUEPRINT,
     title='MET API',
     version='1.0',
-    description='The Core API for MET'
+    description='The Core API for MET',
+    doc=SWAGGER_DOC
 )
 
 # HANDLER = ExceptionHandler(API)
