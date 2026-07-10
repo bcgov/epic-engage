@@ -5,7 +5,7 @@ import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { MetPaper, MetHeader4, MetDescription, MetIconText, PrimaryButton } from 'components/shared/common';
 import { QuestionTypeLabel } from './QuestionTypeLabel';
 
-const DRAWER_HEIGHT = '95vh';
+const DRAWER_HEIGHT = '100vh';
 
 interface CommentsProps {
     question: string;
@@ -89,6 +89,9 @@ export const Comments = ({ question, responses, questionType }: CommentsProps) =
                 anchor="bottom"
                 open={isDrawerOpen}
                 onClose={() => setIsDrawerOpen(false)}
+                // The logged-in InternalHeader is a fixed AppBar at theme.zIndex.drawer + 1; go
+                // above it so this drawer covers the full screen, header included, while open.
+                sx={{ zIndex: (theme) => theme.zIndex.drawer + 2 }}
                 PaperProps={{
                     sx: {
                         height: DRAWER_HEIGHT,
