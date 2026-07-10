@@ -135,14 +135,7 @@ const Dashboard = () => {
                                         </Stack>
                                     </Grid>
                                 </When>
-                                <Grid
-                                    container
-                                    spacing={{ md: 0, lg: 3 }}
-                                    rowSpacing={{ md: 1, lg: 3 }}
-                                    item
-                                    xs={12}
-                                    ml={{ md: 0, lg: 2 }}
-                                >
+                                <Grid container rowSpacing={{ md: 1, lg: 3 }} item xs={12} ml={{ md: 0, lg: 2 }}>
                                     <Grid
                                         id={'kpi'}
                                         container

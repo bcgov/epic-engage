@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Box, Divider, Skeleton } from '@mui/material';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { MetPaper, MetHeader4, MetDescription } from 'components/shared/common';
 import { DonutChart, LikertChart, RankOrderChart, Comments, CheckboxChart } from './charts';
 import { QuestionTypeLabel } from './charts/QuestionTypeLabel';
@@ -9,6 +10,7 @@ import { ErrorBox } from 'components/shared/analytics/ErrorBox';
 import { NoData } from 'components/shared/analytics/NoData';
 import FormStepper from 'components/public/survey/submit/Stepper';
 import { useSurveyResultPages } from './hooks/useSurveyResultPages';
+import { useSurveyComments } from './hooks/useSurveyComments';
 
 const COMPONENT_TYPE = {
     RADIO: 'simpleradios',
@@ -52,11 +54,36 @@ function flatToChartItems(items: FlatResultItem[]) {
     };
 }
 
-interface QuestionChartProps {
-    question: TypedSurveyData;
+// A matrix question (simplesurvey/simpleranking) whose analytics rows were synced by an
+// older met-etl version, before it started writing the parent row matrix results roll up
+// under. Its sub-question rows still exist, just as orphaned flat entries the frontend can't
+// render as a chart, so it's shown as a compatibility warning instead of a broken/empty chart.
+interface StaleFormatNotice {
+    staleKey: string;
 }
 
-const QuestionChart = ({ question }: QuestionChartProps) => {
+const isStaleMatrixEntry = (q: TypedSurveyData) =>
+    (q.type === COMPONENT_TYPE.SURVEY || q.type === COMPONENT_TYPE.RANKING) &&
+    q.key.includes('-') &&
+    toMatrixRows(q.result).length === 0;
+
+const StaleFormatCard = ({ questionKey }: { questionKey: string }) => (
+    <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <WarningAmberIcon fontSize="small" sx={{ color: '#B54708' }} />
+            <MetDescription sx={{ color: '#474543' }}>
+                Survey data for &quot;{questionKey}&quot; has not been updated to a format compatible with this chart.
+            </MetDescription>
+        </Box>
+    </MetPaper>
+);
+
+interface QuestionChartProps {
+    question: TypedSurveyData;
+    commentsByKey: Map<string, string[]>;
+}
+
+const QuestionChart = ({ question, commentsByKey }: QuestionChartProps) => {
     const { label, type, result } = question;
 
     switch (type) {
@@ -76,12 +103,7 @@ const QuestionChart = ({ question }: QuestionChartProps) => {
         case COMPONENT_TYPE.CHECKBOX: {
             const { data, total } = flatToChartItems(toFlatItems(result));
             return (
-                <CheckboxChart
-                    question={label}
-                    respondentCount={total}
-                    data={data}
-                    questionType={TYPE_LABELS[type]}
-                />
+                <CheckboxChart question={label} respondentCount={total} data={data} questionType={TYPE_LABELS[type]} />
             );
         }
 
@@ -110,7 +132,7 @@ const QuestionChart = ({ question }: QuestionChartProps) => {
 
         case COMPONENT_TYPE.TEXTAREA:
         case COMPONENT_TYPE.TEXTFIELD: {
-            const responses = toFlatItems(result).map((r) => r.value);
+            const responses = commentsByKey.get(question.key) ?? toFlatItems(result).map((r) => r.value);
             return <Comments question={label} responses={responses} questionType={TYPE_LABELS[type]} />;
         }
 
@@ -133,8 +155,25 @@ export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }:
         surveyId ? Number(surveyId) : undefined,
         dashboardType,
     );
+    const {
+        data: commentsData,
+        isLoading: commentsIsLoading,
+        isError: commentsIsError,
+        refetch: refetchComments,
+    } = useSurveyComments(Number(engagement.id), surveyId ? Number(surveyId) : undefined, dashboardType);
 
-    if (isLoading || engagementIsLoading) {
+    // Free-text (simpletextarea/simpletextfield) questions are never synced to the analytics
+    // dataset - only the option-based question types (radio, checkbox, likert, ranking) are.
+    // Comments are instead sourced live from met-api, so they need to be merged into the
+    // per-page question list here rather than just backfilled onto an existing entry.
+    const commentQuestionsByKey = new Map<string, TypedSurveyData>(
+        (commentsData?.data ?? []).map((question) => [question.key, question]),
+    );
+    const commentsByKey = new Map<string, string[]>(
+        (commentsData?.data ?? []).map((question) => [question.key, toFlatItems(question.result).map((r) => r.value)]),
+    );
+
+    if (isLoading || commentsIsLoading || engagementIsLoading) {
         return (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 4 }}>
                 <Skeleton variant="rectangular" height={300} />
@@ -143,15 +182,62 @@ export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }:
         );
     }
 
-    if (isError) {
-        return <ErrorBox sx={{ mt: 4 }} onClick={refetch} />;
+    if (isError || commentsIsError) {
+        return (
+            <ErrorBox
+                sx={{ mt: 4 }}
+                onClick={() => {
+                    refetch();
+                    refetchComments();
+                }}
+            />
+        );
     }
 
-    if (!data?.data?.length) {
+    if (!data?.data?.length && !commentsData?.data?.length) {
         return <NoData sx={{ mt: 4 }} />;
     }
     const safePage = pages ? Math.min(currentPage, pages.length - 1) : 0;
-    const questionsToShow = pages ? pages[safePage].questions : data.data;
+    // Rebuild the page's question order from its true form field order (page.keys) so
+    // chart questions and comment questions interleave correctly - the two datasets are
+    // fetched separately and each only cover a disjoint subset of the page's questions.
+    let questionsToShow: (TypedSurveyData | StaleFormatNotice)[];
+    if (pages) {
+        const chartPage = pages[safePage];
+        const chartQuestionsByKey = new Map(chartPage.questions.map((q) => [q.key, q]));
+        questionsToShow = chartPage.keys
+            .map((key): TypedSurveyData | StaleFormatNotice | undefined => {
+                const chartQuestion = chartQuestionsByKey.get(key);
+                if (chartQuestion) {
+                    return chartQuestion;
+                }
+                const commentQuestion = commentQuestionsByKey.get(key);
+                if (commentQuestion) {
+                    return commentQuestion;
+                }
+                const hasStaleMatrixData = (data?.data ?? []).some(
+                    (q) => q.key.startsWith(`${key}-`) && isStaleMatrixEntry(q),
+                );
+                return hasStaleMatrixData ? { staleKey: key } : undefined;
+            })
+            .filter((q): q is TypedSurveyData | StaleFormatNotice => Boolean(q));
+    } else {
+        const seenStaleBaseKeys = new Set<string>();
+        questionsToShow = [...(data?.data ?? []), ...(commentsData?.data ?? [])].reduce<
+            (TypedSurveyData | StaleFormatNotice)[]
+        >((items, q) => {
+            if (isStaleMatrixEntry(q)) {
+                const baseKey = q.key.split('-')[0];
+                if (!seenStaleBaseKeys.has(baseKey)) {
+                    seenStaleBaseKeys.add(baseKey);
+                    items.push({ staleKey: baseKey });
+                }
+                return items;
+            }
+            items.push(q);
+            return items;
+        }, []);
+    }
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 4 }}>
             <Divider sx={{ mb: 1 }}>
@@ -161,7 +247,13 @@ export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }:
                 <FormStepper currentPage={safePage} pages={pages} onStepClick={(index) => setCurrentPage(index)} />
             )}
             {questionsToShow.length ? (
-                questionsToShow.map((question) => <QuestionChart key={question.key} question={question} />)
+                questionsToShow.map((question) =>
+                    'staleKey' in question ? (
+                        <StaleFormatCard key={question.staleKey} questionKey={question.staleKey} />
+                    ) : (
+                        <QuestionChart key={question.key} question={question} commentsByKey={commentsByKey} />
+                    ),
+                )
             ) : (
                 <NoData />
             )}

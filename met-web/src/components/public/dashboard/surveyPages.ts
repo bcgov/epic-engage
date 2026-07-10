@@ -16,6 +16,10 @@ export interface DashboardSurveyForm {
 export interface ResultPage {
     title: string;
     questions: TypedSurveyData[];
+    // The page's question keys in true form field order. Chart data (analytics) and comment
+    // data (met-api) are fetched separately and each only cover a subset of question types, so
+    // this lets callers that need both interleave them in the order they appear on the form.
+    keys: string[];
     // index signature so a ResultPage is also a valid FormInfo (consumed by FormStepper)
     [key: string]: unknown;
 }
@@ -35,6 +39,6 @@ export const buildResultPages = (
     }
     return form.pages.map((page) => {
         const keys = new Set(page.questions);
-        return { title: page.title, questions: questions.filter((q) => keys.has(q.key)) };
+        return { title: page.title, questions: questions.filter((q) => keys.has(q.key)), keys: page.questions };
     });
 };

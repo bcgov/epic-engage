@@ -26,7 +26,9 @@ export const CommentsTab = ({ engagement, engagementIsLoading, dashboardType }: 
     // fall back to a single unnamed page over the flat result list otherwise (mirrors
     // ChartPreview's fallback to data.data when pages is null).
     const effectivePages = useMemo(
-        () => pages ?? (data?.data?.length ? [{ title: '', questions: data.data }] : null),
+        () =>
+            pages ??
+            (data?.data?.length ? [{ title: '', questions: data.data, keys: data.data.map((q) => q.key) }] : null),
         [pages, data],
     );
     const sections = useMemo(() => buildCommentSections(effectivePages), [effectivePages]);
