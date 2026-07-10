@@ -22,6 +22,20 @@ export const getBaseUrl = () => {
     return baseUrl;
 };
 
+// Returns the URL only if it uses a safe scheme (http/https/mailto), otherwise undefined.
+// Blocks javascript:/data: and other dangerous schemes before they reach an href.
+export const sanitizeUrl = (url?: string): string | undefined => {
+    if (!url) {
+        return undefined;
+    }
+    try {
+        const { protocol } = new URL(url, window.location.origin);
+        return ['http:', 'https:', 'mailto:'].includes(protocol) ? url : undefined;
+    } catch {
+        return undefined;
+    }
+};
+
 export const filterQueryParams = (queryParams: { [x: string]: unknown }) => {
     const filteredQueryParams: { [x: string]: unknown } = {};
     Object.keys(queryParams).forEach((key) => {
