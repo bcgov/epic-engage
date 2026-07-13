@@ -18,7 +18,7 @@ import CloseRounded from '@mui/icons-material/CloseRounded';
 import FiberNewOutlined from '@mui/icons-material/FiberNewOutlined';
 import { PermissionsGate } from 'components/shared/permissionsGate';
 import { CommentStatus } from 'constants/commentStatus';
-import { ActionsDropDown } from './ActionsDropDown';
+import { ReportButtons } from './ReportButtons';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import CheckIcon from '@mui/icons-material/Check';
 import LinkIcon from '@mui/icons-material/Link';
@@ -40,7 +40,6 @@ const Surveys = () => {
         setSearchText,
         searchFilter,
         surveys, // ADD THIS - get surveys from context
-        setSurveys, // ADD THIS - get setSurveys from context
     } = useContext(SurveyListingContext);
 
     const navigate = useNavigate();
@@ -67,10 +66,6 @@ const Surveys = () => {
             ...searchFilter,
             value: surveyNameFilter,
         });
-    };
-
-    const handleSurveyDeleted = (surveyId: number) => {
-        setSurveys((prev) => prev.filter((s) => s.id !== surveyId));
     };
 
     const headCells: HeadCell<Survey>[] = [
@@ -376,13 +371,13 @@ const Surveys = () => {
             key: 'id',
             numeric: true,
             disablePadding: false,
-            label: 'Actions',
+            label: 'Reports',
             allowSort: false,
             renderCell: (row: Survey) => {
-                return <ActionsDropDown survey={row} onSurveyDeleted={handleSurveyDeleted} />;
+                return <ReportButtons survey={row} />;
             },
             customStyle: {
-                minWidth: '200px',
+                minWidth: '280px',
             },
         },
     ];
