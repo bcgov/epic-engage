@@ -59,11 +59,11 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType }:
                         letterSpacing: '0.04em',
                         textTransform: 'uppercase',
                         color: '#474543',
-                        width: 44,
+                        width: 64,
                         textAlign: 'right',
                     }}
                 >
-                    %
+                    % of Respondents
                 </Typography>
                 <Typography
                     sx={{
@@ -96,7 +96,7 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType }:
                         {item.label}
                     </Typography>
                     <Typography
-                        sx={{ width: 44, fontSize: 13, fontWeight: 700, color: Palette.primary.main, textAlign: 'right' }}
+                        sx={{ width: 64, fontSize: 13, fontWeight: 700, color: Palette.primary.main, textAlign: 'right' }}
                     >
                         {item.pct}%
                     </Typography>
