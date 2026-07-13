@@ -6,6 +6,7 @@ import { If, Then, Else } from 'react-if';
 import { Link, Box } from '@mui/material';
 import OpenInNew from '@mui/icons-material/OpenInNew';
 import { SvgIconProps } from '@mui/material';
+import { sanitizeUrl } from 'utils/helpers';
 
 type DocumentTreeItemProps = TreeItemProps & {
     labelIcon: React.ElementType<SvgIconProps>;
@@ -85,7 +86,8 @@ export function StyledTreeItem(props: StyledTreeItemProps & DocumentTreeItemProp
                                     maxWidth: '80%',
                                 }}
                                 target="_blank"
-                                href={`${labelUrl}`}
+                                rel="noopener noreferrer"
+                                href={sanitizeUrl(labelUrl)}
                                 onClick={() => onLinkClick?.(labelText, labelUrl ?? '')}
                             >
                                 {labelText}
@@ -97,7 +99,8 @@ export function StyledTreeItem(props: StyledTreeItemProps & DocumentTreeItemProp
                                     justifyContent: 'center',
                                 }}
                                 target="_blank"
-                                href={`${labelUrl}`}
+                                rel="noopener noreferrer"
+                                href={sanitizeUrl(labelUrl)}
                                 onClick={() => onLinkClick?.(labelText, labelUrl ?? '')}
                             >
                                 <Box component={OpenInNew} color="inherit" sx={{ p: 0.5, mr: 1 }} />
