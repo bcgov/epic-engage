@@ -17,6 +17,7 @@
 Test-Suite to ensure that the /Engagement endpoint is working as expected.
 """
 import copy
+from datetime import datetime, timedelta
 from http import HTTPStatus
 import json
 
@@ -24,7 +25,7 @@ from faker import Faker
 from flask import current_app
 import pytest
 
-from met_api.constants.engagement_status import EngagementDisplayStatus, SubmissionStatus
+from met_api.constants.engagement_status import EngagementDisplayStatus, Status, SubmissionStatus
 from met_api.constants.engagement_visibility import Visibility
 from met_api.models.tenant import Tenant as TenantModel
 from met_api.utils.constants import TENANT_ID_HEADER
@@ -448,3 +449,63 @@ def test_count_submissions(client, jwt, session, engagement_info):  # pylint:dis
     assert submission_meta_data.get('approved', 0) == 1
     assert submission_meta_data.get('pending', 0) == 1
     assert submission_meta_data.get('needs_further_review', 0) == 1
+
+
+def _unpublished_engagement_info(start_date_offset_days: int) -> dict:
+    """Build engagement info for an unpublished engagement with an offset start date."""
+    return {
+        **TestEngagementInfo.engagement1,
+        'status': Status.Unpublished.value,
+        'start_date': (datetime.today() + timedelta(days=start_date_offset_days)).strftime('%Y-%m-%d'),
+    }
+
+
+def test_delete_engagement(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that an unpublished engagement that never went live can be deleted."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    engagement = factory_engagement_model(_unpublished_engagement_info(start_date_offset_days=10))
+    engagement_id = engagement.id
+
+    rv = client.delete(f'/api/engagements/{engagement_id}', headers=headers,
+                       content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.OK
+
+    rv = client.get(f'/api/engagements/{engagement_id}', headers=headers,
+                    content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_delete_engagement_invalid_status(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that an engagement that is not unpublished cannot be deleted."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    engagement = factory_engagement_model(status=Status.Published.value)
+
+    rv = client.delete(f'/api/engagements/{engagement.id}', headers=headers,
+                       content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_delete_engagement_already_started(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that an unpublished engagement whose start date has passed cannot be deleted."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    engagement = factory_engagement_model(_unpublished_engagement_info(start_date_offset_days=-10))
+
+    rv = client.delete(f'/api/engagements/{engagement.id}', headers=headers,
+                       content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_delete_engagement_with_submissions(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that an engagement with submissions cannot be deleted."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    factory_staff_user_model(TestJwtClaims.public_user_role.get('sub'))
+    participant = factory_participant_model()
+    survey, engagement = factory_survey_and_eng_model()
+    factory_submission_model(survey.id, engagement.id, participant.id)
+    engagement.status_id = Status.Unpublished.value
+    engagement.start_date = datetime.today() + timedelta(days=10)
+    engagement.save()
+
+    rv = client.delete(f'/api/engagements/{engagement.id}', headers=headers,
+                       content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.BAD_REQUEST

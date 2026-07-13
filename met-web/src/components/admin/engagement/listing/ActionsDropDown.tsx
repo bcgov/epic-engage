@@ -4,7 +4,7 @@ import { CircularProgress, MenuItem, Select } from '@mui/material';
 import { Engagement } from 'models/engagement';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from 'hooks';
-import { SubmissionStatus, EngagementStatus } from 'constants/engagementStatus';
+import { EngagementStatus } from 'constants/engagementStatus';
 import { Palette } from 'styles/Theme';
 import { getFormsSheet } from 'services/FormCAC';
 import { openNotification } from 'services/notificationService/notificationSlice';
@@ -30,46 +30,6 @@ export const ActionsDropDown = ({
     const [isExportingCacForms, setIsExportingCacForms] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const { roles, assignedEngagements } = useAppSelector((state) => state.user);
-    const submissionHasBeenOpened = [SubmissionStatus.Open, SubmissionStatus.Closed].includes(
-        engagement.submission_status,
-    );
-    const isDraft = engagement.engagement_status.id === EngagementStatus.Draft;
-    const isOpen = engagement.submission_status === SubmissionStatus.Open;
-    const isClosed = engagement.submission_status === SubmissionStatus.Closed;
-    const isUpcoming =
-        engagement.engagement_status.id === EngagementStatus.Published &&
-        engagement.submission_status === SubmissionStatus.Upcoming;
-    const isScheduled = engagement.engagement_status.id === EngagementStatus.Scheduled;
-
-    const canEditEngagement = (): boolean => {
-        const authorized = roles.includes(USER_ROLES.EDIT_ENGAGEMENT) || assignedEngagements.includes(engagement.id);
-
-        if (!authorized) {
-            return false;
-        }
-
-        if (isDraft) {
-            const canEditDraftEngagement = roles.includes(USER_ROLES.EDIT_DRAFT_ENGAGEMENT);
-            return canEditDraftEngagement;
-        }
-        if (isOpen) {
-            const canEditOpenEngagement = roles.includes(USER_ROLES.EDIT_OPEN_ENGAGEMENT);
-            return canEditOpenEngagement;
-        }
-        if (isClosed) {
-            const canEditClosedEngagement = roles.includes(USER_ROLES.EDIT_CLOSED_ENGAGEMENT);
-            return canEditClosedEngagement;
-        }
-        if (isScheduled) {
-            const canEditScheduledEngagement = roles.includes(USER_ROLES.EDIT_SCHEDULED_ENGAGEMENT);
-            return canEditScheduledEngagement;
-        }
-        if (isUpcoming) {
-            const canEditUpcomingEngagement = roles.includes(USER_ROLES.EDIT_UPCOMING_ENGAGEMENT);
-            return canEditUpcomingEngagement;
-        }
-        return true;
-    };
 
     const canViewSurvey = (): boolean => {
         if (engagement.engagement_status.id !== EngagementStatus.Draft) {
@@ -118,14 +78,6 @@ export const ActionsDropDown = ({
         () => [
             {
                 value: 1,
-                label: 'Edit Engagement',
-                action: () => {
-                    navigate(`/engagements/${engagement.id}/form`);
-                },
-                condition: canEditEngagement(),
-            },
-            {
-                value: 2,
                 label: 'View Survey',
                 action: () => {
                     navigate(`/surveys/${engagement.surveys[0].id}/submit`);
@@ -133,40 +85,7 @@ export const ActionsDropDown = ({
                 condition: canViewSurvey(),
             },
             {
-                value: 3,
-                label: 'View Report - Public',
-                action: () => {
-                    navigate(`/engagements/${engagement.id}/dashboard/public`);
-                },
-                condition:
-                    submissionHasBeenOpened &&
-                    (roles.includes(USER_ROLES.ACCESS_DASHBOARD) || assignedEngagements.includes(engagement.id)),
-            },
-            {
-                value: 4,
-                label: 'View Report - Internal',
-                action: () => {
-                    navigate(`/engagements/${engagement.id}/dashboard/internal`);
-                },
-                condition:
-                    submissionHasBeenOpened &&
-                    roles.includes(USER_ROLES.VIEW_ALL_SURVEY_RESULTS) &&
-                    (roles.includes(USER_ROLES.ACCESS_DASHBOARD) || assignedEngagements.includes(engagement.id)),
-            },
-            {
-                value: 5,
-                label: 'View All Comments',
-                action: () => {
-                    navigate(`/surveys/${engagement.surveys[0].id}/comments`);
-                },
-                condition:
-                    submissionHasBeenOpened &&
-                    (roles.includes(USER_ROLES.REVIEW_COMMENTS) ||
-                        roles.includes(USER_ROLES.VIEW_APPROVED_COMMENTS) ||
-                        assignedEngagements.includes(engagement.id)),
-            },
-            {
-                value: 6,
+                value: 2,
                 label: 'Export Form Sign-Up Data',
                 action: () => {
                     exportCacFormSheet();
@@ -177,7 +96,7 @@ export const ActionsDropDown = ({
                         assignedEngagements.includes(engagement.id)),
             },
             {
-                value: 7,
+                value: 3,
                 label: 'Delete Engagement',
                 action: () => {
                     setDeleteModalOpen(true);
@@ -185,7 +104,7 @@ export const ActionsDropDown = ({
                 condition: canDeleteEngagement,
             },
         ],
-        [engagement.id],
+        [engagement.id, canDeleteEngagement],
     );
 
     if (isExportingCacForms) {
