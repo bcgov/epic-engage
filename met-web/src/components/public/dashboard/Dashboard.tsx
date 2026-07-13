@@ -2,7 +2,7 @@ import { useContext, useState } from 'react';
 import { Box } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { When } from 'react-if';
-import { ChartPreview } from './ChartPreview';
+import { SurveyResultsCharts } from './SurveyResultsCharts';
 import { CommentsTab } from './comments/CommentsTab';
 import { Breadcrumb } from './Breadcrumb';
 import { DashboardHeaderCard } from './DashboardHeaderCard';
@@ -43,7 +43,7 @@ const Dashboard = () => {
                         px: { xs: 2, md: 3 },
                     }}
                 >
-                    <ChartPreview
+                    <SurveyResultsCharts
                         engagement={engagement}
                         engagementIsLoading={isEngagementLoading}
                         dashboardType={dashboardType}

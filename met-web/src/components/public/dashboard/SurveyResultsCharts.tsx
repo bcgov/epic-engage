@@ -1,7 +1,16 @@
 import { useState } from 'react';
-import { Box, Divider, Skeleton } from '@mui/material';
+import { Box, Divider, Skeleton, Stack } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import { MetPaper, MetHeader4, MetDescription } from 'components/shared/common';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import {
+    MetPaper,
+    MetHeader4,
+    MetDescription,
+    MetHeader3,
+    PrimaryButton,
+    SecondaryButton,
+} from 'components/shared/common';
 import { DonutChart, LikertChart, RankOrderChart, Comments, CheckboxChart } from './charts';
 import { QuestionTypeLabel } from './charts/QuestionTypeLabel';
 import { TypedSurveyData, FlatResultItem, MatrixResultRow } from 'models/analytics/surveyResult';
@@ -141,13 +150,13 @@ const QuestionChart = ({ question, commentsByKey }: QuestionChartProps) => {
     }
 };
 
-interface ChartPreviewProps {
+interface SurveyResultsChartsProps {
     engagement: Engagement;
     engagementIsLoading: boolean;
     dashboardType: string;
 }
 
-export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }: ChartPreviewProps) => {
+export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboardType }: SurveyResultsChartsProps) => {
     const [currentPage, setCurrentPage] = useState(0);
     const surveyId = engagement.surveys?.[0]?.id;
     const { data, pages, isLoading, isError, refetch } = useSurveyResultPages(
@@ -246,6 +255,9 @@ export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }:
             {pages && pages.length > 1 && (
                 <FormStepper currentPage={safePage} pages={pages} onStepClick={(index) => setCurrentPage(index)} />
             )}
+            {pages && pages[safePage].title && (
+                <MetHeader3 sx={{ color: '#013366' }}>{pages[safePage].title}</MetHeader3>
+            )}
             {questionsToShow.length ? (
                 questionsToShow.map((question) =>
                     'staleKey' in question ? (
@@ -257,8 +269,31 @@ export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }:
             ) : (
                 <NoData />
             )}
+            {pages && pages.length > 1 && (
+                <Box sx={{ pt: 1, borderTop: '1px solid #D8D8D8' }}>
+                    <MetDescription sx={{ pt: 1.5, mb: 1.5 }}>
+                        Page {safePage + 1} of {pages.length}
+                    </MetDescription>
+                    <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }}>
+                        <SecondaryButton
+                            startIcon={<ArrowBackIcon />}
+                            disabled={safePage === 0}
+                            onClick={() => setCurrentPage(safePage - 1)}
+                        >
+                            Previous
+                        </SecondaryButton>
+                        <PrimaryButton
+                            endIcon={<ArrowForwardIcon />}
+                            disabled={safePage === pages.length - 1}
+                            onClick={() => setCurrentPage(safePage + 1)}
+                        >
+                            Next
+                        </PrimaryButton>
+                    </Stack>
+                </Box>
+            )}
         </Box>
     );
 };
 
-export default ChartPreview;
+export default SurveyResultsCharts;
