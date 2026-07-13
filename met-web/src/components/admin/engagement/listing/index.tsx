@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { When } from 'react-if';
 import TextField from '@mui/material/TextField';
 import Grid from '@mui/material/Grid';
@@ -30,6 +30,7 @@ import { CommentStatus } from 'constants/commentStatus';
 import { ActionsDropDown } from './ActionsDropDown';
 import { updateURLWithPagination } from 'components/shared/common/Table/utils';
 import AdvancedSearch from './AdvancedSearch/SearchComponent';
+import { Palette } from 'styles/Theme';
 
 const EngagementListing = () => {
     const isMediumScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down('md'));
@@ -379,6 +380,64 @@ const EngagementListing = () => {
                         </span>
                     </MetTooltip>
                 );
+            },
+        },
+        {
+            key: 'id',
+            numeric: true,
+            disablePadding: false,
+            label: 'Reports',
+            allowSort: false,
+            renderCell: (row: Engagement) => {
+                const canAccessDashboard =
+                    roles.includes(USER_ROLES.ACCESS_DASHBOARD) || assignedEngagements.includes(row.id);
+                const canViewPublicReport = submissionHasBeenOpened(row) && canAccessDashboard;
+                const canViewInternalReport =
+                    submissionHasBeenOpened(row) &&
+                    roles.includes(USER_ROLES.VIEW_ALL_SURVEY_RESULTS) &&
+                    canAccessDashboard;
+
+                return (
+                    <Stack direction="row" spacing={1}>
+                        <SecondaryButton
+                            size="small"
+                            sx={{
+                                whiteSpace: 'nowrap',
+                                color: Palette.text.primary,
+                                border: '1px solid',
+                                '&:hover': {
+                                    border: '1px solid',
+                                    backgroundColor: '#EBF1F8',
+                                    color: Palette.text.primary,
+                                },
+                            }}
+                            disabled={!canViewPublicReport}
+                            onClick={() => navigate(`/engagements/${row.id}/dashboard/public`)}
+                        >
+                            Public Report
+                        </SecondaryButton>
+                        <SecondaryButton
+                            size="small"
+                            sx={{
+                                whiteSpace: 'nowrap',
+                                color: Palette.text.primary,
+                                border: '1px solid',
+                                '&:hover': {
+                                    border: '1px solid',
+                                    backgroundColor: '#EBF1F8',
+                                    color: Palette.text.primary,
+                                },
+                            }}
+                            disabled={!canViewInternalReport}
+                            onClick={() => navigate(`/engagements/${row.id}/dashboard/internal`)}
+                        >
+                            Internal Report
+                        </SecondaryButton>
+                    </Stack>
+                );
+            },
+            customStyle: {
+                minWidth: '270px',
             },
         },
         {

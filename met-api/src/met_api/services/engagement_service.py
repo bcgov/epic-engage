@@ -24,6 +24,7 @@ from met_api.services.engagement_slug_service import EngagementSlugService
 from met_api.services.object_storage_service import ObjectStorageService
 from met_api.services.project_service import ProjectService
 from met_api.utils import email_util, notification
+from met_api.utils.datetime import local_datetime
 from met_api.utils.enums import SourceAction, SourceType
 from met_api.utils.roles import Role
 from met_api.utils.template import Template
@@ -342,6 +343,18 @@ class EngagementService:
 
         if not engagement:
             raise ValueError('Engagement to delete was not found')
+
+        if engagement.status_id != Status.Unpublished.value:
+            raise ValueError('Only unpublished engagements can be deleted')
+
+        # start_date is naive Pacific time; only engagements that have not yet
+        # opened for submissions can be deleted
+        now = local_datetime().replace(tzinfo=None)
+        if engagement.start_date is None or engagement.start_date <= now:
+            raise ValueError('Engagements that have opened for submissions cannot be deleted')
+
+        if SubmissionModel.query.filter_by(engagement_id=engagement_id).count() > 0:
+            raise ValueError('Engagements with submissions cannot be deleted')
 
         ProjectService.delete_from_epic(engagement_id)
         EngagementModel.delete_engagement(engagement_id)
