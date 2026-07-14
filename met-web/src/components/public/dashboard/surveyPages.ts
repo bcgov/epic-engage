@@ -7,10 +7,23 @@ export interface DashboardSurveyPage {
     questions: string[]; // question keys
 }
 
+// A conditionally-shown free-text question's link back to the question/row that triggers it.
+// row_key/row_label are null when the trigger is a plain radio/select question rather than a
+// specific Likert row or Ranking statement.
+export interface ConditionalLink {
+    trigger_key: string;
+    row_key: string | null;
+    row_label: string | null;
+    trigger_values: string[];
+    trigger_value_labels: string[];
+}
+
 export interface DashboardSurveyForm {
     id: number;
     display?: string;
     pages: DashboardSurveyPage[];
+    // Keyed by the follow-up question's key.
+    conditional_links?: Record<string, ConditionalLink>;
 }
 
 export interface ResultPage {

@@ -12,5 +12,7 @@ export type { RankOrderItem } from './RankOrderChart';
 
 export { Comments } from './Comments';
 
+export { ConditionalFollowUp } from './ConditionalFollowUp';
+
 export { CheckboxChart } from './CheckboxChart';
 export type { CheckboxChartItem } from './CheckboxChart';

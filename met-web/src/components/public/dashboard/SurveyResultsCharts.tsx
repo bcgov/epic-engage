@@ -11,7 +11,7 @@ import {
     PrimaryButton,
     SecondaryButton,
 } from 'components/shared/common';
-import { DonutChart, LikertChart, RankOrderChart, Comments, CheckboxChart } from './charts';
+import { DonutChart, LikertChart, RankOrderChart, Comments, CheckboxChart, ConditionalFollowUp } from './charts';
 import { QuestionTypeLabel } from './charts/QuestionTypeLabel';
 import { TypedSurveyData, FlatResultItem, MatrixResultRow } from 'models/analytics/surveyResult';
 import { Engagement } from 'models/engagement';
@@ -20,6 +20,7 @@ import { NoData } from 'components/shared/analytics/NoData';
 import FormStepper from 'components/public/survey/submit/Stepper';
 import { useSurveyResultPages } from './hooks/useSurveyResultPages';
 import { useSurveyComments } from './hooks/useSurveyComments';
+import { ConditionalLink } from './surveyPages';
 
 const COMPONENT_TYPE = {
     RADIO: 'simpleradios',
@@ -76,6 +77,41 @@ const isStaleMatrixEntry = (q: TypedSurveyData) =>
     q.key.includes('-') &&
     toMatrixRows(q.result).length === 0;
 
+interface ResolvedFollowUp {
+    key: string;
+    link: ConditionalLink;
+    // The follow-up question's own label, used as the comments drawer title.
+    question: string;
+    responses: string[];
+}
+
+const ORDINAL_SUFFIXES: Record<number, string> = { 1: 'st', 2: 'nd', 3: 'rd' };
+
+// Ranking trigger values are rank positions ('1', '2', ...) rather than option codes, so they
+// read better as ordinals ("1st or 2nd") than as the raw numbers the backend can't otherwise label.
+const formatOrdinal = (value: string): string => {
+    const n = Number(value);
+    if (!Number.isInteger(n)) {
+        return value;
+    }
+    const suffix = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ORDINAL_SUFFIXES[n % 10] ?? 'th';
+    return `${n}${suffix}`;
+};
+
+const describeConditional = (link: ConditionalLink, triggerType?: string): string => {
+    const values =
+        triggerType === COMPONENT_TYPE.RANKING ? link.trigger_values.map(formatOrdinal) : link.trigger_value_labels;
+    const valuesPhrase = values.join('" or "');
+
+    if (!link.row_label) {
+        return `Conditional — shown to respondents who selected "${valuesPhrase}"`;
+    }
+    if (triggerType === COMPONENT_TYPE.RANKING) {
+        return `Conditional — shown to respondents who ranked "${link.row_label}" ${valuesPhrase}`;
+    }
+    return `Conditional — shown to respondents who answered "${valuesPhrase}" for "${link.row_label}"`;
+};
+
 const StaleFormatCard = ({ questionKey }: { questionKey: string }) => (
     <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -90,9 +126,20 @@ const StaleFormatCard = ({ questionKey }: { questionKey: string }) => (
 interface QuestionChartProps {
     question: TypedSurveyData;
     commentsByKey: Map<string, string[]>;
+    followUps: ResolvedFollowUp[];
 }
 
-const QuestionChart = ({ question, commentsByKey }: QuestionChartProps) => {
+const renderFollowUps = (followUps: ResolvedFollowUp[], type: string) =>
+    followUps.map((followUp) => (
+        <ConditionalFollowUp
+            key={followUp.key}
+            conditionLabel={describeConditional(followUp.link, type)}
+            question={followUp.question}
+            responses={followUp.responses}
+        />
+    ));
+
+const QuestionChart = ({ question, commentsByKey, followUps }: QuestionChartProps) => {
     const { label, type, result } = question;
 
     switch (type) {
@@ -105,6 +152,7 @@ const QuestionChart = ({ question, commentsByKey }: QuestionChartProps) => {
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     <MetDescription sx={{ mb: '18px' }}>{total.toLocaleString()} respondents</MetDescription>
                     <DonutChart data={data} total={total} />
+                    {renderFollowUps(followUps, type)}
                 </MetPaper>
             );
         }
@@ -123,6 +171,7 @@ const QuestionChart = ({ question, commentsByKey }: QuestionChartProps) => {
                     <QuestionTypeLabel label={TYPE_LABELS[type]} />
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     <LikertChart data={rows} axisLabels={['Not Effective', 'Effective']} />
+                    {renderFollowUps(followUps, type)}
                 </MetPaper>
             );
         }
@@ -135,6 +184,7 @@ const QuestionChart = ({ question, commentsByKey }: QuestionChartProps) => {
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     <MetDescription sx={{ mb: '18px' }}>1 = most important</MetDescription>
                     <RankOrderChart data={rows.map((r) => ({ label: r.label, ranks: r.pcts }))} />
+                    {renderFollowUps(followUps, type)}
                 </MetPaper>
             );
         }
@@ -159,7 +209,7 @@ interface SurveyResultsChartsProps {
 export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboardType }: SurveyResultsChartsProps) => {
     const [currentPage, setCurrentPage] = useState(0);
     const surveyId = engagement.surveys?.[0]?.id;
-    const { data, pages, isLoading, isError, refetch } = useSurveyResultPages(
+    const { data, pages, conditionalLinks, isLoading, isError, refetch } = useSurveyResultPages(
         Number(engagement.id),
         surveyId ? Number(surveyId) : undefined,
         dashboardType,
@@ -172,15 +222,26 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
     } = useSurveyComments(Number(engagement.id), surveyId ? Number(surveyId) : undefined, dashboardType);
 
     // Free-text (simpletextarea/simpletextfield) questions are never synced to the analytics
-    // dataset - only the option-based question types (radio, checkbox, likert, ranking) are.
-    // Comments are instead sourced live from met-api, so they need to be merged into the
-    // per-page question list here rather than just backfilled onto an existing entry.
+    // dataset.Comments are instead sourced live from met-api, so they need to be merged into the
+    // per-page question list here.
     const commentQuestionsByKey = new Map<string, TypedSurveyData>(
         (commentsData?.data ?? []).map((question) => [question.key, question]),
     );
     const commentsByKey = new Map<string, string[]>(
         (commentsData?.data ?? []).map((question) => [question.key, toFlatItems(question.result).map((r) => r.value)]),
     );
+
+    // Conditionally-shown free-text follow-ups are grouped under their trigger question's chart.
+    const followUpsByTrigger = new Map<string, ResolvedFollowUp[]>();
+    Object.entries(conditionalLinks).forEach(([followUpKey, link]) => {
+        const resolved: ResolvedFollowUp = {
+            key: followUpKey,
+            link,
+            question: commentQuestionsByKey.get(followUpKey)?.label ?? followUpKey,
+            responses: commentsByKey.get(followUpKey) ?? [],
+        };
+        followUpsByTrigger.set(link.trigger_key, [...(followUpsByTrigger.get(link.trigger_key) ?? []), resolved]);
+    });
 
     if (isLoading || commentsIsLoading || engagementIsLoading) {
         return (
@@ -216,6 +277,10 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
         const chartQuestionsByKey = new Map(chartPage.questions.map((q) => [q.key, q]));
         questionsToShow = chartPage.keys
             .map((key): TypedSurveyData | StaleFormatNotice | undefined => {
+                // Rendered nested under its trigger question's chart instead of standalone.
+                if (conditionalLinks[key]) {
+                    return undefined;
+                }
                 const chartQuestion = chartQuestionsByKey.get(key);
                 if (chartQuestion) {
                     return chartQuestion;
@@ -235,6 +300,10 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
         questionsToShow = [...(data?.data ?? []), ...(commentsData?.data ?? [])].reduce<
             (TypedSurveyData | StaleFormatNotice)[]
         >((items, q) => {
+            // Rendered nested under its trigger question's chart instead of standalone.
+            if (conditionalLinks[q.key]) {
+                return items;
+            }
             if (isStaleMatrixEntry(q)) {
                 const baseKey = q.key.split('-')[0];
                 if (!seenStaleBaseKeys.has(baseKey)) {
@@ -263,7 +332,12 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
                     'staleKey' in question ? (
                         <StaleFormatCard key={question.staleKey} questionKey={question.staleKey} />
                     ) : (
-                        <QuestionChart key={question.key} question={question} commentsByKey={commentsByKey} />
+                        <QuestionChart
+                            key={question.key}
+                            question={question}
+                            commentsByKey={commentsByKey}
+                            followUps={followUpsByTrigger.get(question.key) ?? []}
+                        />
                     ),
                 )
             ) : (
