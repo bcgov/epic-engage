@@ -22,6 +22,7 @@ from flask_restx import Namespace, Resource
 from met_api.auth import jwt as _jwt
 from met_api.services.email_verification_service import EmailVerificationService
 from met_api.services.subscription_service import SubscriptionService
+from met_api.utils.limiter import limiter, public_write_limit
 from met_api.utils.util import allowedorigins, cors_preflight
 
 
@@ -62,6 +63,7 @@ class Subscriptions(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_write_limit)
     def post():
         """Create a new subscription."""
         try:
@@ -74,6 +76,7 @@ class Subscriptions(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_write_limit)
     def patch():
         """Update a existing subscription partially."""
         try:
@@ -93,6 +96,7 @@ class ManageSubscriptions(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_write_limit)
     def post():
         """Create or update a subscription."""
         try:
@@ -105,6 +109,7 @@ class ManageSubscriptions(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_write_limit)
     def patch():
         """Update a existing subscription partially."""
         try:
@@ -123,6 +128,7 @@ class UnsubscribeByToken(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_write_limit)
     def patch(token):
         """Update subscription status using a secure token.
 

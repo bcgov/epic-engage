@@ -20,6 +20,7 @@ from flask_restx import Namespace, Resource
 
 from met_api.exceptions.business_exception import BusinessException
 from met_api.services.cac_form_service import CACFormService
+from met_api.utils.limiter import limiter, public_write_limit
 from met_api.utils.roles import Role
 from met_api.utils.tenant_validator import require_role
 from met_api.utils.util import allowedorigins, cors_preflight
@@ -36,6 +37,7 @@ class CACForm(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_write_limit)
     def post(engagement_id, widget_id):
         """Create cac form submission."""
         try:

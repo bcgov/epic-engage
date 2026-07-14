@@ -25,6 +25,7 @@ from met_api.constants.feedback import FeedbackStatusType
 from met_api.models.pagination_options import PaginationOptions
 from met_api.schemas import utils as schema_utils
 from met_api.services.feedback_service import FeedbackService
+from met_api.utils.limiter import limiter, public_write_limit
 from met_api.utils.roles import Role
 from met_api.utils.tenant_validator import require_role
 from met_api.utils.token_info import TokenInfo
@@ -68,6 +69,7 @@ class FeedbackList(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_write_limit)
     @auth.optional
     def post():
         """Create a new feedback."""

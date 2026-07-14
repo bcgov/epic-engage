@@ -219,6 +219,10 @@ objects:
     PENGUIN_ANALYTICS_ENABLED: ${PENGUIN_ANALYTICS_ENABLED}
     PENGUIN_ANALYTICS_URL: ${PENGUIN_ANALYTICS_URL}
     PENGUIN_ANALYTICS_SOURCE_APP: ${PENGUIN_ANALYTICS_SOURCE_APP}
+    RATELIMIT_ENABLED: ${RATELIMIT_ENABLED}
+    RATELIMIT_EMAIL_SENDING: ${RATELIMIT_EMAIL_SENDING}
+    RATELIMIT_PUBLIC_WRITE: ${RATELIMIT_PUBLIC_WRITE}
+    RATELIMIT_PUBLIC_READ: ${RATELIMIT_PUBLIC_READ}
 - kind: Secret
   apiVersion: v1
   type: Opaque
@@ -356,3 +360,19 @@ parameters:
     description: "Source application identifier for Penguin Analytics events"
     required: false
     value: 'epic-engage'
+  - name: RATELIMIT_ENABLED
+    description: "Enable per-IP rate limiting on public endpoints (true/false)"
+    required: false
+    value: 'true'
+  - name: RATELIMIT_EMAIL_SENDING
+    description: "Per-IP limit for public endpoints that send email through GC Notify"
+    required: false
+    value: '5 per minute; 25 per hour'
+  - name: RATELIMIT_PUBLIC_WRITE
+    description: "Per-IP limit for public write endpoints (submissions, feedback, subscriptions)"
+    required: false
+    value: '30 per minute'
+  - name: RATELIMIT_PUBLIC_READ
+    description: "Per-IP limit for public read endpoints"
+    required: false
+    value: '60 per minute'

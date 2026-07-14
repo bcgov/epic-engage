@@ -227,6 +227,17 @@ class _Config():  # pylint: disable=too-few-public-methods
     # Timezone in BC
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
 
+    # Rate limiting (Flask-Limiter) for public endpoints
+    RATELIMIT_ENABLED = os.getenv('RATELIMIT_ENABLED', 'True').lower() == 'true'
+    # memory:// keeps counters per pod; point at Redis (redis://...) to share limits across pods
+    RATELIMIT_STORAGE_URI = os.getenv('RATELIMIT_STORAGE_URI', 'memory://')
+    RATELIMIT_HEADERS_ENABLED = True
+    # Per-IP limits for public (unauthenticated) endpoints. Deliberately lenient
+    # to start; tighten once we have real traffic numbers to tune against.
+    RATELIMIT_EMAIL_SENDING = os.getenv('RATELIMIT_EMAIL_SENDING', '5 per minute; 25 per hour')
+    RATELIMIT_PUBLIC_WRITE = os.getenv('RATELIMIT_PUBLIC_WRITE', '30 per minute')
+    RATELIMIT_PUBLIC_READ = os.getenv('RATELIMIT_PUBLIC_READ', '60 per minute')
+
     # Analytics Configuration
     ANALYTICS_ENABLED = os.getenv('ANALYTICS_ENABLED', 'False').lower() == 'true'
 
@@ -255,6 +266,8 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     DEBUG = True
     TESTING = True
+    # Disable rate limiting so tests can call endpoints repeatedly
+    RATELIMIT_ENABLED = False
     # POSTGRESQL
     DB_USER = os.getenv('DATABASE_TEST_USERNAME', 'postgres')
     DB_PASSWORD = os.getenv('DATABASE_TEST_PASSWORD', 'postgres')
