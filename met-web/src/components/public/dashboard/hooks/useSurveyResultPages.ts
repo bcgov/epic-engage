@@ -3,11 +3,12 @@ import axios from 'axios';
 import { getSurveyResultData } from 'services/analytics/surveyResult';
 import { getSurveyForDashboard } from 'services/surveyService';
 import { TypedSurveyResultData } from 'models/analytics/surveyResult';
-import { buildResultPages, ResultPage, DashboardSurveyForm } from '../surveyPages';
+import { buildResultPages, ResultPage, DashboardSurveyForm, ConditionalLink } from '../surveyPages';
 
 interface UseSurveyResultPagesResult {
     data: TypedSurveyResultData | null;
     pages: ResultPage[] | null;
+    conditionalLinks: Record<string, ConditionalLink>;
     isLoading: boolean;
     isError: boolean;
     refetch: () => void;
@@ -58,7 +59,7 @@ export const useSurveyResultPages = (
 
     const pages = data?.data?.length ? buildResultPages(form, data.data) : null;
 
-    return { data, pages, isLoading, isError, refetch: fetchData };
+    return { data, pages, conditionalLinks: form?.conditional_links ?? {}, isLoading, isError, refetch: fetchData };
 };
 
 export default useSurveyResultPages;

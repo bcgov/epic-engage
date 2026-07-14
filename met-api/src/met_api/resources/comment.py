@@ -76,8 +76,8 @@ class SurveyCommentsGrouped(Resource):
             records = CommentService().get_comments_grouped_by_question(survey_id)
             return records, HTTPStatus.OK
         except ValueError as err:
-            current_app.logger.error("Error fetching grouped survey comments: %s", str(err))
-            return "Error fetching grouped survey comments.", HTTPStatus.INTERNAL_SERVER_ERROR
+            current_app.logger.error('Error fetching grouped survey comments: %s', str(err))
+            return 'Error fetching grouped survey comments.', HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @cors_preflight('GET, OPTIONS')

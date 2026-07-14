@@ -59,7 +59,7 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType }:
                         letterSpacing: '0.04em',
                         textTransform: 'uppercase',
                         color: '#474543',
-                        width: 64,
+                        width: 80,
                         textAlign: 'right',
                     }}
                 >

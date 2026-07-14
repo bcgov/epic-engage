@@ -358,6 +358,31 @@ wizard_survey_info = {
     },
 }
 
+wizard_survey_info_with_conditional = {
+    **TestSurveyInfo.survey1.value,
+    'form_json': {
+        'display': 'wizard',
+        'components': [
+            {
+                'type': 'panel', 'title': 'Page 1', 'key': 'page1', 'input': False,
+                'components': [
+                    {
+                        'key': 'question1', 'input': True, 'type': 'simpleradios',
+                        'values': [
+                            {'value': 'yes', 'label': 'Yes'},
+                            {'value': 'other', 'label': 'Other'},
+                        ],
+                    },
+                    {
+                        'key': 'followup1', 'input': True, 'type': 'simpletextarea',
+                        'customConditional': "show = data.question1 === 'other';",
+                    },
+                ],
+            },
+        ],
+    },
+}
+
 
 def test_get_survey_dashboard(client, session):  # pylint:disable=unused-argument
     """Assert that the dashboard endpoint returns the wizard page structure without auth."""
@@ -372,6 +397,7 @@ def test_get_survey_dashboard(client, session):  # pylint:disable=unused-argumen
         {'title': 'Page 1', 'questions': ['question1']},
         {'title': 'Page 2', 'questions': ['question2']},
     ]
+    assert rv.json.get('conditional_links') == {}
 
 
 def test_get_survey_dashboard_non_wizard(client, session):  # pylint:disable=unused-argument
@@ -382,6 +408,25 @@ def test_get_survey_dashboard_non_wizard(client, session):  # pylint:disable=unu
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json.get('pages') == []
+    assert rv.json.get('conditional_links') == {}
+
+
+def test_get_survey_dashboard_conditional_links(client, session):  # pylint:disable=unused-argument
+    """Assert that a conditionally-shown follow-up question is grouped under its trigger."""
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info_with_conditional)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('conditional_links') == {
+        'followup1': {
+            'trigger_key': 'question1',
+            'row_key': None,
+            'row_label': None,
+            'trigger_values': ['other'],
+            'trigger_value_labels': ['Other'],
+        },
+    }
 
 
 def test_get_survey_dashboard_draft_engagement(client, session):  # pylint:disable=unused-argument

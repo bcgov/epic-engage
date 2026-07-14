@@ -20,6 +20,7 @@ from met_api.services.object_storage_service import ObjectStorageService
 from met_api.services.report_setting_service import ReportSettingService
 from met_api.utils.datetime import local_datetime
 from met_api.utils.roles import Role
+from met_api.utils.survey_conditional_logic import extract_conditional_links
 from met_api.utils.token_info import TokenInfo
 from ..exceptions.business_exception import BusinessException
 
@@ -98,6 +99,14 @@ class SurveyService:
         Only the page structure is exposed (page title + the question keys on each page),
         not the question text, options or any other survey content. Question keys are
         already surfaced through the analytics survey result, so no extra data is leaked.
+
+        `conditional_links` maps a free-text follow-up question's key to the question/row that
+        conditionally triggers it (see `extract_conditional_links`), so the dashboard can group
+        it under its trigger instead of showing it as an unrelated standalone question. This
+        doesn't leak anything beyond what's already public: the keys involved are already
+        exposed via `pages[].questions`, and the row/value labels it resolves are already
+        exposed through the analytics survey result (matrix row labels and option value labels
+        both appear there today).
         """
         survey_model = SurveyModel.get_for_dashboard(survey_id)
         if not survey_model:
@@ -112,7 +121,12 @@ class SurveyService:
                 cls._collect_question_keys(page, keys)
                 pages.append({'title': page.get('title', ''), 'questions': keys})
 
-        return {'id': survey_model.id, 'display': display, 'pages': pages}
+        return {
+            'id': survey_model.id,
+            'display': display,
+            'pages': pages,
+            'conditional_links': extract_conditional_links(form_json),
+        }
 
     @staticmethod
     def get_surveys_paginated(
