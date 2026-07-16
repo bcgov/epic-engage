@@ -19,7 +19,10 @@ from faker import Faker
 
 from analytics_api import db
 from analytics_api.config import get_named_config
+from analytics_api.models.available_response_option import AvailableResponseOption as AvailableResponseOptionModel
 from analytics_api.models.engagement import Engagement as EngagementModel
+from analytics_api.models.request_type_option import RequestTypeOption as RequestTypeOptionModel
+from analytics_api.models.response_type_option import ResponseTypeOption as ResponseTypeOptionModel
 from analytics_api.models.survey import Survey as SurveyModel
 from analytics_api.models.email_verification import EmailVerification as EmailVerificationModel
 from analytics_api.models.user_response_detail import UserResponseDetail as UserResponseDetailModel
@@ -100,3 +103,50 @@ def factory_survey_model(surveyinfo: dict = TestSurveyInfo.survey1):
     db.session.add(survey)
     db.session.commit()
     return survey
+
+
+def factory_request_type_option_model(
+    survey_id, key, request_type, label, request_id, position=1, display=None, is_active=True,
+):
+    """Produce a request type option (survey question) model."""
+    option = RequestTypeOptionModel(
+        survey_id=survey_id,
+        key=key,
+        type=request_type,
+        label=label,
+        request_id=request_id,
+        position=position,
+        display=display,
+        is_active=is_active,
+    )
+    db.session.add(option)
+    db.session.commit()
+    return option
+
+
+def factory_available_response_option_model(survey_id, request_key, value, request_id=None, is_active=True):
+    """Produce an available response option (possible answer choice) model."""
+    option = AvailableResponseOptionModel(
+        survey_id=survey_id,
+        request_key=request_key,
+        value=value,
+        request_id=request_id,
+        is_active=is_active,
+    )
+    db.session.add(option)
+    db.session.commit()
+    return option
+
+
+def factory_response_type_option_model(survey_id, request_key, value, request_id=None, is_active=True):
+    """Produce a response type option (a submitted answer) model."""
+    option = ResponseTypeOptionModel(
+        survey_id=survey_id,
+        request_key=request_key,
+        value=value,
+        request_id=request_id,
+        is_active=is_active,
+    )
+    db.session.add(option)
+    db.session.commit()
+    return option

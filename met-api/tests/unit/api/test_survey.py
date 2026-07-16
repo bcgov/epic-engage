@@ -17,6 +17,7 @@
 Test-Suite to ensure that the /Engagement endpoint is working as expected.
 """
 import copy
+from datetime import datetime, timedelta
 from http import HTTPStatus
 import json
 
@@ -29,7 +30,8 @@ from met_api.models.membership import Membership as MembershipModel
 from met_api.models.tenant import Tenant as TenantModel
 from met_api.utils.constants import TENANT_ID_HEADER
 from met_api.utils.enums import ContentType, MembershipStatus
-from tests.utilities.factory_scenarios import TestJwtClaims, TestSurveyInfo, TestTenantInfo, TestUserInfo
+from tests.utilities.factory_scenarios import (
+    TestEngagementInfo, TestJwtClaims, TestSurveyInfo, TestTenantInfo, TestUserInfo)
 from tests.utilities.factory_utils import (
     factory_auth_header, factory_engagement_model, factory_membership_model, factory_staff_user_model,
     factory_survey_and_eng_model, factory_survey_model, factory_tenant_model, set_global_tenant)
@@ -437,5 +439,40 @@ def test_get_survey_dashboard_draft_engagement(client, session):  # pylint:disab
     survey.save()
 
     rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_get_survey_dashboard_closed_engagement_visible(client, session):  # pylint:disable=unused-argument
+    """Assert that a closed (but already-started) engagement's dashboard is still reachable."""
+    eng = factory_engagement_model(status=Status.Closed.value)
+    survey = factory_survey_model()
+    survey.engagement_id = eng.id
+    survey.save()
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+
+
+def test_get_survey_dashboard_not_yet_started_engagement_hidden(client, session):  # pylint:disable=unused-argument
+    """Assert that a published engagement whose start_date is still in the future is hidden."""
+    future_eng_info = {
+        **TestEngagementInfo.engagement1.value,
+        'start_date': (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d'),
+    }
+    eng = factory_engagement_model(eng_info=future_eng_info, status=Status.Published.value)
+    survey = factory_survey_model()
+    survey.engagement_id = eng.id
+    survey.save()
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_get_survey_dashboard_survey_not_found(client, session):  # pylint:disable=unused-argument
+    """Assert that a nonexistent survey id returns 404."""
+    rv = client.get(f'{surveys_url}999999999/dashboard', content_type=ContentType.JSON.value)
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
