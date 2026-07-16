@@ -14,7 +14,7 @@ from met_api.utils import notification
 from met_api.utils.datetime import convert_and_format_to_utc_str
 
 # Statuses where the engagement should not be publicly visible in EPIC.
-_NON_PUBLIC_STATUSES = {Status.Draft.value, Status.Scheduled.value, Status.Unpublished.value}
+_NON_PUBLIC_STATUSES = {Status.Draft.value, Status.Unpublished.value}
 
 
 class ProjectService:

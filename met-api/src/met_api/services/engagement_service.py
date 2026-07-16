@@ -140,6 +140,7 @@ class EngagementService:
             if engagement_settings:
                 if engagement_settings.send_report:
                     EngagementService._send_closeout_emails(engagement)
+            ProjectService.update_project_info(engagement.id)
 
     @staticmethod
     def publish_scheduled_engagements():
