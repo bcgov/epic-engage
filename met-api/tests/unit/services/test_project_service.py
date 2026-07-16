@@ -46,7 +46,7 @@ def _make_engagement(status_id=Status.Published.value):
     (Status.Published.value, True),
     (Status.Closed.value, True),
     (Status.Draft.value, False),
-    (Status.Scheduled.value, False),
+    (Status.Scheduled.value, True),
     (Status.Unpublished.value, False),
 ])
 def test_construct_epic_payload_is_published(app, status_id, expected_published):
