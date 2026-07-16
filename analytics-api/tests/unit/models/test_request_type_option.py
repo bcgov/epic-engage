@@ -80,6 +80,7 @@ def test_hides_non_display_questions_for_public_view(session):  # pylint:disable
         survey.id, 'hidden1', 'simpleradios', 'Hidden', 'hidden1', position=1, display=False)
     factory_request_type_option_model(
         survey.id, 'shown1', 'simpleradios', 'Shown (unset)', 'shown1', position=2, display=None)
+    factory_available_response_option_model(survey.id, 'hidden1', 'yes')
     factory_available_response_option_model(survey.id, 'shown1', 'yes')
 
     public_result = RequestTypeOptionModel.get_survey_result_with_type(104, False)
