@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Box, Skeleton, Stack, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
@@ -8,6 +8,9 @@ import { UserResponseDetailByMonth } from 'models/analytics/userResponseDetail';
 import { getAggregatorData } from 'services/analytics/aggregatorService';
 import { getMapData } from 'services/analytics/mapService';
 import { getUserResponseDetailByMonth } from 'services/analytics/userResponseDetailService';
+import { useAppSelector } from 'hooks';
+import { DashboardType } from 'constants/dashboardType';
+import { DashboardContext } from './DashboardContext';
 import { LiveActivityChart } from './LiveActivityChart';
 
 interface DashboardHeaderCardProps {
@@ -36,6 +39,9 @@ const formatMonthLabel = (showdataby: string) => {
 };
 
 export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: DashboardHeaderCardProps) => {
+    const { dashboardType } = useContext(DashboardContext);
+    const isAuthenticated = useAppSelector((state) => state.user.authentication.authenticated);
+    const canExport = dashboardType === DashboardType.INTERNAL && isAuthenticated;
     const [surveysCompleted, setSurveysCompleted] = useState<number | null>(null);
     const [isLocationLoading, setIsLocationLoading] = useState(true);
     const [projectLocation, setProjectLocation] = useState<string | null>(null);
@@ -146,9 +152,11 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                             </Box>
                         )}
                     </Box>
-                    <PrimaryButton startIcon={<FileDownloadOutlinedIcon />} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
-                        Export
-                    </PrimaryButton>
+                    {canExport && (
+                        <PrimaryButton startIcon={<FileDownloadOutlinedIcon />} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+                            Export
+                        </PrimaryButton>
+                    )}
                 </Stack>
             </Box>
         </Box>
