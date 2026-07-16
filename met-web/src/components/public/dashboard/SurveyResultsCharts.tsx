@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Divider, Skeleton, Stack } from '@mui/material';
+import { Box, Skeleton, Stack } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -21,6 +21,7 @@ import FormStepper from 'components/public/survey/submit/Stepper';
 import { useSurveyResultPages } from './hooks/useSurveyResultPages';
 import { useSurveyComments } from './hooks/useSurveyComments';
 import { ConditionalLink } from './surveyPages';
+import { DashboardType } from 'constants/dashboardType';
 
 const COMPONENT_TYPE = {
     RADIO: 'simpleradios',
@@ -127,6 +128,7 @@ interface QuestionChartProps {
     question: TypedSurveyData;
     commentsByKey: Map<string, string[]>;
     followUps: ResolvedFollowUp[];
+    dashboardType: string;
 }
 
 const renderFollowUps = (followUps: ResolvedFollowUp[], type: string) =>
@@ -139,8 +141,9 @@ const renderFollowUps = (followUps: ResolvedFollowUp[], type: string) =>
         />
     ));
 
-const QuestionChart = ({ question, commentsByKey, followUps }: QuestionChartProps) => {
+const QuestionChart = ({ question, commentsByKey, followUps, dashboardType }: QuestionChartProps) => {
     const { label, type, result } = question;
+    const questionType = dashboardType === DashboardType.INTERNAL ? TYPE_LABELS[type] : undefined;
 
     switch (type) {
         case COMPONENT_TYPE.RADIO:
@@ -148,7 +151,7 @@ const QuestionChart = ({ question, commentsByKey, followUps }: QuestionChartProp
             const { data, total } = flatToChartItems(toFlatItems(result));
             return (
                 <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
-                    <QuestionTypeLabel label={TYPE_LABELS[type]} />
+                    {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     <MetDescription sx={{ mb: '18px' }}>{total.toLocaleString()} respondents</MetDescription>
                     <DonutChart data={data} total={total} />
@@ -160,7 +163,7 @@ const QuestionChart = ({ question, commentsByKey, followUps }: QuestionChartProp
         case COMPONENT_TYPE.CHECKBOX: {
             const { data, total } = flatToChartItems(toFlatItems(result));
             return (
-                <CheckboxChart question={label} respondentCount={total} data={data} questionType={TYPE_LABELS[type]} />
+                <CheckboxChart question={label} respondentCount={total} data={data} questionType={questionType} />
             );
         }
 
@@ -168,7 +171,7 @@ const QuestionChart = ({ question, commentsByKey, followUps }: QuestionChartProp
             const rows = toMatrixRows(result);
             return (
                 <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
-                    <QuestionTypeLabel label={TYPE_LABELS[type]} />
+                    {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     <LikertChart data={rows} axisLabels={['Not Effective', 'Effective']} />
                     {renderFollowUps(followUps, type)}
@@ -180,7 +183,7 @@ const QuestionChart = ({ question, commentsByKey, followUps }: QuestionChartProp
             const rows = toMatrixRows(result);
             return (
                 <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
-                    <QuestionTypeLabel label={TYPE_LABELS[type]} />
+                    {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     <MetDescription sx={{ mb: '18px' }}>1 = most important</MetDescription>
                     <RankOrderChart data={rows.map((r) => ({ label: r.label, ranks: r.pcts }))} />
@@ -192,7 +195,7 @@ const QuestionChart = ({ question, commentsByKey, followUps }: QuestionChartProp
         case COMPONENT_TYPE.TEXTAREA:
         case COMPONENT_TYPE.TEXTFIELD: {
             const responses = commentsByKey.get(question.key) ?? toFlatItems(result).map((r) => r.value);
-            return <Comments question={label} responses={responses} questionType={TYPE_LABELS[type]} />;
+            return <Comments question={label} responses={responses} questionType={questionType} />;
         }
 
         default:
@@ -318,9 +321,6 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
     }
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 4 }}>
-            <Divider sx={{ mb: 1 }}>
-                <MetDescription sx={{ color: '#9F9D9C', fontSize: 12 }}>Survey Results</MetDescription>
-            </Divider>
             {pages && pages.length > 1 && (
                 <FormStepper currentPage={safePage} pages={pages} onStepClick={(index) => setCurrentPage(index)} />
             )}
@@ -337,6 +337,7 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
                             question={question}
                             commentsByKey={commentsByKey}
                             followUps={followUpsByTrigger.get(question.key) ?? []}
+                            dashboardType={dashboardType}
                         />
                     ),
                 )
@@ -344,8 +345,8 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
                 <NoData />
             )}
             {pages && pages.length > 1 && (
-                <Box sx={{ pt: 1, borderTop: '1px solid #D8D8D8' }}>
-                    <MetDescription sx={{ pt: 1.5, mb: 1.5 }}>
+                <Box sx={{ pt: 1 }}>
+                    <MetDescription sx={{ pt: 1.5, mb: 1.5, width: 'fit-content', borderTop: '1px solid #D8D8D8' }}>
                         Page {safePage + 1} of {pages.length}
                     </MetDescription>
                     <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }}>

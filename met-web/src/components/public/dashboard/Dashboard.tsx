@@ -8,6 +8,7 @@ import { Breadcrumb } from './Breadcrumb';
 import { DashboardHeaderCard } from './DashboardHeaderCard';
 import { DashboardTabBar, RESULTS_TAB, COMMENTS_TAB } from './DashboardTabBar';
 import { DashboardContext } from './DashboardContext';
+import { DashboardType } from 'constants/dashboardType';
 
 const Dashboard = () => {
     const { slug } = useParams();
@@ -29,7 +30,7 @@ const Dashboard = () => {
                 items={[
                     { label: 'Engagements', to: '/' },
                     { label: engagement.name, to: basePath },
-                    { label: 'Public Report' },
+                    { label: dashboardType === DashboardType.INTERNAL ? 'Internal Report' : 'Public Report' },
                 ]}
             />
             <DashboardHeaderCard engagement={engagement} engagementIsLoading={isEngagementLoading} />
