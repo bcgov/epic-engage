@@ -7,6 +7,7 @@ import os
 from flask import Flask, current_app, g, request
 from flask_cors import CORS
 import secure
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from met_api.auth import jwt
 from met_api.config import get_named_config
@@ -14,6 +15,7 @@ from met_api.models import db, ma, migrate
 from met_api.models.tenant import Tenant as TenantModel
 from met_api.utils import constants
 from met_api.utils.cache import cache
+from met_api.utils.limiter import limiter
 from met_api.utils.util import allowedorigins
 
 
@@ -54,7 +56,14 @@ def create_app(run_mode: str = None):
     # All configuration are in config file
     app.config.from_object(get_named_config(run_mode))
 
+    # Trust the client IP forwarded by the OpenShift router so rate limiting
+    # keys on the real client address instead of the router's.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+
     CORS(app, origins=allowedorigins(), supports_credentials=True)
+
+    # Rate limiting on public endpoints
+    limiter.init_app(app)
 
     # Register blueprints
     app.register_blueprint(API_BLUEPRINT)
