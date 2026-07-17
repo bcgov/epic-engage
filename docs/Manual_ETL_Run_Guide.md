@@ -16,6 +16,12 @@
 
 3. Entities process in order (user, engagement, survey, report setting, submission, email verification). Success ends with `RUN_SUCCESS`.
 
+## Clean up Dagster event logs
+
+Each run appends to Dagster's event log storage, which grows unbounded. After the run completes, clean up the event logs:
+
+1. Check the size of the Dagster tables (`event_logs`, `runs`) and delete data as needed — follow the steps in [Database_Cleanup_Guide.md](Database_Cleanup_Guide.md).
+
 ## Force a re-extract (survey only)
 
 1. Mark run cycles unsuccessful in the **analytics** database:
