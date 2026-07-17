@@ -200,6 +200,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     # This gets cleared after every shapefile conversion.
     SHAPEFILE_UPLOAD_FOLDER = os.getenv('SHAPEFILE_UPLOAD_FOLDER', '/tmp/uploads')
 
+    # Global cap on incoming request body size (bytes), enforced by Werkzeug before
+    # a view even runs. Backstops any endpoint that accepts file uploads.
+    MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', str(100 * 1024 * 1024)))  # 100 MB
+
     # default tenant configs ; Set to EAO for now.Overwrite using openshift variables
     DEFAULT_TENANT_SHORT_NAME = os.getenv('DEFAULT_TENANT_SHORT_NAME', 'EAO')
     DEFAULT_TENANT_NAME = os.getenv('DEFAULT_TENANT_NAME', 'Environment Assessment Office')
