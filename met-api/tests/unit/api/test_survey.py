@@ -106,6 +106,34 @@ def test_create_survey_with_tenant(client, jwt, session):  # pylint:disable=unus
     assert survey_tenant_id == str(tenant_2.id)
 
 
+def test_cross_tenant_edit_delete_unlinked_survey_forbidden(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert editing/deleting an unlinked survey outside the caller's tenant is rejected.
+
+    `update`/`delete` on a survey with no engagement used to skip the tenant check
+    entirely, so a caller whose request is not tenant-scoped (and therefore bypasses the
+    tenant filter in `find_by_id`) could edit/delete a survey owned by another tenant.
+    """
+    # An unlinked survey owned by tenant 1.
+    survey = factory_survey_model()
+    survey.tenant_id = 1
+    survey.save()
+    survey_id = survey.id
+
+    # A caller without a tenant claim: their by-id lookup is not tenant-scoped, so the
+    # survey is resolvable, but the survey's own tenant must still gate edit/delete.
+    claims = copy.deepcopy(TestJwtClaims.staff_admin_role.value)
+    claims.pop('tenant_id', None)
+    headers = factory_auth_header(jwt=jwt, claims=claims)
+
+    rv = client.put(surveys_url, data=json.dumps({'id': str(survey_id), 'name': 'hijacked'}),
+                    headers=headers, content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+
+    rv = client.delete(f'{surveys_url}{survey_id}', headers=headers,
+                       content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+
+
 @pytest.mark.parametrize('survey_info', [TestSurveyInfo.survey2])
 def test_put_survey(client, jwt, session, survey_info):  # pylint:disable=unused-argument
     """Assert that an survey can be POSTed."""

@@ -28,7 +28,8 @@ def check_auth(**kwargs):
     if has_valid_roles:
         if not skip_tenant_check:
             user_tenant_id = user_from_context.tenant_id
-            _validate_tenant(kwargs.get('engagement_id'), user_tenant_id)
+            _validate_tenant(kwargs.get('engagement_id'), user_tenant_id,
+                             kwargs.get('resource_tenant_id'))
         return
 
     team_permitted_roles = {MembershipType.TEAM_MEMBER.name, MembershipType.REVIEWER.name} & permitted_roles
@@ -42,16 +43,26 @@ def check_auth(**kwargs):
     abort(403)
 
 
-def _validate_tenant(eng_id, tenant_id):
-    """Validate users tenant id with engagements tenant id."""
+def _validate_tenant(eng_id, tenant_id, resource_tenant_id=None):
+    """Validate the user's tenant id against the target resource's tenant id."""
     # Reject a tenant-id header that disagrees with the JWT claim
     get_authorized_tenant_id()
-    if not eng_id:
+    if eng_id:
+        engagement_tenant_id = EngagementModel.find_tenant_id_by_id(eng_id)
+        if engagement_tenant_id and str(tenant_id) != str(engagement_tenant_id):
+            current_app.logger.debug(f'Aborting . Tenant Id on Engagement and user context Mismatch'
+                                     f'engagement_tenant_id: {engagement_tenant_id} '
+                                     f'tenant_id: {tenant_id}')
+
+            abort(HTTPStatus.FORBIDDEN)
         return
-    engagement_tenant_id = EngagementModel.find_tenant_id_by_id(eng_id)
-    if engagement_tenant_id and str(tenant_id) != str(engagement_tenant_id):
-        current_app.logger.debug(f'Aborting . Tenant Id on Engagement and user context Mismatch'
-                                 f'engagement_tenant_id: {engagement_tenant_id} '
+    # No engagement to scope against: when the target record carries its own
+    # tenant id, enforce it so a by-id lookup cannot edit/delete a record owned
+    # by another tenant. An untenanted (None) record is deliberately shared by
+    # find_by_id, so it is left accessible.
+    if resource_tenant_id is not None and str(tenant_id) != str(resource_tenant_id):
+        current_app.logger.debug(f'Aborting . Tenant Id on resource and user context Mismatch'
+                                 f'resource_tenant_id: {resource_tenant_id} '
                                  f'tenant_id: {tenant_id}')
 
         abort(HTTPStatus.FORBIDDEN)
