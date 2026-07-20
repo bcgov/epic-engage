@@ -344,7 +344,7 @@ const EngagementListing = () => {
             disablePadding: false,
             label: '',
 
-            customStyle: { padding: 2 },
+            customStyle: { padding: 2, paddingRight: 16 },
             hideSorticon: true,
             align: 'left',
             icon: (
