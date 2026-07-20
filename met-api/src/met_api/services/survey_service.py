@@ -212,7 +212,8 @@ class SurveyService:
         engagement_id = survey.get('engagement_id', None)
 
         authorization.check_auth(one_of_roles=(MembershipType.TEAM_MEMBER.name,
-                                               Role.EDIT_SURVEY.value), engagement_id=engagement_id)
+                                               Role.EDIT_SURVEY.value), engagement_id=engagement_id,
+                                 resource_tenant_id=survey.get('tenant_id', None))
 
         # check if user has edit all surveys access to edit template surveys as well
         user_roles = TokenInfo.get_user_roles()
@@ -252,7 +253,8 @@ class SurveyService:
                 MembershipType.TEAM_MEMBER.name,
                 Role.CREATE_ADMIN_USER.value
             ),
-            engagement_id=eng_id)  # TODO create proper role for delete survey
+            engagement_id=eng_id,
+            resource_tenant_id=survey.get('tenant_id', None))  # TODO create proper role for delete survey
         if engagement_id:
             raise ValueError('Cannot delete a survey linked to an engagement')
 
