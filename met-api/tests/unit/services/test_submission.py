@@ -98,6 +98,29 @@ def test_review_comment(client, jwt, session, monkeypatch):  # pylint:disable=un
         assert submission_record.get('comment_status_id') == 2
 
 
+def test_review_comment_keeps_is_resubmission_flag(client, jwt, session, monkeypatch):  # pylint:disable=unused-argument
+    """Assert that reviewing a resubmitted comment does not clear its is_resubmission flag."""
+    with patch.object(authorization, 'check_auth', return_value=True):
+        admin_user = factory_staff_user_model(3)
+        participant = factory_participant_model()
+        survey, eng = factory_survey_and_eng_model()
+        submission = factory_submission_model(
+            survey.id, eng.id, participant.id)
+        factory_comment_model(survey.id, submission.id)
+
+        submission.is_resubmission = True
+        submission.save()
+
+        reasons = {
+            'status_id': Status.Approved.value,
+        }
+        submission_record = SubmissionService().review_comment(
+            submission.id, reasons, admin_user.external_id)
+
+        assert submission_record.get('comment_status_id') == Status.Approved.value
+        assert submission_record.get('is_resubmission') is True
+
+
 def test_auto_approval_of_submissions_without_comment(session):  # pylint:disable=unused-argument
     """Assert that a submission without comment is auto approved."""
     survey, eng = factory_survey_and_eng_model()
