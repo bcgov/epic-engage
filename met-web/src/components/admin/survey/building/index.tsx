@@ -31,6 +31,9 @@ import { BuilderTabs, tabIds } from './BuilderTabs';
 import { debounce } from 'lodash';
 import { format } from 'date-fns';
 
+const TAB_QUESTIONS = 'questions';
+const TAB_REPORT = 'report';
+
 interface SurveyForm {
     id: string;
     form_json: unknown;
@@ -72,7 +75,7 @@ const SurveyFormBuilder = () => {
     }, [savedEngagement]);
 
     const [autoSaveNotificationOpen, setAutoSaveNotificationOpen] = useState(false);
-    const [tab, setTab] = useState('questions');
+    const [tab, setTab] = useState(TAB_QUESTIONS);
     const AUTO_SAVE_INTERVAL = 5000;
 
     useEffect(() => {
@@ -338,12 +341,12 @@ const SurveyFormBuilder = () => {
                 <BuilderTabs
                     tabs={[
                         {
-                            value: 'questions',
+                            value: TAB_QUESTIONS,
                             label: 'Survey questions',
                             icon: <ListAltOutlinedIcon />,
                         },
                         {
-                            value: 'report',
+                            value: TAB_REPORT,
                             label: 'Public report settings',
                             icon: <AssessmentOutlinedIcon />,
                         },
@@ -351,8 +354,8 @@ const SurveyFormBuilder = () => {
                     value={tab}
                     onChange={setTab}
                 />
-                {tab === 'questions' && (
-                    <Box role="tabpanel" id={tabIds('questions').panel} aria-labelledby={tabIds('questions').tab}>
+                {tab === TAB_QUESTIONS && (
+                    <Box role="tabpanel" id={tabIds(TAB_QUESTIONS).panel} aria-labelledby={tabIds(TAB_QUESTIONS).tab}>
                         <Stack spacing={1} sx={{ pt: 1, borderBottom: '1px solid #E0E0E0', pb: 2, mb: 2 }}>
                             <Stack direction="row">
                                 <FormGroup>
@@ -420,8 +423,8 @@ const SurveyFormBuilder = () => {
                         </Stack>
                     </Box>
                 )}
-                {tab === 'report' && (
-                    <Box role="tabpanel" id={tabIds('report').panel} aria-labelledby={tabIds('report').tab}>
+                {tab === TAB_REPORT && (
+                    <Box role="tabpanel" id={tabIds(TAB_REPORT).panel} aria-labelledby={tabIds(TAB_REPORT).tab}>
                         <MetParagraph sx={{ pt: 2 }}>will be done in ENGAGE-239.</MetParagraph>
                     </Box>
                 )}
