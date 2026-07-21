@@ -1,9 +1,9 @@
 """Service for project management."""
 from http import HTTPStatus
 import logging
-import requests
 
 from flask import current_app
+import requests
 
 from met_api.constants.engagement_status import Status
 from met_api.models.engagement import Engagement as EngagementModel
@@ -35,7 +35,7 @@ class ProjectService:
             response = requests.get(project_url, headers=headers, timeout=10)
             if response.status_code == HTTPStatus.OK:
                 return 'project'
-        except Exception:  # pylint:disable=broad-except
+        except Exception:  # noqa: B902 # pylint:disable=broad-except
             pass
 
         # Check project notification
@@ -44,7 +44,7 @@ class ProjectService:
             response = requests.get(notification_url, headers=headers, timeout=10)
             if response.status_code == HTTPStatus.OK:
                 return 'notification'
-        except Exception:  # pylint:disable=broad-except
+        except Exception:  # noqa: B902 # pylint:disable=broad-except
             pass
 
         return 'project'  # Default to project for backward compatibility
@@ -79,7 +79,10 @@ class ProjectService:
             'dateCompleted': convert_and_format_to_utc_str(engagement.end_date) if engagement.end_date else None,
             'pcp': pcp,
             'isMet': True,
-            'metURL': f'{notification.get_tenant_site_url(engagement.tenant_id)}{EmailVerificationService.get_engagement_path(engagement, is_public_url=True)}'
+            'metURL': (
+                f'{notification.get_tenant_site_url(engagement.tenant_id)}'
+                f'{EmailVerificationService.get_engagement_path(engagement, is_public_url=True)}'
+            )
         })
 
         RestService.put(
