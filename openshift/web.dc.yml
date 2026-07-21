@@ -26,7 +26,7 @@ objects:
         "REACT_APP_API_URL": "https://${APP}-${ENV}.apps.gold.devops.gov.bc.ca/api/",
         "REACT_APP_ANALYTICS_API_URL": "https://analytics-api-${ENV}.apps.gold.devops.gov.bc.ca/api/",
         // Keycloak
-        "REACT_APP_KEYCLOAK_URL": "https://met-oidc.apps.gold.devops.gov.bc.ca/auth",
+        "REACT_APP_KEYCLOAK_URL": "https://dev.loginproxy.gov.bc.ca/auth",
         "REACT_APP_KEYCLOAK_CLIENT": "${KC_CLIENT}",
         "REACT_APP_KEYCLOAK_REALM": "${KC_REALM}",
         // Redash
