@@ -9,7 +9,7 @@
         "@emotion/react": "^11.9.0",
         "@emotion/styled": "^11.8.1",
         "@epic/centre-analytics": "github:bcgov/EPIC.analytics#v1.1.0",
-        "@formio/js": "^5.3.1",
+        "@formio/js": "~5.3.1",
         "@formio/react": "^6.1.0",
         "@hello-pangea/dnd": "^17.0.0",
         "@hookform/resolvers": "^2.9.8",

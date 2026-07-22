@@ -1,39 +1,38 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-    Grid,
-    Stack,
-    Divider,
-    TextField,
-    IconButton,
-    Switch,
-    FormGroup,
-    FormControlLabel,
-    Tooltip,
-} from '@mui/material';
-import HelpIcon from '@mui/icons-material/Help';
+import { Grid, Stack, Divider, TextField, IconButton, Switch, FormGroup, FormControlLabel, Box } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import FormBuilder from 'components/shared/form/FormBuilder';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import ClearIcon from '@mui/icons-material/Clear';
+import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import { SurveyParams } from '../types';
 import { getSurvey, putSurvey } from 'services/surveyService';
 import { Survey } from 'models/survey';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
-import { MetHeader3, MetPageGridContainer, PrimaryButton, SecondaryButton } from 'components/shared/common';
+import {
+    MetHeader3,
+    MetParagraph,
+    MetPageGridContainer,
+    PrimaryButton,
+    SecondaryButton,
+} from 'components/shared/common';
 import FormBuilderSkeleton from './FormBuilderSkeleton';
 import { FormBuilderData } from 'components/shared/form/FormBuilder/types';
 import { EngagementStatus } from 'constants/engagementStatus';
 import { getEngagement } from 'services/engagementService';
 import { Engagement } from 'models/engagement';
 import { openNotificationModal } from 'services/notificationModalService/notificationModalSlice';
-import { Palette } from 'styles/Theme';
-import { PermissionsGate } from 'components/shared/permissionsGate';
-import { USER_ROLES } from 'services/userService/constants';
 import axios from 'axios';
 import { AutoSaveSnackBar } from './AutoSaveSnackBar';
+import { AdditionalSettings } from './AdditionalSettings';
+import { BuilderTabs, tabIds } from './BuilderTabs';
 import { debounce } from 'lodash';
 import { format } from 'date-fns';
+
+const TAB_QUESTIONS = 'questions';
+const TAB_REPORT = 'report';
 
 interface SurveyForm {
     id: string;
@@ -76,6 +75,7 @@ const SurveyFormBuilder = () => {
     }, [savedEngagement]);
 
     const [autoSaveNotificationOpen, setAutoSaveNotificationOpen] = useState(false);
+    const [tab, setTab] = useState(TAB_QUESTIONS);
     const AUTO_SAVE_INTERVAL = 5000;
 
     useEffect(() => {
@@ -338,140 +338,96 @@ const SurveyFormBuilder = () => {
                 <Divider />
             </Grid>
             <Grid item xs={12}>
-                <Stack direction="row">
-                    <FormGroup>
-                        <FormControlLabel
-                            control={
-                                <Switch
-                                    checked={isMultiPage}
-                                    onChange={(e) => {
-                                        dispatch(
-                                            openNotificationModal({
-                                                open: true,
-                                                data: {
-                                                    header: 'Change Survey Type',
-                                                    subText: [
-                                                        {
-                                                            text: `You will be changing the survey type from ${
-                                                                isMultiPage
-                                                                    ? 'multi page to single page'
-                                                                    : 'single page to multi page'
-                                                            }.`,
-                                                        },
-                                                        {
-                                                            text: 'You will lose all current progress if you do.',
-                                                            bold: true,
-                                                        },
-                                                        {
-                                                            text: 'Do you want to change this survey type?',
-                                                        },
-                                                    ],
-                                                    handleConfirm: () => {
-                                                        setFormDefinition({
-                                                            display: isMultiPage ? 'form' : 'wizard',
-                                                            components: [],
-                                                        });
-                                                    },
-                                                },
-                                                type: 'confirm',
-                                            }),
-                                        );
-                                    }}
-                                />
-                            }
-                            label="Multi-page"
-                        />
-                    </FormGroup>
-                </Stack>
-            </Grid>
-            <Grid item xs={12}>
-                <FormBuilder handleFormChange={handleFormChange} savedForm={formDefinition} isLoading={loading} />
-            </Grid>
-            <Grid item xs={12}>
-                <Stack direction="row">
-                    <FormGroup>
-                        <FormControlLabel
-                            control={
-                                <PermissionsGate scopes={[USER_ROLES.CREATE_SURVEY]} errorProps={{ disabled: true }}>
-                                    <Switch
-                                        checked={isTemplateSurvey}
-                                        disabled={Boolean(savedSurvey?.engagement_id)}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setIsTemplateSurvey(true);
-                                                return;
-                                            }
-                                            setIsTemplateSurvey(false);
-                                        }}
+                <BuilderTabs
+                    tabs={[
+                        {
+                            value: TAB_QUESTIONS,
+                            label: 'Survey questions',
+                            icon: <ListAltOutlinedIcon />,
+                        },
+                        {
+                            value: TAB_REPORT,
+                            label: 'Public report settings',
+                            icon: <AssessmentOutlinedIcon />,
+                        },
+                    ]}
+                    value={tab}
+                    onChange={setTab}
+                />
+                {tab === TAB_QUESTIONS && (
+                    <Box role="tabpanel" id={tabIds(TAB_QUESTIONS).panel} aria-labelledby={tabIds(TAB_QUESTIONS).tab}>
+                        <Stack spacing={1} sx={{ pt: 1, borderBottom: '1px solid #E0E0E0', pb: 2, mb: 2 }}>
+                            <Stack direction="row">
+                                <FormGroup>
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                checked={isMultiPage}
+                                                onChange={(e) => {
+                                                    dispatch(
+                                                        openNotificationModal({
+                                                            open: true,
+                                                            data: {
+                                                                header: 'Change Survey Type',
+                                                                subText: [
+                                                                    {
+                                                                        text: `You will be changing the survey type from ${
+                                                                            isMultiPage
+                                                                                ? 'multi page to single page'
+                                                                                : 'single page to multi page'
+                                                                        }.`,
+                                                                    },
+                                                                    {
+                                                                        text: 'You will lose all current progress if you do.',
+                                                                        bold: true,
+                                                                    },
+                                                                    {
+                                                                        text: 'Do you want to change this survey type?',
+                                                                    },
+                                                                ],
+                                                                handleConfirm: () => {
+                                                                    setFormDefinition({
+                                                                        display: isMultiPage ? 'form' : 'wizard',
+                                                                        components: [],
+                                                                    });
+                                                                },
+                                                            },
+                                                            type: 'confirm',
+                                                        }),
+                                                    );
+                                                }}
+                                            />
+                                        }
+                                        label="Multi-page"
                                     />
-                                </PermissionsGate>
-                            }
-                            label="Save as a Template"
-                        />
-                    </FormGroup>
-                    <Tooltip
-                        title="When you toggle ON this option and save your Survey, your Survey will become a Template. As long as this option is on, the Template can be cloned (and then edited) but can't be attached directly to an Engagement."
-                        placement="top"
-                        componentsProps={{
-                            tooltip: {
-                                sx: {
-                                    bgcolor: '#003366',
-                                    color: 'white',
-                                },
-                            },
-                        }}
-                    >
-                        <IconButton>
-                            <HelpIcon sx={{ fontSize: 20, color: `${Palette.primary.main}` }} />
-                        </IconButton>
-                    </Tooltip>
-                </Stack>
-                <Stack direction="row">
-                    <FormGroup>
-                        <FormControlLabel
-                            control={
-                                <PermissionsGate scopes={[USER_ROLES.CREATE_SURVEY]} errorProps={{ disabled: true }}>
-                                    <Switch
-                                        checked={isHiddenSurvey}
-                                        disabled={Boolean(savedSurvey?.engagement_id)}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setIsHiddenSurvey(true);
-                                                return;
-                                            }
-                                            setIsHiddenSurvey(false);
-                                        }}
-                                    />
-                                </PermissionsGate>
-                            }
-                            label="Hide Survey"
-                        />
-                    </FormGroup>
-                    <Tooltip
-                        title="When you toggle ON this option and save your Survey, your Survey will be 'Hidden'. When the toggle is ON and as long as the survey is not attached to an engagement, the Survey will only be visible to Superusers. When you are ready to make it available and able to be cloned or attached to an engagement, change the toggle to OFF and click the Save button."
-                        placement="top"
-                        componentsProps={{
-                            tooltip: {
-                                sx: {
-                                    bgcolor: '#003366',
-                                    color: 'white',
-                                },
-                            },
-                        }}
-                    >
-                        <IconButton>
-                            <HelpIcon sx={{ fontSize: 20, color: `${Palette.primary.main}` }} />
-                        </IconButton>
-                    </Tooltip>
-                </Stack>
-            </Grid>
-            <Grid item xs={12}>
-                <Stack direction="row" spacing={2}>
-                    <PrimaryButton disabled={!formData} loading={isSaving} onClick={handleSaveForm}>
-                        {'Report Settings'}
-                    </PrimaryButton>
-                    <SecondaryButton onClick={() => navigate('/surveys')}>Cancel</SecondaryButton>
-                </Stack>
+                                </FormGroup>
+                            </Stack>
+                            <FormBuilder
+                                handleFormChange={handleFormChange}
+                                savedForm={formDefinition}
+                                isLoading={loading}
+                            />
+                            <AdditionalSettings
+                                isTemplateSurvey={isTemplateSurvey}
+                                onTemplateChange={setIsTemplateSurvey}
+                                isHiddenSurvey={isHiddenSurvey}
+                                onHiddenChange={setIsHiddenSurvey}
+                                disabled={Boolean(savedSurvey?.engagement_id)}
+                            />
+                            <Stack direction="row" spacing={2}>
+                                <PrimaryButton disabled={!formData} loading={isSaving} onClick={handleSaveForm}>
+                                    {'Report Settings'}
+                                </PrimaryButton>
+                                <SecondaryButton onClick={() => navigate('/surveys')}>Cancel</SecondaryButton>
+                            </Stack>
+                        </Stack>
+                    </Box>
+                )}
+                {tab === TAB_REPORT && (
+                    <Box role="tabpanel" id={tabIds(TAB_REPORT).panel} aria-labelledby={tabIds(TAB_REPORT).tab}>
+                        <MetParagraph sx={{ pt: 2 }}>will be done in ENGAGE-239.</MetParagraph>
+                    </Box>
+                )}
             </Grid>
             <AutoSaveSnackBar
                 open={autoSaveNotificationOpen}
