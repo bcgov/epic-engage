@@ -245,7 +245,7 @@ const Surveys = () => {
             disablePadding: false,
             label: '',
 
-            customStyle: { padding: 2, width: '1%', whiteSpace: 'nowrap'},
+            customStyle: { padding: 2, width: '1%', whiteSpace: 'nowrap' },
             hideSorticon: true,
             align: 'left',
             icon: (
