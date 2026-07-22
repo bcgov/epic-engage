@@ -187,6 +187,7 @@ const Surveys = () => {
             numeric: true,
             disablePadding: false,
             label: 'Engagement Name',
+            customStyle: { padding: 2, width: '10%', whiteSpace: 'nowrap' },
             allowSort: true,
             renderCell: (row: Survey) => {
                 if (!row.engagement) {
@@ -205,9 +206,9 @@ const Surveys = () => {
             numeric: true,
             disablePadding: false,
             label: '',
-            customStyle: { padding: 2 },
+            customStyle: { padding: 2, width: '10%', whiteSpace: 'nowrap' },
             hideSorticon: true,
-            align: 'left',
+            align: 'right',
             icon: (
                 <ApprovedIcon>
                     <CheckIcon fontSize="small" />
@@ -244,7 +245,7 @@ const Surveys = () => {
             disablePadding: false,
             label: '',
 
-            customStyle: { padding: 2 },
+            customStyle: { padding: 2, width: '1%', whiteSpace: 'nowrap'},
             hideSorticon: true,
             align: 'left',
             icon: (
@@ -287,9 +288,9 @@ const Surveys = () => {
             disablePadding: false,
             label: '',
 
-            customStyle: { padding: 2 },
+            customStyle: { padding: 2, width: '1%', whiteSpace: 'nowrap' },
             hideSorticon: true,
-            align: 'left',
+            align: 'center',
             icon: (
                 <RejectedIcon>
                     <CloseRounded fontSize="small" />
@@ -330,7 +331,7 @@ const Surveys = () => {
             disablePadding: false,
             label: '',
 
-            customStyle: { padding: 2 },
+            customStyle: { padding: 2, width: '10%', whiteSpace: 'nowrap' },
             hideSorticon: true,
             align: 'left',
             icon: (
@@ -377,7 +378,9 @@ const Surveys = () => {
                 return <ReportButtons survey={row} />;
             },
             customStyle: {
-                minWidth: '280px',
+                width: '1%',
+                whiteSpace: 'nowrap',
+                paddingLeft: '2rem',
             },
         },
     ];
