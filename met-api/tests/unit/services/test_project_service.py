@@ -87,11 +87,12 @@ def test_construct_epic_payload_fields(app):
         assert payload['metBannerImageUrl'] == 'https://image.test/banner.webp'
 
 
-def test_update_project_info_stores_underscore_id(app, session):
+def test_update_project_info_stores_underscore_id(app):
     """Tracking ID stored from _id (not id) in eagle-api POST response."""
     with app.app_context():
         with patch('met_api.services.project_service.EngagementModel') as mock_eng_model, \
              patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
+             patch.object(ProjectService, '_get_project_type', return_value='project'), \
              patch.object(ProjectService, '_construct_epic_payload', return_value={}), \
              patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
              patch('met_api.services.project_service.RestService') as mock_rest:
@@ -122,6 +123,7 @@ def test_update_project_info_uses_put_when_tracking_id_exists(app):
     with app.app_context():
         with patch('met_api.services.project_service.EngagementModel') as mock_eng_model, \
              patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
+             patch.object(ProjectService, '_get_project_type', return_value='project'), \
              patch.object(ProjectService, '_construct_epic_payload', return_value={}), \
              patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
              patch('met_api.services.project_service.RestService') as mock_rest:
@@ -159,6 +161,7 @@ def test_delete_from_epic_calls_rest_delete(app):
     """Delete call uses the tracking URL built from EPIC_URL and tracking ID."""
     with app.app_context():
         with patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
+             patch.object(ProjectService, '_get_project_type', return_value='project'), \
              patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
              patch('met_api.services.project_service.RestService') as mock_rest:
 
@@ -186,4 +189,86 @@ def test_delete_from_epic_skips_when_no_tracking_id(app):
 
             ProjectService.delete_from_epic(1)
 
+            mock_rest.delete.assert_not_called()
+
+
+def test_update_project_info_project_notification(app):
+    """Verify that update_project_info correctly fetches, merges, and PUTs for project notifications."""
+    with app.app_context():
+        with patch('met_api.services.project_service.EngagementModel') as mock_eng_model, \
+             patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
+             patch.object(ProjectService, '_get_project_type', return_value='notification'), \
+             patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
+             patch('met_api.services.project_service.notification') as mock_notif, \
+             patch('met_api.services.project_service.EmailVerificationService') as mock_evs, \
+             patch('met_api.services.project_service.requests.get') as mock_get, \
+             patch('met_api.services.project_service.RestService') as mock_rest:
+
+            app.config['IS_EAO_ENVIRONMENT'] = True
+            app.config['EPIC_URL'] = 'https://eagle-dev/api/commentperiod'
+
+            mock_notif.get_tenant_site_url.return_value = 'https://engage.test/'
+            mock_evs.get_engagement_path.return_value = '/engagements/test'
+
+            eng = _make_engagement()
+            eng.start_date = None
+            eng.end_date = None
+            mock_eng_model.find_by_id.return_value = eng
+
+            mock_meta = _make_metadata(project_id=PROJECT_ID, tracking_id=None)
+            mock_meta_model.find_by_engagement_id.return_value = mock_meta
+
+            # Mock GET response returning existing project notification
+            mock_resp = MagicMock()
+            mock_resp.status_code = HTTPStatus.OK
+            mock_resp.json.return_value = {'_id': PROJECT_ID, 'name': 'Notification Name'}
+            mock_get.return_value = mock_resp
+
+            ProjectService.update_project_info(1)
+
+            # verify get was called with correct URL
+            mock_get.assert_called_once_with(
+                'https://eagle-dev/api/projectNotification/abc123projectid',
+                headers={'Authorization': 'Bearer token'},
+                timeout=10
+            )
+
+            # verify RestService.put was called with correct payload and publish query param
+            mock_rest.put.assert_called_once()
+            kwargs = mock_rest.put.call_args[1]
+            assert kwargs['endpoint'] == 'https://eagle-dev/api/projectNotification/abc123projectid?publish=true'
+            assert kwargs['data']['pcp'] == 'open'
+            assert kwargs['data']['name'] == 'Notification Name'
+            assert kwargs['data']['isMet'] is True
+
+
+def test_delete_from_epic_project_notification(app):
+    """Verify that delete_from_epic clears comment period fields and PUTs publish=false for project notifications."""
+    with app.app_context():
+        with patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
+             patch.object(ProjectService, '_get_project_type', return_value='notification'), \
+             patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
+             patch('met_api.services.project_service.requests.get') as mock_get, \
+             patch('met_api.services.project_service.RestService') as mock_rest:
+
+            app.config['IS_EAO_ENVIRONMENT'] = True
+            app.config['EPIC_URL'] = 'https://eagle-dev/api/commentperiod'
+
+            mock_meta = _make_metadata(project_id=PROJECT_ID, tracking_id=TRACKING_ID)
+            mock_meta_model.find_by_engagement_id.return_value = mock_meta
+
+            mock_resp = MagicMock()
+            mock_resp.status_code = HTTPStatus.OK
+            mock_resp.json.return_value = {'_id': PROJECT_ID, 'name': 'Notification Name'}
+            mock_get.return_value = mock_resp
+
+            ProjectService.delete_from_epic(1)
+
+            # verify RestService.put was called with cleared commenting fields and publish=false
+            mock_rest.put.assert_called_once()
+            kwargs = mock_rest.put.call_args[1]
+            assert kwargs['endpoint'] == 'https://eagle-dev/api/projectNotification/abc123projectid?publish=false'
+            assert kwargs['data']['pcp'] == 'none'
+            assert kwargs['data']['isMet'] is False
+            assert kwargs['data']['metURL'] == ''
             mock_rest.delete.assert_not_called()

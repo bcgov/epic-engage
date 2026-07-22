@@ -3,6 +3,7 @@ from http import HTTPStatus
 import logging
 
 from flask import current_app
+import requests
 
 from met_api.constants.engagement_status import Status
 from met_api.models.engagement import Engagement as EngagementModel
@@ -11,7 +12,7 @@ from met_api.services.email_verification_service import EmailVerificationService
 from met_api.services.object_storage_service import ObjectStorageService
 from met_api.services.rest_service import RestService
 from met_api.utils import notification
-from met_api.utils.datetime import convert_and_format_to_utc_str
+from met_api.utils.datetime import convert_and_format_to_utc_str, local_datetime
 
 # Statuses where the engagement should not be publicly visible in EPIC.
 _NON_PUBLIC_STATUSES = {Status.Draft.value, Status.Unpublished.value}
@@ -19,6 +20,106 @@ _NON_PUBLIC_STATUSES = {Status.Draft.value, Status.Unpublished.value}
 
 class ProjectService:
     """Project management service."""
+
+    @staticmethod
+    def _get_project_type(project_id: str, token: str) -> str:
+        """Determine whether the project_id is a standard Project or a ProjectNotification."""
+        epic_url = current_app.config.get('EPIC_URL')
+        base_url = epic_url.rsplit('/', 1)[0]
+
+        headers = {'Authorization': f'Bearer {token}'}
+
+        # Check standard project
+        project_url = f'{base_url}/project/{project_id}'
+        try:
+            response = requests.get(project_url, headers=headers, timeout=10)
+            if response.status_code == HTTPStatus.OK:
+                return 'project'
+        except Exception:  # noqa: B902 # pylint:disable=broad-except
+            pass
+
+        # Check project notification
+        notification_url = f'{base_url}/projectNotification/{project_id}'
+        try:
+            response = requests.get(notification_url, headers=headers, timeout=10)
+            if response.status_code == HTTPStatus.OK:
+                return 'notification'
+        except Exception:  # noqa: B902 # pylint:disable=broad-except
+            pass
+
+        return 'project'  # Default to project for backward compatibility
+
+    @staticmethod
+    def _update_project_notification(engagement, project_id, token, engagement_metadata):
+        base_url = current_app.config.get('EPIC_URL').rsplit('/', 1)[0]
+
+        response = requests.get(
+            f'{base_url}/projectNotification/{project_id}',
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=10
+        )
+        if response.status_code != HTTPStatus.OK:
+            return
+
+        notification_data = response.json()
+        is_pub = engagement.status_id not in _NON_PUBLIC_STATUSES
+
+        now = local_datetime().replace(tzinfo=None)
+        if not is_pub:
+            pcp = 'none'
+        elif engagement.start_date and now < engagement.start_date:
+            pcp = 'pending'
+        elif engagement.end_date and now > engagement.end_date:
+            pcp = 'closed'
+        else:
+            pcp = 'open'
+
+        notification_data.update({
+            'dateStarted': convert_and_format_to_utc_str(engagement.start_date) if engagement.start_date else None,
+            'dateCompleted': convert_and_format_to_utc_str(engagement.end_date) if engagement.end_date else None,
+            'pcp': pcp,
+            'isMet': True,
+            'metURL': (
+                f'{notification.get_tenant_site_url(engagement.tenant_id)}'
+                f'{EmailVerificationService.get_engagement_path(engagement, is_public_url=True)}'
+            )
+        })
+
+        RestService.put(
+            endpoint=f'{base_url}/projectNotification/{project_id}?publish={"true" if is_pub else "false"}',
+            token=token,
+            data=notification_data,
+            raise_for_status=False
+        )
+
+        if not engagement_metadata.project_tracking_id:
+            engagement_metadata.project_tracking_id = project_id
+            engagement_metadata.commit()
+
+    @staticmethod
+    def _delete_project_notification(project_id, token):
+        base_url = current_app.config.get('EPIC_URL').rsplit('/', 1)[0]
+
+        response = requests.get(
+            f'{base_url}/projectNotification/{project_id}',
+            headers={'Authorization': f'Bearer {token}'},
+            timeout=10
+        )
+        if response.status_code == HTTPStatus.OK:
+            notification_data = response.json()
+            notification_data.update({
+                'dateStarted': None,
+                'dateCompleted': None,
+                'pcp': 'none',
+                'isMet': False,
+                'metURL': ''
+            })
+            RestService.put(
+                endpoint=f'{base_url}/projectNotification/{project_id}?publish=false',
+                token=token,
+                data=notification_data,
+                raise_for_status=False
+            )
 
     @staticmethod
     def update_project_info(eng_id: str) -> None:
@@ -30,7 +131,6 @@ class ProjectService:
             if not is_eao_environment:
                 return
 
-            engagement_metadata: EngagementMetadataModel
             engagement, engagement_metadata = ProjectService._get_engagement_and_metadata(eng_id)
 
             if not engagement_metadata or not (project_id := engagement_metadata.project_id):
@@ -38,26 +138,33 @@ class ProjectService:
                 logger.debug('No project Id, skipping EPIC update.')
                 return
 
-            epic_comment_period_payload = ProjectService._construct_epic_payload(engagement, project_id)
             eao_service_account_token = ProjectService._get_eao_service_account_token()
+            project_type = ProjectService._get_project_type(project_id, eao_service_account_token)
 
-            if engagement_metadata.project_tracking_id:
-                update_url = f'{current_app.config.get("EPIC_URL")}/{engagement_metadata.project_tracking_id}'
-                RestService.put(endpoint=update_url, token=eao_service_account_token,
-                                data=epic_comment_period_payload, raise_for_status=False)
-
+            if project_type == 'notification':
+                ProjectService._update_project_notification(
+                    engagement, project_id, eao_service_account_token, engagement_metadata
+                )
             else:
-                create_url = current_app.config.get('EPIC_URL')
-                api_response = RestService.post(endpoint=create_url, token=eao_service_account_token,
-                                                data=epic_comment_period_payload, raise_for_status=False)
+                epic_comment_period_payload = ProjectService._construct_epic_payload(engagement, project_id)
 
-                if api_response.status_code == HTTPStatus.OK:
-                    response_data = api_response.json()
-                    # Eagle-API returns the created MongoDB document; the PK field is '_id'.
-                    tracking_number = str(response_data.get('_id', ''))
-                    if tracking_number:
-                        engagement_metadata.project_tracking_id = tracking_number
-                        engagement_metadata.commit()
+                if engagement_metadata.project_tracking_id:
+                    update_url = f'{current_app.config.get("EPIC_URL")}/{engagement_metadata.project_tracking_id}'
+                    RestService.put(endpoint=update_url, token=eao_service_account_token,
+                                    data=epic_comment_period_payload, raise_for_status=False)
+
+                else:
+                    create_url = current_app.config.get('EPIC_URL')
+                    api_response = RestService.post(endpoint=create_url, token=eao_service_account_token,
+                                                    data=epic_comment_period_payload, raise_for_status=False)
+
+                    if api_response.status_code == HTTPStatus.OK:
+                        response_data = api_response.json()
+                        # Eagle-API returns the created MongoDB document; the PK field is '_id'.
+                        tracking_number = str(response_data.get('_id', ''))
+                        if tracking_number:
+                            engagement_metadata.project_tracking_id = tracking_number
+                            engagement_metadata.commit()
 
         except Exception as e:  # NOQA # pylint:disable=broad-except
             logger.error('Error in update_project_info: %s', str(e))
@@ -77,8 +184,15 @@ class ProjectService:
                 return
 
             eao_service_account_token = ProjectService._get_eao_service_account_token()
-            delete_url = f'{current_app.config.get("EPIC_URL")}/{engagement_metadata.project_tracking_id}'
-            RestService.delete(endpoint=delete_url, token=eao_service_account_token, raise_for_status=False)
+            project_id = engagement_metadata.project_id or engagement_metadata.project_tracking_id
+
+            project_type = ProjectService._get_project_type(project_id, eao_service_account_token)
+
+            if project_type == 'notification':
+                ProjectService._delete_project_notification(project_id, eao_service_account_token)
+            else:
+                delete_url = f'{current_app.config.get("EPIC_URL")}/{engagement_metadata.project_tracking_id}'
+                RestService.delete(endpoint=delete_url, token=eao_service_account_token, raise_for_status=False)
 
         except Exception as e:  # NOQA # pylint:disable=broad-except
             logger.error('Error in delete_from_epic: %s', str(e))
