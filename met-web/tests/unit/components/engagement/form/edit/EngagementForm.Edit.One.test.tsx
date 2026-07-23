@@ -34,7 +34,13 @@ jest.mock('react-redux', () => ({
     ...jest.requireActual('react-redux'),
     useSelector: jest.fn(() => {
         return {
-            roles: [USER_ROLES.VIEW_PRIVATE_ENGAGEMENTS, USER_ROLES.EDIT_ENGAGEMENT, USER_ROLES.CREATE_ENGAGEMENT],
+            roles: [
+                USER_ROLES.VIEW_PRIVATE_ENGAGEMENTS,
+                USER_ROLES.EDIT_ENGAGEMENT,
+                USER_ROLES.CREATE_ENGAGEMENT,
+                USER_ROLES.CREATE_SURVEY,
+                USER_ROLES.EDIT_ALL_SURVEYS,
+            ],
             assignedEngagements: [draftEngagement.id],
         };
     }),
