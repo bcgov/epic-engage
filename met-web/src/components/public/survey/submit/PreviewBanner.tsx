@@ -32,7 +32,7 @@ export const PreviewBanner = () => {
                 </Grid>
                 <Grid sx={{ pt: 2 }} item xs={12} container direction="row" justifyContent="flex-end" spacing={1}>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} width="100%" justifyContent="flex-start">
-                        <PermissionsGate scopes={[USER_ROLES.EDIT_ENGAGEMENT]} errorProps={{ disabled: true }}>
+                        <PermissionsGate scopes={[USER_ROLES.EDIT_ALL_SURVEYS]} errorProps={{ disabled: true }}>
                             <SecondaryButton
                                 sx={{
                                     backgroundColor: 'background.paper',
