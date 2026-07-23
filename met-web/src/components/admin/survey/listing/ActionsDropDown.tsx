@@ -40,14 +40,6 @@ export const ActionsDropDown = ({
             return true;
         }
 
-        if (
-            isEngagementDraft &&
-            assignedEngagements.includes(engagementId) &&
-            roles.includes(USER_ROLES.VIEW_ENGAGEMENT)
-        ) {
-            return true;
-        }
-
         return false;
     };
 
