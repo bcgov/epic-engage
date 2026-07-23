@@ -185,9 +185,9 @@ const Surveys = () => {
             key: 'engagement',
             nestedSortKey: 'engagement.name',
             numeric: true,
-            disablePadding: false,
+            disablePadding: true,
             label: 'Engagement Name',
-            customStyle: { padding: 2, width: '10%', whiteSpace: 'nowrap' },
+            customStyle: { padding: 2, width: '10%' },
             allowSort: true,
             renderCell: (row: Survey) => {
                 if (!row.engagement) {
@@ -206,7 +206,7 @@ const Surveys = () => {
             numeric: true,
             disablePadding: false,
             label: '',
-            customStyle: { padding: 2, width: '10%', whiteSpace: 'nowrap' },
+            customStyle: { padding: 2, width: '5%', whiteSpace: 'nowrap' },
             hideSorticon: true,
             align: 'right',
             icon: (
@@ -331,7 +331,7 @@ const Surveys = () => {
             disablePadding: false,
             label: '',
 
-            customStyle: { padding: 2, width: '10%', whiteSpace: 'nowrap' },
+            customStyle: { padding: 2, width: '5%', whiteSpace: 'nowrap' },
             hideSorticon: true,
             align: 'left',
             icon: (
