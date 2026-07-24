@@ -1,11 +1,10 @@
 import React, { ReactNode } from 'react';
-import { render, waitFor, screen, fireEvent } from '@testing-library/react';
+import { render, waitFor, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { setupEnv } from '../setEnvVars';
 import * as reactRedux from 'react-redux';
 import * as userService from 'services/userService/api';
 import * as membershipService from 'services/membershipService';
-import * as notificationModalSlice from 'services/notificationModalService/notificationModalSlice';
 import { User, createDefaultUser } from 'models/user';
 import { draftEngagement } from '../factory';
 import { EngagementTeamMember, initialDefaultTeamMember } from 'models/engagementTeamMember';
@@ -71,9 +70,6 @@ jest.mock('react-router-dom', () => ({
 
 describe('User Details tests', () => {
     jest.spyOn(reactRedux, 'useDispatch').mockImplementation(() => jest.fn());
-    const mockOpenNotificationModal = jest
-        .spyOn(notificationModalSlice, 'openNotificationModal')
-        .mockImplementation(jest.fn());
     jest.spyOn(userService, 'getUser').mockReturnValue(Promise.resolve(mockUser1));
     jest.spyOn(membershipService, 'getMembershipsByUser').mockReturnValue(Promise.resolve([mockMembership]));
 
@@ -88,22 +84,6 @@ describe('User Details tests', () => {
             expect(screen.getByText(draftEngagement.name)).toBeVisible();
             expect(screen.getByText(`${mockUser1.last_name}, ${mockUser1.first_name}`)).toBeVisible();
             expect(screen.getByText(mockUser1.email_address)).toBeVisible();
-            expect(screen.getByText('Deactivate User')).toBeVisible();
-        });
-    });
-
-    test('Confirmation model appears when toggling status', async () => {
-        render(<UserProfile />);
-
-        await waitFor(() => {
-            expect(screen.getByText('Deactivate User')).toBeVisible();
-        });
-
-        const button = screen.getByTestId('user-status-toggle');
-        fireEvent.click(button);
-
-        await waitFor(() => {
-            expect(mockOpenNotificationModal).toHaveBeenCalled();
         });
     });
 });

@@ -25,13 +25,6 @@ export const Routes: Route[] = [
         allowedRoles: [],
     },
     {
-        name: 'User Management',
-        path: '/usermanagement',
-        base: 'usermanagement',
-        authenticated: true,
-        allowedRoles: [USER_ROLES.VIEW_USERS],
-    },
-    {
         name: 'Feedback Tool',
         path: '/feedback',
         base: 'feedback',
