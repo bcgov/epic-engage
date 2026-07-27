@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime
 from operator import or_
 
-from sqlalchemy import and_, asc, desc
+from sqlalchemy import and_, asc, case, desc
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql.expression import true
 from sqlalchemy.sql.schema import ForeignKey
@@ -154,11 +154,21 @@ class Comment(BaseModel):
         if advanced_search_filters:
             query = cls._filter_by_advanced_filters(query, advanced_search_filters)
 
+        # Status ids do not sort into review priority on their own, so map them onto one.
+        _status_priority = case(
+            {
+                CommentStatus.Pending.value: 1,
+                CommentStatus.Needs_further_review.value: 2,
+                CommentStatus.Approved.value: 3,
+                CommentStatus.Rejected.value: 4,
+            },
+            value=Submission.comment_status_id,
+        )
         _sort_columns = {
             'id': Submission.id,
             'submission.id': Submission.id,
-            'submission.comment_status_id': Submission.comment_status_id,
-            'comment_status_id': Submission.comment_status_id,
+            'submission.comment_status_id': _status_priority,
+            'comment_status_id': _status_priority,
             'created_date': Submission.created_date,
             'reviewed_by': Submission.reviewed_by,
             'review_date': Submission.review_date,
@@ -166,7 +176,8 @@ class Comment(BaseModel):
         col = _sort_columns.get(pagination_options.sort_key, Submission.id)
         sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
 
-        query = query.order_by(sort)
+        # Secondary sort keeps rows with equal sort values stable across pages.
+        query = query.order_by(sort, Submission.id.asc())
 
         no_pagination_options = not pagination_options.page or not pagination_options.size
         if no_pagination_options:

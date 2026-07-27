@@ -21,6 +21,7 @@ import json
 
 import pytest
 
+from met_api.constants.comment_status import Status as CommentStatus
 from met_api.constants.membership_type import MembershipType
 from met_api.utils.enums import ContentType
 from tests.utilities.factory_scenarios import TestJwtClaims, TestSubmissionInfo
@@ -154,6 +155,37 @@ def test_get_comment_filtering(client, jwt, session):  # pylint:disable=unused-a
     assert rv.status_code == 200
     assert len(rv.json.get(
         'items')) == 2, 'Team Member with team membership can see unapproved and unapproved comments'
+
+
+def test_get_submission_page_sorted_by_review_priority(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that sorting by status puts Pending first and Needs further review second."""
+    claims = TestJwtClaims.staff_admin_role
+
+    participant = factory_participant_model()
+    survey, eng = factory_survey_and_eng_model()
+    # Created out of priority order so the assertion cannot pass on insertion order alone.
+    for status in (CommentStatus.Approved, CommentStatus.Rejected,
+                   CommentStatus.Needs_further_review, CommentStatus.Pending):
+        submission = factory_submission_model(
+            survey.id, eng.id, participant.id,
+            {**TestSubmissionInfo.submission1, 'comment_status_id': status.value})
+        factory_comment_model(survey.id, submission.id)
+
+    headers = factory_auth_header(jwt=jwt, claims=claims)
+    rv = client.get(
+        f'/api/submissions/survey/{survey.id}',
+        headers=headers,
+        content_type=ContentType.JSON.value,
+        query_string={'sort_key': 'submission.comment_status_id', 'sort_order': 'asc'}
+    )
+
+    assert rv.status_code == 200
+    assert [item.get('comment_status_id') for item in rv.json.get('items', [])] == [
+        CommentStatus.Pending.value,
+        CommentStatus.Needs_further_review.value,
+        CommentStatus.Approved.value,
+        CommentStatus.Rejected.value,
+    ]
 
 
 def test_invalid_submission(client, jwt, session):  # pylint:disable=unused-argument
