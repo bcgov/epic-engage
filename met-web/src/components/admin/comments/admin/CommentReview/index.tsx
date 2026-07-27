@@ -16,7 +16,8 @@ import {
     Box,
     Button,
 } from '@mui/material';
-import { getSubmission, getSubmissionPage, getSubmissionVersions, reviewComments } from 'services/submissionService';
+import { getSubmission, getSubmissionVersions, reviewComments } from 'services/submissionService';
+import { resolveNextSubmissionId } from './nextInQueue';
 import { useAppDispatch, useAppTranslation } from 'hooks';
 import { useParams, useNavigate } from 'react-router-dom';
 import { openNotification } from 'services/notificationService/notificationSlice';
@@ -76,7 +77,7 @@ const CommentReview = () => {
     const [survey, setSurvey] = useState<Survey>(createDefaultSurvey());
     const [isEditingThreatContact, setIsEditingThreatContact] = useState(false);
     const [threatContact, setThreatContact] = useState<ThreatContact | null>(null);
-    const [nextPendingId, setNextPendingId] = useState<number | null>(null);
+    const [nextSubmissionId, setNextSubmissionId] = useState<number | null>(null);
     const [versions, setVersions] = useState<SubmissionVersion[]>([]);
     const [selectedVersion, setSelectedVersion] = useState<SubmissionVersion | null>(null);
     const [versionDrawerOpen, setVersionDrawerOpen] = useState(false);
@@ -105,25 +106,6 @@ const CommentReview = () => {
         );
     };
 
-    const fetchNextPending = async (currentId: number) => {
-        try {
-            const result = await getSubmissionPage({
-                survey_id: Number(surveyId),
-                queryParams: {
-                    page: 1,
-                    size: 10,
-                    status: CommentStatus.Pending,
-                    sort_key: 'submission.id',
-                    sort_order: 'asc',
-                },
-            });
-            const next = result.items.find((s) => Number(s.id) !== currentId);
-            setNextPendingId(next?.id ?? null);
-        } catch (err) {
-            setNextPendingId(null);
-        }
-    };
-
     const fetchSubmission = async () => {
         try {
             if (isNaN(Number(submissionId))) {
@@ -133,6 +115,13 @@ const CommentReview = () => {
             const fetchedSurvey = await getSurvey(Number(surveyId));
             setSubmission(fetchedSubmission);
             setSurvey(fetchedSurvey);
+            setNextSubmissionId(
+                await resolveNextSubmissionId(
+                    Number(surveyId),
+                    Number(submissionId),
+                    fetchedSubmission.comment_status_id,
+                ),
+            );
             setHasOtherReason(!!fetchedSubmission.rejected_reason_other);
             setOtherReason(fetchedSubmission.rejected_reason_other ?? '');
             setHasPersonalInfo(fetchedSubmission.has_personal_info ?? false);
@@ -166,9 +155,8 @@ const CommentReview = () => {
     };
 
     useEffect(() => {
-        const currentId = Number(submissionId);
         setIsLoading(true);
-        setNextPendingId(null);
+        setNextSubmissionId(null);
         setReview(CommentStatus.Approved);
         setHasOtherReason(false);
         setOtherReason('');
@@ -181,7 +169,6 @@ const CommentReview = () => {
         setSelectedVersion(null);
         setVersionDrawerOpen(false);
         fetchSubmission();
-        fetchNextPending(currentId);
     }, [submissionId]);
 
     useEffect(() => {
@@ -272,7 +259,7 @@ const CommentReview = () => {
             });
             setIsSaving(false);
             dispatch(openNotification({ severity: 'success', text: 'Comments successfully reviewed.' }));
-            navigate(`/surveys/${surveyId}/submissions/${nextPendingId}/review`);
+            navigate(`/surveys/${surveyId}/submissions/${nextSubmissionId}/review`);
         } catch (error) {
             dispatch(openNotification({ severity: 'error', text: 'Error occurred while sending comments review.' }));
             setIsSaving(false);
@@ -900,7 +887,7 @@ const CommentReview = () => {
                         </When>
                         <Grid item xs={12}>
                             <Stack direction="row" spacing={2}>
-                                {nextPendingId !== null ? (
+                                {nextSubmissionId !== null ? (
                                     <>
                                         <PrimaryButton loading={isSaving} onClick={handleSaveAndNext}>
                                             {'Save & Review Next'}
