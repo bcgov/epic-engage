@@ -1,6 +1,7 @@
 @charset "UTF-8";
 
-  
+@use './styles/tokens' as tokens;
+
 #main {
   margin-top: 10px;
 }
@@ -9,8 +10,8 @@ body {
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-family: 'BCSans', 'Noto Sans', Verdana, Arial, sans-serif;
-  color: #494949
+  font-family: tokens.$typography-font-families-bc-sans, 'Noto Sans', Verdana, Arial, sans-serif;
+  color: tokens.$typography-color-primary;
 }
 
 code {

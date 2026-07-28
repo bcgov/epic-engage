@@ -1,7 +1,9 @@
 import React from 'react';
 import { Typography } from '@mui/material';
-import { SxProps, styled } from '@mui/system';
-import { MET_Header_Font_Family, MET_Font_Weight, MET_Header_Font_Weight } from 'styles/constants';
+import { SxProps } from '@mui/system';
+// styled from material/styles (not system) so the callback's `theme` is the typed MUI theme.
+import { styled } from '@mui/material/styles';
+import { MET_Header_Font_Weight } from 'styles/constants';
 
 interface HeaderProps {
     sx?: SxProps;
@@ -11,47 +13,34 @@ interface HeaderProps {
     [prop: string]: unknown;
 }
 
-export const MetLabel = styled(Typography)(() => ({
-    fontSize: '16px',
-    fontWeight: 'bold',
-    fontFamily: MET_Header_Font_Family,
+/**
+ * Size, weight, line height and font family all come from the theme's typography variants, which
+ * are built from B.C. Design System tokens. These components pick a variant; they no longer restate
+ * the values. Caller `sx` is spread last so it can actually override.
+ */
+
+export const MetLabel = styled(Typography)(({ theme }) => ({
+    ...theme.typography.body1,
+    fontWeight: MET_Header_Font_Weight,
 }));
 
-export const MetParagraph = styled(Typography)(() => ({
-    fontSize: '16px',
-    fontFamily: MET_Header_Font_Family,
+export const MetParagraph = styled(Typography)(({ theme }) => theme.typography.body1);
+
+export const MetIconText = styled(Typography)(({ theme }) => ({
+    ...theme.typography.caption,
+    lineHeight: 1.2,
 }));
 
-export const MetIconText = styled(Typography)(() => ({
-    fontSize: '11px',
-    fontFamily: MET_Header_Font_Family,
-    lineHeight: '1.2',
+export const MetDescription = styled(Typography)(({ theme }) => ({
+    ...theme.typography.body2,
+    color: theme.palette.text.secondary,
 }));
 
-export const MetDescription = styled(Typography)(() => ({
-    fontSize: '13px',
-    fontFamily: MET_Header_Font_Family,
-    color: '#707070',
-}));
-
-export const HeaderTitle = styled(Typography)(() => ({
-    fontSize: '32px',
-    fontWeight: 'bold',
-    fontFamily: MET_Header_Font_Family,
-}));
+export const HeaderTitle = styled(Typography)(({ theme }) => theme.typography.h2);
 
 export const MetSmallText = ({ bold, children, sx, ...rest }: HeaderProps) => {
     return (
-        <Typography
-            sx={{
-                ...sx,
-                fontSize: '13px',
-                fontFamily: MET_Header_Font_Family,
-                fontWeight: bold ? 'bold' : MET_Header_Font_Weight,
-            }}
-            variant="subtitle1"
-            {...rest}
-        >
+        <Typography variant="body2" sx={{ fontWeight: bold ? MET_Header_Font_Weight : undefined, ...sx }} {...rest}>
             {children}
         </Typography>
     );
@@ -59,17 +48,7 @@ export const MetSmallText = ({ bold, children, sx, ...rest }: HeaderProps) => {
 
 export const MetHeader1 = ({ bold, children, sx, ...rest }: HeaderProps) => {
     return (
-        <Typography
-            sx={{
-                ...sx,
-                fontSize: '1.5rem',
-                lineHeight: 1.25,
-                fontWeight: MET_Header_Font_Weight,
-                fontFamily: MET_Header_Font_Family,
-            }}
-            variant="h1"
-            {...rest}
-        >
+        <Typography variant="h1" sx={{ fontWeight: bold ? MET_Header_Font_Weight : undefined, ...sx }} {...rest}>
             {children}
         </Typography>
     );
@@ -77,16 +56,7 @@ export const MetHeader1 = ({ bold, children, sx, ...rest }: HeaderProps) => {
 
 export const MetHeader2 = ({ bold, children, sx, ...rest }: HeaderProps) => {
     return (
-        <Typography
-            sx={{
-                ...sx,
-                fontSize: '1.9rem',
-                fontWeight: MET_Header_Font_Weight,
-                fontFamily: MET_Header_Font_Family,
-            }}
-            variant="h2"
-            {...rest}
-        >
+        <Typography variant="h2" sx={{ fontWeight: bold ? MET_Header_Font_Weight : undefined, ...sx }} {...rest}>
             {children}
         </Typography>
     );
@@ -94,16 +64,7 @@ export const MetHeader2 = ({ bold, children, sx, ...rest }: HeaderProps) => {
 
 export const MetHeader3 = ({ bold, children, sx, ...rest }: HeaderProps) => {
     return (
-        <Typography
-            sx={{
-                ...sx,
-                fontSize: '1.5rem',
-                fontWeight: MET_Header_Font_Weight,
-                fontFamily: MET_Header_Font_Family,
-            }}
-            variant="h3"
-            {...rest}
-        >
+        <Typography variant="h3" sx={{ fontWeight: bold ? MET_Header_Font_Weight : undefined, ...sx }} {...rest}>
             {children}
         </Typography>
     );
@@ -113,13 +74,8 @@ export const MetHeader4 = ({ bold, color, children, sx, ...rest }: HeaderProps) 
     return (
         <Typography
             color={color}
-            sx={{
-                ...sx,
-                fontSize: '1.3rem',
-                fontWeight: MET_Header_Font_Weight,
-                fontFamily: MET_Header_Font_Family,
-            }}
             variant="h4"
+            sx={{ fontWeight: bold ? MET_Header_Font_Weight : undefined, ...sx }}
             {...rest}
         >
             {children}
@@ -129,15 +85,7 @@ export const MetHeader4 = ({ bold, color, children, sx, ...rest }: HeaderProps) 
 
 export const MetBody = ({ bold, children, sx, ...rest }: HeaderProps) => {
     return (
-        <Typography
-            sx={{
-                ...sx,
-                fontSize: '16px',
-                fontFamily: MET_Header_Font_Family,
-                fontWeight: bold ? 'bold' : MET_Font_Weight,
-            }}
-            {...rest}
-        >
+        <Typography variant="body1" sx={{ fontWeight: bold ? MET_Header_Font_Weight : undefined, ...sx }} {...rest}>
             {children}
         </Typography>
     );

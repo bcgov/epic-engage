@@ -1,5 +1,6 @@
 import { Box, Popper, Theme } from '@mui/material';
 import { styled } from '@mui/system';
+import { surfaceColorBackgroundLightBlue } from 'styles/designTokens';
 
 export const metPopperClasses = {
     arrow: 'met-popper-arrow',
@@ -11,7 +12,7 @@ export const Arrow = styled(Box)(() => ({
     width: '1em',
     height: '0.71em' /* = width / sqrt(2) = (length of the hypotenuse) */,
     boxSizing: 'border-box',
-    color: '#9BE2DF',
+    color: surfaceColorBackgroundLightBlue,
     '&::before': {
         content: '""',
         margin: 'auto',

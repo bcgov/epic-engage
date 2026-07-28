@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { Grid, Typography } from '@mui/material';
 import Dropzone, { Accept } from 'react-dropzone';
 import { FileUploadContext } from './FileUploadContext';
+import { Palette } from 'styles/Theme';
 
 interface UploaderProps {
     margin?: number;
@@ -28,8 +29,8 @@ const Uploader = ({ margin = 2, height = '10em', helpText, acceptedFormat }: Upl
                         alignItems="center"
                         justifyContent="center"
                         style={{
-                            border: '1px dashed #606060',
-                            background: '#F2F2F2 0% 0% no-repeat padding-box',
+                            border: `1px dashed ${Palette.border.medium}`,
+                            background: `${Palette.background.light} 0% 0% no-repeat padding-box`,
                             height: height,
                             cursor: 'pointer',
                         }}

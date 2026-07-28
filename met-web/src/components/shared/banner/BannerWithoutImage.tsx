@@ -1,12 +1,13 @@
 import React from 'react';
 import { Box } from '@mui/material';
 import { BannerProps } from 'components/public/engagement/view/types';
+import { Palette } from 'styles/Theme';
 
 const BannerWithoutImage = ({ children }: BannerProps) => {
     return (
         <Box
             sx={{
-                backgroundColor: '#F2F2F2',
+                backgroundColor: Palette.background.light,
                 width: '100%',
                 position: 'relative',
             }}

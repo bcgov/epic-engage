@@ -1,6 +1,7 @@
 import React from 'react';
 import { ButtonBase } from '@mui/material';
-import { Palette } from 'styles/Theme';
+import { Palette, statusStyles } from 'styles/Theme';
+import { CommentStatus } from 'constants/commentStatus';
 import Icon from '@mui/material/Icon';
 
 interface BadgeProps {
@@ -12,9 +13,9 @@ export const ApprovedIcon = ({ children, onClick }: BadgeProps) => {
         <ButtonBase onClick={onClick}>
             <Icon
                 sx={{
-                    backgroundColor: '#D3FDC6',
+                    backgroundColor: statusStyles[CommentStatus.Approved].background,
                     '&:hover': {
-                        backgroundColor: '#77eb52',
+                        backgroundColor: statusStyles[CommentStatus.Approved].borderColor,
                     },
                     borderRadius: '3px',
                     fontWeight: 'bold',
@@ -38,9 +39,9 @@ export const NFRIcon = ({ children, onClick }: BadgeProps) => {
         <ButtonBase onClick={onClick}>
             <Icon
                 sx={{
-                    backgroundColor: '#FCE0B9',
+                    backgroundColor: statusStyles[CommentStatus.NeedsFurtherReview].background,
                     '&:hover': {
-                        backgroundColor: 'rgb(252, 185, 47)',
+                        backgroundColor: statusStyles[CommentStatus.NeedsFurtherReview].borderColor,
                     },
                     borderRadius: '3px',
                     fontWeight: 'bold',
@@ -64,9 +65,9 @@ export const RejectedIcon = ({ children, onClick }: BadgeProps) => {
         <ButtonBase onClick={onClick}>
             <Icon
                 sx={{
-                    backgroundColor: '#F9D9D9',
+                    backgroundColor: statusStyles[CommentStatus.Rejected].background,
                     '&:hover': {
-                        backgroundColor: 'rgb(241, 90, 44)',
+                        backgroundColor: statusStyles[CommentStatus.Rejected].borderColor,
                     },
                     borderRadius: '3px',
                     fontWeight: 'bold',
@@ -94,7 +95,7 @@ export const NewIcon = ({ children, onClick }: BadgeProps) => {
                     border: `2px solid ${Palette.primary.main}`,
                     '&:hover': {
                         backgroundColor: Palette.primary.main,
-                        color: 'white',
+                        color: Palette.text.invert,
                         textDecoration: 'underline',
                     },
                     borderRadius: '3px',

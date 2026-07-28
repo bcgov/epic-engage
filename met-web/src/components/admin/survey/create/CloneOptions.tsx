@@ -10,6 +10,7 @@ import { MetLabel, PrimaryButton, SecondaryButton } from 'components/shared/comm
 import { Survey } from 'models/survey';
 import { Engagement } from 'models/engagement';
 import { Disclaimer } from './Disclaimer';
+import { Palette } from 'styles/Theme';
 
 export type EngagementParams = {
     engagementId: string;
@@ -139,7 +140,7 @@ const CloneOptions = ({ availableSurveys, loadingSurveys }: CloneOptions) => {
         <Grid container direction="row" alignItems="flex-start" justifyContent="flex-start" item xs={12} spacing={2}>
             <Grid item xs={6}>
                 <MetLabel sx={{ marginBottom: '2px', display: 'flex' }}>
-                    Select Engagement <Typography sx={{ ml: 1, color: '#ACA9A9' }}>(optional)</Typography>
+                    Select Engagement <Typography sx={{ ml: 1, color: Palette.text.disabled }}>(optional)</Typography>
                 </MetLabel>
 
                 <Autocomplete

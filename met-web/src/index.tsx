@@ -7,7 +7,7 @@ import { ThemeProvider, StyledEngineProvider } from '@mui/material/styles';
 import { BaseTheme } from 'styles/Theme';
 import { Formio } from '@formio/js';
 import MetFormioComponents from 'met-formio/lib/index.js';
-import '@bcgov/bc-sans/css/BCSans.css';
+import '@bcgov/bc-sans/css/BC_Sans.css';
 import { HelmetProvider } from 'react-helmet-async';
 
 Formio.use(MetFormioComponents);

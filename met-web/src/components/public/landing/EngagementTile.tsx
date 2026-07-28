@@ -14,6 +14,7 @@ import { SubmissionStatus } from 'constants/engagementStatus';
 import { TileSkeleton } from './TileSkeleton';
 import { getSlugByEngagementId } from 'services/engagementSlugService';
 import { getBaseUrl } from 'utils/helpers';
+import { Palette } from 'styles/Theme';
 
 interface EngagementTileProps {
     passedEngagement?: Engagement;
@@ -82,7 +83,7 @@ const EngagementTile = ({ passedEngagement, engagementId }: EngagementTileProps)
             sx={{
                 maxWidth: 345,
                 '&:hover': {
-                    backgroundColor: '#F2F2F2',
+                    backgroundColor: Palette.background.light,
                     cursor: 'pointer',
                 },
             }}

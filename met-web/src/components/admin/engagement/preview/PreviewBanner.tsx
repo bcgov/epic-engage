@@ -14,6 +14,7 @@ import { formatDate } from 'utils/helpers/dateHelper';
 import { USER_ROLES } from 'services/userService/constants';
 import UnpublishModal from '../schedule/UnpublishModal';
 import RepublishModal from '../schedule/RepublishModal';
+import { Palette } from 'styles/Theme';
 
 export const PreviewBanner = () => {
     const isSmallScreen: boolean = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'));
@@ -158,7 +159,7 @@ export const PreviewBanner = () => {
                         </When>
                     </Grid>
                     <Grid item container direction="row" alignItems="flex-end" justifyContent="flex-end" xs={4}>
-                        <MetPaper sx={{ p: 1, borderColor: '#cdcdcd' }}>
+                        <MetPaper sx={{ p: 1, borderColor: Palette.border.default }}>
                             <Typography sx={{ fontSize: '13px', fontWeight: 'bold', pb: '8px' }}>
                                 Click to View Different Engagement Status:
                             </Typography>

@@ -10,6 +10,7 @@ import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import { SubscriptionType } from './subscribe';
 import { verifyEmailVerification } from 'services/emailVerificationService';
 import { confirmSubscription, unSubscribe, unSubscribeByToken } from 'services/subscriptionService';
+import { Palette } from 'styles/Theme';
 
 export type SubscriptionParams = {
     engagementId?: string;
@@ -140,7 +141,7 @@ export const Subscription = () => {
                 m={{ lg: '3em 5em 0 3em', md: '3em', sm: '1em' }}
                 rowSpacing={2}
             >
-                <CheckCircleRoundedIcon style={{ color: '#2e8540', fontSize: 50 }} />
+                <CheckCircleRoundedIcon style={{ color: Palette.success.main, fontSize: 50 }} />
                 <MetLabel m={{ lg: '.5em 0 0 .5em', md: '3em', sm: '1em' }}>
                     {subscriptionText.map((text) => (
                         <>

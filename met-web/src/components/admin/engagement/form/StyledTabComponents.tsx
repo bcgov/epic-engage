@@ -7,13 +7,13 @@ import { Palette } from 'styles/Theme';
 export const MetTab = styled(Tab)(() => ({
     height: '0.5em',
     minHeight: 0,
-    border: '1px solid #cdcdcd',
+    border: `1px solid ${Palette.border.default}`,
     borderRadius: '0px',
     borderBottom: 'none',
     color: Palette.action.active,
     fontWeight: 'inherit',
     '&.Mui-selected': {
-        border: '1px solid #606060',
+        border: `1px solid ${Palette.border.medium}`,
         borderBottom: 'none',
         color: Palette.text.primary,
         fontWeight: '700',

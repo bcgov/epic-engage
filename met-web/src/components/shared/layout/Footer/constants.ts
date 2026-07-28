@@ -1,6 +1,8 @@
+import { surfaceColorBackgroundDarkBlue, supportBorderColorWarning } from 'styles/designTokens';
+
 export const FOOTER_COLORS = {
-    BACKGROUND: '#252525',
-    BORDER: '#F9B233',
+    BACKGROUND: surfaceColorBackgroundDarkBlue,
+    BORDER: supportBorderColorWarning,
 };
 
 export const SOCIAL_LINKS = {
