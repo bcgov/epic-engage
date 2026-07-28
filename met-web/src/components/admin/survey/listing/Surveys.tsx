@@ -18,7 +18,7 @@ import CloseRounded from '@mui/icons-material/CloseRounded';
 import FiberNewOutlined from '@mui/icons-material/FiberNewOutlined';
 import { PermissionsGate } from 'components/shared/permissionsGate';
 import { CommentStatus } from 'constants/commentStatus';
-import { ActionsDropDown } from './ActionsDropDown';
+import { ReportButtons } from './ReportButtons';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import CheckIcon from '@mui/icons-material/Check';
 import LinkIcon from '@mui/icons-material/Link';
@@ -40,7 +40,6 @@ const Surveys = () => {
         setSearchText,
         searchFilter,
         surveys, // ADD THIS - get surveys from context
-        setSurveys, // ADD THIS - get setSurveys from context
     } = useContext(SurveyListingContext);
 
     const navigate = useNavigate();
@@ -67,10 +66,6 @@ const Surveys = () => {
             ...searchFilter,
             value: surveyNameFilter,
         });
-    };
-
-    const handleSurveyDeleted = (surveyId: number) => {
-        setSurveys((prev) => prev.filter((s) => s.id !== surveyId));
     };
 
     const headCells: HeadCell<Survey>[] = [
@@ -190,8 +185,9 @@ const Surveys = () => {
             key: 'engagement',
             nestedSortKey: 'engagement.name',
             numeric: true,
-            disablePadding: false,
+            disablePadding: true,
             label: 'Engagement Name',
+            customStyle: { padding: 2, width: '10%' },
             allowSort: true,
             renderCell: (row: Survey) => {
                 if (!row.engagement) {
@@ -210,9 +206,9 @@ const Surveys = () => {
             numeric: true,
             disablePadding: false,
             label: '',
-            customStyle: { padding: 2 },
+            customStyle: { padding: 2, width: '5%', whiteSpace: 'nowrap' },
             hideSorticon: true,
-            align: 'left',
+            align: 'right',
             icon: (
                 <ApprovedIcon>
                     <CheckIcon fontSize="small" />
@@ -249,7 +245,7 @@ const Surveys = () => {
             disablePadding: false,
             label: '',
 
-            customStyle: { padding: 2 },
+            customStyle: { padding: 2, width: '1%', whiteSpace: 'nowrap' },
             hideSorticon: true,
             align: 'left',
             icon: (
@@ -292,9 +288,9 @@ const Surveys = () => {
             disablePadding: false,
             label: '',
 
-            customStyle: { padding: 2 },
+            customStyle: { padding: 2, width: '1%', whiteSpace: 'nowrap' },
             hideSorticon: true,
-            align: 'left',
+            align: 'center',
             icon: (
                 <RejectedIcon>
                     <CloseRounded fontSize="small" />
@@ -335,7 +331,7 @@ const Surveys = () => {
             disablePadding: false,
             label: '',
 
-            customStyle: { padding: 2 },
+            customStyle: { padding: 2, width: '5%', whiteSpace: 'nowrap' },
             hideSorticon: true,
             align: 'left',
             icon: (
@@ -376,13 +372,15 @@ const Surveys = () => {
             key: 'id',
             numeric: true,
             disablePadding: false,
-            label: 'Actions',
+            label: 'Reports',
             allowSort: false,
             renderCell: (row: Survey) => {
-                return <ActionsDropDown survey={row} onSurveyDeleted={handleSurveyDeleted} />;
+                return <ReportButtons survey={row} />;
             },
             customStyle: {
-                minWidth: '200px',
+                width: '1%',
+                whiteSpace: 'nowrap',
+                paddingLeft: '2rem',
             },
         },
     ];

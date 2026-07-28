@@ -1,24 +1,44 @@
 import React, { useContext } from 'react';
 import { Grid, Stack, Typography, IconButton } from '@mui/material';
-import Dropzone, { Accept } from 'react-dropzone';
+import Dropzone, { Accept, FileRejection } from 'react-dropzone';
 import { MetWidgetPaper, WidgetButton } from 'components/shared/common';
 import { FileUploadContext } from './FileUploadContext';
 import LinkIcon from '@mui/icons-material/Link';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import { useAppDispatch } from 'hooks';
+import { openNotification } from 'services/notificationService/notificationSlice';
+
+// Keep in sync with ShapefileService.MAX_ZIP_UPLOAD_SIZE on the backend.
+export const MAX_SHAPEFILE_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024;
 
 interface UploaderProps {
     acceptedFormat?: Accept;
 }
 const Uploader = ({ acceptedFormat = { 'application/zip': ['.zip'] } }: UploaderProps) => {
     const { handleAddFile, savedFileName, addedFileName, setAddedFileName } = useContext(FileUploadContext);
+    const dispatch = useAppDispatch();
 
     const existingFile = addedFileName;
+
+    const handleDropRejected = (fileRejections: FileRejection[]) => {
+        const isTooLarge = fileRejections.some((rejection) =>
+            rejection.errors.some((error) => error.code === 'file-too-large'),
+        );
+        const text = isTooLarge
+            ? `File is too large. Maximum allowed size is ${Math.floor(
+                  MAX_SHAPEFILE_UPLOAD_SIZE_BYTES / (1024 * 1024),
+              )} MB.`
+            : 'Unsupported file. Please upload a zipped shapefile (.zip).';
+        dispatch(openNotification({ severity: 'error', text }));
+    };
 
     if (existingFile) {
         return (
             <>
                 <Dropzone
                     accept={acceptedFormat}
+                    maxSize={MAX_SHAPEFILE_UPLOAD_SIZE_BYTES}
+                    onDropRejected={handleDropRejected}
                     onDrop={async (acceptedFiles) => {
                         if (!acceptedFiles.length) {
                             setAddedFileName('');
@@ -67,6 +87,8 @@ const Uploader = ({ acceptedFormat = { 'application/zip': ['.zip'] } }: Uploader
     return (
         <Dropzone
             accept={acceptedFormat}
+            maxSize={MAX_SHAPEFILE_UPLOAD_SIZE_BYTES}
+            onDropRejected={handleDropRejected}
             onDrop={async (acceptedFiles) => {
                 if (!acceptedFiles.length) {
                     setAddedFileName('');

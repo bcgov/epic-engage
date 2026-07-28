@@ -27,8 +27,8 @@ from tests.utilities.factory_utils import factory_auth_header
 
 @pytest.mark.parametrize('contact_info', [TestContactInfo.contact1])
 def test_create_contact(client, jwt, session, contact_info):  # pylint:disable=unused-argument
-    """Assert that a contact can be POSTed."""
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    """Assert that a contact can be POSTed by a staff user with edit_engagement."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
     rv = client.post('/api/contacts/', data=json.dumps(contact_info),
                      headers=headers, content_type=ContentType.JSON.value)
     assert rv.status_code == 200
@@ -38,3 +38,12 @@ def test_create_contact(client, jwt, session, contact_info):  # pylint:disable=u
     assert rv.json.get('email') == contact_info.get('email')
     assert rv.json.get('address') == contact_info.get('address')
     assert rv.json.get('bio') == contact_info.get('bio')
+
+
+@pytest.mark.parametrize('contact_info', [TestContactInfo.contact1])
+def test_create_contact_without_role_is_forbidden(client, jwt, session, contact_info):  # pylint:disable=unused-argument
+    """Assert that a user without the edit_engagement role cannot POST a contact."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    rv = client.post('/api/contacts/', data=json.dumps(contact_info),
+                     headers=headers, content_type=ContentType.JSON.value)
+    assert rv.status_code == 401

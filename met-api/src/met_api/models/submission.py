@@ -143,7 +143,6 @@ class Submission(BaseModel):  # pylint: disable=too-few-public-methods
             'review_date': datetime.utcnow(),
             'updated_by': comment.get('participant_id'),
             'updated_date': datetime.utcnow(),
-            'is_resubmission': False,
         }
 
         query.update(update_fields)

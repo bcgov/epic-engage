@@ -21,6 +21,7 @@ from flask_restx import Namespace, Resource
 
 from met_api.schemas.email_verification import EmailVerificationSchema
 from met_api.services.email_verification_service import EmailVerificationService
+from met_api.utils.limiter import email_sending_limit, limiter, public_read_limit, public_write_limit
 from met_api.utils.util import allowedorigins, cors_preflight
 
 
@@ -37,6 +38,7 @@ class EmailVerification(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_read_limit)
     def get(token):
         """Fetch a email verification matching the provided token."""
         try:
@@ -53,6 +55,7 @@ class EmailVerification(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_write_limit)
     def put(token):
         """Fetch a email verification matching the provided token."""
         try:
@@ -74,6 +77,7 @@ class EmailVerifications(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(email_sending_limit)
     def post():
         """Create a new email verification."""
         try:
@@ -95,6 +99,7 @@ class SubscribeEmailVerifications(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(email_sending_limit)
     def post(subscription_type):
         """Create a new email verification."""
         try:

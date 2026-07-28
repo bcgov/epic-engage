@@ -6,7 +6,6 @@ Commands and notes to deploy MET to a Openshift environment.
 
 - [Deployment Guide](#deployment-configuration)
 - [Database Setup](#database-configuration)
-- [Keycloak Configuration](#keycloak-configuration)
 - **[Penguin Analytics Integration](../docs/Penguin_Analytics_Integration.md)** - Event tracking setup
 
 ## Build Configuration
@@ -140,9 +139,6 @@ To restore the backup follow these steps:
       alter role analytics WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION
 	      PASSWORD 'analytics';
 
-      alter role keycloak WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION
-	      PASSWORD 'keycloak';
-      
       alter role redash WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION
 	      PASSWORD 'redash';
       
@@ -151,28 +147,6 @@ To restore the backup follow these steps:
 
     ```
     Once the roles are altered the restore script can be ran again.
-
-## Keycloak Configuration
-
-Create an instance of a postgresql database:
-
-In each environment namespace (dev, test, prod) use the following:
-
-Deploy the web application:
-```
-oc process -f ./keycloak.dc.yml -p ENV=<dev/test/prod> | oc create -f -
-```
-
-The create the initial credentials use port forwarding to access the url as localhost:8080
-```
-oc port-forward keycloak-<PODNAME> 8080:8080
-```
-
-In the keycloak app:
-1. create a new realm and click import json, select the file "keycloak-realm-export.json"
-1. Request a new client configuration in sso-requests (https://bcgov.github.io/sso-requests/)
-1. Update the identity provider client secret and url domains.
-
 
 ## Deployment Configuration
 
@@ -192,7 +166,7 @@ Deploy the api application:
 oc process -f ./api.dc.yml \
   -p ENV=<dev/test/prod> \
   -p IMAGE_TAG=<dev/test/prod> \
-  -p KC_DOMAIN=met-oidc-test.apps.gold.devops.gov.bc.ca \
+  -p KC_DOMAIN=test.loginproxy.gov.bc.ca \
   -p S3_BUCKET=met-test \
   -p SITE_URL=https://met-web-test.apps.gold.devops.gov.bc.ca \
   -p MET_ADMIN_CLIENT_SECRET=<SERVICE_ACCOUNT_SECRET> \
@@ -206,7 +180,7 @@ Deploy the notify api application:
 oc process -f ./notify-api.dc.yml \
   -p ENV=<dev/test/prod> \
   -p IMAGE_TAG=<dev/test/prod> \
-  -p KC_DOMAIN=met-oidc-test.apps.gold.devops.gov.bc.ca \
+  -p KC_DOMAIN=test.loginproxy.gov.bc.ca \
   -p GC_NOTIFY_API_KEY=<GC_NOTIFY_API_KEY> \
   | oc create -f -
 
@@ -217,7 +191,7 @@ Deploy the cron job application:
 oc process -f ./cron.dc.yml \
   -p ENV=<dev/test/prod> \
   -p IMAGE_TAG=<dev/test/prod> \
-  -p KC_DOMAIN=met-oidc-test.apps.gold.devops.gov.bc.ca \
+  -p KC_DOMAIN=test.loginproxy.gov.bc.ca \
   -p SITE_URL=https://met-web-test.apps.gold.devops.gov.bc.ca \
   -p MET_ADMIN_CLIENT_SECRET=<SERVICE_ACCOUNT_SECRET> \
   -p NOTIFICATIONS_EMAIL_ENDPOINT=https://met-notify-api-test.apps.gold.devops.gov.bc.ca/api/v1/notifications/email \

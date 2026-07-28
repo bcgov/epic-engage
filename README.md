@@ -48,7 +48,6 @@ This project is to develop modern engagement tools that address shortfalls ident
     └── tests/                 - API application tests
     openshift/                 - OpenShift templates and documentation
     tools/
-    ├── keycloak/              - Docker container for Keycloak in dev
     ├── postgres/              - Docker container for Postgres db dev
     ├── postman/               
     ├── snowplow/              - Snowplow custom schemas               

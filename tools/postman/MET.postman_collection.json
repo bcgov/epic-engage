@@ -194,12 +194,12 @@
 								},
 								{
 									"key": "accessTokenUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/token",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/token",
 									"type": "string"
 								},
 								{
 									"key": "authUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/auth",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/auth",
 									"type": "string"
 								},
 								{
@@ -380,12 +380,12 @@
 								},
 								{
 									"key": "accessTokenUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/token",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/token",
 									"type": "string"
 								},
 								{
 									"key": "authUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/auth",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/auth",
 									"type": "string"
 								},
 								{
@@ -495,12 +495,12 @@
 								},
 								{
 									"key": "accessTokenUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/token",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/token",
 									"type": "string"
 								},
 								{
 									"key": "authUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/auth",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/auth",
 									"type": "string"
 								},
 								{
@@ -584,12 +584,12 @@
 								},
 								{
 									"key": "accessTokenUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/token",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/token",
 									"type": "string"
 								},
 								{
 									"key": "authUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/auth",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/auth",
 									"type": "string"
 								},
 								{
@@ -689,12 +689,12 @@
 								},
 								{
 									"key": "accessTokenUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/token",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/token",
 									"type": "string"
 								},
 								{
 									"key": "authUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/auth",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/auth",
 									"type": "string"
 								},
 								{
@@ -784,12 +784,12 @@
 								},
 								{
 									"key": "accessTokenUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/token",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/token",
 									"type": "string"
 								},
 								{
 									"key": "authUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/auth",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/auth",
 									"type": "string"
 								},
 								{
@@ -886,12 +886,12 @@
 								},
 								{
 									"key": "accessTokenUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/token",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/token",
 									"type": "string"
 								},
 								{
 									"key": "authUrl",
-									"value": "https://met-oidc-dev.apps.gold.devops.gov.bc.ca/auth/realms/met/protocol/openid-connect/auth",
+									"value": "https://dev.loginproxy.gov.bc.ca/auth/realms/eao-epic/protocol/openid-connect/auth",
 									"type": "string"
 								},
 								{

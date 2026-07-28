@@ -3,11 +3,12 @@ import { EngagementFormContext } from '../../EngagementFormContext';
 import { Grid } from '@mui/material';
 import { MetHeader4, MetPaper, MetSurvey, SecondaryButton } from 'components/shared/common';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch } from 'hooks';
+import { useAppDispatch, useAppSelector } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { EngagementStatus } from 'constants/engagementStatus';
 import { unlinkSurvey } from 'services/surveyService';
 import { openNotificationModal } from 'services/notificationModalService/notificationModalSlice';
+import { USER_ROLES } from 'services/userService/constants';
 import SurveyTextTabs from './SurveyTextTabs';
 
 interface SurveyBlockProps {
@@ -18,6 +19,9 @@ export const SurveyBlock = ({ didSurveyGoLive }: SurveyBlockProps) => {
     const { savedEngagement, fetchEngagement } = useContext(EngagementFormContext);
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
+    const { roles } = useAppSelector((state) => state.user);
+    const canCreateSurvey = roles.includes(USER_ROLES.CREATE_SURVEY);
+    const canEditSurveys = roles.includes(USER_ROLES.EDIT_ALL_SURVEYS);
 
     const [isDeletingSurvey, setIsDeletingSurvey] = useState(false);
 
@@ -124,9 +128,11 @@ export const SurveyBlock = ({ didSurveyGoLive }: SurveyBlockProps) => {
                         <SurveyTextTabs />
                     </Grid>
                     <Grid item xs={12} container direction="row" justifyContent="flex-end">
-                        <SecondaryButton onClick={handleAddSurvey} disabled={savedEngagement.surveys.length > 0}>
-                            Add Survey
-                        </SecondaryButton>
+                        {canCreateSurvey && (
+                            <SecondaryButton onClick={handleAddSurvey} disabled={savedEngagement.surveys.length > 0}>
+                                Add Survey
+                            </SecondaryButton>
+                        )}
                     </Grid>
 
                     <Grid item xs={12}>
@@ -136,8 +142,12 @@ export const SurveyBlock = ({ didSurveyGoLive }: SurveyBlockProps) => {
                                     key={survey.id}
                                     testId={survey.id}
                                     title={survey.name}
-                                    onEditClick={() => navigate(`/surveys/${survey.id}/build`)}
-                                    onDeleteClick={() => handleDeleteClick(survey.id, survey.name)}
+                                    onEditClick={
+                                        canEditSurveys ? () => navigate(`/surveys/${survey.id}/build`) : undefined
+                                    }
+                                    onDeleteClick={
+                                        canEditSurveys ? () => handleDeleteClick(survey.id, survey.name) : undefined
+                                    }
                                     deleting={isDeletingSurvey}
                                 />
                             );

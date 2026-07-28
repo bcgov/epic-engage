@@ -55,12 +55,14 @@ class Contact(BaseModel):  # pylint: disable=too-few-public-methods
 
     @classmethod
     def update_contact(cls, contact_data: dict) -> Optional[Contact or None]:
-        """Update engagement."""
+        """Update contact, scoped to the authorized tenant."""
         contact_id = contact_data.get('id', None)
-        query = Contact.query.filter_by(id=contact_id)
+        query = cls._add_tenant_filter(Contact.query.filter_by(id=contact_id))
         contact: Contact = query.first()
         if not contact:
             return None
+        # Never allow a contact to be reassigned to another tenant via the payload.
+        contact_data.pop('tenant_id', None)
         contact_data['updated_date'] = datetime.utcnow()
         query.update(contact_data)
         db.session.commit()

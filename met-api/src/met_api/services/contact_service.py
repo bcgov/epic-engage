@@ -40,4 +40,4 @@ class ContactService:
         updated_contact = Contact.update_contact(data)
         if not updated_contact:
             raise ValueError('Contact to update was not found')
-        return Contact.update_contact(data)
+        return updated_contact

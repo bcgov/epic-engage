@@ -20,10 +20,11 @@ from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 from marshmallow import ValidationError
 
-from met_api.auth import jwt as _jwt
 from met_api.schemas import utils as schema_utils
 from met_api.schemas.contact import ContactSchema
 from met_api.services.contact_service import ContactService
+from met_api.utils.roles import Role
+from met_api.utils.tenant_validator import require_role
 from met_api.utils.token_info import TokenInfo
 from met_api.utils.util import allowedorigins, cors_preflight
 
@@ -41,7 +42,12 @@ class Contact(Resource):
     @staticmethod
     @cross_origin(origins=allowedorigins())
     def get(contact_id):
-        """Fetch a contact by id."""
+        """Fetch a contact by id.
+
+        Intentionally unauthenticated: the public "Who Is Listening" widget renders
+        this contact on anonymous engagement pages. The lookup is tenant-scoped via
+        Contact.find_by_id.
+        """
         try:
             contact = ContactService().get_contact_by_id(contact_id)
             return contact, HTTPStatus.OK
@@ -57,7 +63,7 @@ class Contacts(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
-    @_jwt.requires_auth
+    @require_role([Role.EDIT_ENGAGEMENT.value])
     def post():
         """Create a new contact."""
         try:
@@ -74,6 +80,7 @@ class Contacts(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @require_role([Role.EDIT_ENGAGEMENT.value])
     def get():
         """Fetch list of contacts."""
         try:
@@ -85,7 +92,7 @@ class Contacts(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
-    @_jwt.requires_auth
+    @require_role([Role.EDIT_ENGAGEMENT.value])
     def patch():
         """Update saved contact partially."""
         try:

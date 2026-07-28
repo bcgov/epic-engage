@@ -220,8 +220,7 @@ class SurveyService:
             engagement_model = EngagementModel.find_by_id(engagement_id)
             eng_id = getattr(engagement_model, 'id', None)
 
-        authorization.check_auth(one_of_roles=(MembershipType.TEAM_MEMBER.name,
-                                               Role.CLONE_SURVEY.value), engagement_id=eng_id)
+        authorization.check_auth(one_of_roles=(Role.CLONE_SURVEY.value,), engagement_id=eng_id)
 
         tenant_id = getattr(g, 'tenant_id', None)
         if not tenant_id:
@@ -260,8 +259,8 @@ class SurveyService:
         engagement = survey.get('engagement', None)
         engagement_id = survey.get('engagement_id', None)
 
-        authorization.check_auth(one_of_roles=(MembershipType.TEAM_MEMBER.name,
-                                               Role.EDIT_SURVEY.value), engagement_id=engagement_id)
+        authorization.check_auth(one_of_roles=(Role.EDIT_SURVEY.value,), engagement_id=engagement_id,
+                                 resource_tenant_id=survey.get('tenant_id', None))
 
         # check if user has edit all surveys access to edit template surveys as well
         user_roles = TokenInfo.get_user_roles()
@@ -301,7 +300,8 @@ class SurveyService:
                 MembershipType.TEAM_MEMBER.name,
                 Role.CREATE_ADMIN_USER.value
             ),
-            engagement_id=eng_id)  # TODO create proper role for delete survey
+            engagement_id=eng_id,
+            resource_tenant_id=survey.get('tenant_id', None))  # TODO create proper role for delete survey
         if engagement_id:
             raise ValueError('Cannot delete a survey linked to an engagement')
 
@@ -339,8 +339,7 @@ class SurveyService:
     def link(cls, survey_id, engagement_id):
         """Update survey."""
         cls.validate_link_fields(survey_id, engagement_id)
-        authorization.check_auth(one_of_roles=(MembershipType.TEAM_MEMBER.name,
-                                               Role.EDIT_SURVEY.value), engagement_id=engagement_id)
+        authorization.check_auth(one_of_roles=(Role.EDIT_SURVEY.value,), engagement_id=engagement_id)
         return SurveyModel.link_survey(survey_id, engagement_id)
 
     @classmethod
@@ -362,8 +361,7 @@ class SurveyService:
     def unlink(cls, survey_id, engagement_id):
         """Unlink survey."""
         cls.validate_unlink_fields(survey_id, engagement_id)
-        authorization.check_auth(one_of_roles=(MembershipType.TEAM_MEMBER.name,
-                                               Role.EDIT_SURVEY.value), engagement_id=engagement_id)
+        authorization.check_auth(one_of_roles=(Role.EDIT_SURVEY.value,), engagement_id=engagement_id)
         return SurveyModel.unlink_survey(survey_id)
 
     @classmethod

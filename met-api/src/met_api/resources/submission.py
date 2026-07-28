@@ -24,6 +24,7 @@ from met_api.models.pagination_options import PaginationOptions
 from met_api.schemas import utils as schema_utils
 from met_api.schemas.submission import SubmissionSchema
 from met_api.services.submission_service import SubmissionService
+from met_api.utils.limiter import limiter, public_read_limit, public_write_limit
 from met_api.utils.token_info import TokenInfo
 from met_api.utils.util import allowedorigins, cors_preflight
 
@@ -75,6 +76,7 @@ class PublicSubmission(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_read_limit)
     def get(verification_token):
         """Fetch a single submission."""
         try:
@@ -88,6 +90,7 @@ class PublicSubmission(Resource):
     @staticmethod
     # @TRACER.trace()
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_write_limit)
     def post(verification_token):
         """Create a new submission."""
         try:
@@ -104,6 +107,7 @@ class PublicSubmission(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @limiter.limit(public_write_limit)
     def put(verification_token):
         """Update comment status by submission id."""
         try:

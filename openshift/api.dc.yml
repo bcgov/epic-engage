@@ -177,9 +177,9 @@ objects:
   data:
     JWT_OIDC_ALGORITHMS: RS256
     JWT_OIDC_AUDIENCE: account
-    JWT_OIDC_ISSUER: https://${KC_DOMAIN}/auth/realms/met
-    JWT_OIDC_JWKS_URI: https://${KC_DOMAIN}/auth/realms/met/protocol/openid-connect/certs
-    JWT_OIDC_WELL_KNOWN_CONFIG: https://${KC_DOMAIN}/auth/realms/met/.well-known/openid-configuration
+    JWT_OIDC_ISSUER: https://${KC_DOMAIN}/auth/realms/eao-epic
+    JWT_OIDC_JWKS_URI: https://${KC_DOMAIN}/auth/realms/eao-epic/protocol/openid-connect/certs
+    JWT_OIDC_WELL_KNOWN_CONFIG: https://${KC_DOMAIN}/auth/realms/eao-epic/.well-known/openid-configuration
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -219,6 +219,10 @@ objects:
     PENGUIN_ANALYTICS_ENABLED: ${PENGUIN_ANALYTICS_ENABLED}
     PENGUIN_ANALYTICS_URL: ${PENGUIN_ANALYTICS_URL}
     PENGUIN_ANALYTICS_SOURCE_APP: ${PENGUIN_ANALYTICS_SOURCE_APP}
+    RATELIMIT_ENABLED: ${RATELIMIT_ENABLED}
+    RATELIMIT_EMAIL_SENDING: ${RATELIMIT_EMAIL_SENDING}
+    RATELIMIT_PUBLIC_WRITE: ${RATELIMIT_PUBLIC_WRITE}
+    RATELIMIT_PUBLIC_READ: ${RATELIMIT_PUBLIC_READ}
 - kind: Secret
   apiVersion: v1
   type: Opaque
@@ -256,7 +260,7 @@ parameters:
   - name: KC_DOMAIN
     description: "The keycloak domain"
     required: true
-    value: met-oidc-dev.apps.gold.devops.gov.bc.ca
+    value: dev.loginproxy.gov.bc.ca
   - name: SITE_URL
     description: "The frontend site URL"
     required: true
@@ -319,7 +323,7 @@ parameters:
   - name: KEYCLOAK_BASE_URL
     description: "Keycloak base url"
     required: true
-    value: 'https://met-oidc-dev.apps.gold.devops.gov.bc.ca'
+    value: 'https://dev.loginproxy.gov.bc.ca'
   - name: KEYCLOAK_REALMNAME
     description: "Realm name for the project"
     required: true
@@ -356,3 +360,19 @@ parameters:
     description: "Source application identifier for Penguin Analytics events"
     required: false
     value: 'epic-engage'
+  - name: RATELIMIT_ENABLED
+    description: "Enable per-IP rate limiting on public endpoints (true/false)"
+    required: false
+    value: 'true'
+  - name: RATELIMIT_EMAIL_SENDING
+    description: "Per-IP limit for public endpoints that send email through GC Notify"
+    required: false
+    value: '5 per minute; 25 per hour'
+  - name: RATELIMIT_PUBLIC_WRITE
+    description: "Per-IP limit for public write endpoints (submissions, feedback, subscriptions)"
+    required: false
+    value: '30 per minute'
+  - name: RATELIMIT_PUBLIC_READ
+    description: "Per-IP limit for public read endpoints"
+    required: false
+    value: '60 per minute'

@@ -18,6 +18,7 @@ from http import HTTPStatus
 import json
 import os
 import shutil
+import tempfile
 import zipfile
 
 from flask import current_app
@@ -30,14 +31,22 @@ from met_api.exceptions.business_exception import BusinessException
 class ShapefileService:   # pylint: disable=too-few-public-methods
     """This is the shapefile related service class."""
 
+    MAX_UNCOMPRESSED_SIZE = 200 * 1024 * 1024  # 200 MB total uncompressed
+    MAX_FILE_COUNT = 10_000
+    MAX_ZIP_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB uploaded zip
+
     @staticmethod
     def convert_to_geojson(file):
         """Convert to Geojson."""
-        upload_folder = current_app.config.get('SHAPEFILE_UPLOAD_FOLDER')
-        shapefile_paths = ShapefileService._unzip_file(file, upload_folder)
-        geojson_string = ShapefileService._get_geojson(shapefile_paths)
-        # Clean up uploaded files
-        shutil.rmtree(os.path.join(upload_folder))
+        base_folder = current_app.config.get('SHAPEFILE_UPLOAD_FOLDER')
+        os.makedirs(base_folder, exist_ok=True)
+        upload_folder = tempfile.mkdtemp(dir=base_folder)
+        try:
+            shapefile_paths = ShapefileService._unzip_file(file, upload_folder)
+            geojson_string = ShapefileService._get_geojson(shapefile_paths)
+        finally:
+            # Clean up uploaded files, even if extraction or parsing failed
+            shutil.rmtree(upload_folder, ignore_errors=True)
         return geojson_string
 
     @staticmethod
@@ -83,11 +92,16 @@ class ShapefileService:   # pylint: disable=too-few-public-methods
     @staticmethod
     def _unzip_file(file, upload_folder):
         filename = secure_filename(file.filename)
-        ShapefileService._create_upload_dir(upload_folder)
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
+
+        if os.path.getsize(file_path) > ShapefileService.MAX_ZIP_UPLOAD_SIZE:
+            raise BusinessException(
+                error='Uploaded zip file is too large.',
+                status_code=HTTPStatus.BAD_REQUEST)
+
         with zipfile.ZipFile(file_path, 'r') as zip_ref:
-            zip_ref.extractall(upload_folder)
+            ShapefileService._safe_extract(zip_ref, upload_folder)
             shapefile_names = ShapefileService._get_shapefile_names(zip_ref)
             if not shapefile_names:
                 raise BusinessException(
@@ -98,6 +112,35 @@ class ShapefileService:   # pylint: disable=too-few-public-methods
         return shapefile_paths
 
     @staticmethod
+    def _safe_extract(zip_ref, upload_folder):
+        """Extract a zip archive, guarding against zip-slip and zip-bomb attacks."""
+        members = zip_ref.infolist()
+
+        if len(members) > ShapefileService.MAX_FILE_COUNT:
+            raise BusinessException(
+                error='Zip file contains too many entries.',
+                status_code=HTTPStatus.BAD_REQUEST)
+
+        upload_folder_real = os.path.realpath(upload_folder)
+        total_uncompressed_size = 0
+
+        for member in members:
+            total_uncompressed_size += member.file_size
+            if total_uncompressed_size > ShapefileService.MAX_UNCOMPRESSED_SIZE:
+                raise BusinessException(
+                    error='Zip file is too large when uncompressed.',
+                    status_code=HTTPStatus.BAD_REQUEST)
+
+            member_path = os.path.realpath(os.path.join(upload_folder, member.filename))
+            if not (member_path == upload_folder_real or
+                    member_path.startswith(upload_folder_real + os.sep)):
+                raise BusinessException(
+                    error='Zip file contains invalid entry paths.',
+                    status_code=HTTPStatus.BAD_REQUEST)
+
+        zip_ref.extractall(upload_folder)
+
+    @staticmethod
     def _get_shapefile_names(zip_ref):
         shapefile_names = []
         for name in zip_ref.namelist():
@@ -105,10 +148,3 @@ class ShapefileService:   # pylint: disable=too-few-public-methods
             if normalized_name.endswith('.shp') and 'macosx' not in normalized_name:
                 shapefile_names.append(name)
         return shapefile_names
-
-    @staticmethod
-    def _create_upload_dir(upload_folder):
-        is_exist = os.path.exists(upload_folder)
-        if not is_exist:
-            # Create a new directory because it does not exist
-            os.makedirs(upload_folder)
