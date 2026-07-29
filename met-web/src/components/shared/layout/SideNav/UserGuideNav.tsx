@@ -30,7 +30,6 @@ const UserGuideNav = () => {
         '/feedback': `${HELP_URL}/posts/website-feedback-tool/`,
         '/calendar': HELP_URL,
         '/reporting': `${HELP_URL}/posts/report/`,
-        '/usermanagement': `${HELP_URL}/posts/user-management/`,
         '/usermanagement/1/details': `${HELP_URL}/posts/user-details/`,
     };
 

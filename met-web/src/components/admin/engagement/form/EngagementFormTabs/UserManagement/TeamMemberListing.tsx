@@ -3,6 +3,8 @@ import { HeadCell } from 'components/shared/common/Table/types';
 import { Link } from 'react-router-dom';
 import { Link as MuiLink } from '@mui/material';
 import MetTable from 'components/shared/common/Table';
+import { useAppSelector } from 'hooks';
+import { USER_ROLES } from 'services/userService/constants';
 import { EngagementTabsContext } from '../EngagementTabsContext';
 import { ENGAGEMENT_MEMBERSHIP_STATUS_NAME, EngagementTeamMember } from 'models/engagementTeamMember';
 import { formatDate } from 'utils/helpers/dateHelper';
@@ -10,6 +12,8 @@ import { ActionsDropDown } from 'components/admin/engagement/form/EngagementForm
 
 const TeamMemberListing = () => {
     const { teamMembers, teamMembersLoading } = useContext(EngagementTabsContext);
+    const { roles } = useAppSelector((state) => state.user);
+    const canViewUserDetails = roles.includes(USER_ROLES.EDIT_ENGAGEMENT);
 
     const headCells: HeadCell<EngagementTeamMember>[] = [
         {
@@ -18,11 +22,16 @@ const TeamMemberListing = () => {
             disablePadding: true,
             label: 'Team Members',
             allowSort: false,
-            renderCell: (row: EngagementTeamMember) => (
-                <MuiLink component={Link} to={`/usermanagement/${row.user_id}/details`}>
-                    {row.user?.last_name + ', ' + row.user?.first_name}
-                </MuiLink>
-            ),
+            renderCell: (row: EngagementTeamMember) => {
+                const name = row.user?.last_name + ', ' + row.user?.first_name;
+                return canViewUserDetails ? (
+                    <MuiLink component={Link} to={`/usermanagement/${row.user_id}/details`}>
+                        {name}
+                    </MuiLink>
+                ) : (
+                    name
+                );
+            },
         },
         {
             key: 'status',
