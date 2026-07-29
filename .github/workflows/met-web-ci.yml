@@ -41,7 +41,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
         run: |
-          npm install --legacy-peer-deps
+          npm ci
       - name: Lint
         id: lint
         run: |
@@ -65,7 +65,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm install --legacy-peer-deps
+          npm ci
 
       - name: Test with jest
         id: test
@@ -104,7 +104,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
         run: |
-          npm install --legacy-peer-deps
+          npm ci
       - name: build to check strictness
         id: build
         run: |
