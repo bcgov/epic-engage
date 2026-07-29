@@ -12,7 +12,7 @@ const TabBarContainer = styled('div')({
     alignItems: 'flex-end',
     gap: 0,
     padding: '8px 24px 0',
-    background: 'none',
+    backgroundColor: 'transparent',
     borderBottom: '1px solid #D8D8D8',
     width: '100%',
     overflowX: 'auto',
@@ -29,7 +29,7 @@ const TabButton = styled('button')({
     padding: '12px 20px',
     border: 'none',
     borderBottom: '3px solid transparent',
-    background: 'none',
+    backgroundColor: 'transparent',
     fontFamily: 'inherit',
     fontSize: '16px',
     fontWeight: 400,
@@ -44,15 +44,18 @@ const TabButton = styled('button')({
     '&:hover': {
         color: '#013366',
         fontWeight: 700,
+        backgroundColor: 'transparent',
     },
     '&.active': {
         color: '#013366',
         fontWeight: 700,
         borderBottomColor: '#013366',
+        backgroundColor: 'transparent',
     },
     '&:focus-visible': {
         outline: '2px solid #013366',
         outlineOffset: '2px',
+        backgroundColor: 'transparent',
     },
 });
 

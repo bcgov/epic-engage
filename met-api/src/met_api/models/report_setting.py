@@ -25,6 +25,9 @@ class ReportSetting(BaseModel):  # pylint: disable=too-few-public-methods
     question = db.Column(db.Text())
     display = db.Column(db.Boolean, default=True,
                         comment='Flag to identify if the question needs to be displayed on the dashboard.')
+    description = db.Column(db.Text(), nullable=True,
+                            comment='Optional admin-authored description shown alongside the question on the '
+                                    'public report.')
 
     @classmethod
     def find_by_survey_id(cls, survey_id):

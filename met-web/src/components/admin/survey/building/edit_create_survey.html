@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPIC.engage — Report Settings · Big Delicious Ranch</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+:root {
+  --bcds-primary:#013366; --bcds-primary-hover:#1E5189;
+  --bcds-yellow:#FCBA19; --bcds-text:#2D2D2D;
+  --bcds-text-secondary:#474543; --bcds-text-disabled:#9F9D9C;
+  --bcds-link:#255A90; --bcds-bg:#F2F2F2;
+  --bcds-surface:#FFFFFF; --bcds-border:#D8D8D8;
+  --radius-sm:4px; --radius-md:6px; --radius-lg:8px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.10);
+  --shadow-md:0 2px 8px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans','BCSans',Verdana,Arial,sans-serif;background:#FAF9F8;color:var(--bcds-text);font-size:16px;line-height:1.5;}
+
+/* ── Header ── */
+.gov-header{display:flex;width:100%;height:80px;padding:16px 40px 16px 24px;align-items:center;gap:32px;background:#fff;box-shadow:0 4px 4px 0 rgba(0,0,0,.25);box-sizing:border-box;position:relative;z-index:10;}
+.gov-header .logo-wrap{display:flex;align-items:center;gap:32px;text-decoration:none;flex-shrink:0;}
+.gov-header .app-name{color:#2D2D2D;font-family:'Noto Sans','BC Sans',Verdana,Arial,sans-serif;font-size:32px;font-weight:700;line-height:54px;}
+.gov-header .logout{margin-left:auto;color:#2D2D2D;font-family:'Noto Sans','BC Sans',Verdana,Arial,sans-serif;font-size:18px;font-weight:700;text-decoration:none;}
+.gov-header .logout:hover{text-decoration:underline;}
+
+.app-shell{display:flex;min-height:calc(100vh - 80px);}
+
+/* ── Sidebar (exact copy) ── */
+.sidebar{display:flex;width:260px;min-height:100vh;padding:16px 0 0 0;flex-direction:column;align-items:flex-start;gap:0;background:#003366;flex-shrink:0;}
+.sidebar-item{display:flex;width:260px;padding:20px 24px;align-items:center;color:#fff;font-family:'Noto Sans','BC Sans',Verdana,Arial,sans-serif;font-size:18px;font-weight:700;line-height:1.4;text-decoration:none;cursor:pointer;box-sizing:border-box;transition:opacity .15s;}
+.sidebar-item:hover{opacity:.85;}
+.sidebar-item.active{color:#FCBA19;}
+.sidebar-divider{width:100%;height:1px;background:rgba(255,255,255,.2);flex-shrink:0;}
+
+.main-area{flex:1;min-width:0;display:flex;flex-direction:column;}
+
+/* ── Breadcrumb (exact copy) ── */
+.breadcrumb{display:flex;padding:0 36px;flex-direction:row;justify-content:flex-start;align-items:center;align-self:stretch;border-bottom:1px solid #D8D8D8;background:#FFF;}
+.breadcrumb-item{display:flex;height:40px;padding:8px;justify-content:center;align-items:center;gap:8px;border-radius:4px;background:transparent;color:#255A90;font-size:14px;font-weight:400;text-decoration:underline;cursor:pointer;}
+.breadcrumb-item:hover{background:#ECEAE8;}
+.breadcrumb-sep{display:flex;padding:6px 4px;color:#323130;font-size:16px;}
+.breadcrumb-active{color:#2D2D2D;font-size:16px;font-weight:400;}
+
+/* ── Tab bar (exact copy from dashboard) ── */
+.tab-bar{display:flex;align-items:flex-end;gap:0;padding:8px 24px 0;background:#FAF9F8;border-bottom:1px solid var(--bcds-border);}
+.tab-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border:none;border-bottom:3px solid transparent;background:none;font-family:inherit;font-size:16px;font-weight:400;color:var(--bcds-text-secondary);cursor:pointer;transition:all .15s;margin-bottom:-1px;}
+.tab-btn:hover{color:#013366;font-weight:700;}
+.tab-btn.active{color:#013366;font-weight:700;border-bottom:3px solid #013366;}
+.tab-btn i{font-size:16px;}
+
+.top-panel{display:none;}
+.top-panel.active{display:block;}
+
+/* ── Survey title area ── */
+.survey-title-area{padding:16px 24px 0;background:#FAF9F8;}
+
+/* ── Stepper (exact copy) ── */
+.stepper-wrap{background:transparent;padding:16px 0;border:1px solid var(--bcds-border);border-radius:var(--radius-lg);margin:16px auto 0;max-width:1100px;width:calc(100% - 48px);}
+.stepper{display:flex;align-items:flex-start;gap:0;overflow-x:auto;max-width:1100px;margin:0 auto;}
+.step{display:flex;flex-direction:column;align-items:center;cursor:pointer;flex:1;min-width:80px;position:relative;}
+.step:not(:last-child)::after{content:'';position:absolute;top:16px;left:calc(50% + 18px);right:calc(-50% + 18px);height:2px;background:var(--bcds-border);}
+.step.done:not(:last-child)::after,.step.active:not(:last-child)::after{background:var(--bcds-primary);}
+.step-circle{width:32px;height:32px;border-radius:50%;border:2px solid var(--bcds-border);background:var(--bcds-surface);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--bcds-text-disabled);z-index:1;transition:all .2s;}
+.step.active .step-circle{background:var(--bcds-primary);border-color:var(--bcds-primary);color:#fff;}
+.step.done .step-circle{background:var(--bcds-primary-hover);border-color:var(--bcds-primary-hover);color:#fff;}
+.step-label{font-size:11px;color:var(--bcds-text-secondary);text-align:center;margin-top:6px;line-height:1.3;max-width:90px;}
+.step.active .step-label{color:var(--bcds-primary);font-weight:700;}
+
+/* ── Page nav (exact copy) ── */
+.page-nav{display:flex;flex-direction:column;align-items:center;width:100%;margin-top:0;}
+.page-nav-btns{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:30px;padding-bottom:8px;}
+.page-nav-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:var(--radius-md);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;}
+.page-nav-btn.prev{background:none;border:1px solid var(--bcds-border);color:var(--bcds-text-secondary);}
+.page-nav-btn.prev:hover{background:var(--bcds-bg);}
+.page-nav-btn.next{background:var(--bcds-primary);border:1px solid var(--bcds-primary);color:#fff;}
+.page-nav-btn.next:hover{background:var(--bcds-primary-hover);}
+.page-nav-btn:disabled{opacity:.4;cursor:default;pointer-events:none;}
+.page-counter{font-size:13px;color:var(--bcds-text-secondary);width:100%;text-align:center;padding:10px 0 0;border-top:1px solid var(--bcds-border);margin-bottom:48px;}
+
+/* ── Page wrap ── */
+.page-wrap{max-width:1100px;margin:0 auto;padding:24px 24px 80px;}
+
+/* ── Survey page sections ── */
+.survey-page{display:none;}
+.survey-page.active{display:block;}
+
+/* ── Page header ── */
+.page-header{margin-bottom:20px;}
+.page-title{font-size:20px;font-weight:700;color:var(--bcds-primary);}
+
+/* ── Card (exact copy) ── */
+.card{background:var(--bcds-surface);border-radius:var(--radius-lg);border:1px solid var(--bcds-border);box-shadow:var(--shadow-sm);padding:24px 28px;margin-bottom:20px;transition:border-color .15s,box-shadow .15s;}
+.card.editing{border-color:#AEBED0;box-shadow:none;}
+.card.hidden-q{border-style:dashed;}
+.card.hidden-q > *:not(.card-conditional){opacity:.38;}
+.card.hidden-q > .card-conditional{opacity:1;}
+/* Conditional card group */
+.conditional-group{position:relative;padding-left:24px;margin-top:8px;}
+.conditional-group::before{content:'';position:absolute;left:0;top:0;bottom:20px;width:2px;border-left:2px dashed #9F9D9C;}
+.conditional-label{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;color:#474543;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px;}
+.conditional-label .cond-dot{width:10px;height:10px;border-radius:50%;background:#2E8540;flex-shrink:0;}
+.conditional-label span{color:#2E8540;}
+/* Conditional section inside card */
+.card-conditional{border-top:2px dashed #C8C3BE;margin-top:16px;padding-top:16px;transition:opacity .2s;}
+.card-conditional.disabled{opacity:.35;pointer-events:none;}
+.card-conditional.disabled .vis-toggle-wrap{pointer-events:all;opacity:1;}
+.cond-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#2E8540;margin-bottom:12px;}
+.cond-tag-dot{width:9px;height:9px;border-radius:50%;background:#2E8540;flex-shrink:0;}
+
+/* ── Comp pills (exact copy from dashboard) ── */
+.comp-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:20px;padding:3px 9px;margin-bottom:8px;border:1px solid;}
+.comp-pill-radio{background:#EAF3DE;color:#27500A;border-color:#B8D99A;}
+.comp-pill-checkbox{background:#E6F1FB;color:#0C447C;border-color:#9EC5F0;}
+.comp-pill-likert{background:#FEF1D8;color:#7A4F00;border-color:#F5C97A;}
+.comp-pill-rank{background:#F3ECF8;color:#5C2D91;border-color:#C9A8E8;}
+.comp-pill-freetext{background:#F0F0F0;color:#474543;border-color:#D8D8D8;}
+.comp-pill-dropdown{background:#FBE9F0;color:#7A0C3A;border-color:#F0A0C0;}
+
+/* ── Dashboard chart styles (exact copy) ── */
+.q-title{font-size:16px;font-weight:700;color:var(--bcds-text);line-height:1.4;margin-bottom:4px;}
+.q-subtitle{font-size:12px;color:var(--bcds-text-secondary);margin-bottom:14px;}
+.donut-layout{display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap;}
+.donut-wrap{position:relative;flex-shrink:0;width:200px;height:200px;}
+.donut-centre{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;}
+.donut-n{display:block;font-size:20px;font-weight:700;color:var(--bcds-primary);line-height:1.1;}
+.donut-lbl{font-size:11px;color:var(--bcds-text-secondary);}
+.donut-bar-side{flex:1;min-width:200px;}
+.donut-bar-header{display:grid;grid-template-columns:1fr 130px 90px;gap:8px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--bcds-text-secondary);padding:0 4px 6px;border-bottom:1px solid var(--bcds-border);margin-bottom:4px;}
+.donut-bar-list{list-style:none;}
+.donut-bar-item{display:grid;grid-template-columns:1fr 130px 90px;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid #F0EFEE;font-size:13px;}
+.donut-bar-item:last-child{border-bottom:none;}
+.donut-winner .donut-bar-item-label{font-weight:700;}
+.donut-label-wrap{display:flex;align-items:center;gap:7px;}
+.donut-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.donut-pct{font-weight:700;color:var(--bcds-primary);text-align:right;white-space:nowrap;}
+.donut-count{color:var(--bcds-text-secondary);font-size:12px;text-align:right;padding-right:24px;}
+.lik-legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:14px;}
+.lik-leg-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--bcds-text-secondary);}
+.lik-leg-swatch{width:13px;height:13px;border-radius:3px;flex-shrink:0;}
+.lik-svg-wrap{width:100%;overflow-x:auto;}
+.rank-info-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;}
+.rank-legend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.rank-leg-label{font-size:12px;color:var(--bcds-text-secondary);font-weight:600;}
+.rank-leg-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--bcds-text-secondary);}
+.rank-leg-swatch{width:12px;height:12px;border-radius:2px;flex-shrink:0;}
+.rank-row{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:14px;padding:10px 4px;border-bottom:1px solid #F0EFEE;}
+.rank-row:last-child{border-bottom:none;}
+.rank-row:hover{background:#F7F8FA;border-radius:var(--radius-sm);}
+.rank-medal{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;}
+.rank-medal.r1{background:#1B5E8C;color:#fff;}.rank-medal.r2{background:#4A90C4;color:#fff;}
+.rank-medal.r3{background:#90C0DE;color:#2D2D2D;}.rank-medal.r4{background:#F5C97A;color:#2D2D2D;}
+.rank-medal.r5{background:#E07B39;color:#fff;}
+.rank-bar-wrap{display:flex;flex-direction:column;gap:4px;}
+.rank-item-label{font-size:13px;color:var(--bcds-text);font-weight:500;}
+.rank-stack{display:flex;height:20px;border-radius:3px;overflow:hidden;width:100%;}
+.rank-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;cursor:default;transition:opacity .15s;}
+.rank-seg:hover{opacity:.82;}
+.rank-seg.r1{background:#1B5E8C;color:#fff;}.rank-seg.r2{background:#4A90C4;color:#fff;}
+.rank-seg.r3{background:#90C0DE;color:#2D2D2D;}.rank-seg.r4{background:#F5C97A;color:#2D2D2D;}
+.rank-seg.r5{background:#E07B39;color:#fff;}
+.rank-score{margin-top:1px;margin-bottom:6px;}
+.rank-score .score-num{font-size:11px;font-weight:600;color:var(--bcds-text-secondary);}
+.rank-score .score-lbl{font-size:11px;color:var(--bcds-text-secondary);}
+.freetext-stat-row{display:flex;align-items:center;gap:16px;padding:16px;background:#F7F8FA;border:1px solid var(--bcds-border);border-radius:var(--radius-md);}
+.freetext-stat-num{font-size:28px;font-weight:700;color:#013366;line-height:1;}
+.freetext-stat-lbl{font-size:12px;color:var(--bcds-text-secondary);text-transform:uppercase;letter-spacing:.04em;}
+
+/* ── Card top row ── */
+.card-toprow{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px;}
+.card-toprow-left{flex:1;min-width:0;}
+.card-toprow-right{display:flex;align-items:center;gap:12px;flex-shrink:0;padding-top:2px;}
+
+/* ── Edit button ── */
+.edit-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;font-size:13px;font-weight:600;font-family:inherit;border:1px solid var(--bcds-border);border-radius:4px;background:#fff;color:var(--bcds-text-secondary);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.edit-btn:hover{border-color:#013366;color:#013366;}
+.edit-btn.active{background:#013366;color:#fff;border-color:#013366;}
+.edit-btn i{font-size:14px;}
+
+/* ── Visibility toggle ── */
+.vis-toggle-wrap{display:flex;align-items:center;gap:8px;}
+.vis-toggle-label{font-size:12px;color:var(--bcds-text-secondary);white-space:nowrap;}
+.toggle-sw{position:relative;width:36px;height:20px;flex-shrink:0;}
+.toggle-sw input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{position:absolute;inset:0;background:#9F9D9C;border-radius:100px;cursor:pointer;transition:background .2s;}
+.toggle-sw input:checked + .toggle-track{background:#013366;}
+.toggle-track:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;}
+.toggle-sw input:checked + .toggle-track:before{transform:translateX(16px);}
+
+/* ── Add description ── */
+.add-desc-btn{display:flex;align-items:center;gap:5px;margin-top:6px;padding:0;background:none;border:none;font-family:inherit;font-size:12px;color:var(--bcds-link);cursor:pointer;text-decoration:underline;}
+.add-desc-btn i{font-size:12px;}
+
+/* ── Description flow ── */
+.user-desc-wrap{margin-top:6px;}
+.user-desc-input{display:none;width:100%;border:1px solid #AEBED0;border-radius:4px;padding:6px 10px;font-size:12px;font-family:inherit;color:var(--bcds-text);resize:vertical;min-height:54px;box-sizing:border-box;}
+.user-desc-input:focus{outline:none;border-color:#6A90B0;}
+.user-desc-input.visible{display:block;}
+.desc-actions{display:none;gap:8px;margin-top:6px;}
+.desc-actions.visible{display:flex;}
+.desc-save-btn{height:30px;padding:0 14px;background:#013366;border:2px solid #013366;border-radius:4px;color:#fff;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;}
+.desc-cancel-btn{height:30px;padding:0 14px;background:#fff;border:2px solid var(--bcds-border);border-radius:4px;color:var(--bcds-text);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;}
+.desc-saved{display:none;margin-top:2px;}
+.desc-saved.visible{display:block;}
+.desc-saved-text{font-size:12px;color:var(--bcds-text-secondary);line-height:1.5;}
+.desc-edit-icon{background:none;border:none;cursor:pointer;color:var(--bcds-link);padding:0;flex-shrink:0;line-height:1;}
+.desc-edit-icon i{font-size:13px;}
+
+
+/* ── Editable fields ── */
+/* In view mode: show text spans, hide inputs */
+.ef-text{display:inline;}
+.ef-input{display:none;font-family:inherit;border:1px solid #AEBED0;border-radius:4px;padding:4px 8px;background:#fff;color:var(--bcds-text);width:100%;}
+.ef-input:focus{outline:none;border-color:#6A90B0;}
+.ef-input.title-input{font-size:16px;font-weight:700;}
+.ef-input.subtitle-input{font-size:12px;color:var(--bcds-text-secondary);margin-top:4px;}
+/* col-header: always hidden text span, only input visible (as placeholder-style) */
+.col-header-val{display:inline;}
+.card.editing .col-header-val{display:none;}
+/* In edit mode: hide text spans, show inputs */
+.card.editing .ef-text:not(.q-title){display:none;}
+.card.editing .ef-input{display:block;}
+.card.editing .title-input{display:none !important;height:0;margin:0;padding:0;}
+.card.editing .col-header-val{display:inline !important;}
+.card.editing input.ef-input[style*="text-transform:uppercase"]{display:none !important;}
+
+/* ── Survey builder layout ── */
+.builder-shell{display:flex;align-items:flex-start;background:#FAF9F8;min-height:calc(100vh - 220px);}
+.builder-components{width:200px;flex-shrink:0;background:#fff;border:1px solid var(--bcds-border);border-radius:var(--radius-lg);margin:16px 0 16px 16px;padding:12px;box-shadow:var(--shadow-sm);}
+.builder-comp-btn{display:flex;align-items:center;gap:8px;width:100%;background:#FCBA19;border:none;border-radius:4px;padding:8px 12px;font-size:13px;font-weight:400;color:#2D2D2D;cursor:pointer;margin-bottom:5px;font-family:inherit;text-align:left;}
+.builder-comp-btn:last-child{margin-bottom:0;}
+.builder-comp-btn i{font-size:14px;flex-shrink:0;}
+.builder-main{flex:1;min-width:0;padding:16px;}
+.builder-page-tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.builder-page-tab{padding:6px 16px;font-size:13px;font-weight:600;font-family:inherit;border:none;border-radius:4px;background:#D8EAFD;color:#013366;cursor:pointer;transition:background .15s;}
+.builder-page-tab:hover{background:#BDD5F5;}
+.builder-page-tab.active{background:#013366;color:#fff;}
+.builder-add-page{padding:6px 14px;font-size:13px;font-weight:600;font-family:inherit;border:none;border-radius:4px;background:#2E8540;color:#fff;cursor:pointer;}
+.builder-page-content{background:#fff;border:1px solid var(--bcds-border);border-radius:var(--radius-lg);padding:20px 28px;box-shadow:var(--shadow-sm);overflow:hidden;}
+.builder-page-header{font-size:18px;font-weight:700;color:var(--bcds-primary);margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--bcds-border);}
+
+/* ── Survey question blocks ── */
+.sq-page{display:none;}
+.sq-page.active{display:block;}
+.sq-q-block{margin:0 0 28px 0;}
+.sq-q-label{font-size:16px;font-weight:700;color:var(--bcds-text);margin-bottom:10px;}
+.sq-input-text{width:100%;border:1px solid #606060;border-radius:4px;padding:8px 10px;font-size:15px;font-family:inherit;color:var(--bcds-text);background:#fff;}
+.sq-input-textarea{width:100%;border:1px solid #606060;border-radius:4px;padding:8px 10px;font-size:15px;font-family:inherit;color:var(--bcds-text);background:#fff;min-height:72px;resize:vertical;}
+.sq-input-select{width:100%;border:1px solid #606060;border-radius:4px;padding:8px 10px;font-size:15px;font-family:inherit;color:var(--bcds-text);background:#fff;}
+.sq-pii-hint{font-size:13px;color:#606060;margin-top:6px;}
+.sq-required{color:#D8292F;}
+.sq-hint{font-size:13px;color:#606060;margin-top:6px;}
+.sq-radio-group,.sq-checkbox-group{display:flex;flex-direction:column;gap:8px;}
+.sq-radio-item,.sq-checkbox-item{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--bcds-text);cursor:default;}
+.sq-radio-item input,.sq-checkbox-item input{width:16px;height:16px;flex-shrink:0;}
+
+/* ── Likert matrix (respondent view) ── */
+.sq-likert-wrap{overflow-x:auto;}
+.sq-likert-table{width:100%;border-collapse:collapse;border:1px solid var(--bcds-border);}
+.sq-likert-table th{background:#F2F2F2;font-size:13px;font-weight:700;color:var(--bcds-text);padding:10px 12px;text-align:center;border:1px solid var(--bcds-border);}
+.sq-likert-table th:first-child{text-align:left;min-width:180px;}
+.sq-likert-table td{padding:10px 12px;text-align:center;border:1px solid var(--bcds-border);font-size:13px;color:var(--bcds-text);}
+.sq-likert-table td:first-child{text-align:left;background:#F9F9F9;}
+.sq-likert-table tr:nth-child(even) td:first-child{background:#F2F2F2;}
+.sq-likert-table input[type=radio]{width:16px;height:16px;cursor:default;}
+.sq-likert-hint{font-size:12px;color:#606060;margin-top:8px;}
+
+/* ── Ranking (respondent view) ── */
+.sq-ranking-wrap{display:flex;flex-direction:column;gap:6px;}
+.sq-ranking-hint{font-size:12px;color:#606060;margin-bottom:4px;}
+.sq-ranking-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#F7F8FA;border:1px solid var(--bcds-border);border-radius:4px;font-size:14px;color:var(--bcds-text);}
+.sq-rank-handle{color:#9F9D9C;font-size:16px;cursor:grab;}
+
+/* ── Sticky footer ── */
+.sticky-footer{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--bcds-border);z-index:5;box-shadow:0 -2px 8px rgba(0,0,0,.06);}
+.sq-footer-main{display:flex;align-items:center;gap:12px;padding:14px 24px;}
+
+/* ── Additional settings (static) ── */
+.additional-settings-static{margin-top:16px;margin-bottom:24px;border:1px solid var(--bcds-border);border-radius:var(--radius-md);background:#FAF9F8;}
+.additional-settings-header{display:flex;align-items:center;gap:8px;padding:12px 20px;font-size:14px;font-weight:700;color:var(--bcds-text-secondary);border-bottom:1px solid var(--bcds-border);}
+.additional-settings-header i{font-size:15px;}
+.additional-settings-inner{padding:10px 20px;display:flex;flex-direction:column;gap:0;}
+.additional-setting-row{display:flex;align-items:flex-start;gap:24px;padding:0;}
+.additional-setting-left{display:flex;align-items:flex-start;gap:12px;flex-shrink:0;min-width:180px;}
+.additional-setting-label-group{display:flex;flex-direction:column;gap:3px;}
+.additional-setting-name{font-size:14px;font-weight:600;color:var(--bcds-text);line-height:1.4;}
+.additional-setting-divider{height:1px;background:var(--bcds-border);margin:10px 0;}
+.read-details-btn{background:none;border:none;font-family:inherit;font-size:12px;color:var(--bcds-link);cursor:pointer;text-decoration:underline;padding:0;text-align:left;}
+.read-details-btn:hover{color:var(--bcds-primary);}
+.setting-details{display:none;flex:1;font-size:13px;color:var(--bcds-text-secondary);line-height:1.6;background:#EBF1F8;border-left:3px solid #013366;padding:10px 14px;border-radius:0 4px 4px 0;align-self:flex-start;}
+.setting-details.open{display:block;}
+.btn-primary{background:#013366;color:#fff;border:2px solid #013366;border-radius:4px;padding:10px 24px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px;}
+.btn-primary:hover{background:#1E5189;border-color:#1E5189;}
+.q-original-ref{display:none;align-items:baseline;gap:5px;margin-top:4px;font-size:11px;color:var(--bcds-text-disabled);font-style:italic;line-height:1.4;}
+.q-original-ref i{font-size:11px;flex-shrink:0;color:var(--bcds-text-disabled);}
+.card.editing .q-original-ref{display:none !important;}
+.btn-next{background:#013366;color:#fff;border:2px solid #013366;border-radius:4px;padding:10px 24px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px;}
+.btn-next:hover{background:#1E5189;border-color:#1E5189;}
+.btn-next i{font-size:15px;}
+.btn-secondary{background:#fff;color:var(--bcds-text);border:2px solid #606060;border-radius:4px;padding:10px 24px;font-size:15px;cursor:pointer;font-family:inherit;}
+.btn-secondary:hover{background:#F2F2F2;}
+
+#tooltip{display:none;position:fixed;background:var(--bcds-primary);color:#fff;font-size:12px;padding:7px 12px;border-radius:var(--radius-md);box-shadow:var(--shadow-md);pointer-events:none;z-index:9999;max-width:240px;font-family:inherit;}
+</style>
+</head>
+<body>
+
+<header class="gov-header">
+  <a class="logo-wrap" href="#">
+    <svg xmlns="http://www.w3.org/2000/svg" width="155" height="42" viewBox="0 0 155 42" fill="none" style="width:155px;height:42px;flex-shrink:0;">
+      <g clip-path="url(#clip0_475_632)">
+        <path d="M143.92 40.41H75.17V41.24H143.92V40.41Z" fill="#FDB913"/>
+        <path d="M8.6 34.81C18.33 34.81 31.8 40.29 41.6 40.29C48.6 40.29 55.38 38.43 59.25 35.69C60.4118 27.9658 58.4755 20.0953 53.8626 13.7918C49.2496 7.48833 42.3335 3.26214 34.6197 2.0332C26.9058 0.804263 19.0188 2.67207 12.6755 7.23006C6.3321 11.788 2.04595 18.6672 0.749999 26.37C0.51722 27.8153 0.393537 29.2761 0.379999 30.74C0.381523 32.3918 0.518651 34.0407 0.789999 35.67C3.36528 35.1692 5.97746 34.8816 8.6 34.81Z" fill="white"/>
+        <path d="M49.14 23.8899L50.31 24.3799L52.91 22.5699L49.14 23.8899Z" fill="#FDB913"/>
+        <path d="M5.5 21.87L2.42 20.79L2.58 20.41L6 21.57L6.46 21.31L6.64 21.2L2.91 19.57L3.07 19.17L11.51 22.58L11.79 22.46L3.42 18.4L3.61 18L12.48 22.13L12.6 22.07L4 17.2L4.18 16.83L16.6 23.59C16.7 23.4 16.92 23.06 17.02 22.88C14.0703 20.1231 10.9723 17.5293 7.74 15.11C11.1198 17.3115 14.6148 19.3311 18.21 21.16C18.4 20.92 18.56 20.73 18.76 20.5L8.17 11.18L8.45 10.89L17 18.18L9.08 10.24L9.38 9.92996L18.27 18.53L10 9.33996L10.32 9.05996L18 17.25L11 8.44995L11.3 8.17996L20.3 19.07C20.53 18.87 20.72 18.72 20.96 18.53C19.269 14.884 17.376 11.3352 15.29 7.89995C17.583 11.195 20.0533 14.363 22.69 17.39C22.95 17.24 23.21 17.1 23.48 16.97L17.1 4.42995L17.47 4.25995L22.67 14.26L18.29 3.89995L18.68 3.72995L23.68 15.03L19.48 3.40995L19.88 3.25995L23.88 13.72L20.72 2.99995L21.1 2.85995L25.29 16.22C25.57 16.13 25.85 16.04 26.14 15.97C25.9344 11.9599 25.5104 7.96393 24.87 3.99995C25.7618 7.89223 26.8601 11.7343 28.16 15.51L29.05 15.42L27.92 1.41995H28.33L29.42 12.66L29.23 1.45995H29.66L30.09 13.82L30.52 1.45995H31L30.8 12.67L31.84 1.48995H32.25L31.12 15.49L31.99 15.57C33.288 11.798 34.3829 7.95912 35.27 4.06995C34.6318 7.99396 34.2078 11.9498 34 15.92L34.85 16.17L39 2.84995L39.38 2.98995L36.22 13.77L40.22 3.30995L40.62 3.45995L36.41 15.07L41.41 3.76995L41.8 3.93995L37.46 14.27L42.66 4.26995L43.03 4.43995L36.78 17C37.04 17.12 37.29 17.26 37.54 17.4C40.1618 14.3709 42.6187 11.203 44.9 7.90995C42.8331 11.3252 40.9537 14.8504 39.27 18.47C39.51 18.65 39.75 18.84 39.98 19.04L48.83 8.25995L49.13 8.52995L42.13 17.33L49.78 9.13996L50.1 9.42996L41.82 18.62L50.71 9.99996L51.01 10.31L43.1 18.26L51.65 11L51.93 11.29L41.47 20.49C41.65 20.69 41.83 20.9 42 21.12C45.5685 19.3078 49.0368 17.3049 52.39 15.12C49.181 17.5192 46.1063 20.093 43.18 22.83C43.31 23.04 43.52 23.41 43.64 23.63L55.88 17L56.06 17.37L46.29 22.91L56.46 18.18L56.65 18.56L47.18 23.17L47.36 23.23L57 19.3L57.16 19.69L48.16 23.5L48.33 23.57L54.33 21.57L55.23 20.94L55.53 21.17L57.53 20.52L57.69 20.9L55.99 21.5L58.4 23.37L59.19 23.81C57.6102 17.1885 53.8254 11.3012 48.4573 7.11513C43.0892 2.92904 36.4571 0.693065 29.6503 0.774486C22.8434 0.855908 16.2667 3.24988 11.0003 7.56318C5.73389 11.8765 2.091 17.8526 0.67 24.51L0.78 24.46L1.14 24.3L1.36 24.19L5.5 21.87Z" fill="#FDB913"/>
+        <path d="M0.500001 36.28C3.17732 35.7588 5.89335 35.4612 8.62 35.39C18.35 35.39 31.82 40.87 41.62 40.87C48.79 40.87 55.78 38.87 59.62 36.04C60.333 31.9809 60.2071 27.8187 59.25 23.81L55.18 21.54L50.4 24.89L47.12 23.67C46.03 24.22 39.32 28.67 39.32 28.67L36.74 26.8L34 26.27L30.31 23.58L26.08 26.48C26.08 26.48 21.36 29.22 21.2 29.22C21.04 29.22 15.51 24.84 15.51 24.84L13 22.15C12.57 22.42 10.83 23.22 10.83 23.22H10.7L9 22.73L7 21.67L0.780001 24.46L0.670001 24.51C-0.161265 28.3839 -0.219037 32.3838 0.500001 36.28Z" fill="#4C81AF"/>
+        <path d="M131.19 11H131.27H131.75C132.33 11 132.45 11 132.45 12.7V18.77C132.45 20.12 132.45 20.12 131.81 20.14H131.32H131.26L131.19 20.19C131.087 20.3039 131.031 20.4517 131.031 20.605C131.031 20.7583 131.087 20.9061 131.19 21.02L131.25 21.08H131.37H135.78H135.83C135.905 21.0191 135.963 20.9406 135.999 20.8515C136.036 20.7625 136.05 20.6657 136.04 20.57C136.044 20.4903 136.028 20.4108 135.993 20.3391C135.958 20.2674 135.905 20.2057 135.84 20.16L135.7 20.11H135.21C134.53 20.11 134.46 20.11 134.46 18.44V16.26C134.453 16.1901 134.453 16.1198 134.46 16.05H140C140.19 16.0346 140.38 16.0346 140.57 16.05C140.562 16.1131 140.562 16.1769 140.57 16.24V18.8C140.57 20.17 140.57 20.17 139.83 20.19H139.46H139.41L139.31 20.26C139.2 20.3721 139.138 20.5229 139.138 20.68C139.138 20.837 139.2 20.9878 139.31 21.1L139.37 21.17H139.49H143.81C143.885 21.1091 143.943 21.0306 143.98 20.9415C144.016 20.8525 144.03 20.7557 144.02 20.66C144.022 20.5805 144.005 20.5017 143.971 20.4303C143.936 20.3589 143.884 20.297 143.82 20.25H143.76H143.71H143.24C142.55 20.18 142.55 20.18 142.55 18.68V12.75C142.55 11.12 142.55 11.12 143.27 11.05H143.69C143.807 10.9956 143.902 10.9016 143.956 10.7845C144.011 10.6675 144.023 10.5349 143.99 10.41C143.98 10.3153 143.936 10.2275 143.866 10.163C143.796 10.0986 143.705 10.0619 143.61 10.06H139.42H139.37C139.296 10.1214 139.238 10.2 139.202 10.2889C139.165 10.3778 139.151 10.4743 139.16 10.57C139.156 10.6483 139.172 10.7264 139.207 10.7966C139.242 10.8667 139.295 10.9265 139.36 10.97H139.41H139.49H139.84C140.6 10.97 140.6 10.97 140.6 12.67V14.6C140.607 14.6665 140.607 14.7335 140.6 14.8H135.11C134.921 14.823 134.729 14.823 134.54 14.8C134.548 14.7403 134.548 14.6797 134.54 14.62V12.75C134.54 11.12 134.54 11.12 135.26 11.05H135.65C135.765 10.9959 135.858 10.9035 135.913 10.7886C135.967 10.6738 135.981 10.5435 135.95 10.42C135.939 10.3251 135.894 10.2372 135.825 10.1714C135.756 10.1057 135.665 10.0663 135.57 10.06H131.29H131.24C131.165 10.123 131.107 10.2033 131.071 10.2939C131.034 10.3846 131.02 10.4828 131.03 10.58C131.015 10.6579 131.023 10.7384 131.051 10.8125C131.079 10.8867 131.127 10.9515 131.19 11ZM87.81 20.19H87.08L86.98 20.24C86.8781 20.3522 86.8217 20.4984 86.8217 20.65C86.8217 20.8016 86.8781 20.9477 86.98 21.06L87.04 21.12H87.16H92.16L92.22 21.05C92.3276 20.9366 92.3876 20.7863 92.3876 20.63C92.3876 20.4737 92.3276 20.3233 92.22 20.21L92.12 20.16H91.4C90.7 20.16 90.7 20.16 90.7 19.27V16.47C90.6866 16.3103 90.6866 16.1497 90.7 15.99H90.89C92.06 15.99 92.06 15.99 92.61 16.99L94.61 20.56V20.65C94.6879 20.8339 94.819 20.9903 94.9865 21.099C95.1541 21.2077 95.3503 21.2638 95.55 21.26H97.87L97.93 21.2C98.2 20.92 98.24 20.59 98.04 20.39L97.9 20.27H97.84H97C96.62 20.2 96.46 19.92 96.23 19.49L96.18 19.41L94.55 16.57L94.49 16.47V16.4C94.3562 16.1559 94.1952 15.9278 94.01 15.72C94.6757 15.5991 95.281 15.2566 95.7276 14.7483C96.1742 14.2401 96.4358 13.5957 96.47 12.92C96.47 10.84 94.36 10.11 92.55 10.11H87.22C87.1604 10.1055 87.1006 10.1129 87.0439 10.1318C86.9873 10.1507 86.935 10.1807 86.89 10.22C86.8538 10.254 86.8267 10.2965 86.8109 10.3436C86.7952 10.3908 86.7915 10.441 86.8 10.49V10.58C86.7957 10.6526 86.8059 10.7253 86.8299 10.794C86.854 10.8627 86.8914 10.9259 86.94 10.98C86.992 11.0245 87.0525 11.058 87.1178 11.0786C87.1831 11.0992 87.2518 11.1065 87.32 11.1H87.57C88.51 11.15 88.51 11.15 88.51 12.1V19.43C88.51 20.13 88.51 20.13 87.81 20.19ZM90.51 11.91C90.51 11.02 90.51 11.02 91.69 11.02C93.33 11.02 94.13 11.66 94.13 13.02C94.1445 13.3123 94.0841 13.6035 93.9546 13.866C93.8251 14.1285 93.6308 14.3536 93.39 14.52C92.8144 14.8466 92.1616 15.0123 91.5 15H90.74C90.51 15 90.46 15 90.46 15L90.51 11.91ZM134.28 29.91C134.726 29.7178 135.104 29.3959 135.364 28.9861C135.625 28.5764 135.756 28.0977 135.741 27.6123C135.726 27.127 135.565 26.6574 135.28 26.2646C134.994 25.8719 134.597 25.5741 134.14 25.41C133.175 25.0802 132.159 24.9278 131.14 24.96H130.87C129.29 24.96 127.99 24.96 126.87 25.09C126.798 25.0905 126.728 25.1155 126.671 25.1609C126.615 25.2063 126.576 25.2694 126.56 25.34C126.534 25.4552 126.534 25.5745 126.558 25.6901C126.582 25.8056 126.63 25.9147 126.7 26.01H126.78H127.41C127.95 26.01 128.05 26.11 128.05 27.34V33.48C128.05 35.08 128.12 35.14 127.38 35.25H127.03C126.988 35.2471 126.946 35.2527 126.907 35.2665C126.867 35.2802 126.831 35.3018 126.8 35.33C126.744 35.382 126.701 35.4459 126.674 35.5168C126.646 35.5878 126.634 35.664 126.64 35.74C126.64 35.8938 126.701 36.0413 126.81 36.15H126.87H126.98H131.39C134.71 36.15 136.62 34.89 136.62 32.7C136.574 32.0488 136.322 31.4291 135.902 30.9297C135.481 30.4302 134.914 30.0768 134.28 29.92V29.91ZM130.28 26.17H130.35C130.567 26.1033 130.793 26.0696 131.02 26.07H131.14C132.29 26.07 133.62 26.57 133.62 27.96C133.62 28.96 133.17 29.66 130.94 29.73H130.26V26.31C130.255 26.2656 130.262 26.2209 130.28 26.18V26.17ZM131.81 35.25H131.62C131.256 35.2414 130.906 35.115 130.62 34.89C130.348 34.4253 130.232 33.8854 130.29 33.35V30.89C130.56 30.8182 130.841 30.7945 131.12 30.82C133.93 30.82 134.52 32.16 134.52 33.29C134.49 34.92 133 35.26 131.81 35.26V35.25ZM104 12.32C104.056 12.4074 104.133 12.4797 104.224 12.5303C104.314 12.5809 104.416 12.6083 104.52 12.61C104.625 12.6096 104.729 12.5821 104.82 12.53V12.48C104.957 12.1013 105.18 11.7591 105.47 11.48C106.056 11.204 106.704 11.0868 107.35 11.14H108.46V19C108.46 20.15 108.46 20.15 107.84 20.2H107.22L107.04 20.26H106.99C106.934 20.3149 106.89 20.3803 106.86 20.4524C106.83 20.5245 106.814 20.6018 106.814 20.68C106.814 20.7581 106.83 20.8355 106.86 20.9076C106.89 20.9797 106.934 21.0451 106.99 21.1L107.05 21.15H107.15H111.79H111.85C111.925 21.0891 111.983 21.0106 112.02 20.9215C112.056 20.8325 112.07 20.7357 112.06 20.64C112.065 20.5591 112.048 20.4782 112.011 20.4061C111.974 20.3339 111.919 20.2731 111.85 20.23L111.75 20.17H111.21C110.52 20.12 110.52 20.12 110.52 18.6V18.51V11.3V11.05H112C112.616 10.9791 113.24 11.1051 113.78 11.41C113.954 11.693 114.047 12.018 114.05 12.35V12.43L114.11 12.51C114.23 12.6294 114.391 12.6976 114.56 12.7C114.712 12.6986 114.857 12.6417 114.97 12.54L115.04 12.48V12.35C115.017 11.543 115.098 10.7364 115.28 9.94998V9.81998L115.34 9.57998H114.49L114.43 9.67998V9.72998C114.26 10.03 114.26 10.03 113.43 10.03H106.63C105.79 10.03 105.63 9.97998 105.55 9.76998L105.49 9.69998C105.316 9.63293 105.124 9.63293 104.95 9.69998L104.89 9.76998C104.748 10.568 104.544 11.3537 104.28 12.12V12.26L104 12.32ZM116.69 20.2H116.14L116.08 20.26C116.024 20.3157 115.98 20.382 115.949 20.4549C115.919 20.5278 115.904 20.606 115.904 20.685C115.904 20.7639 115.919 20.8421 115.949 20.9151C115.98 20.988 116.024 21.0542 116.08 21.11L116.18 21.18V21.23H120.74L120.83 21.18C120.901 21.1144 120.956 21.0335 120.991 20.9433C121.025 20.8531 121.039 20.7562 121.03 20.66C121.03 20.5801 121.01 20.5015 120.972 20.4315C120.933 20.3615 120.878 20.3025 120.81 20.26H120.27C119.46 20.21 119.46 20.21 119.46 18.56V12.78C119.46 11.09 119.46 11.09 120.27 11.03H120.78C120.899 10.9772 120.994 10.8834 121.049 10.7659C121.104 10.6483 121.115 10.5149 121.08 10.39C121.07 10.2953 121.026 10.2075 120.956 10.143C120.886 10.0786 120.795 10.0419 120.7 10.04H116.15C116.071 10.1045 116.01 10.1877 115.971 10.282C115.933 10.3763 115.919 10.4788 115.93 10.58C115.929 10.6585 115.949 10.7359 115.988 10.8043C116.027 10.8727 116.082 10.9298 116.15 10.97H116.69C117.48 10.97 117.49 10.97 117.49 12.72V18.5C117.47 20.11 117.46 20.12 116.66 20.2H116.69ZM99.32 20.2H98.77L98.71 20.26C98.6528 20.315 98.6074 20.381 98.5763 20.4541C98.5452 20.5271 98.5292 20.6056 98.5292 20.685C98.5292 20.7643 98.5452 20.8429 98.5763 20.9159C98.6074 20.9889 98.6528 21.0549 98.71 21.11L98.83 21.17H103.29L103.39 21.12C103.464 21.0585 103.522 20.9799 103.558 20.891C103.595 20.8021 103.609 20.7057 103.6 20.61C103.605 20.5291 103.588 20.4482 103.551 20.3761C103.514 20.3039 103.459 20.2431 103.39 20.2H102.84C102.04 20.15 102.04 20.15 102.04 18.5V12.78C102.04 11.09 102.04 11.09 102.85 11.03H103.36C103.477 10.9756 103.572 10.8816 103.626 10.7646C103.681 10.6475 103.693 10.5149 103.66 10.39C103.65 10.2953 103.606 10.2075 103.536 10.143C103.466 10.0786 103.375 10.0419 103.28 10.04H98.76H98.71C98.6356 10.108 98.5772 10.1918 98.5392 10.2852C98.5011 10.3786 98.4843 10.4793 98.49 10.58C98.4915 10.6593 98.5134 10.7369 98.5537 10.8052C98.594 10.8736 98.6513 10.9303 98.72 10.97H99.26C100.05 10.97 100.06 10.97 100.06 12.72V18.5C100.1 20.11 100.09 20.12 99.29 20.2H99.32ZM122.32 20.75L122.41 20.82C123.331 21.2355 124.33 21.4502 125.34 21.45H125.57C128.17 21.45 129.9 20.18 129.95 18.21C129.95 16.85 129.12 15.76 127.42 14.86L125.9 14.06C125.24 13.7 124.45 13.06 124.45 12.33C124.45 11.33 125.11 10.85 126.45 10.85H126.7C127.164 10.8553 127.613 11.0157 127.975 11.3056C128.338 11.5956 128.593 11.9984 128.7 12.45V12.53L128.78 12.61C128.906 12.6992 129.056 12.748 129.21 12.75C129.352 12.7504 129.491 12.7086 129.61 12.63L129.7 12.57V12.41C129.7 11.6955 129.582 10.9859 129.35 10.31V10.24V10.12H129.14C128.941 10.1103 128.743 10.0802 128.55 10.03C127.949 9.89279 127.336 9.81905 126.72 9.80998C123.85 9.80998 122.56 11.35 122.56 12.88C122.632 13.5248 122.87 14.1399 123.25 14.6656C123.63 15.1913 124.14 15.6096 124.73 15.88L126.52 16.88C127.81 17.59 127.91 18.25 127.91 18.88C127.91 19.51 127.27 20.43 125.84 20.43H125.69C125.041 20.4272 124.411 20.2142 123.894 19.823C123.376 19.4318 122.999 18.8833 122.82 18.26C122.782 18.1816 122.724 18.1146 122.652 18.0655C122.58 18.0164 122.497 17.9869 122.41 17.98C122.319 17.9743 122.227 17.9873 122.141 18.0183C122.055 18.0492 121.977 18.0975 121.91 18.16L121.85 18.23V18.34C121.884 19.1627 122.067 19.9724 122.39 20.73L122.32 20.75ZM154.46 35.41L154.4 35.35H153.76C153.35 35.25 153.13 34.66 152.92 34.15L152.82 33.92L149.21 25.36C149.185 25.2506 149.125 25.1526 149.038 25.0819C148.95 25.0111 148.842 24.9717 148.73 24.97C148.35 24.97 148.22 25.33 148.17 25.48L144.71 34C144.56 34.4341 144.355 34.8474 144.1 35.23C143.975 35.3222 143.825 35.3745 143.67 35.38H142.84L142.78 35.44C142.672 35.5533 142.612 35.7037 142.612 35.86C142.612 36.0163 142.672 36.1666 142.78 36.28L142.88 36.36H146.71H146.81C146.92 36.2478 146.982 36.097 146.982 35.94C146.982 35.7829 146.92 35.6321 146.81 35.52H146.76H146.67H146.07C145.74 35.52 145.58 35.34 145.58 35.2C145.605 34.9191 145.679 34.6449 145.8 34.39L146.33 33.12C146.374 33.0387 146.414 32.9553 146.45 32.87C146.54 32.64 146.54 32.64 146.93 32.64H149.34C149.88 32.64 149.88 32.64 150.04 33.03C150.04 33.11 150.12 33.21 150.16 33.31L150.73 34.6C150.831 34.8017 150.902 35.0174 150.94 35.24C150.94 35.34 150.86 35.52 150.37 35.52H149.8L149.74 35.58C149.685 35.6331 149.641 35.6968 149.611 35.7673C149.581 35.8377 149.566 35.9135 149.566 35.99C149.566 36.0665 149.581 36.1422 149.611 36.2127C149.641 36.2831 149.685 36.3468 149.74 36.4L149.8 36.46H149.91H154.39L154.45 36.4C154.531 36.3448 154.598 36.2701 154.643 36.1827C154.688 36.0953 154.711 35.9979 154.709 35.8995C154.707 35.8011 154.68 35.7048 154.632 35.6193C154.583 35.5338 154.514 35.4618 154.43 35.41H154.46ZM149.31 31.35H146.9C147.29 30.35 147.85 28.96 148.13 28.3C148.41 28.95 148.98 30.3 149.38 31.25C149.384 31.2799 149.384 31.3101 149.38 31.34L149.31 31.35ZM110.95 25.22H110.84H106.84L106.78 25.28C106.669 25.3955 106.607 25.5496 106.607 25.71C106.607 25.8703 106.669 26.0245 106.78 26.14L106.84 26.2H106.96H107.48C107.662 26.1746 107.847 26.2061 108.01 26.29C108.181 27.9743 108.244 29.6677 108.2 31.36C108.2 34.29 106.6 35.36 105.1 35.36C102.92 35.36 101.95 34.13 101.95 31.36V27.5C101.95 26.19 101.95 26.19 102.6 26.14H103H103.06C103.164 26.0765 103.244 25.9801 103.288 25.8661C103.331 25.752 103.336 25.6267 103.3 25.51C103.276 25.4192 103.223 25.3388 103.149 25.281C103.075 25.2232 102.984 25.1912 102.89 25.19H98.74H98.65C98.5761 25.2514 98.5183 25.33 98.4817 25.4189C98.4451 25.5078 98.4308 25.6043 98.44 25.7C98.4369 25.7806 98.4545 25.8607 98.4913 25.9325C98.5281 26.0043 98.5828 26.0654 98.65 26.11H98.73H99.18C99.89 26.11 99.89 26.11 99.89 27.74V31.6C99.89 33.6 100.35 34.85 101.34 35.6C102.224 36.2075 103.268 36.5382 104.34 36.55H104.84C106.053 36.543 107.223 36.0952 108.13 35.29C108.616 34.7427 108.981 34.0992 109.201 33.4013C109.422 32.7035 109.493 31.9671 109.41 31.24C109.41 31.24 109.41 27.39 109.63 26.24C109.764 26.1278 109.936 26.0706 110.11 26.08H110.6H110.69H110.75H110.8C110.914 25.963 110.988 25.8122 111.01 25.65C111.027 25.5761 111.028 25.4993 111.013 25.425C110.997 25.3507 110.965 25.2807 110.92 25.22H110.95ZM125.84 35.34H125C124.788 35.3471 124.578 35.2989 124.39 35.2C124.31 35.14 124.26 35.1 124.24 34.83C124.24 34.63 124.24 34.43 124.24 34.31C124.24 34.19 124.24 27.24 124.24 27.15C124.24 26.72 124.24 26.47 124.31 26.28C124.38 26.09 124.59 26.16 124.74 26.16H125.47H125.54C125.595 26.1252 125.638 26.0759 125.667 26.0176C125.695 25.9594 125.706 25.8944 125.7 25.83C125.7 25.78 125.7 25.35 125.56 25.24H125.5H122.88C122.744 25.2174 122.604 25.2381 122.48 25.2991C122.357 25.3601 122.255 25.4583 122.19 25.58L118.52 33.32L115.24 25.71C115.213 25.5676 115.133 25.4408 115.016 25.3553C114.899 25.2699 114.754 25.2322 114.61 25.25H112C111.966 25.2458 111.932 25.2485 111.9 25.258C111.867 25.2674 111.837 25.2834 111.811 25.3049C111.784 25.3264 111.763 25.353 111.747 25.3831C111.732 25.4132 111.722 25.4462 111.72 25.48C111.72 25.66 111.72 26.14 111.91 26.22H112.72C112.98 26.22 113.13 26.22 113.18 26.28C113.23 26.34 113.25 26.59 113.18 26.98L112.6 34.49C112.6 35.28 112.54 35.38 111.94 35.49H111.18L111.12 35.54C111.021 35.6611 110.962 35.8105 110.953 35.9668C110.944 36.1232 110.985 36.2783 111.07 36.41L111.2 36.47H115.05H115.19C115.289 36.3509 115.347 36.2039 115.358 36.0496C115.369 35.8954 115.331 35.7416 115.25 35.61L115.19 35.55H114.42C114.159 35.5515 113.908 35.4511 113.72 35.27C113.608 35.086 113.535 34.881 113.506 34.6677C113.477 34.4543 113.492 34.2373 113.55 34.03L114.04 27.61L117.45 35.96V36.03C117.52 36.19 117.62 36.43 117.89 36.43C117.982 36.4278 118.071 36.3967 118.145 36.3411C118.219 36.2854 118.273 36.2081 118.3 36.12L122.21 27.42V34.3C122.219 34.4765 122.219 34.6534 122.21 34.83C122.21 35.09 122.09 35.11 122.04 35.16C121.858 35.2681 121.651 35.3267 121.44 35.33H120.68L120.62 35.39C120.53 35.5155 120.482 35.6658 120.482 35.82C120.482 35.9742 120.53 36.1245 120.62 36.25L120.68 36.32H125.68L125.74 36.26C125.828 36.1339 125.876 35.9838 125.876 35.83C125.876 35.6761 125.828 35.526 125.74 35.4L125.84 35.34ZM75.15 9.29998H75.24H75.91C76.47 9.29998 76.62 9.29998 76.62 10.83L76.71 18.03C76.71 19.94 76.71 19.95 75.81 20.08L75.37 20.17H75.31C75.1997 20.2899 75.1384 20.447 75.1384 20.61C75.1384 20.773 75.1997 20.93 75.31 21.05H75.39H80.32C84.04 21.05 86.17 19.61 86.17 17.1C86.1535 16.2907 85.8609 15.5113 85.3407 14.8911C84.8206 14.271 84.1041 13.8471 83.31 13.69C83.8321 13.4852 84.2812 13.1294 84.6001 12.668C84.9189 12.2067 85.093 11.6607 85.1 11.1C85.1102 10.5317 84.9447 9.97405 84.6262 9.50332C84.3076 9.0326 83.8514 8.67171 83.32 8.46998C82.3157 8.09554 81.2519 7.90582 80.18 7.90998H79.67C77.77 7.90998 76.34 7.95998 75.18 8.05998C75.1002 8.06988 75.0258 8.10548 74.9681 8.16142C74.9104 8.21735 74.8724 8.29056 74.86 8.36998C74.8254 8.4914 74.8228 8.61972 74.8526 8.74241C74.8824 8.8651 74.9435 8.97796 75.03 9.06998L75.15 9.29998ZM83.7 17.61C83.7 19.53 82.07 19.94 80.7 19.94H80.48C80.0462 19.942 79.6266 19.7855 79.3 19.5C78.9996 18.9538 78.8674 18.3311 78.92 17.71V14.89C78.9141 14.8502 78.9141 14.8098 78.92 14.77C79.213 14.6909 79.5183 14.6671 79.82 14.7C83.2 14.7 83.7 16.52 83.7 17.61ZM78.92 9.33998C79.1536 9.26932 79.396 9.23228 79.64 9.22998H79.82C81.14 9.22998 82.65 9.80998 82.65 11.47C82.65 12.71 82.15 13.47 79.65 13.58H79.21C79.0969 13.5905 78.9831 13.5905 78.87 13.58V13.36V9.53998C78.8732 9.47064 78.8902 9.40264 78.92 9.33998ZM99.09 33.45C98.9796 33.3899 98.8557 33.3589 98.73 33.36C98.6166 33.3563 98.5048 33.3877 98.41 33.45V33.52C98.1944 34.1177 97.8042 34.6368 97.29 35.01C96.7291 35.1748 96.1428 35.2358 95.56 35.19H95C94.4825 35.2809 93.9496 35.2147 93.47 35C93.26 34.79 93.2 34.47 93.2 33.48V27.84C93.2 26.21 93.26 26.2 94 26.14H94.49C94.5984 26.0826 94.6835 25.9895 94.7309 25.8765C94.7783 25.7634 94.785 25.6374 94.75 25.52C94.7405 25.4243 94.6968 25.3353 94.6271 25.2692C94.5573 25.2031 94.466 25.1643 94.37 25.16H89.85H89.79C89.7164 25.2265 89.6584 25.3086 89.6204 25.4002C89.5823 25.4919 89.5651 25.5909 89.57 25.69C89.5716 25.7706 89.5936 25.8495 89.6338 25.9194C89.674 25.9893 89.7312 26.048 89.8 26.09H90.33C91.2 26.14 91.2 26.14 91.2 27.79V33.58C91.2 35.21 91.2 35.21 90.44 35.29H89.8L89.74 35.36C89.6324 35.4733 89.5724 35.6237 89.5724 35.78C89.5724 35.9363 89.6324 36.0866 89.74 36.2L89.8 36.26H89.92H98.48L98.53 36.14V36.09C98.8596 35.3428 99.1175 34.566 99.3 33.77C99.2945 33.7033 99.2724 33.6391 99.2358 33.5832C99.1991 33.5273 99.149 33.4815 99.09 33.45ZM76.58 32.54C76.4568 32.5437 76.3365 32.578 76.23 32.64H76.17L76.11 32.73C75.8566 33.4936 75.3679 34.1575 74.714 34.6263C74.0601 35.0952 73.2746 35.345 72.47 35.34H72.32C69.05 35.34 66.77 32.85 66.77 29.34C66.77 25.22 69.46 23.75 71.97 23.75C74.05 23.75 75.3 24.62 75.68 26.34V26.41L75.74 26.48C75.8715 26.5997 76.0422 26.6672 76.22 26.67C76.3875 26.6734 76.5508 26.6167 76.68 26.51L76.76 26.44V26.33V26.28C76.6 25.04 76.49 23.88 76.49 23.47V23.15H76.12C75.99 23.1516 75.8609 23.1278 75.74 23.08C74.5897 22.7818 73.4082 22.6206 72.22 22.6H72C70.1306 22.6035 68.3115 23.2063 66.81 24.32C66.0029 24.9662 65.355 25.7892 64.9163 26.7254C64.4777 27.6617 64.26 28.6862 64.28 29.72C64.251 30.821 64.5019 31.9113 65.0091 32.889C65.5163 33.8666 66.2632 34.6996 67.18 35.31C68.5839 36.1952 70.2103 36.6633 71.87 36.66H72.19C73.2566 36.6481 74.3164 36.49 75.34 36.19C75.5543 36.1084 75.7751 36.0448 76 36H76.09L76.18 35.91C76.7026 35.041 77.0429 34.0747 77.18 33.07V32.98V32.86C77.1101 32.7653 77.02 32.6875 76.9162 32.6321C76.8124 32.5768 76.6975 32.5453 76.58 32.54ZM141.19 26.15H141.68C141.797 26.0976 141.892 26.0059 141.949 25.8909C142.005 25.7759 142.02 25.6447 141.99 25.52C141.978 25.4235 141.933 25.3343 141.861 25.2684C141.79 25.2024 141.697 25.164 141.6 25.16H137.18H137.13C137.056 25.2215 136.997 25.2998 136.959 25.3885C136.92 25.4771 136.904 25.5736 136.91 25.67C136.907 25.7506 136.925 25.8307 136.961 25.9025C136.998 25.9743 137.053 26.0354 137.12 26.08H137.65C138.4 26.08 138.42 26.08 138.42 27.83V33.55C138.42 35.16 138.42 35.17 137.63 35.25H137.09V35.31C137.034 35.3657 136.99 35.432 136.959 35.5049C136.929 35.5778 136.914 35.656 136.914 35.735C136.914 35.8139 136.929 35.8921 136.959 35.9651C136.99 36.038 137.034 36.1042 137.09 36.16L137.15 36.22H137.26H141.73H141.78C141.854 36.1579 141.912 36.0795 141.95 35.991C141.988 35.9025 142.006 35.8062 142 35.71C142.001 35.6297 141.983 35.5503 141.946 35.4788C141.91 35.4073 141.856 35.3459 141.79 35.3H141.26C140.5 35.3 140.5 35.3 140.5 33.6V27.9C140.42 26.21 140.46 26.21 141.19 26.15ZM88.27 26.59C87.6665 25.9934 86.9467 25.5274 86.1553 25.2212C85.3639 24.9149 84.5179 24.775 83.67 24.81H83.37C81.7787 24.81 80.2526 25.4421 79.1274 26.5673C78.0021 27.6926 77.37 29.2187 77.37 30.81C77.37 33.66 79.53 36.55 83.67 36.55H83.87C84.6483 36.5539 85.4197 36.4044 86.1401 36.1099C86.8605 35.8154 87.5158 35.3818 88.0684 34.8338C88.621 34.2858 89.0602 33.6342 89.3608 32.9163C89.6613 32.1984 89.8174 31.4283 89.82 30.65C89.8501 29.1467 89.2942 27.6907 88.27 26.59ZM83.91 35.43C82.34 35.43 79.68 34.34 79.68 30.27C79.68 27.05 81.68 25.91 83.38 25.91C86.44 25.91 87.53 28.71 87.53 31.12V31.23C87.51 33.15 86.54 35.43 83.91 35.43Z" fill="#013366"/>
+      </g>
+      <defs>
+        <clipPath id="clip0_475_632">
+          <rect width="155" height="42" fill="white"/>
+        </clipPath>
+      </defs>
+    </svg>
+    <span class="app-name">EPIC.engage</span>
+  </a>
+  <a class="logout" href="#">Logout</a>
+</header>
+
+<div class="app-shell">
+  <nav class="sidebar">
+    <a class="sidebar-item" href="#">Home</a>
+    <a class="sidebar-item" href="engagements.html">Engagements</a>
+    <a class="sidebar-item active" href="surveys_list_optionB.html">Surveys</a>
+    <a class="sidebar-item" href="#">User Management</a>
+    <a class="sidebar-item" href="#">Feedback Tool</a>
+    <a class="sidebar-item" href="#">Images</a>
+    <div class="sidebar-divider"></div>
+    <a class="sidebar-item" href="#">User Guide</a>
+  </nav>
+
+  <div class="main-area">
+
+    <div class="breadcrumb">
+      <a class="breadcrumb-item" href="surveys_list_optionB.html">Surveys</a>
+      <span class="breadcrumb-sep">/</span>
+      <a class="breadcrumb-item" href="#">Big Delicious Ranch Survey</a>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-active">Edit survey</span>
+    </div>
+
+    <div class="survey-title-area">
+      <h1 style="font-size:22px;font-weight:700;color:var(--bcds-primary);display:inline;">Big Delicious Ranch</h1>
+      <button style="background:none;border:none;cursor:pointer;color:#606060;vertical-align:middle;margin-left:8px;"><i class="ti ti-pencil" style="font-size:17px;"></i></button>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTopTab('questions')"><i class="ti ti-list"></i> Survey questions</button>
+      <button class="tab-btn" onclick="switchTopTab('report')"><i class="ti ti-chart-bar"></i> Public report settings</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         SURVEY QUESTIONS TAB
+    ═══════════════════════════════════════ -->
+    <div id="panel-questions" class="top-panel active">
+      <div class="builder-shell">
+
+        <!-- Left: component panel -->
+        <div class="builder-components">
+          <button class="builder-comp-btn"><i class="ti ti-heading"></i> Header</button>
+          <button class="builder-comp-btn"><i class="ti ti-pilcrow"></i> Paragraph</button>
+          <button class="builder-comp-btn"><i class="ti ti-layout-rows"></i> Content</button>
+          <button class="builder-comp-btn"><i class="ti ti-cursor-text"></i> Single Line Answer</button>
+          <button class="builder-comp-btn"><i class="ti ti-align-left"></i> Multiple Lines Answer</button>
+          <button class="builder-comp-btn"><i class="ti ti-chevron-down"></i> Drop-down</button>
+          <button class="builder-comp-btn"><i class="ti ti-list-check"></i> Likert</button>
+          <button class="builder-comp-btn"><i class="ti ti-arrows-sort"></i> Ranking</button>
+          <button class="builder-comp-btn"><i class="ti ti-map-pin"></i> Postal Code</button>
+          <button class="builder-comp-btn"><i class="ti ti-circle-dot"></i> Radio Button</button>
+          <button class="builder-comp-btn"><i class="ti ti-checkbox"></i> Checkbox</button>
+          <button class="builder-comp-btn"><i class="ti ti-code"></i> HTML Element</button>
+        </div>
+
+        <!-- Right: page tabs + page content -->
+        <div class="builder-main">
+
+          <!-- Multi-page toggle -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+            <label class="toggle-sw"><input type="checkbox" checked><span class="toggle-track"></span></label>
+            <span style="font-size:15px;color:var(--bcds-text);">Multi-page</span>
+          </div>
+
+          <!-- Page tab pills -->
+          <div class="builder-page-tabs">
+            <button class="builder-page-tab active" onclick="goSQPage(0)">Page 1</button>
+            <button class="builder-page-tab" onclick="goSQPage(1)">Page 2</button>
+            <button class="builder-page-tab" onclick="goSQPage(2)">Page 3</button>
+            <button class="builder-page-tab" onclick="goSQPage(3)">Page 4</button>
+            <button class="builder-page-tab" onclick="goSQPage(4)">Page 5</button>
+            <button class="builder-page-tab" onclick="goSQPage(5)">Page 6</button>
+            <button class="builder-page-tab" onclick="goSQPage(6)">Page 7</button>
+            <button class="builder-page-tab" onclick="goSQPage(7)">Page 8</button>
+            <button class="builder-add-page">+ Page</button>
+          </div>
+
+          <!-- Page content -->
+          <div class="builder-page-content">
+
+            <!-- PAGE 1: Demographics -->
+            <div class="sq-page active" id="sq-page-0">
+              <div class="builder-page-header">Demographics</div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">What is your age? <span class="sq-required">*</span></div>
+                <div class="sq-radio-group">
+                  <label class="sq-radio-item"><input type="radio" name="sq-age" disabled> 14-18 years old</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-age" disabled> 18-34 years old</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-age" disabled> 35-54 years old</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-age" disabled> 55-74 years old</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-age" disabled> 75-94 years old</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-age" disabled> 95+ years old</label>
+                </div>
+                <div class="sq-hint">Choose one of the answers above.</div>
+              </div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">What is your gender? <span class="sq-required">*</span></div>
+                <div class="sq-radio-group">
+                  <label class="sq-radio-item"><input type="radio" name="sq-gender" disabled> Male Gender</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-gender" disabled> Female Gender</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-gender" disabled> Gender Diverse</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-gender" disabled> Prefer not to answer</label>
+                </div>
+                <div class="sq-hint">Choose one of the answers above.</div>
+              </div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Where do you live? <span class="sq-required">*</span></div>
+                <div class="sq-radio-group">
+                  <label class="sq-radio-item"><input type="radio" name="sq-location" disabled> Salty Springs</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-location" disabled> Teeny Mines</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-location" disabled> Abbakirkie</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-location" disabled> Ranchtown</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-location" disabled> I don't live near the proposed project, but I could be potentially affected because I have a business, vacation home or other asset near the project.</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-location" disabled> I don't live near the proposed project, but I work or would like to work in this sector.</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-location" disabled> I don't live near the proposed project, but use the area for recreation, tourism, or other personal/cultural reasons.</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-location" disabled> I don't live near the project, but I am interested in it for another reason.</label>
+                  <label class="sq-radio-item"><input type="radio" name="sq-location" disabled> Other</label>
+                </div>
+                <div class="sq-hint">Choose one of the answers above.</div>
+              </div>
+            </div>
+
+            <!-- PAGE 2: Outreach -->
+            <div class="sq-page" id="sq-page-1">
+              <div class="builder-page-header">Outreach</div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">How did you hear about this survey and the public comment period for the proposed Big Delicious Ranch project?</div>
+                <div class="sq-radio-group">
+                  <label class="sq-radio-item"><input type="radio" name="heard" disabled> Word of mouth</label>
+                  <label class="sq-radio-item"><input type="radio" name="heard" disabled> Online ad</label>
+                  <label class="sq-radio-item"><input type="radio" name="heard" disabled> Postcard in the mail</label>
+                  <label class="sq-radio-item"><input type="radio" name="heard" disabled> Newspaper advertisement</label>
+                  <label class="sq-radio-item"><input type="radio" name="heard" disabled> Poster in the community</label>
+                  <label class="sq-radio-item"><input type="radio" name="heard" disabled> Radio ad</label>
+                  <label class="sq-radio-item"><input type="radio" name="heard" disabled> Other</label>
+                </div>
+              </div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">What advertising methods do you think would be most effective in spreading the word?</div>
+                <div class="sq-likert-wrap">
+                  <table class="sq-likert-table">
+                    <thead><tr>
+                      <th></th>
+                      <th>Not effective</th><th>Somewhat ineffective</th><th>Neutral</th><th>Somewhat effective</th><th>Very effective</th>
+                    </tr></thead>
+                    <tbody>
+                      <tr><td>Direct email notification</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Online advertising on community / government websites</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Advertisements / sponsored posts on Facebook or Instagram</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Posts on other social media platforms (LinkedIn, Bluesky)</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Inclusion in a local community or advocacy newsletter</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Postcard delivered to your home address</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Posters in public spaces (shop windows, bulletin boards)</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Newspaper advertisements</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Radio advertising</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Posts on X (formerly Twitter)</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Other</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                    </tbody>
+                  </table>
+                  <div class="sq-likert-hint">Please select the option that best applies.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PAGE 3: Valued Components -->
+            <div class="sq-page" id="sq-page-2">
+              <div class="builder-page-header">Valued Components</div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Based on the information in the summary of potential effects, please share how you feel about the following valued components.</div>
+                <div class="sq-likert-wrap">
+                  <table class="sq-likert-table">
+                    <thead><tr>
+                      <th></th>
+                      <th>Least important</th><th>Somewhat unimportant</th><th>Neutral</th><th>Somewhat important</th><th>Most important</th>
+                    </tr></thead>
+                    <tbody>
+                      <tr><td>Air quality</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Wildlife</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Fish and fish habitat</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Surface water</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Groundwater</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Indigenous Nations culture &amp; rights</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Vegetation</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Acoustic (sound)</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Landscape and terrain</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Social and economic</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Soil</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                    </tbody>
+                  </table>
+                  <div class="sq-likert-hint">Please select the option that best applies.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PAGE 4: Project Location -->
+            <div class="sq-page" id="sq-page-3">
+              <div class="builder-page-header">Project Location</div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Please rank the following factors by how important they are to your connection to the project area.</div>
+                <div class="sq-ranking-wrap">
+                  <div class="sq-ranking-hint">Drag to rank from most to least important</div>
+                  <div class="sq-ranking-item"><span class="sq-rank-handle">☰</span> Recreation and tourism use of the land</div>
+                  <div class="sq-ranking-item"><span class="sq-rank-handle">☰</span> Proximity of my home or property</div>
+                  <div class="sq-ranking-item"><span class="sq-rank-handle">☰</span> Cultural or spiritual connection to the area</div>
+                  <div class="sq-ranking-item"><span class="sq-rank-handle">☰</span> Economic interests (business, employment)</div>
+                  <div class="sq-ranking-item"><span class="sq-rank-handle">☰</span> Academic or research interest</div>
+                </div>
+              </div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Which of the following activities do you participate in near the project area?</div>
+                <div class="sq-checkbox-group">
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Fishing or hunting</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Hiking or backcountry travel</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Farming or ranching</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Wildlife viewing</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Camping</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Commercial activities</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Cultural practices</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> None of the above</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- PAGE 5: Project Design -->
+            <div class="sq-page" id="sq-page-4">
+              <div class="builder-page-header">Project Design</div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Please rate how concerned you are about the potential effects of each project design element.</div>
+                <div class="sq-likert-wrap">
+                  <table class="sq-likert-table">
+                    <thead><tr>
+                      <th></th>
+                      <th>Not concerned</th><th>Slightly concerned</th><th>Neutral</th><th>Concerned</th><th>Very concerned</th>
+                    </tr></thead>
+                    <tbody>
+                      <tr><td>Visual impact on landscape</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Noise during construction</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Traffic and road access changes</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Footprint size of the project</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Duration of construction</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>Decommissioning and reclamation plan</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                    </tbody>
+                  </table>
+                  <div class="sq-likert-hint">Please select the option that best applies.</div>
+                </div>
+              </div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Do you have any additional comments about the proposed project design?</div>
+                <textarea class="sq-input-textarea" disabled placeholder="Enter your response here…"></textarea>
+                <div class="sq-pii-hint">Please do not include any personally identifiable information about yourself or others in your responses.</div>
+              </div>
+            </div>
+
+            <!-- PAGE 6: Engagement Plan -->
+            <div class="sq-page" id="sq-page-5">
+              <div class="builder-page-header">Engagement Plan</div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Which of the following engagement activities would you be interested in participating in?</div>
+                <div class="sq-checkbox-group">
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Online open houses / webinars</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Email project updates</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Online surveys (like this one)</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> In-person open houses</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Community meetings or town halls</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Technical working group participation</label>
+                  <label class="sq-checkbox-item"><input type="checkbox" disabled> Site tours</label>
+                </div>
+              </div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">How often would you like to receive project updates?</div>
+                <select class="sq-input-select"><option>Choose one of the answers above</option><option>Weekly</option><option>Monthly</option><option>Quarterly</option><option>At key milestones only</option><option>I do not need updates</option></select>
+              </div>
+            </div>
+
+            <!-- PAGE 7: Cumulative Effects -->
+            <div class="sq-page" id="sq-page-6">
+              <div class="builder-page-header">Cumulative Effects &amp; Final Thoughts</div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Please rank the following cumulative effects from most to least concerning.</div>
+                <div class="sq-ranking-wrap">
+                  <div class="sq-ranking-hint">Drag to rank from most to least concerning</div>
+                  <div class="sq-ranking-item"><span class="sq-rank-handle">☰</span> Long-term water quality degradation</div>
+                  <div class="sq-ranking-item"><span class="sq-rank-handle">☰</span> Loss of wildlife corridor connectivity</div>
+                  <div class="sq-ranking-item"><span class="sq-rank-handle">☰</span> Cumulative air quality effects on communities</div>
+                  <div class="sq-ranking-item"><span class="sq-rank-handle">☰</span> Socioeconomic impacts on rural communities</div>
+                  <div class="sq-ranking-item"><span class="sq-rank-handle">☰</span> Noise and light pollution across the valley</div>
+                </div>
+              </div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Is there anything else you would like to share with the EAO about the proposed project?</div>
+                <textarea class="sq-input-textarea" disabled placeholder="Enter your response here…"></textarea>
+                <div class="sq-pii-hint">Please do not include any personally identifiable information about yourself or others in your responses.</div>
+              </div>
+            </div>
+
+            <!-- PAGE 8: EPIC.engage Experience -->
+            <div class="sq-page" id="sq-page-7">
+              <div class="builder-page-header">Your EPIC.engage Experience</div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Please rate your experience with the EPIC.engage survey platform.</div>
+                <div class="sq-likert-wrap">
+                  <table class="sq-likert-table">
+                    <thead><tr>
+                      <th></th>
+                      <th>Strongly disagree</th><th>Disagree</th><th>Neutral</th><th>Agree</th><th>Strongly agree</th>
+                    </tr></thead>
+                    <tbody>
+                      <tr><td>The survey was easy to navigate</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>The project information provided was clear</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>I felt my feedback would be considered</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>The survey length was appropriate</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                      <tr><td>I would participate in future surveys</td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td><td><input type="radio" disabled></td></tr>
+                    </tbody>
+                  </table>
+                  <div class="sq-likert-hint">Please select the option that best applies.</div>
+                </div>
+              </div>
+
+              <div class="sq-q-block">
+                <div class="sq-q-label">Do you have any suggestions for improving the survey or engagement process?</div>
+                <textarea class="sq-input-textarea" disabled placeholder="Enter your response here…"></textarea>
+                <div class="sq-pii-hint">Please do not include any personally identifiable information about yourself or others in your responses.</div>
+              </div>
+            </div>
+
+          </div><!-- /builder-page-content -->
+
+          <!-- Additional settings — shown statically below survey questions -->
+          <div class="additional-settings-static">
+            <div class="additional-settings-header">
+              <i class="ti ti-settings"></i> Additional settings
+            </div>
+            <div class="additional-settings-inner">
+              <div class="additional-setting-row">
+                <div class="additional-setting-left">
+                  <label class="toggle-sw"><input type="checkbox"><span class="toggle-track"></span></label>
+                  <div class="additional-setting-label-group">
+                    <span class="additional-setting-name">Save as template</span>
+                    <button class="read-details-btn" onclick="toggleDetails('template-details', this)">See details</button>
+                  </div>
+                </div>
+                <div class="setting-details" id="template-details">
+                  When you toggle ON this option and save your Survey, your Survey will become a Template. As long as this option is on, the Template can be cloned (and then edited) but can't be attached directly to an Engagement.
+                </div>
+              </div>
+              <div class="additional-setting-divider"></div>
+              <div class="additional-setting-row">
+                <div class="additional-setting-left">
+                  <label class="toggle-sw"><input type="checkbox"><span class="toggle-track"></span></label>
+                  <div class="additional-setting-label-group">
+                    <span class="additional-setting-name">Hide survey</span>
+                    <button class="read-details-btn" onclick="toggleDetails('hide-details', this)">See details</button>
+                  </div>
+                </div>
+                <div class="setting-details" id="hide-details">
+                  When you toggle ON this option and save your Survey, your Survey will be 'Hidden'. When the toggle is ON and as long as the survey is not attached to an engagement, the Survey will only be visible to Superusers. When you are ready to make it available and able to be cloned or attached to an engagement, change the toggle to OFF and click the Save button.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /builder-main -->
+      </div><!-- /builder-shell -->
+
+      <div class="sticky-footer" id="sq-footer">
+        <div class="sq-footer-main">
+          <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+            <button class="btn-secondary">Save draft</button>
+            <button class="btn-next" onclick="switchTopTab('report')">Next: Public report settings <i class="ti ti-arrow-right"></i></button>
+          </div>
+        </div>
+      </div>
+    </div><!-- /panel-questions -->
+
+    <!-- ═══════════════════════════════════════
+         PUBLIC REPORT SETTINGS TAB
+    ═══════════════════════════════════════ -->
+    <div id="panel-report" class="top-panel">
+      <div class="stepper-wrap">
+        <nav class="stepper" id="rs-stepper"></nav>
+      </div>
+
+      <div class="page-wrap">
+
+        <!-- ── PAGE 0: Demographics ── -->
+        <div class="survey-page active" id="rs-page-0">
+          <div class="page-header"><div class="page-title">Demographics</div></div>
+
+          <!-- Q1 -->
+          <div class="card" id="card-1">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">What is your age?</span>
+                <input class="ef-input title-input" value="What is your age?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: What is your age?</div>
+                <div class="user-desc-wrap" id="desc-wrap-1">
+                  <div class="desc-saved" id="desc-saved-1" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-1"></span><button class="desc-edit-icon" onclick="editDesc(1)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-1" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(1)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(1)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(1)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(1,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="donut-layout">
+              <div class="donut-wrap">
+                <svg id="age-svg" viewBox="0 0 200 200" width="200" height="200"></svg>
+                <div class="donut-centre"><span class="donut-n">1,298</span><span class="donut-lbl">respondents</span></div>
+              </div>
+              <div class="donut-bar-side">
+                <div class="donut-bar-header">
+                  <span><span class="ef-text col-header-val">Response</span><input class="ef-input" placeholder="Response" value="Response" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                  <span><span class="ef-text col-header-val">% of respondents</span><input class="ef-input" placeholder="% of respondents" value="% of respondents" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                  <span><span class="ef-text col-header-val">Count</span><input class="ef-input" placeholder="Count" value="Count" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                </div>
+                <ul class="donut-bar-list" id="age-list"></ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Q2 -->
+          <div class="card" id="card-2">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">What is your gender?</span>
+                <input class="ef-input title-input" value="What is your gender?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: What is your gender?</div>
+                <div class="user-desc-wrap" id="desc-wrap-2">
+                  <div class="desc-saved" id="desc-saved-2" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-2"></span><button class="desc-edit-icon" onclick="editDesc(2)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-2" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(2)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(2)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(2)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(2,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="donut-layout">
+              <div class="donut-wrap">
+                <svg id="gender-svg" viewBox="0 0 200 200" width="200" height="200"></svg>
+                <div class="donut-centre"><span class="donut-n">1,287</span><span class="donut-lbl">respondents</span></div>
+              </div>
+              <div class="donut-bar-side">
+                <div class="donut-bar-header">
+                  <span><span class="ef-text col-header-val">Response</span><input class="ef-input" placeholder="Response" value="Response" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                  <span><span class="ef-text col-header-val">% of respondents</span><input class="ef-input" placeholder="% of respondents" value="% of respondents" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                  <span><span class="ef-text col-header-val">Count</span><input class="ef-input" placeholder="Count" value="Count" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                </div>
+                <ul class="donut-bar-list" id="gender-list"></ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Q3 -->
+          <div class="card" id="card-3">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Where do you live?</span>
+                <input class="ef-input title-input" value="Where do you live?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Where do you live?</div>
+                <div class="user-desc-wrap" id="desc-wrap-3">
+                  <div class="desc-saved" id="desc-saved-3" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-3"></span><button class="desc-edit-icon" onclick="editDesc(3)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-3" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(3)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(3)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(3)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(3,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="donut-layout">
+              <div class="donut-wrap">
+                <svg id="location-svg" viewBox="0 0 200 200" width="200" height="200"></svg>
+                <div class="donut-centre"><span class="donut-n">1,342</span><span class="donut-lbl">respondents</span></div>
+              </div>
+              <div class="donut-bar-side">
+                <div class="donut-bar-header">
+                  <span><span class="ef-text col-header-val">Response</span><input class="ef-input" placeholder="Response" value="Response" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                  <span><span class="ef-text col-header-val">% of respondents</span><input class="ef-input" placeholder="% of respondents" value="% of respondents" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                  <span><span class="ef-text col-header-val">Count</span><input class="ef-input" placeholder="Count" value="Count" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                </div>
+                <ul class="donut-bar-list" id="location-list"></ul>
+              </div>
+            </div>
+          <!-- Conditional section for Q3 — inside card-3 -->
+          <div class="card-conditional" id="cond-3c">
+            <div class="cond-tag"><span class="cond-tag-dot"></span> Conditional — shown to respondents who selected "Other"</div>
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <div class="ef-text q-title" style="font-weight:700;font-size:15px;">Please tell us more about your connection to the project area.</div>
+                <!-- Description area -->
+                <div id="cond-3c-desc-display" style="display:none;margin-top:2px;">
+                  <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span id="cond-3c-desc-text" style="line-height:1.5;color:var(--bcds-text-secondary);font-size:12px;"></span><button onclick="editCondDesc('3c')" style="background:none;border:none;cursor:pointer;color:var(--bcds-link);padding:0;flex-shrink:0;margin-top:1px;" title="Edit description"><i class="ti ti-pencil" style="font-size:13px;"></i></button></span>
+                </div>
+                <textarea id="cond-3c-desc-input" placeholder="Add a description…" style="display:none;width:100%;margin-top:8px;border:2px solid #606060;border-radius:4px;padding:8px 10px;font-size:13px;font-family:inherit;resize:vertical;min-height:64px;"></textarea>
+                <div id="cond-3c-desc-actions" style="display:none;margin-top:6px;gap:8px;flex-direction:row;">
+                  <button onclick="saveCondDesc('3c')" style="height:30px;padding:0 14px;background:#013366;border:2px solid #013366;border-radius:4px;color:#fff;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">Save</button>
+                  <button onclick="cancelCondDesc('3c')" style="height:30px;padding:0 14px;background:#fff;border:2px solid var(--bcds-border);border-radius:4px;color:var(--bcds-text);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;">Cancel</button>
+                </div>
+                <button id="cond-3c-add-btn" onclick="openCondDesc('3c')" style="display:flex;align-items:center;gap:5px;margin-top:8px;padding:0;background:none;border:none;font-family:inherit;font-size:12px;color:var(--bcds-link);cursor:pointer;text-decoration:underline;"><i class="ti ti-plus" style="font-size:12px;"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleConditional('3c',this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:14px;padding:12px 16px;background:#FAF9F8;border:1px solid var(--bcds-border);border-radius:6px;display:flex;align-items:center;justify-content:space-between;">
+              <div>
+                <div style="font-size:24px;font-weight:700;color:var(--bcds-text);">46</div>
+                <div style="font-size:11px;font-weight:700;color:var(--bcds-text-secondary);letter-spacing:.05em;text-transform:uppercase;margin-top:2px;">Comments received</div>
+              </div>
+              <button style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 20px;background:#013366;border:2px solid #013366;border-radius:4px;color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">
+                <i class="ti ti-message-2"></i> Read comments
+              </button>
+            </div>
+          </div>
+          </div><!-- /card-3 -->
+
+          <div class="page-nav"><span class="page-counter">Page 1 of 8</span><div class="page-nav-btns"><button class="page-nav-btn prev" disabled onclick="goRSPage(-1)">← Previous</button><button class="page-nav-btn next" onclick="goRSPage(1)">Next →</button></div></div>
+        </div>
+
+        <!-- ── PAGE 1: Outreach ── -->
+        <div class="survey-page" id="rs-page-1">
+          <div class="page-header"><div class="page-title">Outreach</div></div>
+
+          <!-- Q4 -->
+          <div class="card" id="card-4">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">How did you hear about this survey and the public comment period for the proposed Big Delicious Ranch project?</span>
+                <input class="ef-input title-input" value="How did you hear about this survey and the public comment period for the proposed Big Delicious Ranch project?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: How did you hear about this survey and the public comment period for the proposed Big Delicious Ranch project?</div>
+                <div class="user-desc-wrap" id="desc-wrap-4">
+                  <div class="desc-saved" id="desc-saved-4" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-4"></span><button class="desc-edit-icon" onclick="editDesc(4)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-4" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(4)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(4)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(4)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(4,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="donut-layout">
+              <div class="donut-wrap">
+                <svg id="heard-svg" viewBox="0 0 200 200" width="200" height="200"></svg>
+                <div class="donut-centre"><span class="donut-n">1,342</span><span class="donut-lbl">respondents</span></div>
+              </div>
+              <div class="donut-bar-side">
+                <div class="donut-bar-header">
+                  <span><span class="ef-text col-header-val">Response</span><input class="ef-input" placeholder="Response" value="Response" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                  <span><span class="ef-text col-header-val">% of respondents</span><input class="ef-input" placeholder="% of respondents" value="% of respondents" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                  <span><span class="ef-text col-header-val">Count</span><input class="ef-input" placeholder="Count" value="Count" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                </div>
+                <ul class="donut-bar-list" id="heard-list"></ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Q5: Likert -->
+          <div class="card" id="card-5">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">What advertising methods do you think would be most effective in spreading the word?</span>
+                <input class="ef-input title-input" value="What advertising methods do you think would be most effective in spreading the word?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: What advertising methods do you think would be most effective in spreading the word?</div>
+                <div class="user-desc-wrap" id="desc-wrap-5">
+                  <div class="desc-saved" id="desc-saved-5" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-5"></span><button class="desc-edit-icon" onclick="editDesc(5)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-5" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(5)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(5)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(5)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(5,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="lik-legend">
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#C03F2C"></div>Not effective</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#C8C3BE"></div>Neutral</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#E8A94A"></div>Somewhat effective</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#7EB8D4"></div>Effective</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#1B5E8C"></div>Very effective</div>
+            </div>
+            <div class="lik-svg-wrap"><svg id="lik-outreach-svg"></svg></div>
+          </div>
+
+          <div class="page-nav"><span class="page-counter">Page 2 of 8</span><div class="page-nav-btns"><button class="page-nav-btn prev" onclick="goRSPage(-1)">← Previous</button><button class="page-nav-btn next" onclick="goRSPage(1)">Next →</button></div></div>
+        </div>
+
+        <!-- ── PAGE 2: Valued Components ── -->
+        <div class="survey-page" id="rs-page-2">
+          <div class="page-header"><div class="page-title">Valued Components</div></div>
+
+          <!-- Q6: Likert -->
+          <div class="card" id="card-6">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Based on the information in the summary of potential effects, please share how you feel about the following valued components.</span>
+                <input class="ef-input title-input" value="Based on the information in the summary of potential effects, please share how you feel about the following valued components.">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Based on the information in the summary of potential effects, please share how you feel about the following valued components.</div>
+                <div class="q-subtitle">1,298 respondents</div>
+                <div class="user-desc-wrap" id="desc-wrap-6">
+                  <div class="desc-saved" id="desc-saved-6" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-6"></span><button class="desc-edit-icon" onclick="editDesc(6)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-6" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(6)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(6)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(6)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(6,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="lik-legend">
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#C03F2C"></div>Least important</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#C8C3BE"></div>Neutral</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#E8A94A"></div>Somewhat important</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#7EB8D4"></div>Important</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#1B5E8C"></div>Most important</div>
+            </div>
+            <div class="lik-svg-wrap"><svg id="lik-valued-svg"></svg></div>
+          </div>
+
+          <div class="page-nav"><span class="page-counter">Page 3 of 8</span><div class="page-nav-btns"><button class="page-nav-btn prev" onclick="goRSPage(-1)">← Previous</button><button class="page-nav-btn next" onclick="goRSPage(1)">Next →</button></div></div>
+        </div>
+
+        <!-- ── PAGE 3: Project Location ── -->
+        <div class="survey-page" id="rs-page-3">
+          <div class="page-header"><div class="page-title">Project Location</div></div>
+
+          <!-- Q7: Rank -->
+          <div class="card" id="card-7">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Please rank the following factors by how important they are to your connection to the project area.</span>
+                <input class="ef-input title-input" value="Please rank the following factors by how important they are to your connection to the project area.">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Please rank the following factors by how important they are to your connection to the project area.</div>
+                <div class="q-subtitle">1,186 respondents</div>
+                <div class="user-desc-wrap" id="desc-wrap-7">
+                  <div class="desc-saved" id="desc-saved-7" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-7"></span><button class="desc-edit-icon" onclick="editDesc(7)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-7" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(7)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(7)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(7)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(7,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="rank-info-row">
+              <div class="rank-legend">
+                <span class="rank-leg-label">Ranked:</span>
+                <div class="rank-leg-item"><div class="rank-leg-swatch" style="background:#1B5E8C"></div>1st</div>
+                <div class="rank-leg-item"><div class="rank-leg-swatch" style="background:#4A90C4"></div>2nd</div>
+                <div class="rank-leg-item"><div class="rank-leg-swatch" style="background:#90C0DE"></div>3rd</div>
+                <div class="rank-leg-item"><div class="rank-leg-swatch" style="background:#F5C97A"></div>4th</div>
+                <div class="rank-leg-item"><div class="rank-leg-swatch" style="background:#E07B39"></div>5th</div>
+              </div>
+            </div>
+            <div id="rank-location"></div>
+          </div>
+
+          <!-- Q8: Checkbox -->
+          <div class="card" id="card-8">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Which of the following activities do you participate in near the project area?</span>
+                <input class="ef-input title-input" value="Which of the following activities do you participate in near the project area?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Which of the following activities do you participate in near the project area?</div>
+                <div class="q-subtitle">1,186 respondents</div>
+                <div class="user-desc-wrap" id="desc-wrap-8">
+                  <div class="desc-saved" id="desc-saved-8" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-8"></span><button class="desc-edit-icon" onclick="editDesc(8)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-8" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(8)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(8)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(8)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(8,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="donut-bar-header" style="margin-top:8px;">
+              <span><span class="ef-text col-header-val">Response</span><input class="ef-input" placeholder="Response" value="Response" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+              <span><span class="ef-text col-header-val">% of respondents</span><input class="ef-input" placeholder="% of respondents" value="% of respondents" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+              <span><span class="ef-text col-header-val">Count</span><input class="ef-input" placeholder="Count" value="Count" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+            </div>
+            <ul class="donut-bar-list" id="activities-list"></ul>
+          </div>
+
+          <div class="page-nav"><span class="page-counter">Page 4 of 8</span><div class="page-nav-btns"><button class="page-nav-btn prev" onclick="goRSPage(-1)">← Previous</button><button class="page-nav-btn next" onclick="goRSPage(1)">Next →</button></div></div>
+        </div>
+
+        <!-- ── PAGE 4: Project Design ── -->
+        <div class="survey-page" id="rs-page-4">
+          <div class="page-header"><div class="page-title">Project Design</div></div>
+
+          <!-- Q9: Likert -->
+          <div class="card" id="card-9">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Please rate how concerned you are about the potential effects of each project design element.</span>
+                <input class="ef-input title-input" value="Please rate how concerned you are about the potential effects of each project design element.">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Please rate how concerned you are about the potential effects of each project design element.</div>
+                <div class="q-subtitle">1,256 respondents</div>
+                <div class="user-desc-wrap" id="desc-wrap-9">
+                  <div class="desc-saved" id="desc-saved-9" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-9"></span><button class="desc-edit-icon" onclick="editDesc(9)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-9" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(9)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(9)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(9)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(9,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="lik-legend">
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#C03F2C"></div>Not concerned</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#C8C3BE"></div>Neutral</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#E8A94A"></div>Somewhat concerned</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#7EB8D4"></div>Concerned</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#1B5E8C"></div>Very concerned</div>
+            </div>
+            <div class="lik-svg-wrap"><svg id="lik-design-svg"></svg></div>
+          </div>
+
+          <!-- Q10: Free text -->
+          <div class="card" id="card-10">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Do you have any additional comments about the proposed project design?</span>
+                <input class="ef-input title-input" value="Do you have any additional comments about the proposed project design?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Do you have any additional comments about the proposed project design?</div>
+                <div class="user-desc-wrap" id="desc-wrap-10">
+                  <div class="desc-saved" id="desc-saved-10" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-10"></span><button class="desc-edit-icon" onclick="editDesc(10)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-10" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(10)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(10)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(10)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(10,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="freetext-stat-row" style="margin-top:8px;"><div><div class="freetext-stat-num">847</div><div class="freetext-stat-lbl">comments received</div></div></div>
+          </div>
+
+          <div class="page-nav"><span class="page-counter">Page 5 of 8</span><div class="page-nav-btns"><button class="page-nav-btn prev" onclick="goRSPage(-1)">← Previous</button><button class="page-nav-btn next" onclick="goRSPage(1)">Next →</button></div></div>
+        </div>
+
+        <!-- ── PAGE 5: Engagement Plan ── -->
+        <div class="survey-page" id="rs-page-5">
+          <div class="page-header"><div class="page-title">Engagement Plan</div></div>
+
+          <!-- Q11: Checkbox -->
+          <div class="card" id="card-11">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Which of the following engagement activities would you be interested in participating in?</span>
+                <input class="ef-input title-input" value="Which of the following engagement activities would you be interested in participating in?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Which of the following engagement activities would you be interested in participating in?</div>
+                <div class="q-subtitle">1,342 respondents</div>
+                <div class="user-desc-wrap" id="desc-wrap-11">
+                  <div class="desc-saved" id="desc-saved-11" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-11"></span><button class="desc-edit-icon" onclick="editDesc(11)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-11" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(11)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(11)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(11)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(11,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="donut-bar-header" style="margin-top:8px;">
+              <span><span class="ef-text col-header-val">Response</span><input class="ef-input" placeholder="Response" value="Response" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+              <span><span class="ef-text col-header-val">% of respondents</span><input class="ef-input" placeholder="% of respondents" value="% of respondents" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+              <span><span class="ef-text col-header-val">Count</span><input class="ef-input" placeholder="Count" value="Count" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+            </div>
+            <ul class="donut-bar-list" id="engagement-list"></ul>
+          </div>
+
+          <!-- Q12: Dropdown -->
+          <div class="card" id="card-12">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">How often would you like to receive project updates?</span>
+                <input class="ef-input title-input" value="How often would you like to receive project updates?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: How often would you like to receive project updates?</div>
+                <div class="user-desc-wrap" id="desc-wrap-12">
+                  <div class="desc-saved" id="desc-saved-12" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-12"></span><button class="desc-edit-icon" onclick="editDesc(12)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-12" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(12)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(12)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(12)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(12,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="donut-layout">
+              <div class="donut-wrap">
+                <svg id="updates-svg" viewBox="0 0 200 200" width="200" height="200"></svg>
+                <div class="donut-centre"><span class="donut-n">1,342</span><span class="donut-lbl">respondents</span></div>
+              </div>
+              <div class="donut-bar-side">
+                <div class="donut-bar-header">
+                  <span><span class="ef-text col-header-val">Response</span><input class="ef-input" placeholder="Response" value="Response" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                  <span><span class="ef-text col-header-val">% of respondents</span><input class="ef-input" placeholder="% of respondents" value="% of respondents" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                  <span><span class="ef-text col-header-val">Count</span><input class="ef-input" placeholder="Count" value="Count" style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;"></span>
+                </div>
+                <ul class="donut-bar-list" id="updates-list"></ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="page-nav"><span class="page-counter">Page 6 of 8</span><div class="page-nav-btns"><button class="page-nav-btn prev" onclick="goRSPage(-1)">← Previous</button><button class="page-nav-btn next" onclick="goRSPage(1)">Next →</button></div></div>
+        </div>
+
+        <!-- ── PAGE 6: Cumulative Effects ── -->
+        <div class="survey-page" id="rs-page-6">
+          <div class="page-header"><div class="page-title">Cumulative Effects &amp; Final Thoughts</div></div>
+
+          <!-- Q13: Rank -->
+          <div class="card" id="card-13">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Please rank the following cumulative effects from most to least concerning.</span>
+                <input class="ef-input title-input" value="Please rank the following cumulative effects from most to least concerning.">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Please rank the following cumulative effects from most to least concerning.</div>
+                <div class="q-subtitle">1,186 respondents</div>
+                <div class="user-desc-wrap" id="desc-wrap-13">
+                  <div class="desc-saved" id="desc-saved-13" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-13"></span><button class="desc-edit-icon" onclick="editDesc(13)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-13" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(13)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(13)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(13)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(13,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="rank-info-row">
+              <div class="rank-legend">
+                <span class="rank-leg-label">Ranked:</span>
+                <div class="rank-leg-item"><div class="rank-leg-swatch" style="background:#1B5E8C"></div>1st</div>
+                <div class="rank-leg-item"><div class="rank-leg-swatch" style="background:#4A90C4"></div>2nd</div>
+                <div class="rank-leg-item"><div class="rank-leg-swatch" style="background:#90C0DE"></div>3rd</div>
+                <div class="rank-leg-item"><div class="rank-leg-swatch" style="background:#F5C97A"></div>4th</div>
+                <div class="rank-leg-item"><div class="rank-leg-swatch" style="background:#E07B39"></div>5th</div>
+              </div>
+            </div>
+            <div id="rank-cumulative"></div>
+          </div>
+
+          <!-- Q14: Free text -->
+          <div class="card" id="card-14">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Is there anything else you would like to share with the EAO about the proposed project?</span>
+                <input class="ef-input title-input" value="Is there anything else you would like to share with the EAO about the proposed project?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Is there anything else you would like to share with the EAO about the proposed project?</div>
+                <div class="user-desc-wrap" id="desc-wrap-14">
+                  <div class="desc-saved" id="desc-saved-14" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-14"></span><button class="desc-edit-icon" onclick="editDesc(14)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-14" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(14)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(14)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(14)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(14,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="freetext-stat-row" style="margin-top:8px;"><div><div class="freetext-stat-num">923</div><div class="freetext-stat-lbl">comments received</div></div></div>
+          </div>
+
+          <div class="page-nav"><span class="page-counter">Page 7 of 8</span><div class="page-nav-btns"><button class="page-nav-btn prev" onclick="goRSPage(-1)">← Previous</button><button class="page-nav-btn next" onclick="goRSPage(1)">Next →</button></div></div>
+        </div>
+
+        <!-- ── PAGE 7: EPIC.engage Experience ── -->
+        <div class="survey-page" id="rs-page-7">
+          <div class="page-header"><div class="page-title">Your EPIC.engage Experience</div></div>
+
+          <!-- Q15: Likert -->
+          <div class="card" id="card-15">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Please rate your experience with the EPIC.engage survey platform.</span>
+                <input class="ef-input title-input" value="Please rate your experience with the EPIC.engage survey platform.">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Please rate your experience with the EPIC.engage survey platform.</div>
+                <div class="q-subtitle">1,298 respondents</div>
+                <div class="user-desc-wrap" id="desc-wrap-15">
+                  <div class="desc-saved" id="desc-saved-15" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-15"></span><button class="desc-edit-icon" onclick="editDesc(15)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-15" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(15)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(15)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(15)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(15,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="lik-legend">
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#C03F2C"></div>Strongly disagree</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#C8C3BE"></div>Neutral</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#E8A94A"></div>Somewhat agree</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#7EB8D4"></div>Agree</div>
+              <div class="lik-leg-item"><div class="lik-leg-swatch" style="background:#1B5E8C"></div>Strongly agree</div>
+            </div>
+            <div class="lik-svg-wrap"><svg id="lik-experience-svg"></svg></div>
+          </div>
+
+          <!-- Q16: Free text -->
+          <div class="card" id="card-16">
+            <div class="card-toprow">
+              <div class="card-toprow-left">
+                <span class="ef-text q-title">Do you have any suggestions for improving the survey or engagement process?</span>
+                <input class="ef-input title-input" value="Do you have any suggestions for improving the survey or engagement process?">
+                <div class="q-original-ref"><i class="ti ti-info-circle"></i> Original: Do you have any suggestions for improving the survey or engagement process?</div>
+                <div class="user-desc-wrap" id="desc-wrap-16">
+                  <div class="desc-saved" id="desc-saved-16" style="display:none;">
+                    <span style="display:inline-flex;align-items:flex-start;gap:4px;"><span class="desc-saved-text" id="desc-text-16"></span><button class="desc-edit-icon" onclick="editDesc(16)" title="Edit description"><i class="ti ti-pencil"></i></button></span>
+                  </div>
+                  <textarea class="user-desc-input" id="desc-ta-16" placeholder="Add a description…"></textarea>
+                  <div class="desc-actions">
+                    <button class="desc-save-btn" onclick="saveDesc(16)">Save</button>
+                    <button class="desc-cancel-btn" onclick="cancelDesc(16)">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-desc-btn" onclick="addDesc(16)"><i class="ti ti-plus"></i> Add description</button>
+              </div>
+              <div class="card-toprow-right">
+                <div class="vis-toggle-wrap">
+                  <span class="vis-toggle-label">Show in public report</span>
+                  <label class="toggle-sw"><input type="checkbox" checked onchange="toggleCard(16,this.checked)"><span class="toggle-track"></span></label>
+                </div>
+              </div>
+            </div>
+            <div class="freetext-stat-row" style="margin-top:8px;"><div><div class="freetext-stat-num">612</div><div class="freetext-stat-lbl">comments received</div></div></div>
+          </div>
+
+          <div class="page-nav"><span class="page-counter">Page 8 of 8</span><div class="page-nav-btns"><button class="page-nav-btn prev" onclick="goRSPage(-1)">← Previous</button><button class="page-nav-btn next" disabled onclick="goRSPage(1)">Next →</button></div></div>
+        </div>
+
+      </div><!-- /page-wrap -->
+
+      <div class="sticky-footer">
+        <div class="sq-footer-main" style="justify-content:flex-end;">
+          <button class="btn-secondary">Cancel</button>
+          <button class="btn-primary" onclick="window.location.href='surveys_list_optionB.html'">Save</button>
+        </div>
+      </div>
+    </div><!-- /panel-report -->
+
+  </div><!-- /main-area -->
+</div><!-- /app-shell -->
+
+<div id="tooltip"></div>
+
+<script>
+// ── Page names ──
+const PAGE_NAMES = ['Demographics','Outreach','Valued Components','Project Location','Project Design','Engagement Plan','Cumulative Effects & Final Thoughts','Your EPIC.engage Experience'];
+
+// ── Data (exact from dashboard file) ──
+const DONUT_COLORS=['#1B5E8C','#4A90C4','#90C0DE','#FCBA19','#E07B39','#C8C3BE','#72B09D','#E8866F','#7B6FA0','#5C9E6A'];
+
+const ageData=[{label:'35–54 years old',pct:28,n:363},{label:'55–74 years old',pct:24,n:312},{label:'18–34 years old',pct:19,n:247},{label:'75–94 years old',pct:12,n:156},{label:'14–18 years old',pct:10,n:130},{label:'95+ years old',pct:4,n:52},{label:'Prefer not to answer',pct:3,n:39}];
+const genderData=[{label:'Female Gender',pct:44,n:566},{label:'Male Gender',pct:38,n:489},{label:'Gender Diverse',pct:11,n:142},{label:'Prefer not to answer',pct:7,n:90}];
+const locationData=[{label:'Salty Springs',pct:31,n:416},{label:'Teeny Mines',pct:22,n:295},{label:'Abbakirkie',pct:14,n:188},{label:'Ranchtown',pct:11,n:148},{label:"Don't live near but use for recreation/tourism",pct:10,n:134},{label:"Don't live near but could be affected",pct:7,n:94},{label:'Other',pct:5,n:67}];
+const heardData=[{label:'Word of mouth',pct:28,n:376},{label:'Online ad',pct:22,n:295},{label:'Postcard in the mail',pct:16,n:215},{label:'Newspaper advertisement',pct:13,n:175},{label:'Poster in the community',pct:10,n:134},{label:'Radio ad',pct:7,n:94},{label:'Neutral',pct:2,n:27},{label:'Other',pct:2,n:27}];
+const updatesData=[{label:'Monthly',pct:38,n:510},{label:'Quarterly',pct:31,n:416},{label:'At key milestones only',pct:22,n:295},{label:'Weekly',pct:6,n:80},{label:'I do not need updates',pct:3,n:40}];
+const activitiesData=[{label:'Fishing or hunting',pct:48,n:569},{label:'Hiking or backcountry travel',pct:44,n:522},{label:'Farming or ranching',pct:31,n:367},{label:'Wildlife viewing',pct:28,n:332},{label:'Camping',pct:24,n:284},{label:'Commercial activities',pct:14,n:166},{label:'Cultural practices',pct:12,n:142},{label:'None of the above',pct:8,n:95}];
+const engagementData=[{label:'Online open houses / webinars',pct:62,n:832},{label:'Email project updates',pct:58,n:778},{label:'Online surveys (like this one)',pct:54,n:724},{label:'In-person open houses',pct:41,n:550},{label:'Community meetings or town halls',pct:38,n:510},{label:'Technical working group participation',pct:22,n:295},{label:'Site tours',pct:18,n:241}];
+
+const likertOutreach=[
+  {label:'Direct email notification',pcts:[6,15,10,32,37],n:1310},
+  {label:'Online advertising on community / government websites',pcts:[8,16,11,34,31],n:1298},
+  {label:'Advertisements / sponsored posts on Facebook or Instagram',pcts:[10,18,14,30,28],n:1280},
+  {label:'Posts on other social media platforms (LinkedIn, Bluesky)',pcts:[12,20,15,28,25],n:1265},
+  {label:'Inclusion in a local community or advocacy newsletter',pcts:[9,22,13,31,25],n:1267},
+  {label:'Postcard delivered to your home address',pcts:[11,21,15,29,24],n:1250},
+  {label:'Posters in public spaces (shop windows, bulletin boards)',pcts:[12,24,15,28,21],n:1245},
+  {label:'Newspaper advertisements',pcts:[14,26,17,26,17],n:1223},
+  {label:'Radio advertising',pcts:[16,28,20,22,14],n:1198},
+  {label:'Posts on X (formerly Twitter)',pcts:[21,27,18,20,14],n:1176},
+  {label:'Other',pcts:[5,62,8,15,10],n:389},
+];
+const likertValued=[
+  {label:'Air quality',pcts:[3,8,9,31,49],n:1298},
+  {label:'Wildlife',pcts:[4,9,10,30,47],n:1290},
+  {label:'Fish and fish habitat',pcts:[4,10,11,32,43],n:1285},
+  {label:'Surface water',pcts:[5,10,12,34,39],n:1280},
+  {label:'Groundwater',pcts:[5,11,12,35,37],n:1278},
+  {label:'Indigenous Nations culture & rights',pcts:[6,12,14,33,35],n:1270},
+  {label:'Vegetation',pcts:[6,13,15,35,31],n:1265},
+  {label:'Acoustic (sound)',pcts:[8,15,18,33,26],n:1255},
+  {label:'Landscape and terrain',pcts:[8,16,18,34,24],n:1248},
+  {label:'Social and economic',pcts:[9,17,20,32,22],n:1240},
+  {label:'Soil',pcts:[10,18,22,30,20],n:1230},
+];
+const likertDesign=[
+  {label:'Visual impact on landscape',pcts:[8,14,18,34,26],n:1256},
+  {label:'Noise during construction',pcts:[6,12,16,36,30],n:1250},
+  {label:'Traffic and road access changes',pcts:[9,15,18,32,26],n:1244},
+  {label:'Footprint size of the project',pcts:[7,14,19,34,26],n:1238},
+  {label:'Duration of construction',pcts:[8,15,20,32,25],n:1230},
+  {label:'Decommissioning and reclamation plan',pcts:[5,11,16,36,32],n:1225},
+];
+const likertExperience=[
+  {label:'The survey was easy to navigate',pcts:[3,6,8,42,41],n:1298},
+  {label:'The project information provided was clear',pcts:[4,8,11,40,37],n:1290},
+  {label:'I felt my feedback would be considered',pcts:[6,12,14,38,30],n:1282},
+  {label:'The survey length was appropriate',pcts:[5,9,12,40,34],n:1275},
+  {label:'I would participate in future surveys',pcts:[3,6,9,38,44],n:1268},
+];
+const rankLocationData=[
+  {label:'Recreation and tourism use of the land',ranks:[35,26,20,12,7]},
+  {label:'Proximity of my home or property',ranks:[28,24,22,16,10]},
+  {label:'Cultural or spiritual connection to the area',ranks:[22,20,24,18,16]},
+  {label:'Economic interests (business, employment)',ranks:[10,18,26,28,18]},
+  {label:'Academic or research interest',ranks:[5,12,8,26,49]},
+];
+const rankCumulativeData=[
+  {label:'Long-term water quality degradation',ranks:[38,26,18,11,7]},
+  {label:'Loss of wildlife corridor connectivity',ranks:[29,25,22,14,10]},
+  {label:'Cumulative air quality effects on communities',ranks:[22,23,24,18,13]},
+  {label:'Socioeconomic impacts on rural communities',ranks:[7,16,24,30,23]},
+  {label:'Noise and light pollution across the valley',ranks:[4,10,12,27,47]},
+];
+
+// ── Tooltip ──
+const tip=document.getElementById('tooltip');
+function showTip(e,el){tip.textContent=el.getAttribute('data-tip');tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-36)+'px';}
+function hideTip(){tip.style.display='none';}
+
+// ── Donut (exact copy from dashboard) ──
+function renderDonut(svgId,listId,data){
+  const svg=document.getElementById(svgId);if(!svg)return;
+  const cx=100,cy=100,R=80,r=50;
+  const total=data.reduce((s,d)=>s+d.pct,0);
+  const norm=data.map(d=>({...d,_pct:(d.pct/total)*100}));
+  const top=data.reduce((a,b)=>a.pct>b.pct?a:b);
+  let startAngle=-Math.PI/2,paths='';
+  norm.forEach((d,i)=>{
+    const pctSafe=Math.min(d._pct,99.9999),slice=(pctSafe/100)*2*Math.PI,end=startAngle+slice;
+    const gap=norm.length>1?0.02:0,s=startAngle+gap/2,e=end-gap/2;
+    const x1=cx+R*Math.cos(s),y1=cy+R*Math.sin(s),x2=cx+R*Math.cos(e),y2=cy+R*Math.sin(e);
+    const x3=cx+r*Math.cos(e),y3=cy+r*Math.sin(e),x4=cx+r*Math.cos(s),y4=cy+r*Math.sin(s);
+    const large=slice>Math.PI?1:0,col=DONUT_COLORS[i%DONUT_COLORS.length];
+    paths+=`<path d="M${x1},${y1} A${R},${R} 0 ${large},1 ${x2},${y2} L${x3},${y3} A${r},${r} 0 ${large},0 ${x4},${y4} Z" fill="${col}" data-tip="${d.label}: ${d.pct}%" style="cursor:default;transition:opacity .15s;${d===top?'filter:drop-shadow(0 2px 4px rgba(0,0,0,.2))':''}" onmousemove="showTip(event,this)" onmouseleave="hideTip()"/>`;
+    if(d.pct>=10){const mid=s+(e-s)/2,tx=cx+(r+(R-r)/2)*Math.cos(mid),ty=cy+(r+(R-r)/2)*Math.sin(mid)+4,fc=(i<2||i===4)?'#fff':'#2D2D2D';paths+=`<text x="${tx}" y="${ty}" text-anchor="middle" font-size="11" font-weight="700" fill="${fc}" font-family="'Noto Sans',Verdana,sans-serif" pointer-events="none">${d.pct}%</text>`;}
+    startAngle=end;
+  });
+  svg.innerHTML=paths;
+  if(!listId)return;
+  const ul=document.getElementById(listId);if(!ul)return;
+  data.forEach((d,i)=>{
+    const li=document.createElement('li');li.className='donut-bar-item'+(d===top?' donut-winner':'');
+    li.innerHTML=`<div class="donut-label-wrap"><div class="donut-dot" style="background:${DONUT_COLORS[i%DONUT_COLORS.length]}"></div><span style="font-size:13px;color:var(--bcds-text)${d===top?';font-weight:700':''}">${d.label}</span></div><span class="donut-pct">${d.pct}%</span><span class="donut-count">${d.n.toLocaleString()}</span>`;
+    ul.appendChild(li);
+  });
+}
+
+// ── Likert (exact copy from dashboard) ──
+function renderLikert(svgId,data,labels){
+  const svgEl=document.getElementById(svgId);if(!svgEl)return;
+  const COLORS=['#C03F2C','#C8C3BE','#E8A94A','#7EB8D4','#1B5E8C'];
+  const LABEL_SETS={
+    'lik-outreach-svg':['Not effective','Neutral','Somewhat effective','Effective','Very effective'],
+    'lik-valued-svg':['Least important','Neutral','Somewhat important','Important','Most important'],
+    'lik-design-svg':['Not concerned','Neutral','Somewhat concerned','Concerned','Very concerned'],
+    'lik-experience-svg':['Strongly disagree','Neutral','Somewhat agree','Agree','Strongly agree'],
+  };
+  const hoverLbls=LABEL_SETS[svgId]||LABEL_SETS['lik-outreach-svg'];
+  const leftLbl=(labels&&labels[0])?labels[0]:'Negative';
+  const rightLbl=(labels&&labels[1])?labels[1].replace(' →','').trim():'Positive';
+  function wrapText(text,maxChars){
+    if(text.length<=maxChars)return[text];
+    const words=text.split(' '),lines=[];let cur='';
+    words.forEach(function(w){const test=cur?cur+' '+w:w;if(test.length<=maxChars){cur=test;}else{if(cur)lines.push(cur);cur=w;}});
+    if(cur)lines.push(cur);return lines;
+  }
+  const LABEL_W=200,COUNT_W=48,padL=12,padR=80,gap=10,barH=22,padTop=32;
+  const BASE_ROW_H=44,LINE_H=16,WRAP_CHARS=28;
+  const sorted=[...data].sort((a,b)=>{const net=d=>(d.pcts[3]+d.pcts[4])-d.pcts[0];return net(b)-net(a);});
+  const maxLeft=Math.max(...sorted.map(r=>r.pcts[0]+r.pcts[1]/2));
+  const maxRight=Math.max(...sorted.map(r=>r.pcts[1]/2+r.pcts[2]+r.pcts[3]+r.pcts[4]));
+  const totalPct=maxLeft+maxRight;
+  function draw(){
+    const totalW=svgEl.parentElement.clientWidth||800;
+    const barLeft=padL+LABEL_W+gap,barRight=totalW-padR-COUNT_W-gap,barColW=barRight-barLeft;
+    const px=barColW/totalPct,centreX=barLeft+maxLeft*px;
+    const rowHeights=sorted.map(function(row){const lines=wrapText(row.label,WRAP_CHARS);return Math.max(BASE_ROW_H,lines.length*LINE_H+20);});
+    const svgH=padTop+rowHeights.reduce(function(s,h){return s+h;},0)+8;
+    svgEl.setAttribute('width',totalW);svgEl.setAttribute('height',svgH);svgEl.setAttribute('viewBox','0 0 '+totalW+' '+svgH);
+    let html='<defs><clipPath id="cl-'+svgId+'-L"><rect x="'+barLeft+'" y="0" width="'+(centreX-barLeft)+'" height="'+svgH+'"/></clipPath><clipPath id="cl-'+svgId+'-R"><rect x="'+centreX+'" y="0" width="'+(barRight-centreX)+'" height="'+svgH+'"/></clipPath></defs>';
+    html+='<text x="'+padL+'" y="20" font-size="10" font-weight="600" fill="#474543" letter-spacing="0.4" font-family="inherit">RESPONSE</text>';
+    html+='<text x="'+(centreX-4)+'" y="20" font-size="10" font-weight="600" text-anchor="end" fill="#474543" letter-spacing="0.4" font-family="inherit">← '+leftLbl.toUpperCase()+'</text>';
+    html+='<text x="'+centreX+'" y="20" font-size="10" font-weight="600" text-anchor="middle" fill="#474543" font-family="inherit"> | </text>';
+    html+='<text x="'+(centreX+4)+'" y="20" font-size="10" font-weight="600" text-anchor="start" fill="#474543" letter-spacing="0.4" font-family="inherit">'+rightLbl.toUpperCase()+' →</text>';
+    html+='<text x="'+(totalW-padR)+'" y="20" font-size="10" font-weight="600" text-anchor="end" fill="#474543" letter-spacing="0.4" font-family="inherit">COUNT</text>';
+    html+='<line x1="'+padL+'" y1="'+(padTop-4)+'" x2="'+(totalW-padR)+'" y2="'+(padTop-4)+'" stroke="#D8D8D8" stroke-width="1"/>';
+    let y0cur=padTop;
+    sorted.forEach(function(row,i){
+      const sn=row.pcts[0],nt=row.pcts[1],n=row.pcts[2],p=row.pcts[3],sp=row.pcts[4];
+      const rowH=rowHeights[i],y0=y0cur;y0cur+=rowH;
+      const barY=y0+(rowH-barH)/2;
+      if(i%2===0)html+='<rect x="'+padL+'" y="'+y0+'" width="'+(totalW-padL-padR)+'" height="'+rowH+'" fill="#F7F8FA" rx="2"/>';
+      const lblLines=wrapText(row.label,WRAP_CHARS),lblTotalH=lblLines.length*LINE_H,lblStartY=y0+(rowH-lblTotalH)/2+LINE_H-3;
+      lblLines.forEach(function(ln,li){html+='<text x="'+(padL+4)+'" y="'+(lblStartY+li*LINE_H)+'" font-size="12" fill="#2D2D2D" font-family="inherit">'+ln+'</text>';});
+      const ntHalfW=nt/2*px,snW=sn*px,ntLx=centreX-ntHalfW,snX=ntLx-snW;
+      if(sn>0){const r2=3,path='M'+(snX+r2)+','+barY+' h'+(snW-r2)+' v'+barH+' h'+(-(snW-r2))+' a'+r2+','+r2+' 0 0 1 -'+r2+',-'+r2+' v'+(-(barH-2*r2))+' a'+r2+','+r2+' 0 0 1 '+r2+',-'+r2+' z';html+='<path d="'+path+'" fill="'+COLORS[0]+'" data-tip="'+hoverLbls[0]+': '+sn+'%" style="cursor:default" onmousemove="showTip(event,this)" onmouseleave="hideTip()"/>';if(snW>18)html+='<text x="'+(snX+snW/2)+'" y="'+(barY+barH/2+4)+'" font-size="10" font-weight="700" fill="#fff" text-anchor="middle" font-family="inherit" pointer-events="none">'+sn+'%</text>';}
+      html+='<rect x="'+ntLx+'" y="'+barY+'" width="'+ntHalfW+'" height="'+barH+'" fill="'+COLORS[1]+'" data-tip="'+hoverLbls[1]+': '+nt+'%" style="cursor:default" onmousemove="showTip(event,this)" onmouseleave="hideTip()"/>';
+      const ntRx=centreX,nX=ntRx+ntHalfW,pX=nX+n*px,spX=pX+p*px;
+      html+='<rect x="'+ntRx+'" y="'+barY+'" width="'+ntHalfW+'" height="'+barH+'" fill="'+COLORS[1]+'" data-tip="'+hoverLbls[1]+': '+nt+'%" style="cursor:default" onmousemove="showTip(event,this)" onmouseleave="hideTip()"/>';
+      if(nt*px>18)html+='<text x="'+(ntLx+nt*px/2)+'" y="'+(barY+barH/2+4)+'" font-size="10" font-weight="700" fill="#2D2D2D" text-anchor="middle" font-family="inherit" pointer-events="none">'+nt+'%</text>';
+      if(n>0){const w=n*px;html+='<rect x="'+nX+'" y="'+barY+'" width="'+w+'" height="'+barH+'" fill="'+COLORS[2]+'" data-tip="'+hoverLbls[2]+': '+n+'%" style="cursor:default" onmousemove="showTip(event,this)" onmouseleave="hideTip()"/>';if(w>18)html+='<text x="'+(nX+w/2)+'" y="'+(barY+barH/2+4)+'" font-size="10" font-weight="700" fill="#2D2D2D" text-anchor="middle" font-family="inherit" pointer-events="none">'+n+'%</text>';}
+      if(p>0){const w=p*px;html+='<rect x="'+pX+'" y="'+barY+'" width="'+w+'" height="'+barH+'" fill="'+COLORS[3]+'" data-tip="'+hoverLbls[3]+': '+p+'%" style="cursor:default" onmousemove="showTip(event,this)" onmouseleave="hideTip()"/>';if(w>18)html+='<text x="'+(pX+w/2)+'" y="'+(barY+barH/2+4)+'" font-size="10" font-weight="700" fill="#fff" text-anchor="middle" font-family="inherit" pointer-events="none">'+p+'%</text>';}
+      if(sp>0){const w=sp*px,r2=3,path='M'+spX+','+barY+' h'+(w-r2)+' a'+r2+','+r2+' 0 0 1 '+r2+','+r2+' v'+(barH-2*r2)+' a'+r2+','+r2+' 0 0 1 -'+r2+','+r2+' h'+(-(w-r2))+' z';html+='<path d="'+path+'" fill="'+COLORS[4]+'" data-tip="'+hoverLbls[4]+': '+sp+'%" style="cursor:default" onmousemove="showTip(event,this)" onmouseleave="hideTip()"/>';if(w>18)html+='<text x="'+(spX+w/2)+'" y="'+(barY+barH/2+4)+'" font-size="10" font-weight="700" fill="#fff" text-anchor="middle" font-family="inherit" pointer-events="none">'+sp+'%</text>';}
+      html+='<line x1="'+centreX+'" y1="'+(barY-2)+'" x2="'+centreX+'" y2="'+(barY+barH+2)+'" stroke="#5a5a5a" stroke-width="1.5" stroke-dasharray="3,3"/>';
+      html+='<text x="'+(totalW-padR)+'" y="'+(barY+barH/2+4)+'" font-size="11" fill="#474543" text-anchor="end" font-family="inherit">'+row.n.toLocaleString()+'</text>';
+      html+='<line x1="'+padL+'" y1="'+(y0+rowH)+'" x2="'+(totalW-padR)+'" y2="'+(y0+rowH)+'" stroke="#ECEAE8" stroke-width="1"/>';
+    });
+    svgEl.innerHTML=html;
+  }
+  draw();
+  new ResizeObserver(function(){draw();}).observe(svgEl.parentElement);
+}
+
+// ── Rank (exact copy from dashboard) ──
+function renderRank(containerId,data){
+  const container=document.getElementById(containerId);if(!container)return;
+  const SEG=['r1','r2','r3','r4','r5'],LABS=['1st','2nd','3rd','4th','5th'];
+  const scored=data.map(d=>{const score=d.ranks.reduce((s,pct,i)=>s+pct*(i+1),0)/100;return{...d,score};}).sort((a,b)=>a.score-b.score);
+  scored.forEach((item,i)=>{
+    const row=document.createElement('div');row.className='rank-row';
+    const segs=[...item.ranks].map((pct,ri)=>{if(pct<1)return'';return`<div class="rank-seg ${SEG[ri]}" style="width:${pct}%" data-tip="Ranked ${LABS[ri]}: ${pct}%" onmousemove="showTip(event,this)" onmouseleave="hideTip()">${pct}%</div>`;}).join('');
+    row.innerHTML=`<div class="rank-medal ${SEG[i]}">${i+1}</div><div class="rank-bar-wrap"><div class="rank-item-label">${item.label}</div><div class="rank-stack">${segs}</div><div class="rank-score"><span class="score-num">${item.score.toFixed(2)}</span> <span class="score-lbl">avg. rank score</span></div></div>`;
+    container.appendChild(row);
+  });
+}
+
+// ── Checkbox list ──
+function renderCheckbox(listId,data){
+  const ul=document.getElementById(listId);if(!ul)return;
+  [...data].sort((a,b)=>b.pct-a.pct).forEach(d=>{
+    const li=document.createElement('li');li.className='donut-bar-item';
+    li.innerHTML=`<span style="font-size:13px;color:var(--bcds-text)">${d.label}</span><span class="donut-pct">${d.pct}%</span><span class="donut-count">${d.n.toLocaleString()}</span>`;
+    ul.appendChild(li);
+  });
+}
+
+// ── Stepper builder ──
+function buildStepper(navId, goFn) {
+  const nav=document.getElementById(navId);if(!nav)return;
+  PAGE_NAMES.forEach((name,i)=>{
+    const step=document.createElement('div');
+    step.className='step'+(i===0?' active':'');
+    step.id=navId+'-step-'+i;
+    step.onclick=()=>goFn(i, true);
+    step.innerHTML=`<div class="step-circle">${i+1}</div><div class="step-label">${name}</div>`;
+    nav.appendChild(step);
+  });
+}
+
+// ── Survey Questions page tabs ──
+let sqCurrent=0;
+function goSQPage(i){
+  if(i<0||i>=PAGE_NAMES.length)return;
+  document.getElementById('sq-page-'+sqCurrent).classList.remove('active');
+  sqCurrent=i;
+  document.getElementById('sq-page-'+sqCurrent).classList.add('active');
+  document.querySelectorAll('.builder-page-tab').forEach((btn,idx)=>{
+    btn.classList.toggle('active',idx===sqCurrent);
+  });
+  document.querySelector('.builder-page-content').scrollTop=0;
+}
+
+// ── Report Settings stepper ──
+let rsCurrent=0;
+const rsRendered=new Set();
+function goRSPage(dir){ goRSTo(rsCurrent+dir, false); }
+function goRSTo(i, absolute){
+  if(i<0||i>=PAGE_NAMES.length)return;
+  document.getElementById('rs-page-'+rsCurrent).classList.remove('active');
+  rsCurrent=i;
+  document.getElementById('rs-page-'+rsCurrent).classList.add('active');
+  document.querySelectorAll('#rs-stepper .step').forEach((s,idx)=>{
+    s.classList.toggle('active',idx===rsCurrent);
+    s.classList.toggle('done',idx<rsCurrent);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+  renderRSPage(rsCurrent);
+}
+
+function renderRSPage(i){
+  if(rsRendered.has(i))return;
+  rsRendered.add(i);
+  if(i===0){renderDonut('age-svg','age-list',ageData);renderDonut('gender-svg','gender-list',genderData);renderDonut('location-svg','location-list',locationData);}
+  if(i===1){renderDonut('heard-svg','heard-list',heardData);renderLikert('lik-outreach-svg',likertOutreach,['NOT EFFECTIVE','EFFECTIVE →']);}
+  if(i===2){renderLikert('lik-valued-svg',likertValued,['LEAST IMPORTANT','MOST IMPORTANT →']);}
+  if(i===3){renderRank('rank-location',rankLocationData);renderCheckbox('activities-list',activitiesData);}
+  if(i===4){renderLikert('lik-design-svg',likertDesign,['NOT CONCERNED','VERY CONCERNED →']);}
+  if(i===5){renderCheckbox('engagement-list',engagementData);renderDonut('updates-svg','updates-list',updatesData);}
+  if(i===6){renderRank('rank-cumulative',rankCumulativeData);}
+  if(i===7){renderLikert('lik-experience-svg',likertExperience,['STRONGLY DISAGREE','STRONGLY AGREE →']);}
+}
+
+// ── Edit toggle ──
+const editState={};
+function toggleEdit(id){
+  const card=document.getElementById('card-'+id);
+  const btn=card.querySelector('.edit-btn');
+  if(editState[id]){
+    // commit values back to text spans
+    card.querySelectorAll('.ef-input').forEach(input=>{
+      const span=input.previousElementSibling;
+      if(span&&span.classList.contains('ef-text')&&input.value.trim()!==''){
+        span.textContent=input.value;
+      }
+    });
+    // show original ref only if title was changed
+    const titleInput=card.querySelector('.title-input');
+    const originalRef=card.querySelector('.q-original-ref');
+    if(titleInput&&originalRef){
+      const original=originalRef.textContent.replace(/^.*Original:\s*/,'').trim();
+      const current=titleInput.value.trim();
+      originalRef.style.display=(current&&current!==original)?'flex':'none';
+    }
+    // commit user-desc textarea and show text span if content exists
+    const descWrap=document.getElementById('desc-wrap-'+id);
+    if(descWrap){
+      const ta=descWrap.querySelector('.user-desc-input');
+      const sp=descWrap.querySelector('.user-desc-text');
+      if(ta&&sp){
+        sp.textContent=ta.value;
+        if(!ta.value.trim()){
+          descWrap.style.display='none';
+          // restore the add-desc button
+          const addBtn=card.querySelector('.add-desc-btn');
+          if(addBtn)addBtn.style.display='';
+        }
+      }
+    }
+    card.classList.remove('editing');
+    btn.innerHTML='<i class="ti ti-pencil"></i> Edit';
+    btn.classList.remove('active');
+    editState[id]=false;
+  } else {
+    card.classList.add('editing');
+    btn.innerHTML='<i class="ti ti-check"></i> Done';
+    btn.classList.add('active');
+    editState[id]=true;
+    const tf=card.querySelector('.title-input');
+    if(tf){tf.focus();tf.select();}
+  }
+}
+
+// ── Add description ──
+function addDesc(id) {
+  const wrap = document.getElementById('desc-wrap-' + id);
+  const btn = document.querySelector('#card-' + id + ' .add-desc-btn');
+  const ta = document.getElementById('desc-ta-' + id);
+  const actions = wrap ? wrap.querySelector('.desc-actions') : null;
+  if (!wrap || !ta) return;
+  wrap.style.display = 'block';
+  ta.style.display = 'block';
+  if (actions) actions.style.display = 'flex';
+  if (btn) btn.style.display = 'none';
+  ta.focus();
+}
+function saveDesc(id) {
+  const ta = document.getElementById('desc-ta-' + id);
+  const saved = document.getElementById('desc-saved-' + id);
+  const textEl = document.getElementById('desc-text-' + id);
+  const wrap = document.getElementById('desc-wrap-' + id);
+  const actions = wrap ? wrap.querySelector('.desc-actions') : null;
+  const btn = document.querySelector('#card-' + id + ' .add-desc-btn');
+  const val = ta ? ta.value.trim() : '';
+  if (!val) { cancelDesc(id); return; }
+  if (textEl) textEl.textContent = val;
+  if (saved) saved.style.display = 'block';
+  if (ta) ta.style.display = 'none';
+  if (actions) actions.style.display = 'none';
+  if (btn) btn.style.display = 'none';
+}
+function cancelDesc(id) {
+  const wrap = document.getElementById('desc-wrap-' + id);
+  const ta = document.getElementById('desc-ta-' + id);
+  const actions = wrap ? wrap.querySelector('.desc-actions') : null;
+  const textEl = document.getElementById('desc-text-' + id);
+  const btn = document.querySelector('#card-' + id + ' .add-desc-btn');
+  if (ta) ta.style.display = 'none';
+  if (actions) actions.style.display = 'none';
+  if (!textEl || !textEl.textContent.trim()) {
+    if (wrap) wrap.style.display = 'none';
+    if (btn) btn.style.display = 'flex';
+  }
+}
+function editDesc(id) {
+  const ta = document.getElementById('desc-ta-' + id);
+  const saved = document.getElementById('desc-saved-' + id);
+  const textEl = document.getElementById('desc-text-' + id);
+  const wrap = document.getElementById('desc-wrap-' + id);
+  const actions = wrap ? wrap.querySelector('.desc-actions') : null;
+  if (ta && textEl) ta.value = textEl.textContent;
+  if (saved) saved.style.display = 'none';
+  if (ta) ta.style.display = 'block';
+  if (actions) actions.style.display = 'flex';
+  if (ta) ta.focus();
+}
+
+function toggleCard(id,show){
+  const card=document.getElementById('card-'+id);
+  if(card)card.classList.toggle('hidden-q',!show);
+  // Deliberately do NOT touch any child conditional sections —
+  // they have their own independent toggle
+}
+function toggleConditional(id,show){
+  const el=document.getElementById('cond-'+id);
+  if(el)el.classList.toggle('disabled',!show);
+}
+
+// ── Additional settings ──
+function toggleAdditionalSettings(){
+  const panel=document.getElementById('additional-settings-panel');
+  const chevron=document.getElementById('additional-settings-chevron');
+  const open=panel.classList.toggle('open');
+  chevron.style.transform=open?'rotate(180deg)':'rotate(0deg)';
+}
+function toggleDetails(id, btn){
+  const el=document.getElementById(id);
+  const open=el.classList.toggle('open');
+  btn.textContent=open?'Hide details':'See details';
+}
+
+function switchTopTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='questions')||(i===1&&tab==='report')));
+  document.getElementById('panel-questions').classList.toggle('active',tab==='questions');
+  document.getElementById('panel-report').classList.toggle('active',tab==='report');
+}
+
+// ── Init ──
+buildStepper('rs-stepper', goRSTo);
+renderRSPage(0);
+
+// ── Conditional description helpers ──
+function openCondDesc(id) {
+  const input = document.getElementById('cond-'+id+'-desc-input');
+  const actions = document.getElementById('cond-'+id+'-desc-actions');
+  const addBtn = document.getElementById('cond-'+id+'-add-btn');
+  input.style.display = 'block';
+  actions.style.display = 'flex';
+  addBtn.style.display = 'none';
+  input.focus();
+}
+function saveCondDesc(id) {
+  const input = document.getElementById('cond-'+id+'-desc-input');
+  const display = document.getElementById('cond-'+id+'-desc-display');
+  const textEl = document.getElementById('cond-'+id+'-desc-text');
+  const actions = document.getElementById('cond-'+id+'-desc-actions');
+  const addBtn = document.getElementById('cond-'+id+'-add-btn');
+  const val = input.value.trim();
+  if (val) {
+    textEl.textContent = val;
+    display.style.display = 'block';
+    addBtn.style.display = 'none';
+  } else {
+    display.style.display = 'none';
+    addBtn.style.display = 'flex';
+  }
+  input.style.display = 'none';
+  actions.style.display = 'none';
+}
+function cancelCondDesc(id) {
+  const input = document.getElementById('cond-'+id+'-desc-input');
+  const actions = document.getElementById('cond-'+id+'-desc-actions');
+  const addBtn = document.getElementById('cond-'+id+'-add-btn');
+  const display = document.getElementById('cond-'+id+'-desc-display');
+  input.style.display = 'none';
+  actions.style.display = 'none';
+  if (!document.getElementById('cond-'+id+'-desc-text').textContent.trim()) {
+    addBtn.style.display = 'flex';
+    display.style.display = 'none';
+  }
+}
+function editCondDesc(id) {
+  const input = document.getElementById('cond-'+id+'-desc-input');
+  const actions = document.getElementById('cond-'+id+'-desc-actions');
+  const display = document.getElementById('cond-'+id+'-desc-display');
+  const textEl = document.getElementById('cond-'+id+'-desc-text');
+  input.value = textEl.textContent;
+  input.style.display = 'block';
+  actions.style.display = 'flex';
+  display.style.display = 'none';
+  input.focus();
+}
+</script>
+</body>
+</html>
