@@ -6,6 +6,7 @@ import { SubmissionVersion } from 'models/submissionVersion';
 import { CommentStatus, COMMENTS_STATUS } from 'constants/commentStatus';
 import { formatDate } from 'utils/helpers/dateHelper';
 import { MetLabel, MetParagraph } from 'components/shared/common';
+import { Palette } from 'styles/Theme';
 
 interface VersionHistoryDrawerProps {
     open: boolean;
@@ -43,7 +44,7 @@ const VersionHistoryDrawer: FC<VersionHistoryDrawerProps> = ({
             <Divider sx={{ mb: 2 }} />
 
             {versions.length === 0 ? (
-                <MetParagraph sx={{ color: '#707070' }}>No previous versions available.</MetParagraph>
+                <MetParagraph sx={{ color: Palette.text.secondary }}>No previous versions available.</MetParagraph>
             ) : (
                 versions.map((version) => (
                     <VersionCard
@@ -75,13 +76,13 @@ const VersionCard: FC<VersionCardProps> = ({ version, isSelected, onClick }) => 
                 p: 2,
                 mb: 1.5,
                 border: '1px solid',
-                borderColor: isSelected ? 'primary.main' : '#e0e0e0',
+                borderColor: isSelected ? 'primary.main' : Palette.border.default,
                 borderRadius: 1,
                 cursor: 'pointer',
                 backgroundColor: isSelected ? 'primary.light' : 'transparent',
                 '&:hover': {
                     borderColor: 'primary.main',
-                    backgroundColor: isSelected ? 'primary.light' : '#f5f5f5',
+                    backgroundColor: isSelected ? 'primary.light' : Palette.background.light,
                 },
                 transition: 'all 0.15s ease-in-out',
             }}

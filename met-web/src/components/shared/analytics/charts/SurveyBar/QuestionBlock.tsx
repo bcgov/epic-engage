@@ -3,6 +3,7 @@ import { MetParagraph } from 'components/shared/common';
 import React from 'react';
 import { SurveyBarData } from 'components/public/dashboard/types';
 import { DASHBOARD } from '../../constants';
+import { Palette } from 'styles/Theme';
 
 interface QuestionBlockProps {
     data: SurveyBarData[];
@@ -17,7 +18,7 @@ export const QuestionBlock = ({ data, selectedQuestionIndex, handleSelected }: Q
                 background: DASHBOARD.SURVEY_RESULT.BACKGROUND_COLOR,
                 width: '100%',
                 height: '450px',
-                borderRight: '1px solid #cdcdcd',
+                borderRight: `1px solid ${Palette.border.default}`,
             }}
             overflow="auto"
         >

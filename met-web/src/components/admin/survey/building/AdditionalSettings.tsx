@@ -4,6 +4,7 @@ import { styled } from '@mui/system';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { PermissionsGate } from 'components/shared/permissionsGate';
 import { USER_ROLES } from 'services/userService/constants';
+import { Palette } from 'styles/Theme';
 
 const TEMPLATE_HELP_TEXT =
     "When you toggle ON this option and save your Survey, your Survey will become a Template. As long as this option is on, the Template can be cloned (and then edited) but can't be attached directly to an Engagement.";
@@ -22,9 +23,9 @@ const SurveySwitch = styled(Switch)(() => ({
         transitionDuration: '200ms',
         '&.Mui-checked': {
             transform: 'translateX(16px)',
-            color: '#fff',
+            color: Palette.text.invert,
             '& + .MuiSwitch-track': {
-                backgroundColor: '#013366',
+                backgroundColor: Palette.primary.main,
                 opacity: 1,
                 border: 0,
             },
@@ -38,7 +39,7 @@ const SurveySwitch = styled(Switch)(() => ({
     },
     '& .MuiSwitch-track': {
         borderRadius: 10,
-        backgroundColor: '#9F9D9C',
+        backgroundColor: Palette.text.disabled,
         opacity: 1,
         transition: 'background-color 200ms',
     },
@@ -51,15 +52,15 @@ const DetailsButton = styled('button')(() => ({
     marginTop: '4px',
     font: 'inherit',
     fontSize: '12px',
-    color: '#255A90',
+    color: Palette.action.active,
     textDecoration: 'underline',
     textAlign: 'left',
     cursor: 'pointer',
     '&:hover': {
-        color: '#013366',
+        color: Palette.primary.main,
     },
     '&:focus-visible': {
-        outline: '2px solid #013366',
+        outline: `2px solid ${Palette.primary.main}`,
         outlineOffset: '2px',
     },
 }));
@@ -91,7 +92,9 @@ const SettingRow = ({
                 <FormControlLabel
                     control={control}
                     label={
-                        <Typography sx={{ fontSize: '14px', fontWeight: 600, lineHeight: 1.4, color: '#2D2D2D' }}>
+                        <Typography
+                            sx={{ fontSize: '14px', fontWeight: 600, lineHeight: 1.4, color: Palette.text.primary }}
+                        >
                             {label}
                         </Typography>
                     }
@@ -116,9 +119,9 @@ const SettingRow = ({
                         width: { xs: '100%', md: 'auto' },
                         fontSize: '13px',
                         lineHeight: 1.6,
-                        color: '#474543',
-                        backgroundColor: '#EBF1F8',
-                        borderLeft: '3px solid #013366',
+                        color: Palette.text.secondary,
+                        backgroundColor: Palette.background.lightBlue,
+                        borderLeft: `3px solid ${Palette.primary.main}`,
                         padding: '10px 14px',
                         borderRadius: '0 4px 4px 0',
                     }}
@@ -148,8 +151,8 @@ export const AdditionalSettings = ({
             sx={{
                 mt: '16px',
                 mb: '24px',
-                backgroundColor: '#FAF9F8',
-                border: '1px solid #D8D8D8',
+                backgroundColor: Palette.background.light,
+                border: `1px solid ${Palette.border.default}`,
                 borderRadius: '6px',
                 boxShadow: 'none',
                 overflow: 'hidden',
@@ -163,8 +166,8 @@ export const AdditionalSettings = ({
                     padding: '12px 20px',
                     fontSize: '14px',
                     fontWeight: 700,
-                    color: '#474543',
-                    borderBottom: '1px solid #D8D8D8',
+                    color: Palette.text.secondary,
+                    borderBottom: `1px solid ${Palette.border.default}`,
                 }}
             >
                 <SettingsOutlinedIcon sx={{ fontSize: '15px' }} />
@@ -185,7 +188,7 @@ export const AdditionalSettings = ({
                         </PermissionsGate>
                     }
                 />
-                <Box sx={{ borderBottom: '1px solid #D8D8D8', my: '10px' }} />
+                <Box sx={{ borderBottom: `1px solid ${Palette.border.default}`, my: '10px' }} />
                 <SettingRow
                     id="setting-hidden"
                     label="Hide survey"

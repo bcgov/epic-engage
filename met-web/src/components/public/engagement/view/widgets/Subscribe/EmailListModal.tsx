@@ -10,6 +10,7 @@ import { createSubscription } from 'services/subscriptionService';
 import { EmailVerificationType } from 'models/emailVerification';
 import { SubscriptionType } from 'constants/subscriptionType';
 import { TenantState } from 'redux/slices/tenantSlice';
+import { Palette } from 'styles/Theme';
 
 const EmailListModal = ({ open, setOpen }: { open: boolean; setOpen: (open: boolean) => void }) => {
     const dispatch = useAppDispatch();
@@ -120,8 +121,8 @@ const EmailListModal = ({ open, setOpen }: { open: boolean; setOpen: (open: bool
                     sx={{
                         p: '1em',
                         borderLeft: 8,
-                        borderColor: '#003366',
-                        backgroundColor: '#F2F2F2',
+                        borderColor: Palette.primary.main,
+                        backgroundColor: Palette.background.light,
                         mt: '0.5em',
                     }}
                 >

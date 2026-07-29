@@ -1,4 +1,5 @@
 import React, { useContext, useRef, useState } from 'react';
+import { Palette } from 'styles/Theme';
 import Modal from '@mui/material/Modal';
 import { Grid, Paper, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -116,7 +117,7 @@ export const CropModal = ({
                     sx={{
                         display: 'flex',
                         justifyContent: 'flex-end',
-                        backgroundColor: '#fff',
+                        backgroundColor: Palette.background.default,
                         minHeight: '40px',
                         mb: 1,
                     }}
@@ -124,7 +125,7 @@ export const CropModal = ({
                     <IconButton
                         onClick={() => setCropModalOpen(false)}
                         sx={{
-                            color: '#000',
+                            color: Palette.text.primary,
                         }}
                     >
                         <CloseIcon />

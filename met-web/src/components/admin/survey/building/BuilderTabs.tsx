@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { styled } from '@mui/system';
+import { Palette } from 'styles/Theme';
 
 export interface BuilderTab {
     value: string;
@@ -13,7 +14,7 @@ const TabBarContainer = styled('div')({
     gap: 0,
     padding: '8px 24px 0',
     background: 'none',
-    borderBottom: '1px solid #D8D8D8',
+    borderBottom: `1px solid ${Palette.border.default}`,
     width: '100%',
     overflowX: 'auto',
     whiteSpace: 'nowrap',
@@ -33,7 +34,7 @@ const TabButton = styled('button')({
     fontFamily: 'inherit',
     fontSize: '16px',
     fontWeight: 400,
-    color: '#474543',
+    color: Palette.text.secondary,
     cursor: 'pointer',
     transition: 'all 0.15s',
     marginBottom: '-1px',
@@ -42,16 +43,16 @@ const TabButton = styled('button')({
         fontSize: '16px',
     },
     '&:hover': {
-        color: '#013366',
+        color: Palette.primary.main,
         fontWeight: 700,
     },
     '&.active': {
-        color: '#013366',
+        color: Palette.primary.main,
         fontWeight: 700,
-        borderBottomColor: '#013366',
+        borderBottomColor: Palette.primary.main,
     },
     '&:focus-visible': {
-        outline: '2px solid #013366',
+        outline: `2px solid ${Palette.primary.main}`,
         outlineOffset: '2px',
     },
 });

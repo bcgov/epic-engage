@@ -7,6 +7,7 @@ import { formatDate } from 'utils/helpers/dateHelper';
 import { useAppSelector } from 'hooks';
 import { TenantState } from 'redux/slices/tenantSlice';
 import { EngagementStatus } from 'constants/engagementStatus';
+import { Palette } from 'styles/Theme';
 
 export default function EmailPreview({
     survey,
@@ -62,7 +63,7 @@ export default function EmailPreview({
                             sx={{
                                 borderLeft: '4px solid grey',
                                 paddingLeft: '8px',
-                                color: '#555',
+                                color: Palette.text.secondary,
                                 mb: 2,
                             }}
                         >
@@ -82,8 +83,8 @@ export default function EmailPreview({
 }
 
 const container = {
-    backgroundColor: '#ffffff',
-    border: '1px solid #eee',
+    backgroundColor: Palette.background.default,
+    border: `1px solid ${Palette.border.default}`,
     borderRadius: '5px',
     boxShadow: '0 5px 10px rgba(20,50,70,.2)',
     width: '80%',

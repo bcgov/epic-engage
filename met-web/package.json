@@ -5,7 +5,7 @@
     "type": "module",
     "dependencies": {
         "@arcgis/core": "^4.30.0",
-        "@bcgov/bc-sans": "^1.0.1",
+        "@bcgov/bc-sans": "^2.1.0",
         "@emotion/react": "^11.9.0",
         "@emotion/styled": "^11.8.1",
         "@epic/centre-analytics": "github:bcgov/EPIC.analytics#v1.1.0",

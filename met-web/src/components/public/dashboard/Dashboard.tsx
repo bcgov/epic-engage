@@ -21,6 +21,7 @@ import { generateDashboardPdf } from 'components/shared/analytics/util';
 import { Map } from 'models/analytics/map';
 import { When } from 'react-if';
 import { analyticsService } from 'services/penguinAnalytics';
+import { Palette } from 'styles/Theme';
 
 const Dashboard = () => {
     const { slug } = useParams();
@@ -232,7 +233,7 @@ const Dashboard = () => {
                 </Grid>
             </Grid>
             <Backdrop
-                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                sx={{ color: Palette.background.default, zIndex: (theme) => theme.zIndex.drawer + 1 }}
                 open={isPrinting}
                 onExit={() => {
                     setPdfExportProgress(100);

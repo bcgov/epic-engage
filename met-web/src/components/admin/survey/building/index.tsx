@@ -30,6 +30,7 @@ import { AdditionalSettings } from './AdditionalSettings';
 import { BuilderTabs, tabIds } from './BuilderTabs';
 import { debounce } from 'lodash';
 import { format } from 'date-fns';
+import { Palette } from 'styles/Theme';
 
 const TAB_QUESTIONS = 'questions';
 const TAB_REPORT = 'report';
@@ -356,7 +357,10 @@ const SurveyFormBuilder = () => {
                 />
                 {tab === TAB_QUESTIONS && (
                     <Box role="tabpanel" id={tabIds(TAB_QUESTIONS).panel} aria-labelledby={tabIds(TAB_QUESTIONS).tab}>
-                        <Stack spacing={1} sx={{ pt: 1, borderBottom: '1px solid #E0E0E0', pb: 2, mb: 2 }}>
+                        <Stack
+                            spacing={1}
+                            sx={{ pt: 1, borderBottom: `1px solid ${Palette.border.default}`, pb: 2, mb: 2 }}
+                        >
                             <Stack direction="row">
                                 <FormGroup>
                                     <FormControlLabel

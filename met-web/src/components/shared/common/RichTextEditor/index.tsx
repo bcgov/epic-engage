@@ -6,6 +6,7 @@ import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
 import './RichEditorStyles.css';
 import { getEditorStateFromHtml, getEditorStateFromRaw } from './utils';
 import { MetPaper } from '..';
+import { Palette } from 'styles/Theme';
 
 const RichTextEditor = ({
     setRawText = (_rawText: string) => {
@@ -58,7 +59,7 @@ const RichTextEditor = ({
 
     return (
         <FormControl fullWidth>
-            <MetPaper style={{ borderColor: `${error ? '#d32f2f' : ''}` }}>
+            <MetPaper style={{ borderColor: `${error ? Palette.text.danger : ''}` }}>
                 <form>
                     <Editor
                         spellCheck

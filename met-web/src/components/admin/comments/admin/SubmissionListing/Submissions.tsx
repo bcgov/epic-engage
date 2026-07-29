@@ -17,7 +17,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useAppSelector } from 'hooks';
 import { USER_ROLES } from 'services/userService/constants';
 import { USER_GROUP } from 'models/user';
-import { statusStyles } from 'styles/Theme';
+import { statusStyles, Palette } from 'styles/Theme';
 
 const Submissions = () => {
     const {
@@ -101,8 +101,10 @@ const Submissions = () => {
                     <Box
                         sx={{
                             borderRadius: '2px',
-                            border: `1px solid ${statusStyles[row.comment_status_id]?.borderColor || '#ccc'}`,
-                            background: statusStyles[row.comment_status_id]?.background || '#f5f5f5',
+                            border: `1px solid ${
+                                statusStyles[row.comment_status_id]?.borderColor || Palette.border.default
+                            }`,
+                            background: statusStyles[row.comment_status_id]?.background || Palette.background.light,
                             px: 1.5,
                             py: 0.25,
                         }}

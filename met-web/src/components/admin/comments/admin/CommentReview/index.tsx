@@ -57,7 +57,7 @@ import { getThreatContactById } from 'services/threatContactService';
 import { PermissionsGate } from 'components/shared/permissionsGate';
 import { USER_ROLES } from 'services/userService/constants';
 import VersionHistoryDrawer from './VersionHistoryDrawer';
-import { statusStyles } from 'styles/Theme';
+import { statusStyles, Palette } from 'styles/Theme';
 
 const CommentReview = () => {
     const [submission, setSubmission] = useState<SurveySubmission>(createDefaultSubmission());
@@ -538,7 +538,7 @@ const CommentReview = () => {
                         <Grid item xs={12} sx={{ opacity: 0.6 }}>
                             <FormControl disabled>
                                 <FormLabel id="controlled-radio-buttons-group-readonly">
-                                    <MetHeader3 sx={{ color: '#494949' }}>Comments Approval</MetHeader3>
+                                    <MetHeader3>Comments Approval</MetHeader3>
                                 </FormLabel>
                                 <RadioGroup value={selectedVersion?.comment_status_id}>
                                     <FormControlLabel
@@ -563,7 +563,7 @@ const CommentReview = () => {
                             <Grid item xs={12} sx={{ opacity: 0.6 }}>
                                 <FormControl disabled>
                                     <FormLabel id="controlled-checkbox-group-readonly">
-                                        <MetHeader4 sx={{ color: '#494949' }}>Reason for Rejection</MetHeader4>
+                                        <MetHeader4>Reason for Rejection</MetHeader4>
                                     </FormLabel>
                                     <FormControlLabel
                                         label={<MetParagraph>Contains personal information</MetParagraph>}
@@ -599,9 +599,7 @@ const CommentReview = () => {
                                     (note) => note.note_type === StaffNoteType.Review,
                                 ).length > 0 && (
                                     <>
-                                        <MetParagraph sx={{ fontWeight: 'bold', color: '#494949', mt: 2 }}>
-                                            Review Notes
-                                        </MetParagraph>
+                                        <MetParagraph sx={{ fontWeight: 'bold', mt: 2 }}>Review Notes</MetParagraph>
                                         {selectedVersion.staff_note_json
                                             .filter((note) => note.note_type === StaffNoteType.Review)
                                             .map((note, idx) => (
@@ -644,7 +642,7 @@ const CommentReview = () => {
                         <Grid item xs={12}>
                             <FormControl>
                                 <FormLabel id="controlled-radio-buttons-group">
-                                    <MetHeader3 sx={{ color: '#494949' }}>Comments Approval</MetHeader3>
+                                    <MetHeader3>Comments Approval</MetHeader3>
                                 </FormLabel>
                                 <RadioGroup
                                     defaultValue={defaultVerdict}
@@ -672,7 +670,7 @@ const CommentReview = () => {
                             <Grid item xs={12}>
                                 <FormControl>
                                     <FormLabel id="controlled-checkbox-group">
-                                        <MetHeader4 sx={{ color: '#494949' }}>Reason for Rejection</MetHeader4>
+                                        <MetHeader4>Reason for Rejection</MetHeader4>
                                     </FormLabel>
                                     <FormControlLabel
                                         label={<MetParagraph>Contains personal information</MetParagraph>}
@@ -711,7 +709,7 @@ const CommentReview = () => {
                                         sx={{ marginLeft: '3em', mt: '-1em' }}
                                     >
                                         <Grid item>
-                                            <MetSmallText bold color="#d32f2f">
+                                            <MetSmallText bold color={Palette.text.danger}>
                                                 {translate('comment.admin.review.threatTextOne')}{' '}
                                                 {threatContact?.first_name} {threatContact?.last_name}{' '}
                                                 {translate('comment.admin.review.threatTextTwo')}{' '}
@@ -743,7 +741,7 @@ const CommentReview = () => {
                                         onSaveCallback={fetchThreatContactSettings}
                                     />
                                     <FormControlLabel
-                                        label={<MetParagraph sx={{ color: '#494949' }}>Other</MetParagraph>}
+                                        label={<MetParagraph>Other</MetParagraph>}
                                         control={
                                             <Checkbox
                                                 checked={hasOtherReason}
@@ -756,9 +754,17 @@ const CommentReview = () => {
                                             />
                                         }
                                     />
-                                    <MetParagraph sx={{ marginLeft: '3em', color: '#707070', fontSize: '13px' }}>
+                                    <MetParagraph
+                                        sx={{ marginLeft: '3em', color: Palette.text.secondary, fontSize: '13px' }}
+                                    >
                                         This will be inserted in the email sent to the respondent:
-                                        <MetParagraph sx={{ fontStyle: 'italic', color: '#707070', fontSize: '13px' }}>
+                                        <MetParagraph
+                                            sx={{
+                                                fontStyle: 'italic',
+                                                color: Palette.text.secondary,
+                                                fontSize: '13px',
+                                            }}
+                                        >
                                             We have reviewed your feedback and can't accept it for the following
                                             reason(s): - Your feedback contains "other"
                                         </MetParagraph>
@@ -773,10 +779,8 @@ const CommentReview = () => {
                                         multiline
                                     />
                                     <br />
-                                    <MetParagraph sx={{ fontWeight: 'bold', color: '#494949' }}>
-                                        Review Notes
-                                    </MetParagraph>
-                                    <MetParagraph sx={{ color: '#707070', fontSize: '13px' }}>
+                                    <MetParagraph sx={{ fontWeight: 'bold' }}>Review Notes</MetParagraph>
+                                    <MetParagraph sx={{ color: Palette.text.secondary, fontSize: '13px' }}>
                                         This note will be inserted in the email sent to the respondent to help them
                                         understand what needs to be edited for their comment(s) to be approved.
                                     </MetParagraph>
