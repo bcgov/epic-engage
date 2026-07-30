@@ -4,6 +4,7 @@ import { styled } from '@mui/system';
 import AddIcon from '@mui/icons-material/Add';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { PrimaryButton, SecondaryButton } from 'components/shared/common';
+import { Palette } from 'styles/Theme';
 
 const AddDescriptionButton = styled('button')(() => ({
     display: 'inline-flex',
@@ -15,14 +16,14 @@ const AddDescriptionButton = styled('button')(() => ({
     border: 'none',
     font: 'inherit',
     fontSize: '12px',
-    color: '#255A90',
+    color: Palette.action.active,
     textDecoration: 'underline',
     cursor: 'pointer',
     '&:hover': {
-        color: '#013366',
+        color: Palette.primary.main,
     },
     '&:focus-visible': {
-        outline: '2px solid #013366',
+        outline: `2px solid ${Palette.primary.main}`,
         outlineOffset: '2px',
     },
 }));
@@ -89,7 +90,9 @@ export const DescriptionEditor = ({ settingId, description, onSave }: Descriptio
     if (description) {
         return (
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, mt: 1 }}>
-                <Typography sx={{ fontSize: '12px', color: '#474543', lineHeight: 1.5 }}>{description}</Typography>
+                <Typography sx={{ fontSize: '12px', color: Palette.text.secondary, lineHeight: 1.5 }}>
+                    {description}
+                </Typography>
                 <IconButton
                     size="small"
                     onClick={startEdit}

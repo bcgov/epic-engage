@@ -313,7 +313,7 @@ const SurveyFormBuilder = () => {
     }
 
     return (
-        <Box sx={{ pt: 3, backgroundColor: '#FAF9F8' }}>
+        <Box sx={{ pt: 3, backgroundColor: Palette.background.light }}>
             <Breadcrumb
                 items={[
                     { label: 'Surveys', to: '/surveys' },
@@ -326,7 +326,7 @@ const SurveyFormBuilder = () => {
                     {!isNameFocused ? (
                         <>
                             <MetHeader3
-                                sx={{ p: 0.5, color: '#013366' }}
+                                sx={{ p: 0.5, color: Palette.primary.main }}
                                 onClick={() => {
                                     setIsNamedFocused(true);
                                 }}
@@ -388,7 +388,10 @@ const SurveyFormBuilder = () => {
                         aria-labelledby={tabIds(TAB_QUESTIONS).tab}
                         sx={{ px: { xs: 2, md: 3 } }}
                     >
-                        <Stack spacing={1} sx={{ pt: 1, borderBottom: `1px solid ${Palette.border.default}`, pb: 2, mb: 2 }}>
+                        <Stack
+                            spacing={1}
+                            sx={{ pt: 1, borderBottom: `1px solid ${Palette.border.default}`, pb: 2, mb: 2 }}
+                        >
                             <Box sx={{ position: 'relative' }}>
                                 <Box
                                     sx={{
@@ -407,7 +410,9 @@ const SurveyFormBuilder = () => {
                                     <FormGroup sx={{ alignItems: 'flex-start' }}>
                                         <FormControlLabel
                                             sx={{ m: 0, gap: '10px' }}
-                                            slotProps={{ typography: { sx: { fontSize: '15px', color: '#2D2D2D' } } }}
+                                            slotProps={{
+                                                typography: { sx: { fontSize: '15px', color: Palette.text.primary } },
+                                            }}
                                             control={
                                                 <SurveySwitch
                                                     checked={isMultiPage}
@@ -482,8 +487,8 @@ const SurveyFormBuilder = () => {
                             display: 'flex',
                             justifyContent: 'flex-end',
                             gap: 2,
-                            backgroundColor: '#fff',
-                            borderTop: '1px solid #D8D8D8',
+                            backgroundColor: Palette.background.default,
+                            borderTop: `1px solid ${Palette.border.default}`,
                             boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.06)',
                         }}
                     >

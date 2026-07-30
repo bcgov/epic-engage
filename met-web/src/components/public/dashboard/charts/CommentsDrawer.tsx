@@ -2,6 +2,7 @@ import { Box, Drawer, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { MetHeader4, MetDescription } from 'components/shared/common';
 import { QuestionTypeLabel } from './QuestionTypeLabel';
+import { Palette } from 'styles/Theme';
 
 const DRAWER_HEIGHT = '100vh';
 
@@ -20,9 +21,9 @@ const renderResponses = (responses: string[]) =>
             sx={{
                 p: '10px 14px',
                 borderRadius: '0 6px 6px 0',
-                border: '1px solid #D8D8D8',
-                borderLeft: '3px solid #013366',
-                backgroundColor: '#ffffff',
+                border: `1px solid ${Palette.border.default}`,
+                borderLeft: `3px solid ${Palette.primary.main}`,
+                backgroundColor: Palette.background.default,
                 mb: 1,
             }}
         >
@@ -30,7 +31,7 @@ const renderResponses = (responses: string[]) =>
                 sx={{
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
-                    color: '#454743',
+                    color: Palette.text.secondary,
                     lineHeight: 1.5,
                 }}
             >
@@ -61,19 +62,19 @@ export const CommentsDrawer = ({ open, onClose, question, responses, questionTyp
                 justifyContent: 'space-between',
                 alignItems: 'flex-start',
                 p: '20px 24px 12px 24px',
-                borderBottom: '1px solid #d8d8d8',
+                borderBottom: `1px solid ${Palette.border.default}`,
             }}
         >
             <Box>
                 {questionType && <QuestionTypeLabel label={questionType} />}
                 <MetHeader4 sx={{ lineHeight: 1.4 }}>{question}</MetHeader4>
-                <MetDescription sx={{ color: '#9F9D9C' }}>{responses.length} comments</MetDescription>
+                <MetDescription sx={{ color: Palette.text.disabled }}>{responses.length} comments</MetDescription>
             </Box>
             <IconButton aria-label="Close comments" onClick={onClose}>
                 <CloseIcon />
             </IconButton>
         </Box>
-        <Box sx={{ flex: 1, overflowY: 'auto', p: '16px 24px', backgroundColor: '#F2F2F2' }}>
+        <Box sx={{ flex: 1, overflowY: 'auto', p: '16px 24px', backgroundColor: Palette.chart.surface.drawer }}>
             {renderResponses(responses)}
         </Box>
     </Drawer>

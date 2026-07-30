@@ -12,6 +12,7 @@ import { useAppSelector } from 'hooks';
 import { DashboardType } from 'constants/dashboardType';
 import { DashboardContext } from './DashboardContext';
 import { LiveActivityChart } from './LiveActivityChart';
+import { Palette } from 'styles/Theme';
 
 interface DashboardHeaderCardProps {
     engagement: Engagement;
@@ -20,17 +21,17 @@ interface DashboardHeaderCardProps {
 
 const statLabelSx = {
     fontSize: 10,
-    color: '#898785',
+    color: Palette.text.muted,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.04em',
 };
 
 const statValueSx = {
     fontSize: 13,
-    color: '#2D2D2D',
+    color: Palette.text.primary,
 };
 
-const statSeparator = <Box sx={{ width: '1px', height: 28, backgroundColor: '#D8D8D8', mr: 2 }} />;
+const statSeparator = <Box sx={{ width: '1px', height: 28, backgroundColor: Palette.border.default, mr: 2 }} />;
 
 // Backend returns showdataby as "YYYY-Mon" (e.g. "2024-Jan"); the header displays "Mon YYYY".
 const formatMonthLabel = (showdataby: string) => {
@@ -71,8 +72,8 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
     );
 
     return (
-        <Box sx={{ px: { xs: 2, md: 3 }, pt: 2, backgroundColor: '#FAF9F8' }}>
-            <Box sx={{ backgroundColor: '#FFFFFF', border: '1px solid #D8D8D8', borderRadius: '8px', p: '18px 24px 16px' }}>
+        <Box sx={{ px: { xs: 2, md: 3 }, pt: 2, backgroundColor: Palette.background.light }}>
+            <Box sx={{ backgroundColor: Palette.background.default, border: `1px solid ${Palette.border.default}`, borderRadius: '8px', p: '18px 24px 16px' }}>
                 <Stack
                     direction={{ xs: 'column', sm: 'row' }}
                     justifyContent="space-between"
@@ -80,7 +81,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                     gap={2}
                 >
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: '#013366' }}>
+                        <Typography sx={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: Palette.primary.main }}>
                             What We Heard
                         </Typography>
                         <Stack direction="row" alignItems="center" flexWrap="wrap" sx={{ mt: 1.25 }}>
@@ -131,7 +132,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                             <ExpandMoreIcon
                                                 sx={{
                                                     fontSize: 14,
-                                                    color: '#898785',
+                                                    color: Palette.text.muted,
                                                     transform: isActivityOpen ? 'rotate(180deg)' : 'none',
                                                     transition: 'transform .2s',
                                                 }}
@@ -142,7 +143,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                             )}
                         </Stack>
                         {isActivityOpen && activity.length > 0 && (
-                            <Box sx={{ mt: 1.75, pt: 1.5, borderTop: '1px solid #D8D8D8' }}>
+                            <Box sx={{ mt: 1.75, pt: 1.5, borderTop: `1px solid ${Palette.border.default}` }}>
                                 <LiveActivityChart
                                     data={activity.map((d) => ({
                                         label: formatMonthLabel(d.showdataby),

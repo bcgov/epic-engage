@@ -23,7 +23,7 @@ export const HorizontalBarList = ({ data, multiSelect = false }: HorizontalBarLi
                     sx={{
                         fontSize: 13,
                         color: Palette.primary.main,
-                        background: '#E3EEF9',
+                        background: Palette.chart.surface.callout,
                         borderLeft: `4px solid ${Palette.primary.main}`,
                         borderRadius: '4px',
                         px: 1.5,
@@ -42,14 +42,14 @@ export const HorizontalBarList = ({ data, multiSelect = false }: HorizontalBarLi
                     justifyContent: 'flex-end',
                     columnGap: 1,
                     pb: 0.75,
-                    borderBottom: '1px solid #D8D8D8',
+                    borderBottom: `1px solid ${Palette.border.default}`,
                     mb: 0.5,
                 }}
             >
-                <Typography sx={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#474543', width: 44, textAlign: 'right' }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: Palette.text.secondary, width: 44, textAlign: 'right' }}>
                     %
                 </Typography>
-                <Typography sx={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#474543', width: 64, textAlign: 'right' }}>
+                <Typography sx={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: Palette.text.secondary, width: 64, textAlign: 'right' }}>
                     Count
                 </Typography>
             </Box>
@@ -60,8 +60,8 @@ export const HorizontalBarList = ({ data, multiSelect = false }: HorizontalBarLi
                     sx={{
                         px: 0.5,
                         py: 0.75,
-                        borderBottom: i < sorted.length - 1 ? '1px solid #F0EFEE' : 'none',
-                        '&:hover': { background: '#F7F8FA', borderRadius: '4px' },
+                        borderBottom: i < sorted.length - 1 ? `1px solid ${Palette.chart.surface.rowDivider}` : 'none',
+                        '&:hover': { background: Palette.chart.surface.rowHover, borderRadius: '4px' },
                     }}
                 >
                     {/* Label row with pct and count */}
@@ -72,13 +72,13 @@ export const HorizontalBarList = ({ data, multiSelect = false }: HorizontalBarLi
                         <Typography sx={{ width: 44, fontSize: 13, fontWeight: 700, color: Palette.primary.main, textAlign: 'right' }}>
                             {item.pct}%
                         </Typography>
-                        <Typography sx={{ width: 64, fontSize: 12, color: '#474543', textAlign: 'right' }}>
+                        <Typography sx={{ width: 64, fontSize: 12, color: Palette.text.secondary, textAlign: 'right' }}>
                             {item.count.toLocaleString()}
                         </Typography>
                     </Box>
 
                     {/* Proportional bar */}
-                    <Box sx={{ height: 6, borderRadius: '3px', background: '#EEEEEE', overflow: 'hidden' }}>
+                    <Box sx={{ height: 6, borderRadius: '3px', background: Palette.chart.surface.track, overflow: 'hidden' }}>
                         <Box
                             sx={{
                                 height: '100%',

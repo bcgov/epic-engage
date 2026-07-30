@@ -28,6 +28,7 @@ export const Palette = {
     text: {
         primary: tokens.typographyColorPrimary,
         secondary: tokens.typographyColorSecondary,
+        muted: tokens.typographyColorMuted,
         disabled: tokens.typographyColorDisabled,
         invert: tokens.typographyColorPrimaryInvert,
         danger: tokens.typographyColorDanger,
@@ -50,12 +51,17 @@ export const Palette = {
         default: tokens.surfaceColorBorderDefault,
         medium: tokens.surfaceColorBorderMedium,
         dark: tokens.surfaceColorBorderDark,
+        subtle: tokens.surfaceColorBorderSubtle,
     },
     background: {
         default: tokens.surfaceColorBackgroundWhite,
         light: tokens.surfaceColorBackgroundLightGray,
         lightBlue: tokens.surfaceColorBackgroundLightBlue,
         darkBlue: tokens.surfaceColorBackgroundDarkBlue,
+        offWhite: tokens.surfaceColorBackgroundOffWhite,
+        gray: tokens.surfaceColorBackgroundGray,
+        paleBlue: tokens.surfaceColorBackgroundPaleBlue,
+        skyBlue: tokens.surfaceColorBackgroundSkyBlue,
     },
     internalHeader: {
         backgroundColor: tokens.surfaceColorBackgroundWhite,
@@ -104,6 +110,87 @@ export const Palette = {
     },
     icons: {
         surveyReady: tokens.iconsColorSuccess,
+        warning: tokens.supportIconColorWarning,
+    },
+    /**
+     * Results-dashboard chart colours.
+     *
+     * Each series is an array of swatches plus a matching array of label colours, so a swatch and
+     * the text drawn on top of it stay paired. Index into both with the same
+     * `i % series.length` - see `DonutChart`/`RankOrderChart`/`LikertChart`.
+     */
+    chart: {
+        // Donut and other unordered categorical series, in draw order.
+        categorical: [
+            tokens.dataVizBlueDark,
+            tokens.dataVizBlueMedium,
+            tokens.dataVizBlueLight,
+            tokens.dataVizYellow,
+            tokens.dataVizOrange,
+            tokens.dataVizNeutral,
+            tokens.dataVizGreen,
+            tokens.dataVizSalmon,
+            tokens.dataVizPurple,
+            tokens.dataVizGreenDeep,
+        ],
+        categoricalLabel: [
+            tokens.typographyColorPrimaryInvert,
+            tokens.typographyColorPrimaryInvert,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimaryInvert,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimary,
+        ],
+        // Rank-order stacked bars, indexed by rank position (0 = 1st place).
+        rank: [
+            tokens.dataVizBlueDark,
+            tokens.dataVizBlueMedium,
+            tokens.dataVizBlueLight,
+            tokens.dataVizYellowLight,
+            tokens.dataVizOrange,
+        ],
+        rankLabel: [
+            tokens.typographyColorPrimaryInvert,
+            tokens.typographyColorPrimaryInvert,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimaryInvert,
+        ],
+        // Likert scale, ordered negative -> strongly positive.
+        likert: [
+            tokens.dataVizRed,
+            tokens.dataVizNeutral,
+            tokens.dataVizAmber,
+            tokens.dataVizBlueSky,
+            tokens.dataVizBlueDark,
+        ],
+        likertLabel: [
+            tokens.typographyColorPrimaryInvert,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimary,
+            tokens.typographyColorPrimaryInvert,
+        ],
+        // Used when a data point falls outside a fixed-length scale.
+        fallback: {
+            swatch: tokens.dataVizNeutral,
+            label: tokens.typographyColorPrimary,
+        },
+        // Chart chrome: the surfaces rows, bars and callouts are drawn on.
+        surface: {
+            rowHover: tokens.surfaceColorBackgroundOffWhite,
+            rowDivider: tokens.surfaceColorBorderSubtle,
+            callout: tokens.surfaceColorBackgroundPaleBlue,
+            track: tokens.surfaceColorTrack,
+            drawer: tokens.surfaceColorBackgroundGray,
+            bar: tokens.surfaceColorBackgroundSkyBlue,
+        },
+        // Marker on a conditional follow-up question.
+        conditionalMarker: tokens.dataVizGreen,
     },
 };
 

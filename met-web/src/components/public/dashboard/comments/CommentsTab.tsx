@@ -8,6 +8,7 @@ import { useSurveyComments } from '../hooks/useSurveyComments';
 import { buildCommentSections } from './buildCommentSections';
 import { CommentsSidebarToc } from './CommentsSidebarToc';
 import { CommentSection } from './CommentSection';
+import { Palette } from 'styles/Theme';
 
 interface CommentsTabProps {
     engagement: Engagement;
@@ -85,7 +86,7 @@ export const CommentsTab = ({ engagement, engagementIsLoading, dashboardType }: 
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0, mt: 4 }}>
             <CommentsSidebarToc sections={sections} activeId={activeId} onNavigate={handleNavigate} />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-                <MetHeader4 sx={{ mb: 3, color: '#013366' }}>All Comments</MetHeader4>
+                <MetHeader4 sx={{ mb: 3, color: Palette.primary.main }}>All Comments</MetHeader4>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     {sections.map((section) => (
                         <CommentSection key={section.id} section={section} registerRef={registerRef} />

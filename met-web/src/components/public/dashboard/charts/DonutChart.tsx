@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
 
-const COLORS = ['#1B5E8C', '#4A90C4', '#90C0DE', '#FCBA19', '#E07B39', '#C8C3BE', '#72B09D', '#E8866F', '#7B6FA0', '#5C9E6A'];
+const COLORS = Palette.chart.categorical;
 
-// Label text is white on dark segments (indices 0, 1, 4) and dark on lighter ones.
-const LABEL_COLOR = (i: number) => (i < 2 || i === 4 ? '#fff' : '#2D2D2D');
+// Label text is white on the dark segments and dark on the lighter ones; the pairing lives with
+// the swatches in `Palette.chart` so the two indices can never drift apart.
+const LABEL_COLOR = (i: number) => Palette.chart.categoricalLabel[i % COLORS.length];
 
 export interface DonutChartItem {
     label: string;
@@ -142,7 +143,7 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
                     >
                         {total.toLocaleString()}
                     </Typography>
-                    <Typography component="span" display="block" sx={{ fontSize: 11, color: '#474543' }}>
+                    <Typography component="span" display="block" sx={{ fontSize: 11, color: Palette.text.secondary }}>
                         respondents
                     </Typography>
                 </Box>
@@ -159,10 +160,10 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
                         fontWeight: 600,
                         letterSpacing: '0.04em',
                         textTransform: 'uppercase',
-                        color: '#474543',
+                        color: Palette.text.secondary,
                         px: 0.5,
                         pb: 0.75,
-                        borderBottom: '1px solid #D8D8D8',
+                        borderBottom: `1px solid ${Palette.border.default}`,
                         mb: 0.5,
                     }}
                 >
@@ -182,8 +183,8 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
                                 gap: 1,
                                 px: 0.5,
                                 py: 1,
-                                borderBottom: i < sorted.length - 1 ? '1px solid #F0EFEE' : 'none',
-                                '&:hover': { background: '#F7F8FA', borderRadius: '4px' },
+                                borderBottom: i < sorted.length - 1 ? `1px solid ${Palette.chart.surface.rowDivider}` : 'none',
+                                '&:hover': { background: Palette.chart.surface.rowHover, borderRadius: '4px' },
                             }}
                         >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
@@ -203,7 +204,7 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
                             <Typography sx={{ fontSize: 13, fontWeight: 700, color: Palette.primary.main, textAlign: 'right' }}>
                                 {item.pct}%
                             </Typography>
-                            <Typography sx={{ fontSize: 12, color: '#474543', textAlign: 'right' }}>
+                            <Typography sx={{ fontSize: 12, color: Palette.text.secondary, textAlign: 'right' }}>
                                 {item.count.toLocaleString()}
                             </Typography>
                         </Box>
@@ -219,7 +220,7 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
                         top: tooltip.y - 36,
                         left: tooltip.x + 14,
                         background: Palette.primary.main,
-                        color: '#fff',
+                        color: Palette.text.invert,
                         fontSize: 12,
                         px: 1.5,
                         py: 0.75,

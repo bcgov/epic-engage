@@ -31,7 +31,7 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                 sx={{
                     fontSize: 13,
                     color: Palette.primary.main,
-                    background: '#E3EEF9',
+                    background: Palette.chart.surface.callout,
                     borderLeft: `4px solid ${Palette.primary.main}`,
                     borderRadius: '4px',
                     px: 1.5,
@@ -48,7 +48,7 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                     justifyContent: 'flex-end',
                     columnGap: 1,
                     pb: 0.75,
-                    borderBottom: '1px solid #D8D8D8',
+                    borderBottom: `1px solid ${Palette.border.default}`,
                     mb: 0.5,
                 }}
             >
@@ -58,7 +58,7 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                         fontWeight: 600,
                         letterSpacing: '0.04em',
                         textTransform: 'uppercase',
-                        color: '#474543',
+                        color: Palette.text.secondary,
                         width: 80,
                         textAlign: 'right',
                     }}
@@ -71,7 +71,7 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                         fontWeight: 600,
                         letterSpacing: '0.04em',
                         textTransform: 'uppercase',
-                        color: '#474543',
+                        color: Palette.text.secondary,
                         width: 64,
                         textAlign: 'right',
                     }}
@@ -88,8 +88,8 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                         alignItems: 'center',
                         px: 0.5,
                         py: 0.75,
-                        borderBottom: i < sorted.length - 1 ? '1px solid #F0EFEE' : 'none',
-                        '&:hover': { background: '#F7F8FA', borderRadius: '4px' },
+                        borderBottom: i < sorted.length - 1 ? `1px solid ${Palette.chart.surface.rowDivider}` : 'none',
+                        '&:hover': { background: Palette.chart.surface.rowHover, borderRadius: '4px' },
                     }}
                 >
                     <Typography sx={{ flex: 1, fontSize: 13, color: Palette.text.primary }}>{item.label}</Typography>
@@ -104,7 +104,7 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                     >
                         {item.pct}%
                     </Typography>
-                    <Typography sx={{ width: 64, fontSize: 12, color: '#474543', textAlign: 'right' }}>
+                    <Typography sx={{ width: 64, fontSize: 12, color: Palette.text.secondary, textAlign: 'right' }}>
                         {item.count.toLocaleString()}
                     </Typography>
                 </Box>
@@ -117,7 +117,7 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
     }
 
     return (
-        <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
+        <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
             {questionType && <QuestionTypeLabel label={questionType} />}
             <MetHeader4 sx={{ lineHeight: 1.4 }}>{question}</MetHeader4>
             {content}

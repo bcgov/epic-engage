@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Link, Typography } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { CommentSection } from './buildCommentSections';
+import { Palette } from 'styles/Theme';
 
 interface CommentsSidebarTocProps {
     sections: CommentSection[];
@@ -25,8 +26,8 @@ export const CommentsSidebarToc = ({ sections, activeId, onNavigate }: CommentsS
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     width: '100%',
-                    backgroundColor: '#013366',
-                    color: '#fff',
+                    backgroundColor: Palette.primary.main,
+                    color: Palette.background.default,
                     border: 'none',
                     borderRadius: collapsed ? '6px' : '6px 6px 0 0',
                     padding: '10px 14px',
@@ -42,8 +43,8 @@ export const CommentsSidebarToc = ({ sections, activeId, onNavigate }: CommentsS
             {!collapsed && (
                 <Box
                     sx={{
-                        backgroundColor: '#F7F8FA',
-                        border: '1px solid #d8d8d8',
+                        backgroundColor: Palette.background.offWhite,
+                        border: `1px solid ${Palette.border.default}`,
                         borderTop: 'none',
                         borderRadius: '0 0 6px 6px',
                         padding: '8px 0 12px',
@@ -68,15 +69,15 @@ export const CommentsSidebarToc = ({ sections, activeId, onNavigate }: CommentsS
                                     lineHeight: 1.4,
                                     borderLeft: '3px solid transparent',
                                     ...(activeId === section.id && {
-                                        backgroundColor: '#E3EEF9',
-                                        borderLeftColor: '#013366',
+                                        backgroundColor: Palette.background.paleBlue,
+                                        borderLeftColor: Palette.primary.main,
                                         fontWeight: 700,
                                     }),
                                 }}
                             >
                                 <Typography
                                     component="span"
-                                    sx={{ fontSize: '11px', fontWeight: 700, color: '#9F9D9C', minWidth: '16px' }}
+                                    sx={{ fontSize: '11px', fontWeight: 700, color: Palette.text.disabled, minWidth: '16px' }}
                                 >
                                     {index + 1}
                                 </Typography>
@@ -93,7 +94,7 @@ export const CommentsSidebarToc = ({ sections, activeId, onNavigate }: CommentsS
                                         ml: '23px',
                                         mr: '14px',
                                         mb: '4px',
-                                        borderLeft: '2px solid #d8d8d8',
+                                        borderLeft: `2px solid ${Palette.border.default}`,
                                     }}
                                 >
                                     {section.subSections.map((sub) => (
@@ -111,7 +112,7 @@ export const CommentsSidebarToc = ({ sections, activeId, onNavigate }: CommentsS
                                                 borderLeft: '2px solid transparent',
                                                 ...(activeId === sub.id && {
                                                     fontWeight: 700,
-                                                    borderLeftColor: '#013366',
+                                                    borderLeftColor: Palette.primary.main,
                                                 }),
                                             }}
                                         >

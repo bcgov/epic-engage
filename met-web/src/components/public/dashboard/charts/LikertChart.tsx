@@ -3,9 +3,9 @@ import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
 
 // Scale colors: [negative, neutral, somewhat, positive, strongly positive]
-const COLORS = ['#C03F2C', '#C8C3BE', '#E8A94A', '#7EB8D4', '#1B5E8C'];
-// true = white label text on this segment color
-const WHITE_LABEL = [true, false, false, false, true];
+const COLORS = Palette.chart.likert;
+// Label text colour per scale point, paired with COLORS above
+const LABEL_COLORS = Palette.chart.likertLabel;
 
 const LABEL_W = 220;
 const N_COL_W = 70;
@@ -111,7 +111,7 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
                 {scaleLabels.map((lbl, i) => (
                     <Box key={lbl} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                         <Box sx={{ width: 13, height: 13, borderRadius: '3px', flexShrink: 0, background: COLORS[i] }} />
-                        <Typography sx={{ fontSize: 12, color: '#474543' }}>{lbl}</Typography>
+                        <Typography sx={{ fontSize: 12, color: Palette.text.secondary }}>{lbl}</Typography>
                     </Box>
                 ))}
             </Box>
@@ -127,16 +127,16 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
                         </defs>
 
                         {/* Column headers */}
-                        <text x={PAD_L} y={18} fontSize={10} fontWeight={600} fill="#474543" letterSpacing={0.5}>
+                        <text x={PAD_L} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
                             RESPONSE
                         </text>
-                        <text x={cx} y={18} fontSize={10} fontWeight={600} fill="#474543" letterSpacing={0.5} textAnchor="middle">
+                        <text x={cx} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="middle">
                             {`← ${axisLabels[0].toUpperCase()}  |  ${axisLabels[1].toUpperCase()} →`}
                         </text>
-                        <text x={barRight + BAR_GAP} y={18} fontSize={10} fontWeight={600} fill="#474543" letterSpacing={0.5}>
+                        <text x={barRight + BAR_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
                             COUNT
                         </text>
-                        <line x1={PAD_L} y1={PAD_TOP - 4} x2={totalW - PAD_R} y2={PAD_TOP - 4} stroke="#D8D8D8" strokeWidth={1} />
+                        <line x1={PAD_L} y1={PAD_TOP - 4} x2={totalW - PAD_R} y2={PAD_TOP - 4} stroke={Palette.border.default} strokeWidth={1} />
 
                         {sorted.map((row, i) => {
                             const y0 = PAD_TOP + i * ROW_H;
@@ -159,13 +159,13 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
                                 <g key={row.label}>
                                     {/* Alternating row background */}
                                     {i % 2 === 0 && (
-                                        <rect x={PAD_L} y={y0} width={totalW - PAD_L - PAD_R} height={ROW_H} fill="#F7F8FA" rx={2} />
+                                        <rect x={PAD_L} y={y0} width={totalW - PAD_L - PAD_R} height={ROW_H} fill={Palette.chart.surface.rowHover} rx={2} />
                                     )}
 
                                     {/* Row label (up to 2 lines) */}
-                                    <text x={PAD_L + 4} y={tY} fontSize={12} fill="#2D2D2D">{line1}</text>
+                                    <text x={PAD_L + 4} y={tY} fontSize={12} fill={Palette.text.primary}>{line1}</text>
                                     {line2 && (
-                                        <text x={PAD_L + 4} y={tY + 14} fontSize={12} fill="#2D2D2D">{line2}</text>
+                                        <text x={PAD_L + 4} y={tY + 14} fontSize={12} fill={Palette.text.primary}>{line2}</text>
                                     )}
 
                                     {/* Bar segments */}
@@ -173,7 +173,7 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
                                         {segs.map((s) => {
                                             if (s.w < 0.5) return null;
                                             const path = segmentPath(s);
-                                            const labelColor = WHITE_LABEL[s.ci] ? '#fff' : '#2D2D2D';
+                                            const labelColor = LABEL_COLORS[s.ci] ?? Palette.chart.fallback.label;
                                             return (
                                                 <g key={s.ci}>
                                                     <path
@@ -211,13 +211,13 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
                                     <line
                                         x1={cx} y1={barY - 1}
                                         x2={cx} y2={barY + BAR_H + 1}
-                                        stroke="#9F9D9C"
+                                        stroke={Palette.text.disabled}
                                         strokeWidth={1.5}
                                         strokeDasharray="3,2"
                                     />
 
                                     {/* N count */}
-                                    <text x={barRight + BAR_GAP} y={barY + BAR_H / 2 + 4} fontSize={11} fill="#474543">
+                                    <text x={barRight + BAR_GAP} y={barY + BAR_H / 2 + 4} fontSize={11} fill={Palette.text.secondary}>
                                         {row.n.toLocaleString()}
                                     </text>
 
@@ -225,7 +225,7 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
                                     <line
                                         x1={PAD_L} y1={y0 + ROW_H}
                                         x2={totalW - PAD_R} y2={y0 + ROW_H}
-                                        stroke="#ECEAE8"
+                                        stroke={Palette.chart.surface.rowDivider}
                                         strokeWidth={1}
                                     />
                                 </g>
@@ -243,7 +243,7 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
                         top: tooltip.y - 36,
                         left: tooltip.x + 14,
                         background: Palette.primary.main,
-                        color: '#fff',
+                        color: Palette.text.invert,
                         fontSize: 12,
                         px: 1.5,
                         py: 0.75,
