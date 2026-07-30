@@ -23,7 +23,7 @@ import { useSurveyComments } from './hooks/useSurveyComments';
 import { ConditionalLink } from './surveyPages';
 import { DashboardType } from 'constants/dashboardType';
 
-const COMPONENT_TYPE = {
+export const COMPONENT_TYPE = {
     RADIO: 'simpleradios',
     CHECKBOX: 'simplecheckboxes',
     SELECT: 'simpleselect',
@@ -33,7 +33,7 @@ const COMPONENT_TYPE = {
     RANKING: 'simpleranking',
 } as const;
 
-const TYPE_LABELS: Record<string, string> = {
+export const TYPE_LABELS: Record<string, string> = {
     simpleradios: 'Radio Button',
     simplecheckboxes: 'Checkbox',
     simpleselect: 'Drop-down',
@@ -45,15 +45,15 @@ const TYPE_LABELS: Record<string, string> = {
 
 const isMatrixRow = (r: FlatResultItem | MatrixResultRow): r is MatrixResultRow => 'pcts' in r;
 
-function toFlatItems(result: (FlatResultItem | MatrixResultRow)[]): FlatResultItem[] {
+export function toFlatItems(result: (FlatResultItem | MatrixResultRow)[]): FlatResultItem[] {
     return result.filter((r): r is FlatResultItem => !isMatrixRow(r));
 }
 
-function toMatrixRows(result: (FlatResultItem | MatrixResultRow)[]): MatrixResultRow[] {
+export function toMatrixRows(result: (FlatResultItem | MatrixResultRow)[]): MatrixResultRow[] {
     return result.filter(isMatrixRow);
 }
 
-function flatToChartItems(items: FlatResultItem[]) {
+export function flatToChartItems(items: FlatResultItem[]) {
     const total = items.reduce((sum, r) => sum + r.count, 0);
     return {
         total,
@@ -78,7 +78,7 @@ const isStaleMatrixEntry = (q: TypedSurveyData) =>
     q.key.includes('-') &&
     toMatrixRows(q.result).length === 0;
 
-interface ResolvedFollowUp {
+export interface ResolvedFollowUp {
     key: string;
     link: ConditionalLink;
     // The follow-up question's own label, used as the comments drawer title.
@@ -99,7 +99,7 @@ const formatOrdinal = (value: string): string => {
     return `${n}${suffix}`;
 };
 
-const describeConditional = (link: ConditionalLink, triggerType?: string): string => {
+export const describeConditional = (link: ConditionalLink, triggerType?: string): string => {
     const values =
         triggerType === COMPONENT_TYPE.RANKING ? link.trigger_values.map(formatOrdinal) : link.trigger_value_labels;
     const valuesPhrase = values.join('" or "');
@@ -124,11 +124,15 @@ const StaleFormatCard = ({ questionKey }: { questionKey: string }) => (
     </MetPaper>
 );
 
-interface QuestionChartProps {
+export interface QuestionChartProps {
     question: TypedSurveyData;
     commentsByKey: Map<string, string[]>;
     followUps: ResolvedFollowUp[];
     dashboardType: string;
+    // Renders just the chart content, without the surrounding MetPaper card/title, for callers
+    // that render their own. Follow-ups still render read-only regardless of this flag; pass
+    // followUps={[]} and render your own nested UI if they need to be editable.
+    bare?: boolean;
 }
 
 const renderFollowUps = (followUps: ResolvedFollowUp[], type: string) =>
@@ -141,7 +145,13 @@ const renderFollowUps = (followUps: ResolvedFollowUp[], type: string) =>
         />
     ));
 
-const QuestionChart = ({ question, commentsByKey, followUps, dashboardType }: QuestionChartProps) => {
+export const QuestionChart = ({
+    question,
+    commentsByKey,
+    followUps,
+    dashboardType,
+    bare = false,
+}: QuestionChartProps) => {
     const { label, type, result } = question;
     const questionType = dashboardType === DashboardType.INTERNAL ? TYPE_LABELS[type] : undefined;
 
@@ -149,13 +159,21 @@ const QuestionChart = ({ question, commentsByKey, followUps, dashboardType }: Qu
         case COMPONENT_TYPE.RADIO:
         case COMPONENT_TYPE.SELECT: {
             const { data, total } = flatToChartItems(toFlatItems(result));
+            const content = (
+                <>
+                    <MetDescription sx={{ mb: '18px' }}>{total.toLocaleString()} respondents</MetDescription>
+                    <DonutChart data={data} total={total} />
+                    {renderFollowUps(followUps, type)}
+                </>
+            );
+            if (bare) {
+                return content;
+            }
             return (
                 <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
-                    <MetDescription sx={{ mb: '18px' }}>{total.toLocaleString()} respondents</MetDescription>
-                    <DonutChart data={data} total={total} />
-                    {renderFollowUps(followUps, type)}
+                    {content}
                 </MetPaper>
             );
         }
@@ -163,31 +181,53 @@ const QuestionChart = ({ question, commentsByKey, followUps, dashboardType }: Qu
         case COMPONENT_TYPE.CHECKBOX: {
             const { data, total } = flatToChartItems(toFlatItems(result));
             return (
-                <CheckboxChart question={label} respondentCount={total} data={data} questionType={questionType} />
+                <CheckboxChart
+                    question={label}
+                    respondentCount={total}
+                    data={data}
+                    questionType={questionType}
+                    bare={bare}
+                />
             );
         }
 
         case COMPONENT_TYPE.SURVEY: {
             const rows = toMatrixRows(result);
+            const content = (
+                <>
+                    <LikertChart data={rows} axisLabels={['Not Effective', 'Effective']} />
+                    {renderFollowUps(followUps, type)}
+                </>
+            );
+            if (bare) {
+                return content;
+            }
             return (
                 <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
-                    <LikertChart data={rows} axisLabels={['Not Effective', 'Effective']} />
-                    {renderFollowUps(followUps, type)}
+                    {content}
                 </MetPaper>
             );
         }
 
         case COMPONENT_TYPE.RANKING: {
             const rows = toMatrixRows(result);
+            const content = (
+                <>
+                    <MetDescription sx={{ mb: '18px' }}>1 = most important</MetDescription>
+                    <RankOrderChart data={rows.map((r) => ({ label: r.label, ranks: r.pcts }))} />
+                    {renderFollowUps(followUps, type)}
+                </>
+            );
+            if (bare) {
+                return content;
+            }
             return (
                 <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
-                    <MetDescription sx={{ mb: '18px' }}>1 = most important</MetDescription>
-                    <RankOrderChart data={rows.map((r) => ({ label: r.label, ranks: r.pcts }))} />
-                    {renderFollowUps(followUps, type)}
+                    {content}
                 </MetPaper>
             );
         }
@@ -195,7 +235,7 @@ const QuestionChart = ({ question, commentsByKey, followUps, dashboardType }: Qu
         case COMPONENT_TYPE.TEXTAREA:
         case COMPONENT_TYPE.TEXTFIELD: {
             const responses = commentsByKey.get(question.key) ?? toFlatItems(result).map((r) => r.value);
-            return <Comments question={label} responses={responses} questionType={questionType} />;
+            return <Comments question={label} responses={responses} questionType={questionType} bare={bare} />;
         }
 
         default:

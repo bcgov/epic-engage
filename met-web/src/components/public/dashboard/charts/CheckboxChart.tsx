@@ -14,19 +14,19 @@ interface CheckboxChartProps {
     respondentCount: number;
     data: CheckboxChartItem[];
     questionType?: string;
+    // Renders just the chart content, without the surrounding MetPaper card/title, for callers
+    // that render their own.
+    bare?: boolean;
 }
 
-export const CheckboxChart = ({ question, respondentCount, data, questionType }: CheckboxChartProps) => {
+export const CheckboxChart = ({ question, respondentCount, data, questionType, bare = false }: CheckboxChartProps) => {
     const sorted = [...data].sort((a, b) => b.pct - a.pct);
 
-    return (
-        <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
-            {questionType && <QuestionTypeLabel label={questionType} />}
-            <MetHeader4 sx={{ lineHeight: 1.4 }}>{question}</MetHeader4>
+    const content = (
+        <>
             <MetDescription sx={{ mb: '18px' }}>
                 Multiple selections allowed · {respondentCount.toLocaleString()} respondents
             </MetDescription>
-
             <Box
                 sx={{
                     fontSize: 13,
@@ -92,11 +92,15 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType }:
                         '&:hover': { background: '#F7F8FA', borderRadius: '4px' },
                     }}
                 >
-                    <Typography sx={{ flex: 1, fontSize: 13, color: Palette.text.primary }}>
-                        {item.label}
-                    </Typography>
+                    <Typography sx={{ flex: 1, fontSize: 13, color: Palette.text.primary }}>{item.label}</Typography>
                     <Typography
-                        sx={{ width: 64, fontSize: 13, fontWeight: 700, color: Palette.primary.main, textAlign: 'right' }}
+                        sx={{
+                            width: 64,
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: Palette.primary.main,
+                            textAlign: 'right',
+                        }}
                     >
                         {item.pct}%
                     </Typography>
@@ -105,6 +109,18 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType }:
                     </Typography>
                 </Box>
             ))}
+        </>
+    );
+
+    if (bare) {
+        return content;
+    }
+
+    return (
+        <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
+            {questionType && <QuestionTypeLabel label={questionType} />}
+            <MetHeader4 sx={{ lineHeight: 1.4 }}>{question}</MetHeader4>
+            {content}
         </MetPaper>
     );
 };

@@ -11,7 +11,7 @@ const HIDE_SURVEY_HELP_TEXT =
     "When you toggle ON this option and save your Survey, your Survey will be 'Hidden'. When the toggle is ON and as long as the survey is not attached to an engagement, the Survey will only be visible to Superusers. When you are ready to make it available and able to be cloned or attached to an engagement, change the toggle to OFF and click the Save button.";
 
 // Toggle styled per design spec: 36x20 track, 14px thumb, 3px offset, 16px travel.
-const SurveySwitch = styled(Switch)(() => ({
+export const SurveySwitch = styled(Switch)(() => ({
     width: 36,
     height: 20,
     padding: 0,

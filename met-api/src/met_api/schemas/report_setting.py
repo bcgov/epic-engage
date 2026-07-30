@@ -21,6 +21,7 @@ class ReportSettingSchema(Schema):
     question_type = fields.Str(data_key='question_type')
     question = fields.Str(data_key='question')
     display = fields.Bool(data_key='display')
+    description = fields.Str(data_key='description', allow_none=True)
     created_by = fields.Str(data_key='created_by')
     created_date = fields.Str(data_key='created_date')
     updated_by = fields.Str(data_key='updated_by')

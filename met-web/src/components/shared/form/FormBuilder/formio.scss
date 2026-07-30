@@ -96,8 +96,8 @@ h4 {
     border-color: #56595d !important;
 }
 .bg-default {
-    background-color: #38598a;
-    border: #003366;
+    background-color: #013366;
+    border: #013366;
     color: white !important;
 }
 .text-muted {
@@ -666,13 +666,16 @@ div[disabled] {
 }
 
 .formio .formcomponents .formcomponent {
-    background-color: $btn-primary-main;
-    border-color: $btn-primary-main;
-    color: $text-primary;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 13px;
+    background-color: #fcba19;
+    border-color: #fcba19;
+    color: #2d2d2d;
 
     &:hover {
-        background-color: $btn-primary-light;
-        border-color: $btn-primary-light;
+        background-color: #ffd875;
+        border-color: #ffd875;
     }
 }
 
@@ -684,7 +687,20 @@ div[disabled] {
     }
 }
 
+// The component list is a Bootstrap accordion even with a single group; hide the toggle header
+// and force the body open so it just reads as a plain always-visible list.
+.formio .formcomponents .form-builder-group-header {
+    display: none;
+}
+
+.formio .formcomponents .collapse {
+    display: block;
+}
+
 .formio .formcomponents {
+    // Without this, the palette stretches to match .formarea's height (Bootstrap's .row is a
+    // flexbox with align-items: stretch by default).
+    align-self: flex-start;
     position: sticky;
     top: 100px; // Account for header height (toolbar with 5em logo + environment banner)
     max-height: calc(100vh - 100px);
@@ -692,8 +708,85 @@ div[disabled] {
     scrollbar-width: none;
     -ms-overflow-style: none;
     z-index: 100;
+    background-color: #ffffff;
+    border: 1px solid #d8d8d8;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 
     &::-webkit-scrollbar {
         display: none;
     }
+}
+
+// Reserves space at the top of formarea for the Multi-page toggle, rendered by React as an
+// absolutely-positioned overlay (see building/index.tsx) so it sits beside formcomponents instead
+// of below the whole builder. Only applies at 576px, where the two columns sit side by side —
+// below that they stack and the toggle renders in normal flow, needing no reserved space.
+@media (min-width: 576px) {
+    .formio .formarea {
+        padding-top: 2rem;
+    }
+
+    // Formio's builder sizes formcomponents/formarea with Bootstrap's percentage-based columns,
+    // which grows the palette with viewport width. The wireframe wants a fixed-width palette
+    // instead, so this switches both to flex-basis.
+    .formio .formcomponents {
+        flex: 0 0 220px;
+        max-width: 220px;
+        width: 220px;
+    }
+
+    .formio .formarea {
+        flex: 1 1 auto;
+        max-width: none;
+        width: auto;
+    }
+}
+
+// ── Wizard page tabs (the <ol class="breadcrumb wizard-pages">) ──
+.formio .wizard-pages {
+    gap: 4px;
+    flex-wrap: wrap;
+    margin: 0 0 12px;
+}
+
+// Formio tells page pills apart with Bootstrap badge color classes: bg-info = inactive,
+// bg-primary = active, bg-success = the "Create Page" add-page pill.
+.formio .wizard-page-label {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 4px;
+
+    // Formio's Bootstrap .me-2 utility sets margin-right with !important, stacking on top of the
+    // .wizard-pages flex gap above and doubling the visual space between pills.
+    margin-right: 0 !important;
+
+    // Bootstrap's .bg-info/.bg-primary/.bg-success utilities also set background-color with
+    // !important, so these need it too to win.
+    &.bg-info {
+        background-color: #d8eafd !important;
+        color: #013366;
+    }
+
+    &.bg-primary {
+        background-color: #013366 !important;
+        color: #ffffff;
+    }
+
+    &.bg-success {
+        background-color: #2e8540 !important;
+        color: #ffffff;
+    }
+}
+
+// ── Page content — formarea's only other child besides .wizard-pages, targeted structurally
+// since it's an unclassed `ref="form"` div ──
+.formio .formarea > div {
+    background-color: #ffffff;
+    border: 1px solid #d8d8d8;
+    border-radius: 8px;
+    padding: 20px 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
