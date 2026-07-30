@@ -15,7 +15,7 @@ export const QuestionTypeLabel = ({ label }: QuestionTypeLabelProps) => (
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
             color: Palette.primary.main,
-            background: '#E3EEF9',
+            background: Palette.chart.surface.callout,
             borderRadius: '20px',
             px: 1.25,
             py: '3px',

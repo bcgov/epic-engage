@@ -23,6 +23,7 @@ import FormStepper from 'components/public/survey/submit/Stepper';
 import { SurveySwitch } from './AdditionalSettings';
 import { groupReportSettingsByPage } from './groupReportSettingsByPage';
 import { DescriptionEditor } from './DescriptionEditor';
+import { Palette } from 'styles/Theme';
 
 export interface ReportSettingsPanelProps {
     surveyId: string;
@@ -181,7 +182,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
 
         const renderVisibilityToggle = (setting: SurveyReportSetting) => (
             <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, pt: '2px' }}>
-                <Typography sx={{ fontSize: '12px', color: '#474543', whiteSpace: 'nowrap' }}>
+                <Typography sx={{ fontSize: '12px', color: Palette.text.secondary, whiteSpace: 'nowrap' }}>
                     Show in public report
                 </Typography>
                 <SurveySwitch
@@ -202,7 +203,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                     return <Skeleton variant="rounded" height={100} sx={{ mt: 1 }} />;
                 }
                 return (
-                    <MetDescription sx={{ mt: 1, color: '#474543', fontStyle: 'italic' }}>
+                    <MetDescription sx={{ mt: 1, color: Palette.text.secondary, fontStyle: 'italic' }}>
                         Results will appear here once the survey receives submissions.
                     </MetDescription>
                 );
@@ -226,7 +227,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
             const responses = commentsByKey.get(followUpSetting.question_key) ?? [];
 
             return (
-                <Box key={followUpSetting.id} sx={{ mt: 2, pt: 2, borderTop: '2px dashed #D8D8D8' }}>
+                <Box key={followUpSetting.id} sx={{ mt: 2, pt: 2, borderTop: `2px dashed ${Palette.border.default}` }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                             <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 1.5 }}>
@@ -235,7 +236,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                                         width: 10,
                                         height: 10,
                                         borderRadius: '50%',
-                                        backgroundColor: '#72B09D',
+                                        backgroundColor: Palette.chart.conditionalMarker,
                                         flexShrink: 0,
                                     }}
                                 />
@@ -245,13 +246,13 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                                         fontWeight: 700,
                                         letterSpacing: '0.05em',
                                         textTransform: 'uppercase',
-                                        color: '#474543',
+                                        color: Palette.text.secondary,
                                     }}
                                 >
                                     {link ? describeConditional(link, triggerType) : 'Conditional question'}
                                 </MetIconText>
                             </Stack>
-                            <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#2D2D2D' }}>
+                            <Typography sx={{ fontSize: '13px', fontWeight: 600, color: Palette.text.primary }}>
                                 {followUpSetting.question}
                             </Typography>
                             <DescriptionEditor
@@ -282,7 +283,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                                     <QuestionTypeLabel
                                         label={QUESTION_TYPE_LABELS[setting.question_type] ?? setting.question_type}
                                     />
-                                    <Typography sx={{ fontSize: '16px', fontWeight: 700, color: '#2D2D2D' }}>
+                                    <Typography sx={{ fontSize: '16px', fontWeight: 700, color: Palette.text.primary }}>
                                         {setting.question}
                                     </Typography>
                                     <DescriptionEditor
@@ -300,7 +301,14 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                 </Stack>
                 {pages.length > 1 && (
                     <Box sx={{ pt: 1 }}>
-                        <MetDescription sx={{ pt: 1.5, mb: 1.5, width: 'fit-content', borderTop: '1px solid #D8D8D8' }}>
+                        <MetDescription
+                            sx={{
+                                pt: 1.5,
+                                mb: 1.5,
+                                width: 'fit-content',
+                                borderTop: `1px solid ${Palette.border.default}`,
+                            }}
+                        >
                             Page {safePage + 1} of {pages.length}
                         </MetDescription>
                         <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }}>

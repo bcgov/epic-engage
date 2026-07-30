@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Box, Link } from '@mui/material';
 import { MetDescription } from 'components/shared/common';
+import { Palette } from 'styles/Theme';
 
 interface CommentItemProps {
     text: string;
@@ -25,9 +26,9 @@ export const CommentItem = ({ text }: CommentItemProps) => {
             sx={{
                 p: '14px 16px',
                 borderRadius: '0 6px 6px 0',
-                border: '1px solid #d8d8d8',
-                borderLeft: '3px solid #013366',
-                backgroundColor: '#F7F8FA',
+                border: `1px solid ${Palette.border.default}`,
+                borderLeft: `3px solid ${Palette.primary.main}`,
+                backgroundColor: Palette.background.offWhite,
             }}
         >
             <MetDescription
@@ -35,7 +36,7 @@ export const CommentItem = ({ text }: CommentItemProps) => {
                 sx={{
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-word',
-                    color: '#454743',
+                    color: Palette.text.secondary,
                     lineHeight: 1.6,
                     ...(expanded
                         ? {}

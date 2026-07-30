@@ -2,6 +2,7 @@ import { Box } from '@mui/material';
 import { MetHeader4, MetDescription } from 'components/shared/common';
 import { CommentSection as CommentSectionData } from './buildCommentSections';
 import { CommentItem } from './CommentItem';
+import { Palette } from 'styles/Theme';
 
 interface CommentSectionProps {
     section: CommentSectionData;
@@ -13,9 +14,9 @@ const CountPill = ({ count }: { count: number }) => (
         component="span"
         sx={{
             fontSize: '11px',
-            color: '#474543',
-            backgroundColor: '#F2F2F2',
-            border: '1px solid #d8d8d8',
+            color: Palette.text.secondary,
+            backgroundColor: Palette.background.gray,
+            border: `1px solid ${Palette.border.default}`,
             borderRadius: '20px',
             padding: '2px 10px',
             ml: 1,
@@ -32,14 +33,14 @@ export const CommentSection = ({ section, registerRef }: CommentSectionProps) =>
                 sx={{
                     position: 'sticky',
                     top: 0,
-                    backgroundColor: '#fff',
+                    backgroundColor: Palette.background.default,
                     zIndex: 2,
                     padding: '12px 0 8px',
-                    borderBottom: '2px solid #013366',
+                    borderBottom: `2px solid ${Palette.primary.main}`,
                     mb: '12px',
                 }}
             >
-                <MetHeader4 sx={{ display: 'inline', color: '#013366' }}>
+                <MetHeader4 sx={{ display: 'inline', color: Palette.primary.main }}>
                     {section.title}
                     <CountPill count={section.commentCount} />
                 </MetHeader4>
@@ -61,9 +62,9 @@ export const CommentSection = ({ section, registerRef }: CommentSectionProps) =>
                                       fontWeight: 700,
                                       letterSpacing: '.06em',
                                       textTransform: 'uppercase',
-                                      color: '#474543',
+                                      color: Palette.text.secondary,
                                       padding: '12px 0 6px',
-                                      borderBottom: '1px solid #d8d8d8',
+                                      borderBottom: `1px solid ${Palette.border.default}`,
                                       mb: '6px',
                                   }}
                               >

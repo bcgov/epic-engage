@@ -1,4 +1,5 @@
 import { Box, Stack, Tooltip, Typography } from '@mui/material';
+import { Palette } from 'styles/Theme';
 
 export interface LiveActivityDatum {
     label: string;
@@ -22,7 +23,7 @@ export const LiveActivityChart = ({ data }: LiveActivityChartProps) => {
                     fontWeight: 700,
                     letterSpacing: '0.06em',
                     textTransform: 'uppercase',
-                    color: '#898785',
+                    color: Palette.text.muted,
                     mb: 1,
                 }}
             >
@@ -35,11 +36,11 @@ export const LiveActivityChart = ({ data }: LiveActivityChartProps) => {
                             sx={{
                                 flex: 1,
                                 height: `${Math.max(2, Math.round((d.count / max) * BAR_HEIGHT))}px`,
-                                backgroundColor: '#D8EAFD',
+                                backgroundColor: Palette.background.skyBlue,
                                 borderRadius: '2px 2px 0 0',
                                 transition: 'background-color .15s',
                                 cursor: 'default',
-                                '&:hover': { backgroundColor: '#013366' },
+                                '&:hover': { backgroundColor: Palette.primary.main },
                             }}
                         />
                     </Tooltip>
@@ -52,7 +53,7 @@ export const LiveActivityChart = ({ data }: LiveActivityChartProps) => {
                         sx={{
                             flex: 1,
                             fontSize: 9,
-                            color: '#898785',
+                            color: Palette.text.muted,
                             textAlign: 'center',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',

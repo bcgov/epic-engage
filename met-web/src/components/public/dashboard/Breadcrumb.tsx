@@ -1,5 +1,6 @@
 import { Box, Link as MuiLink, Stack, Typography } from '@mui/material';
 import { Link } from 'react-router-dom';
+import { Palette } from 'styles/Theme';
 
 export interface BreadcrumbItem {
     label: string;
@@ -18,8 +19,8 @@ export const Breadcrumb = ({ items }: BreadcrumbProps) => {
             flexWrap="wrap"
             sx={{
                 px: { xs: 2, md: 4.5 },
-                borderBottom: '1px solid #D8D8D8',
-                backgroundColor: '#FFFFFF',
+                borderBottom: `1px solid ${Palette.border.default}`,
+                backgroundColor: Palette.background.default,
             }}
         >
             {items.map((item, index) => {
@@ -37,20 +38,20 @@ export const Breadcrumb = ({ items }: BreadcrumbProps) => {
                                     py: 1,
                                     px: 1,
                                     borderRadius: '4px',
-                                    color: '#255A90',
+                                    color: Palette.action.active,
                                     fontSize: '14px',
-                                    '&:hover': { backgroundColor: '#ECEAE8' },
+                                    '&:hover': { backgroundColor: Palette.button.tertiary.hoverBackgroundColor },
                                 }}
                             >
                                 {item.label}
                             </MuiLink>
                         ) : (
-                            <Typography sx={{ fontSize: '16px', color: '#2D2D2D', py: '6px' }}>
+                            <Typography sx={{ fontSize: '16px', color: Palette.text.primary, py: '6px' }}>
                                 {item.label}
                             </Typography>
                         )}
                         {!isLast && (
-                            <Box sx={{ px: 0.5, color: '#323130', fontSize: '16px' }} component="span">
+                            <Box sx={{ px: 0.5, color: Palette.border.dark, fontSize: '16px' }} component="span">
                                 /
                             </Box>
                         )}

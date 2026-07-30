@@ -3,8 +3,8 @@ import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
 
 // Colors indexed by rank position (0 = 1st place, 4 = 5th place)
-const RANK_COLORS = ['#1B5E8C', '#4A90C4', '#90C0DE', '#F5C97A', '#E07B39'];
-const RANK_TEXT_COLORS = ['#fff', '#fff', '#2D2D2D', '#2D2D2D', '#fff'];
+const RANK_COLORS = Palette.chart.rank;
+const RANK_TEXT_COLORS = Palette.chart.rankLabel;
 const RANK_LABELS = ['1st', '2nd', '3rd', '4th', '5th'];
 
 export interface RankOrderItem {
@@ -45,7 +45,7 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
         <Box>
             {/* Legend */}
             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.25, mb: 2 }}>
-                <Typography sx={{ fontSize: 12, color: '#474543', fontWeight: 600 }}>Ranked:</Typography>
+                <Typography sx={{ fontSize: 12, color: Palette.text.secondary, fontWeight: 600 }}>Ranked:</Typography>
                 {/* Reversed so legend reads 5th→1st left-to-right, matching the bar stack */}
                 {[...rankLabels].reverse().map((lbl, ri) => {
                     const origIndex = numRanks - 1 - ri;
@@ -60,7 +60,7 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                                     background: RANK_COLORS[origIndex],
                                 }}
                             />
-                            <Typography sx={{ fontSize: 12, color: '#474543' }}>{lbl}</Typography>
+                            <Typography sx={{ fontSize: 12, color: Palette.text.secondary }}>{lbl}</Typography>
                         </Box>
                     );
                 })}
@@ -83,8 +83,8 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                             gap: 1.75,
                             px: 0.5,
                             py: 1.25,
-                            borderBottom: i < scored.length - 1 ? '1px solid #F0EFEE' : 'none',
-                            '&:hover': { background: '#F7F8FA', borderRadius: '4px' },
+                            borderBottom: i < scored.length - 1 ? `1px solid ${Palette.chart.surface.rowDivider}` : 'none',
+                            '&:hover': { background: Palette.chart.surface.rowHover, borderRadius: '4px' },
                         }}
                     >
                         {/* Position medal */}
@@ -97,8 +97,8 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 flexShrink: 0,
-                                background: RANK_COLORS[i] ?? '#C8C3BE',
-                                color: RANK_TEXT_COLORS[i] ?? '#2D2D2D',
+                                background: RANK_COLORS[i] ?? Palette.chart.fallback.swatch,
+                                color: RANK_TEXT_COLORS[i] ?? Palette.chart.fallback.label,
                                 fontSize: 11,
                                 fontWeight: 700,
                             }}
@@ -137,8 +137,8 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                                                 overflow: 'hidden',
                                                 cursor: 'default',
                                                 transition: 'opacity 0.15s',
-                                                background: RANK_COLORS[rankIndex] ?? '#C8C3BE',
-                                                color: RANK_TEXT_COLORS[rankIndex] ?? '#2D2D2D',
+                                                background: RANK_COLORS[rankIndex] ?? Palette.chart.fallback.swatch,
+                                                color: RANK_TEXT_COLORS[rankIndex] ?? Palette.chart.fallback.label,
                                                 '&:hover': { opacity: 0.82 },
                                             }}
                                             onMouseMove={(e) =>
@@ -166,7 +166,7 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                             >
                                 {item.score.toFixed(2)}
                             </Typography>
-                            <Typography component="span" display="block" sx={{ fontSize: 11, color: '#474543' }}>
+                            <Typography component="span" display="block" sx={{ fontSize: 11, color: Palette.text.secondary }}>
                                 avg. rank score
                             </Typography>
                         </Box>
@@ -182,7 +182,7 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                         top: tooltip.y - 36,
                         left: tooltip.x + 14,
                         background: Palette.primary.main,
-                        color: '#fff',
+                        color: Palette.text.invert,
                         fontSize: 12,
                         px: 1.5,
                         py: 0.75,

@@ -4,6 +4,7 @@ import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { MetPaper, MetHeader4, MetIconText, PrimaryButton } from 'components/shared/common';
 import { QuestionTypeLabel } from './QuestionTypeLabel';
 import { CommentsDrawer } from './CommentsDrawer';
+import { Palette } from 'styles/Theme';
 
 interface CommentsProps {
     question: string;
@@ -24,19 +25,19 @@ export const Comments = ({ question, responses, questionType, bare = false }: Co
                 alignItems: 'center',
                 gap: 2,
                 p: 2,
-                backgroundColor: '#F7F8FA',
-                border: '1px solid #D8D8D8',
+                backgroundColor: Palette.chart.surface.rowHover,
+                border: `1px solid ${Palette.border.default}`,
                 borderRadius: '6px',
             }}
         >
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <Box sx={{ fontSize: '28px', fontWeight: 700, color: '#013366', lineHeight: 1 }}>
+                <Box sx={{ fontSize: '28px', fontWeight: 700, color: Palette.primary.main, lineHeight: 1 }}>
                     {responses.length}
                 </Box>
                 <MetIconText
                     sx={{
                         fontSize: '12px',
-                        color: '#474543',
+                        color: Palette.text.secondary,
                         textTransform: 'uppercase',
                         letterSpacing: '0.04em',
                     }}
@@ -55,10 +56,10 @@ export const Comments = ({ question, responses, questionType, bare = false }: Co
             {bare ? (
                 countBox
             ) : (
-                <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
+                <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4, mb: '12px' }}>{question}</MetHeader4>
-                    <MetIconText sx={{ fontSize: '12px', color: '#474543', mb: '18px' }}>
+                    <MetIconText sx={{ fontSize: '12px', color: Palette.text.secondary, mb: '18px' }}>
                         {responses.length} comments
                     </MetIconText>
                     {countBox}

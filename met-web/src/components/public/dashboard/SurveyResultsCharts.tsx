@@ -22,6 +22,7 @@ import { useSurveyResultPages } from './hooks/useSurveyResultPages';
 import { useSurveyComments } from './hooks/useSurveyComments';
 import { ConditionalLink } from './surveyPages';
 import { DashboardType } from 'constants/dashboardType';
+import { Palette } from 'styles/Theme';
 
 export const COMPONENT_TYPE = {
     RADIO: 'simpleradios',
@@ -114,10 +115,10 @@ export const describeConditional = (link: ConditionalLink, triggerType?: string)
 };
 
 const StaleFormatCard = ({ questionKey }: { questionKey: string }) => (
-    <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
+    <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <WarningAmberIcon fontSize="small" sx={{ color: '#B54708' }} />
-            <MetDescription sx={{ color: '#474543' }}>
+            <WarningAmberIcon fontSize="small" sx={{ color: Palette.icons.warning }} />
+            <MetDescription sx={{ color: Palette.text.secondary }}>
                 Survey data for &quot;{questionKey}&quot; has not been updated to a format compatible with this chart.
             </MetDescription>
         </Box>
@@ -170,7 +171,7 @@ export const QuestionChart = ({
                 return content;
             }
             return (
-                <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
+                <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     {content}
@@ -203,7 +204,7 @@ export const QuestionChart = ({
                 return content;
             }
             return (
-                <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
+                <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     {content}
@@ -224,7 +225,7 @@ export const QuestionChart = ({
                 return content;
             }
             return (
-                <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
+                <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     {content}
@@ -365,7 +366,7 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
                 <FormStepper currentPage={safePage} pages={pages} onStepClick={(index) => setCurrentPage(index)} />
             )}
             {pages && pages[safePage].title && (
-                <MetHeader3 sx={{ color: '#013366' }}>{pages[safePage].title}</MetHeader3>
+                <MetHeader3 sx={{ color: Palette.primary.main }}>{pages[safePage].title}</MetHeader3>
             )}
             {questionsToShow.length ? (
                 questionsToShow.map((question) =>
@@ -386,7 +387,7 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
             )}
             {pages && pages.length > 1 && (
                 <Box sx={{ pt: 1 }}>
-                    <MetDescription sx={{ pt: 1.5, mb: 1.5, width: 'fit-content', borderTop: '1px solid #D8D8D8' }}>
+                    <MetDescription sx={{ pt: 1.5, mb: 1.5, width: 'fit-content', borderTop: `1px solid ${Palette.border.default}` }}>
                         Page {safePage + 1} of {pages.length}
                     </MetDescription>
                     <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }}>
