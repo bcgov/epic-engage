@@ -1,6 +1,7 @@
 import React from 'react';
 import { Chip } from '@mui/material';
 import { SubmissionStatus } from 'constants/engagementStatus';
+import { Palette } from 'styles/Theme';
 const Chip_Font_Weight = { fontWeight: 'bold' };
 
 interface ChipParams {
@@ -33,7 +34,7 @@ const Upcoming = ({ active, clickable }: ChipParams) => {
             label="Upcoming"
             sx={[
                 { ...Chip_Font_Weight },
-                active && { backgroundColor: '#FFC107', color: 'black' },
+                active && { backgroundColor: Palette.dashboard.upcoming.border, color: Palette.text.primary },
                 clickable && { cursor: 'pointer' },
             ]}
         />
@@ -46,7 +47,7 @@ const Unpublished = ({ active, clickable }: ChipParams) => {
             label="Unpublished"
             sx={[
                 { ...Chip_Font_Weight },
-                active && { backgroundColor: '#212121', color: 'white' },
+                active && { backgroundColor: Palette.text.primary, color: Palette.text.invert },
                 clickable && { cursor: 'pointer' },
             ]}
         />

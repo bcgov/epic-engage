@@ -1,5 +1,7 @@
 @charset "UTF-8";
 
+@use '../../../../styles/tokens' as tokens;
+
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 @import 'font-awesome/css/font-awesome.css';
 
@@ -15,7 +17,7 @@ $btn-primary-dark: #ffab00;
 $text-primary: #494949;
 
 .formio {
-    font-family: 'BCSans', 'Noto Sans', Verdana, Arial, sans-serif;
+    font-family: tokens.$typography-font-families-bc-sans, 'Noto Sans', Verdana, Arial, sans-serif;
 }
 .container,
 .container-sm,
@@ -460,7 +462,7 @@ div[disabled] {
 }
 
 .formio-dialog.formio-dialog-theme-default .formio-dialog-content {
-    font-family: 'BCSans', 'Noto Sans', Verdana, Arial, sans-serif;
+    font-family: tokens.$typography-font-families-bc-sans, 'Noto Sans', Verdana, Arial, sans-serif;
     font-size: 1.1em;
     line-height: 1.5em;
 }
@@ -542,7 +544,7 @@ div[disabled] {
     font-weight: 700;
     font-size: 1.125rem;
     text-transform: none;
-    font-family: BCSans, 'Noto Sans', Verdana, Arial, sans-serif;
+    font-family: tokens.$typography-font-families-bc-sans, 'Noto Sans', Verdana, Arial, sans-serif;
     min-width: 64px;
     padding: 5px 15px;
     height: 40px;
@@ -575,7 +577,7 @@ div[disabled] {
     font-weight: 700;
     font-size: 1.125rem;
     text-transform: none;
-    font-family: BCSans, 'Noto Sans', Verdana, Arial, sans-serif;
+    font-family: tokens.$typography-font-families-bc-sans, 'Noto Sans', Verdana, Arial, sans-serif;
     min-width: 64px;
     padding: 6px 16px;
     border-radius: 4px;

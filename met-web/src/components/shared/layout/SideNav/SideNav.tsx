@@ -15,6 +15,10 @@ const DrawerBox = () => {
     const permissions = useAppSelector((state) => state.user.roles);
 
     const getCurrentBaseRoute = () => {
+        // User details are reached from the engagement User Management tab, so keep Engagements selected there.
+        if (location.pathname.includes('usermanagement')) {
+            return '/engagements';
+        }
         return Routes.map((route) => route.base)
             .filter((route) => location.pathname.includes(route))
             .reduce((prev, curr) => (prev.length > curr.length ? prev : curr));

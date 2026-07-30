@@ -1,70 +1,109 @@
 import { createTheme } from '@mui/material';
+import * as tokens from './designTokens';
 import { CommentStatus } from 'constants/commentStatus';
+import { MET_Header_Font_Family, MET_Font_Weight, MET_Header_Font_Weight } from './constants';
 
+/**
+ * Every colour in the app resolves from B.C. Design System tokens.
+ *
+ * `Palette` is imported directly by ~39 files, so it stays as the public surface — but its values
+ * and the MUI theme below now both read from the same tokens, so the two can no longer disagree.
+ * The `button`/`hover`/`dashboard`/`icons` groups have no equivalent slot in MUI's palette type,
+ * so they live here only.
+ */
 export const Palette = {
     primary: {
-        main: '#003366',
-        light: '#385989',
-        dark: '#000C3B',
+        main: tokens.surfaceColorPrimaryDefault,
+        light: tokens.surfaceColorPrimaryHover,
+        dark: tokens.surfaceColorPrimaryPressed,
     },
     secondary: {
-        main: '#FFC107',
-        dark: '#FFAB00',
-        light: '#FFE082',
+        main: tokens.supportBorderColorWarning,
+        dark: tokens.supportBorderColorWarning,
+        light: tokens.supportSurfaceColorWarning,
     },
     hover: {
-        light: '#4C81AF',
+        light: tokens.surfaceColorPrimaryHover,
     },
     text: {
-        primary: '#2D2D2D',
+        primary: tokens.typographyColorPrimary,
+        secondary: tokens.typographyColorSecondary,
+        disabled: tokens.typographyColorDisabled,
+        invert: tokens.typographyColorPrimaryInvert,
+        danger: tokens.typographyColorDanger,
     },
     action: {
-        active: '#1A5A96',
+        active: tokens.typographyColorLink,
     },
     info: {
-        main: '#707070',
+        main: tokens.typographyColorSecondary,
+    },
+    success: {
+        main: tokens.supportBorderColorSuccess,
+        light: tokens.supportSurfaceColorSuccess,
+    },
+    error: {
+        main: tokens.supportBorderColorDanger,
+        light: tokens.supportSurfaceColorDanger,
+    },
+    border: {
+        default: tokens.surfaceColorBorderDefault,
+        medium: tokens.surfaceColorBorderMedium,
+        dark: tokens.surfaceColorBorderDark,
+    },
+    background: {
+        default: tokens.surfaceColorBackgroundWhite,
+        light: tokens.surfaceColorBackgroundLightGray,
+        lightBlue: tokens.surfaceColorBackgroundLightBlue,
+        darkBlue: tokens.surfaceColorBackgroundDarkBlue,
     },
     internalHeader: {
-        backgroundColor: '#FFFFFF',
-        color: '#292929',
+        backgroundColor: tokens.surfaceColorBackgroundWhite,
+        color: tokens.typographyColorPrimary,
     },
     publicHeader: {
-        backgroundColor: '#FFFFFF',
-        color: '#292929',
+        backgroundColor: tokens.surfaceColorBackgroundWhite,
+        color: tokens.typographyColorPrimary,
     },
     button: {
         primary: {
-            backgroundColor: '#003366',
-            hoverBackgroundColor: '#1E5189',
-            color: '#FFFFFF',
+            backgroundColor: tokens.surfaceColorPrimaryButtonDefault,
+            hoverBackgroundColor: tokens.surfaceColorPrimaryButtonHover,
+            disabledBackgroundColor: tokens.surfaceColorPrimaryButtonDisabled,
+            color: tokens.typographyColorPrimaryInvert,
+            disabledColor: tokens.typographyColorDisabled,
         },
         secondary: {
-            backgroundColor: '#FFFFFF',
-            hoverBackgroundColor: '#EDEBE9',
-            color: '#000000',
+            backgroundColor: tokens.surfaceColorSecondaryButtonDefault,
+            hoverBackgroundColor: tokens.surfaceColorSecondaryButtonHover,
+            disabledBackgroundColor: tokens.surfaceColorSecondaryButtonDisabled,
+            color: tokens.typographyColorPrimary,
+            disabledColor: tokens.typographyColorDisabled,
         },
         tertiary: {
-            backgroundColor: '#FFFFFF',
-            hoverBackgroundColor: '#ECEAE8',
-            color: '#003366',
+            backgroundColor: tokens.surfaceColorTertiaryButtonDefault,
+            hoverBackgroundColor: tokens.surfaceColorTertiaryButtonHover,
+            disabledBackgroundColor: tokens.surfaceColorTertiaryButtonDisabled,
+            color: tokens.surfaceColorPrimaryDefault,
+            disabledColor: tokens.typographyColorDisabled,
         },
     },
     dashboard: {
         upcoming: {
-            bg: '#FCB92F26',
-            border: '#FCB92F',
+            bg: tokens.supportSurfaceColorWarning,
+            border: tokens.supportBorderColorWarning,
         },
         open: {
-            bg: '#C8DF8C4D',
-            border: '#839537',
+            bg: tokens.supportSurfaceColorSuccess,
+            border: tokens.supportBorderColorSuccess,
         },
         closed: {
-            bg: '#F15A2C1A',
-            border: '#F15A2C',
+            bg: tokens.supportSurfaceColorDanger,
+            border: tokens.supportBorderColorDanger,
         },
     },
     icons: {
-        surveyReady: '#77EB52',
+        surveyReady: tokens.iconsColorSuccess,
     },
 };
 
@@ -82,19 +121,52 @@ export const BaseTheme = createTheme({
         },
         text: {
             primary: Palette.text.primary,
+            secondary: Palette.text.secondary,
+            disabled: Palette.text.disabled,
         },
         action: {
             active: Palette.action.active,
+            disabled: tokens.typographyColorDisabled,
+            disabledBackground: tokens.surfaceColorPrimaryDisabled,
         },
         info: {
             main: Palette.info.main,
         },
+        // Previously undefined, so every validation and error state fell through to MUI's defaults.
+        error: {
+            main: tokens.supportBorderColorDanger,
+            light: tokens.supportSurfaceColorDanger,
+        },
+        warning: {
+            main: tokens.supportBorderColorWarning,
+            light: tokens.supportSurfaceColorWarning,
+        },
+        success: {
+            main: tokens.supportBorderColorSuccess,
+            light: tokens.supportSurfaceColorSuccess,
+        },
+        background: {
+            default: Palette.background.default,
+            paper: Palette.background.default,
+        },
+        divider: Palette.border.default,
+    },
+    shape: {
+        borderRadius: parseInt(tokens.layoutBorderRadiusMedium, 10),
     },
     components: {
         MuiButton: {
             styleOverrides: {
                 root: {
                     height: '40px',
+                    '&.Mui-disabled': {
+                        backgroundColor: tokens.surfaceColorPrimaryDisabled,
+                        color: tokens.typographyColorDisabled,
+                    },
+                    '&.Mui-focusVisible': {
+                        outline: `2px solid ${tokens.surfaceColorBorderActive}`,
+                        outlineOffset: '2px',
+                    },
                 },
             },
             defaultProps: {
@@ -106,6 +178,60 @@ export const BaseTheme = createTheme({
                 size: 'small',
             },
         },
+        MuiOutlinedInput: {
+            styleOverrides: {
+                root: {
+                    '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: tokens.surfaceColorBorderDefault,
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: tokens.surfaceColorBorderMedium,
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: tokens.surfaceColorBorderActive,
+                    },
+                    '&.Mui-error .MuiOutlinedInput-notchedOutline': {
+                        borderColor: tokens.supportBorderColorDanger,
+                    },
+                    '&.Mui-disabled': {
+                        backgroundColor: tokens.surfaceColorFormsDisabled,
+                    },
+                },
+                input: {
+                    '&::placeholder': {
+                        color: tokens.typographyColorPlaceholder,
+                        opacity: 1,
+                    },
+                },
+            },
+        },
+        MuiFormHelperText: {
+            styleOverrides: {
+                root: {
+                    '&.Mui-error': {
+                        color: tokens.typographyColorDanger,
+                    },
+                },
+            },
+        },
+        MuiCheckbox: {
+            styleOverrides: {
+                root: {
+                    color: tokens.surfaceColorBorderMedium,
+                    '&.Mui-checked': { color: tokens.surfaceColorPrimaryDefault },
+                    '&.Mui-disabled': { color: tokens.typographyColorDisabled },
+                },
+            },
+        },
+        MuiRadio: {
+            styleOverrides: {
+                root: {
+                    color: tokens.surfaceColorBorderMedium,
+                    '&.Mui-checked': { color: tokens.surfaceColorPrimaryDefault },
+                    '&.Mui-disabled': { color: tokens.typographyColorDisabled },
+                },
+            },
+        },
         MuiLink: {
             defaultProps: {
                 color: Palette.action.active,
@@ -115,69 +241,89 @@ export const BaseTheme = createTheme({
             defaultProps: {
                 focused: false,
             },
+            styleOverrides: {
+                root: {
+                    '&.Mui-error': { color: tokens.typographyColorDanger },
+                    '&.Mui-disabled': { color: tokens.typographyColorDisabled },
+                },
+            },
         },
         MuiStepLabel: {
             styleOverrides: {
                 label: {
-                    color: '#494949 !important',
+                    color: `${tokens.typographyColorPrimary} !important`,
                     opacity: '100% !important',
                 },
                 labelContainer: {
-                    color: '#494949 !important',
+                    color: `${tokens.typographyColorPrimary} !important`,
                     opacity: '100% !important',
                 },
             },
         },
     },
     typography: {
-        fontFamily: "'BCSans', 'Noto Sans', Verdana, Arial, sans-serif",
+        fontFamily: MET_Header_Font_Family,
         fontSize: 16,
+        // Sizes and line heights come from the BC DS typography tokens; headings are bold, body regular.
         h1: {
-            fontWeight: 500,
+            fontWeight: MET_Header_Font_Weight,
+            fontSize: tokens.typographyFontSizeH1,
+            lineHeight: tokens.typographyLineHeightH1,
         },
         h2: {
-            fontWeight: 500,
+            fontWeight: MET_Header_Font_Weight,
+            fontSize: tokens.typographyFontSizeH2,
+            lineHeight: tokens.typographyLineHeightH2,
         },
         h3: {
-            fontWeight: 500,
+            fontWeight: MET_Header_Font_Weight,
+            fontSize: tokens.typographyFontSizeH3,
+            lineHeight: tokens.typographyLineHeightH3,
         },
         h4: {
-            fontWeight: 500,
+            fontWeight: MET_Header_Font_Weight,
+            fontSize: tokens.typographyFontSizeH4,
+            lineHeight: tokens.typographyLineHeightH4,
         },
         h5: {
-            fontWeight: 500,
+            fontWeight: MET_Header_Font_Weight,
+            fontSize: tokens.typographyFontSizeH5,
+            lineHeight: tokens.typographyLineHeightH5,
         },
         h6: {
-            fontWeight: 500,
+            fontWeight: MET_Header_Font_Weight,
+            fontSize: tokens.typographyFontSizeLargeBody,
+            lineHeight: tokens.typographyLineHeightLargeBody,
+        },
+        subtitle1: {
+            fontWeight: MET_Font_Weight,
+            fontSize: tokens.typographyFontSizeLargeBody,
+            lineHeight: tokens.typographyLineHeightLargeBody,
         },
         subtitle2: {
-            fontWeight: 500,
-            fontSize: '1.15rem',
+            fontWeight: MET_Font_Weight,
+            fontSize: tokens.typographyFontSizeLargeBody,
+            lineHeight: tokens.typographyLineHeightLargeBody,
         },
         body1: {
-            fontWeight: 500,
-            fontSize: '16px',
+            fontWeight: MET_Font_Weight,
+            fontSize: tokens.typographyFontSizeBody,
+            lineHeight: tokens.typographyLineHeightBody,
+        },
+        body2: {
+            fontWeight: MET_Font_Weight,
+            fontSize: tokens.typographyFontSizeSmallBody,
+            lineHeight: tokens.typographyLineHeightSmallBody,
+        },
+        caption: {
+            fontWeight: MET_Font_Weight,
+            fontSize: tokens.typographyFontSizeLabel,
+            lineHeight: tokens.typographyLineHeightLabel,
         },
         button: {
-            fontWeight: 700,
-            fontSize: '1.125rem',
+            fontWeight: MET_Header_Font_Weight,
+            fontSize: tokens.typographyFontSizeLargeBody,
             textTransform: 'none',
-        },
-    },
-});
-
-export const PublicTheme = createTheme(BaseTheme, {
-    palette: {
-        primary: {
-            main: '#CFD8DC',
-            dark: '#455A64',
-            light: '#ECF2F5',
-        },
-        text: {
-            primary: Palette.text.primary,
-        },
-        action: {
-            active: Palette.action.active,
         },
     },
 });
@@ -188,23 +334,23 @@ export const ZIndex = {
 
 export const statusStyles: Record<number | string, { borderColor: string; background: string }> = {
     [CommentStatus.Pending]: {
-        borderColor: '#F8BB47',
-        background: '#FEF1D8',
+        borderColor: tokens.supportBorderColorWarning,
+        background: tokens.supportSurfaceColorWarning,
     },
     [CommentStatus.Approved]: {
-        borderColor: '#77eb52',
-        background: '#E8F5E9',
+        borderColor: tokens.supportBorderColorSuccess,
+        background: tokens.supportSurfaceColorSuccess,
     },
     [CommentStatus.Rejected]: {
-        borderColor: '#CE3E39',
-        background: '#F4E1E2',
+        borderColor: tokens.supportBorderColorDanger,
+        background: tokens.supportSurfaceColorDanger,
     },
     [CommentStatus.NeedsFurtherReview]: {
-        borderColor: '#FCB02F',
-        background: '#FCE0B9',
+        borderColor: tokens.supportBorderColorInfo,
+        background: tokens.supportSurfaceColorInfo,
     },
     resubmitted: {
-        borderColor: '#9B6BDA',
-        background: '#F6E4FF',
+        borderColor: tokens.surfaceColorBorderMedium,
+        background: tokens.surfaceColorBackgroundLightGray,
     },
 };

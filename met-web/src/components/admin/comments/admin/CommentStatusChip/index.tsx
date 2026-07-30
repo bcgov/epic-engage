@@ -1,28 +1,22 @@
 import React from 'react';
 import { Chip } from '@mui/material';
-import { CommentStatus } from 'constants/commentStatus';
+import { CommentStatus, COMMENTS_STATUS } from 'constants/commentStatus';
+import { statusStyles } from 'styles/Theme';
 
-const Approved = () => {
-    return <Chip label="Approved" color="success" sx={{ fontWeight: 500 }} />;
-};
-
-const Rejected = () => {
-    return <Chip label="Rejected" color="error" sx={{ fontWeight: 500 }} />;
-};
-
-const Pending = () => {
-    return <Chip label="Pending" sx={{ fontWeight: 500, backgroundColor: '#FFC107', color: 'black' }} />;
-};
-
+// Colours come from the shared status map so chips, table cells and listing icons stay in step.
 export const CommentStatusChip = ({ commentStatus }: { commentStatus: CommentStatus }) => {
-    switch (commentStatus) {
-        case CommentStatus.Pending:
-            return <Pending />;
-        case CommentStatus.Approved:
-            return <Approved />;
-        case CommentStatus.Rejected:
-            return <Rejected />;
-        default:
-            return null;
+    const style = statusStyles[commentStatus];
+    if (!style) {
+        return null;
     }
+    return (
+        <Chip
+            label={COMMENTS_STATUS[commentStatus]}
+            sx={{
+                fontWeight: 500,
+                backgroundColor: style.background,
+                border: `1px solid ${style.borderColor}`,
+            }}
+        />
+    );
 };

@@ -4,6 +4,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { SubmissionVersion, VersionStaffNote, VersionComment } from 'models/submissionVersion';
 import { CommentStatus, COMMENTS_STATUS } from 'constants/commentStatus';
 import { formatDate } from 'utils/helpers/dateHelper';
+import { Palette } from 'styles/Theme';
 import {
     MetLabel,
     MetParagraph,
@@ -48,7 +49,9 @@ const VersionDetailView: FC<VersionDetailViewProps> = ({ version, onBack }) => {
                             color={isRejected ? 'error' : 'default'}
                             variant={isRejected ? 'filled' : 'outlined'}
                         />
-                        <MetParagraph sx={{ color: '#707070', fontStyle: 'italic' }}>(View Only)</MetParagraph>
+                        <MetParagraph sx={{ color: Palette.text.secondary, fontStyle: 'italic' }}>
+                            (View Only)
+                        </MetParagraph>
                     </Stack>
                 </Grid>
 
@@ -158,9 +161,9 @@ const VersionDetailView: FC<VersionDetailViewProps> = ({ version, onBack }) => {
                                 <Box
                                     sx={{
                                         p: 2,
-                                        backgroundColor: '#f5f5f5',
+                                        backgroundColor: Palette.background.light,
                                         borderRadius: 1,
-                                        border: '1px solid #e0e0e0',
+                                        border: `1px solid ${Palette.border.default}`,
                                     }}
                                 >
                                     <MetParagraph>{note.note || '(empty)'}</MetParagraph>
@@ -180,9 +183,9 @@ const VersionDetailView: FC<VersionDetailViewProps> = ({ version, onBack }) => {
                                 <Box
                                     sx={{
                                         p: 2,
-                                        backgroundColor: '#f5f5f5',
+                                        backgroundColor: Palette.background.light,
                                         borderRadius: 1,
-                                        border: '1px solid #e0e0e0',
+                                        border: `1px solid ${Palette.border.default}`,
                                     }}
                                 >
                                     <MetParagraph>{note.note || '(empty)'}</MetParagraph>

@@ -7,6 +7,7 @@ import CommentTable from './CommentTable';
 import { useAppSelector, useAppDispatch } from 'hooks';
 import { SubmissionStatus } from 'constants/engagementStatus';
 import { openNotificationModal } from 'services/notificationModalService/notificationModalSlice';
+import { Palette } from 'styles/Theme';
 
 interface CommentsBlockProps {
     dashboardType: string;
@@ -56,7 +57,10 @@ export const CommentsBlock: React.FC<CommentsBlockProps> = ({ dashboardType }) =
     return (
         <>
             <Grid item xs={12} container direction="row" justifyContent="flex-end">
-                <Link to={slug ? basePath : `/engagements/${engagement.id}/view`} style={{ color: '#1A5A96' }}>
+                <Link
+                    to={slug ? basePath : `/engagements/${engagement.id}/view`}
+                    style={{ color: Palette.action.active }}
+                >
                     {'<<Return to ' + engagement.name + ' Engagement'}
                 </Link>
             </Grid>

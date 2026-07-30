@@ -27,6 +27,10 @@ const StyledPrimaryButton = styled(LoadingButton)(() => ({
         color: Palette.button.primary.color,
         textDecoration: 'none',
     },
+    '&.Mui-disabled': {
+        backgroundColor: Palette.button.primary.disabledBackgroundColor,
+        color: Palette.button.primary.disabledColor,
+    },
 }));
 
 const StyledSecondaryButton = styled(LoadingButton)(() => ({
@@ -40,6 +44,12 @@ const StyledSecondaryButton = styled(LoadingButton)(() => ({
         backgroundColor: Palette.button.secondary.hoverBackgroundColor,
         color: Palette.button.secondary.color,
         border: `2px solid ${Palette.button.secondary.color}`,
+    },
+    // Keeps a disabled secondary button looking secondary rather than swapping it for a primary one.
+    '&.Mui-disabled': {
+        backgroundColor: Palette.button.secondary.disabledBackgroundColor,
+        color: Palette.button.secondary.disabledColor,
+        border: `2px solid ${Palette.border.default}`,
     },
 }));
 
@@ -55,25 +65,34 @@ const StyledTertiaryButton = styled(LoadingButton)(() => ({
         color: Palette.button.tertiary.color,
         border: 'none',
     },
+    '&.Mui-disabled': {
+        backgroundColor: Palette.button.tertiary.disabledBackgroundColor,
+        color: Palette.button.tertiary.disabledColor,
+        border: 'none',
+    },
 }));
 
 const StyledWidgetButton = styled(MuiButton)(() => ({
     backgroundColor: 'transparent',
-    color: '#494949',
+    color: Palette.text.primary,
     lineHeight: '1.1rem',
-    border: `2px solid ${'#707070'}`,
+    border: `2px solid ${Palette.border.medium}`,
     '&:hover': {
         opacity: '0.8',
         textDecoration: 'underline',
-        backgroundColor: '#f2f2f2',
-        color: '#494949',
-        border: `2px solid ${'#f2f2f2'}`,
+        backgroundColor: Palette.background.light,
+        color: Palette.text.primary,
+        border: `2px solid ${Palette.background.light}`,
+    },
+    '&.Mui-disabled': {
+        color: Palette.text.disabled,
+        border: `2px solid ${Palette.border.default}`,
     },
 }));
 
 const StyledSocialIconButton = styled(IconButton)(() => ({
-    border: '1px solid #494949',
-    color: '#494949',
+    border: `1px solid ${Palette.text.primary}`,
+    color: Palette.text.primary,
 }));
 
 const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
@@ -83,7 +102,7 @@ const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
     border: `2px solid ${Palette.primary.main}`,
     '&.Mui-selected': {
         backgroundColor: Palette.primary.main,
-        color: '#fff',
+        color: Palette.text.invert,
         '&:hover': {
             backgroundColor: Palette.primary.main,
         },
@@ -92,7 +111,7 @@ const StyledToggleButton = styled(ToggleButton)(({ theme }) => ({
         opacity: '0.8',
         textDecoration: 'underline',
         backgroundColor: Palette.primary.main,
-        color: '#FFFFFF',
+        color: Palette.text.invert,
         '&.Mui-selected:hover': {
             textDecoration: 'underline',
         },
@@ -117,18 +136,13 @@ export const SecondaryButton = ({
     ...rest
 }: {
     children: React.ReactNode;
+    disabled?: boolean;
     [prop: string]: unknown;
 }) => {
-    if (disabled) {
-        return (
-            <PrimaryButton {...rest} disabled>
-                {children}
-            </PrimaryButton>
-        );
-    }
     return (
         <StyledSecondaryButton
             {...rest}
+            disabled={disabled}
             variant="outlined"
             loadingIndicator={<CircularProgress color="primary" size={'1.8em'} />}
         >
@@ -143,18 +157,13 @@ export const TertiaryButton = ({
     ...rest
 }: {
     children: React.ReactNode;
+    disabled?: boolean;
     [prop: string]: unknown;
 }) => {
-    if (disabled) {
-        return (
-            <PrimaryButton {...rest} disabled>
-                {children}
-            </PrimaryButton>
-        );
-    }
     return (
         <StyledTertiaryButton
             {...rest}
+            disabled={disabled}
             variant="outlined"
             loadingIndicator={<CircularProgress color="primary" size={'1.8em'} />}
         >

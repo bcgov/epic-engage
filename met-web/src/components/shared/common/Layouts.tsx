@@ -4,13 +4,14 @@ import { styled } from '@mui/system';
 import EditIcon from '@mui/icons-material/Edit';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { Palette } from 'styles/Theme';
+import { surfaceShadowSmall, layoutBorderRadiusLarge } from 'styles/designTokens';
 import { When } from 'react-if';
 import { MetHeader3 } from './Headers';
 
 const StyledPaper = styled(MuiPaper)(() => ({
-    border: '1px solid #cdcdcd',
-    borderRadius: '5px',
-    boxShadow: 'rgb(0 0 0 / 6%) 0px 2px 2px -1px, rgb(0 0 0 / 6%) 0px 1px 1px 0px, rgb(0 0 0 / 6%) 0px 1px 3px 0px',
+    border: `1px solid ${Palette.border.default}`,
+    borderRadius: layoutBorderRadiusLarge,
+    boxShadow: surfaceShadowSmall,
 }));
 
 export const MetPaper = ({ children, ...rest }: { children: React.ReactNode; [prop: string]: unknown }) => {
@@ -22,7 +23,7 @@ export const MetPaper = ({ children, ...rest }: { children: React.ReactNode; [pr
 };
 
 export const MetWidgetPaper = styled(MuiPaper)(() => ({
-    backgroundColor: '#F2F2F2',
+    backgroundColor: Palette.background.light,
     padding: '1em',
 }));
 
@@ -127,8 +128,8 @@ export const MetDisclaimer = ({
         <Box
             sx={{
                 borderLeft: 8,
-                borderColor: '#003366',
-                backgroundColor: '#F2F2F2',
+                borderColor: Palette.primary.main,
+                backgroundColor: Palette.background.light,
             }}
         >
             <Typography

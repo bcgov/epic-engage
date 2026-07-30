@@ -1,4 +1,5 @@
 import React, { useEffect, useContext } from 'react';
+import { Palette } from 'styles/Theme';
 import { Grid, Stack, Typography } from '@mui/material';
 import Dropzone, { Accept } from 'react-dropzone';
 import { PrimaryButton, SecondaryButton } from 'components/shared/common';
@@ -47,7 +48,7 @@ const Uploader = ({
                     item
                     xs={12}
                     style={{
-                        border: '1px dashed #606060',
+                        border: `1px dashed ${Palette.border.medium}`,
                         height: height,
                         padding: '0',
                     }}
@@ -122,8 +123,8 @@ const Uploader = ({
                         alignItems="center"
                         justifyContent="center"
                         style={{
-                            border: '1px dashed #606060',
-                            background: '#F2F2F2 0% 0% no-repeat padding-box',
+                            border: `1px dashed ${Palette.border.medium}`,
+                            background: `${Palette.background.light} 0% 0% no-repeat padding-box`,
                             height: height,
                             cursor: 'pointer',
                         }}

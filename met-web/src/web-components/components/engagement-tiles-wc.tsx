@@ -4,9 +4,10 @@ import { CacheProvider } from '@emotion/react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import createCache from '@emotion/cache';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import TileBlock from 'components/public/landing/TileBlock';
 import { store } from '../../redux/store';
+import { BaseTheme } from 'styles/Theme';
 
 export default class EngagementTilesWC extends HTMLElement {
     connectedCallback() {
@@ -21,7 +22,7 @@ export default class EngagementTilesWC extends HTMLElement {
             prepend: true,
             container: emotionRoot,
         });
-        const shadowTheme = createTheme({});
+        const shadowTheme = BaseTheme;
 
         ReactDOM.createRoot(shadowRootElement).render(
             <React.StrictMode>

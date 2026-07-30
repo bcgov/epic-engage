@@ -27,6 +27,7 @@ import { BuilderTabs, tabIds } from './BuilderTabs';
 import { ReportSettingsPanel, ReportSettingsPanelHandle } from './ReportSettingsPanel';
 import { debounce } from 'lodash';
 import { format } from 'date-fns';
+import { Palette } from 'styles/Theme';
 
 const TAB_QUESTIONS = 'questions';
 const TAB_REPORT = 'report';
@@ -387,7 +388,7 @@ const SurveyFormBuilder = () => {
                         aria-labelledby={tabIds(TAB_QUESTIONS).tab}
                         sx={{ px: { xs: 2, md: 3 } }}
                     >
-                        <Stack spacing={1} sx={{ pt: 1, borderBottom: '1px solid #E0E0E0', pb: 2, mb: 2 }}>
+                        <Stack spacing={1} sx={{ pt: 1, borderBottom: `1px solid ${Palette.border.default}`, pb: 2, mb: 2 }}>
                             <Box sx={{ position: 'relative' }}>
                                 <Box
                                     sx={{

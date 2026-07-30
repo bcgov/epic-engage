@@ -27,7 +27,11 @@ export const ReportButtons = ({ survey }: { survey: Survey }) => {
                     whiteSpace: 'nowrap',
                     color: Palette.text.primary,
                     border: '1px solid',
-                    '&:hover': { border: '1px solid', backgroundColor: '#EBF1F8', color: Palette.text.primary },
+                    '&:hover': {
+                        border: '1px solid',
+                        backgroundColor: Palette.background.lightBlue,
+                        color: Palette.text.primary,
+                    },
                 }}
                 disabled={!canViewPublic}
                 onClick={() => navigate(`/engagements/${engagementId}/dashboard/public`)}
@@ -40,7 +44,11 @@ export const ReportButtons = ({ survey }: { survey: Survey }) => {
                     whiteSpace: 'nowrap',
                     color: Palette.text.primary,
                     border: '1px solid',
-                    '&:hover': { border: '1px solid', backgroundColor: '#EBF1F8', color: Palette.text.primary },
+                    '&:hover': {
+                        border: '1px solid',
+                        backgroundColor: Palette.background.lightBlue,
+                        color: Palette.text.primary,
+                    },
                 }}
                 disabled={!canViewInternal}
                 onClick={() => navigate(`/engagements/${engagementId}/dashboard/internal`)}

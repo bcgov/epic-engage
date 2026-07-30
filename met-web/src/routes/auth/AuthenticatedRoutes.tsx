@@ -16,7 +16,6 @@ import PublicDashboard from 'components/public/dashboard';
 import EngagementComments from 'components/public/engagement/comments';
 import { UnderConstruction } from 'routes';
 import FeedbackListing from 'components/admin/feedback/FeedbackListing';
-import UserManagementListing from 'components/admin/userManagement/listing';
 import AdminDashboard from 'components/admin/dashboard';
 import { Unauthorized } from 'routes';
 import AuthGate from './AuthGate';
@@ -66,10 +65,7 @@ const AuthenticatedRoutes = () => {
                 </Route>
                 <Route path="/calendar" element={<UnderConstruction />} />
                 <Route path="/reporting" element={<UnderConstruction />} />
-                <Route element={<AuthGate allowedRoles={[USER_ROLES.VIEW_USERS]} />}>
-                    <Route path="/usermanagement" element={<UserManagementListing />} />
-                </Route>
-                <Route element={<AuthGate allowedRoles={[USER_ROLES.VIEW_USERS]} />}>
+                <Route element={<AuthGate allowedRoles={[USER_ROLES.EDIT_ENGAGEMENT]} />}>
                     <Route path="/usermanagement/:userId/details" element={<UserProfile />} />
                 </Route>
                 <Route element={<AuthGate allowedRoles={[USER_ROLES.CREATE_IMAGES]} />}>

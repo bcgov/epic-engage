@@ -5,7 +5,6 @@ import { MetLabel, MetParagraph, MetPageGridContainer, PrimaryButton } from 'com
 import { UserDetailsContext } from './UserDetailsContext';
 import { formatDate } from 'utils/helpers/dateHelper';
 import AssignedEngagementsListing from './AssignedEngagementsListing';
-import UserStatusButton from './UserStatusButton';
 import UserDetailsSkeleton from './UserDetailsSkeleton';
 import { USER_GROUP, USER_STATUS } from 'models/user';
 
@@ -78,10 +77,6 @@ export const UserDetails = () => {
                                 }
                             />
                         </Grid>
-                    </Grid>
-
-                    <Grid item xs="auto">
-                        <UserStatusButton />
                     </Grid>
                 </Stack>
             </Grid>

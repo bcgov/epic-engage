@@ -407,7 +407,7 @@ const EngagementListing = () => {
                                 border: '1px solid',
                                 '&:hover': {
                                     border: '1px solid',
-                                    backgroundColor: '#EBF1F8',
+                                    backgroundColor: Palette.background.lightBlue,
                                     color: Palette.text.primary,
                                 },
                             }}
@@ -424,7 +424,7 @@ const EngagementListing = () => {
                                 border: '1px solid',
                                 '&:hover': {
                                     border: '1px solid',
-                                    backgroundColor: '#EBF1F8',
+                                    backgroundColor: Palette.background.lightBlue,
                                     color: Palette.text.primary,
                                 },
                             }}

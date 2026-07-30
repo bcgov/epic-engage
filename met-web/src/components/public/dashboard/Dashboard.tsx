@@ -9,6 +9,8 @@ import { DashboardHeaderCard } from './DashboardHeaderCard';
 import { DashboardTabBar, RESULTS_TAB, COMMENTS_TAB } from './DashboardTabBar';
 import { DashboardContext } from './DashboardContext';
 import { DashboardType } from 'constants/dashboardType';
+import { analyticsService } from 'services/penguinAnalytics';
+import { Palette } from 'styles/Theme';
 
 const Dashboard = () => {
     const { slug } = useParams();

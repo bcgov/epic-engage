@@ -11,6 +11,7 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import Paper from '@mui/material/Paper';
 import { visuallyHidden } from '@mui/utils';
 import { HeadCell, PageInfo, PaginationOptions } from 'components/shared/common/Table/types';
+import { Palette } from 'styles/Theme';
 import { LinearProgress } from '@mui/material';
 import { Unless, When } from 'react-if';
 
@@ -40,7 +41,7 @@ function MetTableHead<T>({ order, orderBy, onRequestSort, headCells, loading, ne
                         align={headCell.align}
                         style={headCell.customStyle || {}}
                         sortDirection={orderBy === headCell.key ? order : false}
-                        sx={{ borderBottom: '1.5px solid gray', fontWeight: 'bold' }}
+                        sx={{ borderBottom: `1.5px solid ${Palette.border.medium}`, fontWeight: 'bold' }}
                     >
                         <TableSortLabel
                             disabled={!headCell.allowSort || loading}
@@ -102,7 +103,7 @@ function MetTable<T>({
     noPagination = false,
     commentTable = false,
     // eslint-disable-next-line
-    handleChangePagination = (_pagination: PaginationOptions<T>) => { },
+    handleChangePagination = (_pagination: PaginationOptions<T>) => {},
     loading = false,
     paginationOptions = {
         page: 1,

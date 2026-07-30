@@ -149,7 +149,7 @@ const EditContactModal = ({ isOpen, setIsOpen, onSaveCallback }: IEditContactMod
             >
                 <Grid item xs={12}>
                     <FormLabel id="controlled-radio-buttons-group">
-                        <MetHeader1 sx={{ color: '#494949' }}>Edit Contact</MetHeader1>
+                        <MetHeader1>Edit Contact</MetHeader1>
                     </FormLabel>
                 </Grid>
                 <Grid item xs={12}>
@@ -159,7 +159,7 @@ const EditContactModal = ({ isOpen, setIsOpen, onSaveCallback }: IEditContactMod
                                 key={'EXISTING'}
                                 value={'EXISTING'}
                                 control={<Radio />}
-                                label={<MetLabel sx={{ color: '#494949' }}>Select Existing Contact</MetLabel>}
+                                label={<MetLabel>Select Existing Contact</MetLabel>}
                                 sx={{ mb: 0 }}
                             />
                             <If condition={selectedOption === 'EXISTING'}>
@@ -196,7 +196,7 @@ const EditContactModal = ({ isOpen, setIsOpen, onSaveCallback }: IEditContactMod
                                 key={'NEW'}
                                 value={'NEW'}
                                 control={<Radio />}
-                                label={<MetLabel sx={{ color: '#494949' }}>Create New Contact</MetLabel>}
+                                label={<MetLabel>Create New Contact</MetLabel>}
                                 sx={{ mb: 0 }}
                             />
                             <If condition={selectedOption === 'NEW'}>

@@ -2,6 +2,7 @@ import React from 'react';
 import { Grid, Modal } from '@mui/material';
 import { InvalidTokenModalProps } from 'components/admin/survey/types';
 import { modalStyle, PrimaryButton, MetHeader1, MetBody } from 'components/shared/common';
+import { Palette } from 'styles/Theme';
 
 export const InvalidTokenModal = ({ open, handleClose }: InvalidTokenModalProps) => {
     return (
@@ -30,7 +31,14 @@ export const InvalidTokenModal = ({ open, handleClose }: InvalidTokenModalProps)
                     </MetBody>
                 </Grid>
                 <Grid item xs={12}>
-                    <MetBody sx={{ p: '1em', borderLeft: 8, borderColor: '#003366', backgroundColor: '#F2F2F2' }}>
+                    <MetBody
+                        sx={{
+                            p: '1em',
+                            borderLeft: 8,
+                            borderColor: Palette.primary.main,
+                            backgroundColor: Palette.background.light,
+                        }}
+                    >
                         The survey link is expired (24 hours). Or
                         <br />
                         This link has already been previously used. Or

@@ -1,0 +1,5 @@
+// SCSS half of the design tokens. Mirrors the values in `designTokens.ts` - change both together.
+// Only the tokens the stylesheets actually need live here; the TypeScript file is the fuller set.
+
+$typography-font-families-bc-sans: 'BC Sans';
+$typography-color-primary: #2d2d2d;
