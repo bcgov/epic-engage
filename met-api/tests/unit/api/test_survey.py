@@ -19,15 +19,18 @@ Test-Suite to ensure that the /Engagement endpoint is working as expected.
 import copy
 from datetime import datetime, timedelta
 from http import HTTPStatus
+from io import BytesIO
 import json
 
 from flask import current_app
+from openpyxl import load_workbook
 import pytest
 
 from met_api.constants.engagement_status import Status
 from met_api.models.engagement import Engagement as EngagementModel
 from met_api.models.membership import Membership as MembershipModel
 from met_api.models.tenant import Tenant as TenantModel
+from met_api.services.dashboard_export_service import DASHBOARD_SHEETS, TITLE_ROW
 from met_api.utils.constants import TENANT_ID_HEADER
 from met_api.utils.enums import ContentType, MembershipStatus
 from tests.utilities.factory_scenarios import (
@@ -502,5 +505,48 @@ def test_get_survey_dashboard_not_yet_started_engagement_hidden(client, session)
 def test_get_survey_dashboard_survey_not_found(client, session):  # pylint:disable=unused-argument
     """Assert that a nonexistent survey id returns 404."""
     rv = client.get(f'{surveys_url}999999999/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_get_survey_dashboard_sheet(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that the dashboard export returns a workbook with the four labelled sheets."""
+    survey, _ = factory_survey_and_eng_model()
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    workbook = load_workbook(BytesIO(rv.data))
+    assert workbook.sheetnames == [sheet.tab_name for sheet in DASHBOARD_SHEETS]
+    # Excel caps tab names at 31 characters, so each sheet's full title lives in its banner row.
+    for sheet in DASHBOARD_SHEETS:
+        assert workbook[sheet.tab_name][f'A{TITLE_ROW}'].value == sheet.title
+    assert [sheet.title for sheet in DASHBOARD_SHEETS] == [
+        'Quantitative - Non-aggregated',
+        'Quantitative - Aggregated',
+        'All Data (Quantitative and Qualitative)',
+        'Qualitative Responses',
+    ]
+
+
+def test_get_survey_dashboard_sheet_unauthorized(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that the dashboard export is not available without the export role."""
+    survey, _ = factory_survey_and_eng_model()
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.public_user_role)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_get_survey_dashboard_sheet_survey_not_found(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that exporting a nonexistent survey returns 404."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+
+    rv = client.get(f'{surveys_url}999999999/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
