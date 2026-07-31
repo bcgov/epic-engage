@@ -1,15 +1,21 @@
 import { useContext, useEffect, useState } from 'react';
-import { Box, Skeleton, Stack, Typography } from '@mui/material';
+import { Box, Menu, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import { PrimaryButton } from 'components/shared/common';
 import { Engagement } from 'models/engagement';
 import { UserResponseDetailByMonth } from 'models/analytics/userResponseDetail';
 import { getAggregatorData } from 'services/analytics/aggregatorService';
 import { getMapData } from 'services/analytics/mapService';
 import { getUserResponseDetailByMonth } from 'services/analytics/userResponseDetailService';
-import { useAppSelector } from 'hooks';
+import { getDashboardDataSheet } from 'services/surveyService';
+import { USER_ROLES } from 'services/userService/constants';
+import { openNotification } from 'services/notificationService/notificationSlice';
+import { useAppDispatch, useAppSelector } from 'hooks';
 import { DashboardType } from 'constants/dashboardType';
+import { downloadFile } from 'utils';
+import { formatToUTC } from 'utils/helpers/dateHelper';
 import { DashboardContext } from './DashboardContext';
 import { LiveActivityChart } from './LiveActivityChart';
 import { Palette } from 'styles/Theme';
@@ -41,13 +47,43 @@ const formatMonthLabel = (showdataby: string) => {
 
 export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: DashboardHeaderCardProps) => {
     const { dashboardType } = useContext(DashboardContext);
+    const dispatch = useAppDispatch();
     const isAuthenticated = useAppSelector((state) => state.user.authentication.authenticated);
-    const canExport = dashboardType === DashboardType.INTERNAL && isAuthenticated;
+    const roles = useAppSelector((state) => state.user.roles);
+    const canExport =
+        dashboardType === DashboardType.INTERNAL &&
+        isAuthenticated &&
+        roles.includes(USER_ROLES.EXPORT_INTERNAL_COMMENT_SHEET);
+    const surveyId = engagement.surveys?.[0]?.id;
     const [surveysCompleted, setSurveysCompleted] = useState<number | null>(null);
     const [isLocationLoading, setIsLocationLoading] = useState(true);
     const [projectLocation, setProjectLocation] = useState<string | null>(null);
     const [activity, setActivity] = useState<UserResponseDetailByMonth[]>([]);
     const [isActivityOpen, setIsActivityOpen] = useState(false);
+    const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null);
+    const [isExporting, setIsExporting] = useState(false);
+
+    const handleExportCsv = async () => {
+        if (!surveyId) {
+            return;
+        }
+        setExportAnchorEl(null);
+        try {
+            setIsExporting(true);
+            const response = await getDashboardDataSheet(Number(surveyId));
+            const timestamp = formatToUTC(Date(), 'YYYY-MM-DD');
+            downloadFile(response, `INTERNAL ONLY - ${engagement.name} - Dashboard Data - ${timestamp}.xlsx`);
+        } catch (error) {
+            dispatch(
+                openNotification({
+                    severity: 'error',
+                    text: 'Error occurred while exporting dashboard data. Please try again later.',
+                }),
+            );
+        } finally {
+            setIsExporting(false);
+        }
+    };
 
     useEffect(() => {
         if (!Number(engagement.id)) {
@@ -154,9 +190,52 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                         )}
                     </Box>
                     {canExport && (
-                        <PrimaryButton startIcon={<FileDownloadOutlinedIcon />} sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
-                            Export
-                        </PrimaryButton>
+                        <>
+                            <PrimaryButton
+                                startIcon={<FileDownloadOutlinedIcon />}
+                                endIcon={
+                                    <ExpandMoreIcon
+                                        sx={{
+                                            transition: 'transform .2s',
+                                            transform: exportAnchorEl ? 'rotate(180deg)' : 'none',
+                                        }}
+                                    />
+                                }
+                                onClick={(event) => setExportAnchorEl(event.currentTarget)}
+                                loading={isExporting}
+                                disabled={!surveyId}
+                                aria-haspopup="true"
+                                aria-controls={exportAnchorEl ? 'dashboard-export-menu' : undefined}
+                                aria-expanded={Boolean(exportAnchorEl)}
+                                sx={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                            >
+                                Export
+                            </PrimaryButton>
+                            <Menu
+                                id="dashboard-export-menu"
+                                anchorEl={exportAnchorEl}
+                                open={Boolean(exportAnchorEl)}
+                                onClose={() => setExportAnchorEl(null)}
+                                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                                slotProps={{ paper: { sx: { minWidth: 260 } } }}
+                            >
+                                <MenuItem
+                                    onClick={handleExportCsv}
+                                    sx={{ alignItems: 'center', gap: 1.25, py: 1.25, whiteSpace: 'normal' }}
+                                >
+                                    <TableChartOutlinedIcon sx={{ fontSize: 18, color: Palette.primary.main }} />
+                                    <Box>
+                                        <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
+                                            Excel Data Export
+                                        </Typography>
+                                        <Typography sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}>
+                                            Raw and aggregated survey data across 4 sheets
+                                        </Typography>
+                                    </Box>
+                                </MenuItem>
+                            </Menu>
+                        </>
                     )}
                 </Stack>
             </Box>

@@ -67,6 +67,19 @@ export const getSurveyForDashboard = async (surveyId: number): Promise<Dashboard
     return Promise.reject('Failed to fetch survey');
 };
 
+/**
+ * Fetch the internal dashboard's data export. The response is an .xlsx workbook rather than a
+ * literal .csv: the export spans four sheets with per-page and per-question-type colour coding,
+ * none of which a flat CSV file can carry.
+ */
+export const getDashboardDataSheet = async (surveyId: number) => {
+    const url = replaceUrl(Endpoints.Survey.GET_DASHBOARD_SHEET, 'survey_id', String(surveyId));
+    const headers = {
+        'Content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    };
+    return http.GetRequest<Blob>(url, {}, headers, 'arraybuffer');
+};
+
 interface CreateSurveyRequest {
     name: string;
     engagement_id?: string;
