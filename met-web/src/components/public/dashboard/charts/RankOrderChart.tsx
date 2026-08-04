@@ -15,8 +15,6 @@ export interface RankOrderItem {
 
 interface ScoredItem extends RankOrderItem {
     score: number;
-    // 0-based placement once items are ordered by weighted score, independent of the row's
-    // render position - rows render in survey option order, not score order.
     placement: number;
 }
 

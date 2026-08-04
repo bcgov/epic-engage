@@ -17,19 +17,12 @@ const PAD_L = 12;
 const PAD_R = 12;
 const CORNER_R = 3;
 
-// Every survey words its own scale ("Not effective..Very effective", "Least important..Most
-// important", "Not concerned..Very concerned"), so these are only a fallback for when the caller
-// has no labels to pass. The neutral point sits in the middle and straddles the centre axis.
 const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
 
-// Position of the neutral point within the scale. Every scale the design uses runs
-// negative -> neutral -> positive with neutral second, so this is where the bar pivots.
 const NEUTRAL_INDEX = 1;
 
 export interface LikertRow {
     label: string;
-    // One entry per scale point, ordered negative -> positive. The first point is drawn left of
-    // the centre axis and the rest stack to its right, so the scale length can vary per survey.
     pcts: number[];
     n: number;
 }
@@ -100,12 +93,8 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
         return () => observer.disconnect();
     }, []);
 
-    // Rows render in survey order, so no sort here.
     const scaleLength = data.reduce((longest, d) => Math.max(longest, d.pcts.length), 0);
     const labels = Array.from({ length: scaleLength }, (_, i) => scaleLabels[i] ?? `Scale point ${i + 1}`);
-    // Derived from the same labels the legend draws, so the two can never disagree about what the
-    // scale is called - naming the ends separately let a missing scale show one wording in the
-    // legend and a generic one on the axis.
     const [axisStart, axisEnd] = axisLabels ?? [labels[0] ?? 'Negative', labels[labels.length - 1] ?? 'Positive'];
 
     const totalW = width || 700;
@@ -114,24 +103,16 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
     const barColW = barRight - barLeft;
     const svgH = PAD_TOP + data.length * ROW_H + 8;
 
-    // The neutral point straddles the axis - half of it falls on the negative side and half on the
-    // positive - so a row reads as leaning negative or positive by which way it overhangs. Anything
-    // before neutral counts as negative, anything after as positive.
     const leftOfAxis = (pcts: number[]) => (pcts[NEUTRAL_INDEX] ?? 0) / 2
         + pcts.slice(0, NEUTRAL_INDEX).reduce((sum, pct) => sum + pct, 0);
     const rightOfAxis = (pcts: number[]) => (pcts[NEUTRAL_INDEX] ?? 0) / 2
         + pcts.slice(NEUTRAL_INDEX + 1).reduce((sum, pct) => sum + pct, 0);
 
-    // Sizing the column to the widest overhang on each side keeps every bar inside it and puts the
-    // axis where the data actually diverges, instead of assuming a 50/50 split that pushes most
-    // bars off the edge.
     const leftExtent = data.reduce((widest, d) => Math.max(widest, leftOfAxis(d.pcts)), 0);
     const rightExtent = data.reduce((widest, d) => Math.max(widest, rightOfAxis(d.pcts)), 0);
     const span = leftExtent + rightExtent || 100;
     const px = barColW / span;
     const cx = barLeft + leftExtent * px;
-    // The axis is off-centre whenever the two sides differ, so the header spanning both of them
-    // is centred on the column itself rather than on the axis.
     const headerX = barLeft + barColW / 2;
 
     return (
@@ -180,8 +161,6 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                             const y0 = PAD_TOP + i * ROW_H;
                             const barY = y0 + (ROW_H - BAR_H) / 2;
 
-                            // Segments stack left to right from the row's own negative overhang, so
-                            // the neutral point lands astride the centre axis.
                             const lastIndex = row.pcts.length - 1;
                             let cursor = cx - leftOfAxis(row.pcts) * px;
                             const segs: SegmentDef[] = row.pcts.map((pct, ci) => {

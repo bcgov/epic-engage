@@ -20,11 +20,7 @@ export interface TypedSurveyData {
     position: number;
     key: string;
     type: string;
-    // Distinct people who answered this question, counted by the backend. Optional because the
-    // comments dataset comes from met-api rather than analytics-api and carries no such count.
     respondent_count?: number;
-    // The wordings of a likert question's scale, in order, as the survey author wrote them
-    // ("Not effective".."Very effective"). Only present on likert matrix questions.
     scale_labels?: string[];
     result: FlatResultItem[] | MatrixResultRow[];
 }

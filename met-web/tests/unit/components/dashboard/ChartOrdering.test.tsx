@@ -7,8 +7,7 @@ import { LikertChart } from 'components/public/dashboard/charts/LikertChart';
 import { RankOrderChart } from 'components/public/dashboard/charts/RankOrderChart';
 import { flatToChartItems } from 'components/public/dashboard/SurveyResultsCharts';
 
-// Survey option order, deliberately not in descending-percentage order so a magnitude sort
-// would be visible in the rendered output.
+// Deliberately not in descending-percentage order, so a magnitude sort would show up.
 const ageRanges = [
     { label: '14-18', pct: 10, count: 10 },
     { label: '19-34', pct: 50, count: 50 },
@@ -19,8 +18,7 @@ const ageRanges = [
 const labelsInOrder = (container: HTMLElement, selector: string) =>
     Array.from(container.querySelectorAll(selector)).map((el) => el.textContent);
 
-// LikertChart measures its wrapper before drawing the SVG, and jsdom reports every element as
-// zero-width, so the chart body would never render without a stubbed width.
+// LikertChart measures its wrapper before drawing, and jsdom reports everything as zero-width.
 const CHART_WIDTH = 700;
 let clientWidthSpy: jest.SpyInstance;
 
@@ -141,8 +139,7 @@ describe('LikertChart', () => {
     });
 
     it('keeps the axis and the legend describing the same scale when none was supplied', () => {
-        // Deriving the axis outside the chart used to pair a "Negative/Positive" axis with the
-        // chart's own "Not effective..Very effective" legend defaults.
+        // Deriving the axis outside the chart used to pair it with mismatched legend defaults.
         const { container } = render(<LikertChart data={rows} />);
 
         expect(screen.getByText('Not effective')).toBeInTheDocument();
@@ -163,8 +160,7 @@ describe('LikertChart', () => {
     });
 
     it('keeps every bar inside the bar column and centres the scale header over it', () => {
-        // Lopsided rows: the widest negative segment and the widest positive run come from
-        // different rows, which is what used to push bars past the right edge.
+        // Widest negative and widest positive come from different rows - what used to clip.
         const lopsided = [
             { label: 'Cost', pcts: [50, 30, 10, 5, 5], n: 100 },
             { label: 'Speed', pcts: [5, 5, 20, 30, 40], n: 100 },

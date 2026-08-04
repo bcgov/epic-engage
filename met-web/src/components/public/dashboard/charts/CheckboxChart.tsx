@@ -11,8 +11,6 @@ export interface CheckboxChartItem {
 
 interface CheckboxChartProps {
     question: string;
-    // Omitted when the backend has no participant-backed count to report; the summary line then
-    // drops the number rather than showing one that undercounts.
     respondentCount?: number;
     data: CheckboxChartItem[];
     questionType?: string;

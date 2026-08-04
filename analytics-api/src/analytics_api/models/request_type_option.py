@@ -43,13 +43,7 @@ def _fetch_count_map(analytics_survey_id):
 
 
 def _fetch_respondent_count_by_key(analytics_survey_id):
-    """Count the distinct people who answered each question.
-
-    This is not the same as summing a question's response counts: a checkbox question records one
-    row per ticked option, so a single person can contribute several. Note that responses whose
-    participant could not be resolved during ETL carry a null participant_id and are not counted,
-    so this undercounts anonymous submissions.
-    """
+    """Count the distinct people who answered each question."""
     rows = (db.session.query(ResponseTypeOptionModel.request_key,
                              func.count(distinct(ResponseTypeOptionModel.participant_id)).label('respondents'))
             .filter(and_(ResponseTypeOptionModel.survey_id.in_(analytics_survey_id),  # pylint: disable=no-member
@@ -60,11 +54,7 @@ def _fetch_respondent_count_by_key(analytics_survey_id):
 
 
 def _fetch_respondent_count_for_keys(analytics_survey_id, request_keys):
-    """Count the distinct people who answered at least one of the given sub-questions.
-
-    A matrix question's rows are counted together rather than summed, so someone who answered
-    several rows - or skipped some - still counts once.
-    """
+    """Count the distinct people who answered at least one of the given sub-questions."""
     if not request_keys:
         return 0
     count = (db.session.query(func.count(distinct(ResponseTypeOptionModel.participant_id)))
@@ -91,11 +81,6 @@ def _build_matrix_entry(parent, all_questions, avail_by_key, count_map, analytic
         if is_ranking:
             scale_values.sort(key=lambda v: int(v) if v.isdigit() else 0)
         elif not scale_labels:
-            # Every row of a likert shares the survey's one scale, so the first row that has it
-            # speaks for the question. These are the wordings the survey author chose
-            # ("Not effective".."Very effective"), which the dashboard legend and axis need - the
-            # pcts alone say nothing about what the scale means. Ranking is skipped because its
-            # values are rank positions (1, 2, 3), not a scale the reader needs spelled out.
             scale_labels = scale_values
         counts = [count_map.get((child.key, v), 0) for v in scale_values]
         total = sum(counts)

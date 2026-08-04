@@ -54,10 +54,6 @@ export function toMatrixRows(result: (FlatResultItem | MatrixResultRow)[]): Matr
     return result.filter(isMatrixRow);
 }
 
-// `pctBase` is what each option's percentage is measured against. Single-select questions leave it
-// unset so slices are a share of all responses and add up to 100%. Multi-select questions pass the
-// respondent count, because one person can tick several options and the column reports the share of
-// people who picked each one, not the share of ticks.
 export function flatToChartItems(items: FlatResultItem[], pctBase?: number) {
     const total = items.reduce((sum, r) => sum + r.count, 0);
     const base = pctBase && pctBase > 0 ? pctBase : total;
@@ -71,10 +67,7 @@ export function flatToChartItems(items: FlatResultItem[], pctBase?: number) {
     };
 }
 
-// The backend counts distinct participants per question, but responses whose participant couldn't
-// be resolved during ETL carry no participant id and go uncounted. Rather than print a number known
-// to be short - or fall back to summing response counts, which counts one person several times on a
-// multi-select - the count is left off entirely when the backend has nothing to report.
+
 const RespondentCount = ({ count, suffix }: { count?: number; suffix?: string }) => {
     if (!count) {
         return suffix ? <MetDescription sx={{ mb: '18px' }}>{suffix}</MetDescription> : null;
