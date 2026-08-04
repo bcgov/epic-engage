@@ -1,14 +1,11 @@
 import { Box } from '@mui/material';
-import { MetPaper, MetHeader4, MetDescription, MetIconText } from 'components/shared/common';
-import { QuestionTypeLabel } from './QuestionTypeLabel';
+import { MetDescription, MetIconText } from 'components/shared/common';
 
 const SCROLL_HEIGHT = 310;
 
 interface CommentsProps {
-    question: string;
     subText: string;
     responses: string[];
-    questionType?: string;
 }
 
 const renderResponses = (responses: string[]) =>
@@ -40,12 +37,9 @@ const renderResponses = (responses: string[]) =>
         </Box>
     ));
 
-export const Comments = ({ question, subText, responses, questionType }: CommentsProps) => {
+export const Comments = ({ subText, responses }: CommentsProps) => {
     return (
-        <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
-            {questionType && <QuestionTypeLabel label={questionType} />}
-            <MetHeader4 sx={{ lineHeight: 1.4 }}>{question}</MetHeader4>
-            <MetDescription sx={{mb: "18px" }}>Open text • {responses.length} respondents provided comments</MetDescription>
+        <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.2 }}>
                 <Box sx={{ width: 10, height: 10, backgroundColor: '#11467a', borderRadius: '2px' }} />
                 <MetDescription sx={{ color: '#11467a', fontWeight: 'bold' }}>{subText}</MetDescription>
@@ -74,7 +68,7 @@ export const Comments = ({ question, subText, responses, questionType }: Comment
                 <MetIconText sx={{ color: '#9F9D9C' }}>{responses.length} comments</MetIconText>
                 <MetIconText sx={{ color: '#9F9D9C' }}>Scroll to view all</MetIconText>
             </Box>
-        </MetPaper>
+        </Box>
     );
 };
 

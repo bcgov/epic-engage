@@ -23,6 +23,9 @@ from analytics_api.models.engagement import Engagement as EngagementModel
 from analytics_api.models.survey import Survey as SurveyModel
 from analytics_api.models.email_verification import EmailVerification as EmailVerificationModel
 from analytics_api.models.user_response_detail import UserResponseDetail as UserResponseDetailModel
+from analytics_api.models.available_response_option import AvailableResponseOption as AvailableResponseOptionModel
+from analytics_api.models.request_type_option import RequestTypeOption as RequestTypeOptionModel
+from analytics_api.models.response_type_option import ResponseTypeOption as ResponseTypeOptionModel
 from tests.utilities.factory_scenarios import (TestEngagementInfo, TestEmailVerificationInfo,
     TestUserResponseDetailInfo, TestSurveyInfo)
 
@@ -100,3 +103,58 @@ def factory_survey_model(surveyinfo: dict = TestSurveyInfo.survey1):
     db.session.add(survey)
     db.session.commit()
     return survey
+
+
+def factory_request_type_option_model(survey_id, key, question_type, label, position, request_id=None):
+    """Produce a survey question of an option type (radio, checkbox, likert matrix, ranking)."""
+    question = RequestTypeOptionModel(
+        survey_id=survey_id,
+        key=key,
+        type=question_type,
+        label=label,
+        position=position,
+        request_id=request_id or key,
+        display=True,
+        is_active=True,
+        runcycle_id=1,
+    )
+    db.session.add(question)
+    db.session.commit()
+    return question
+
+
+def factory_available_response_option_model(survey_id, request_key, values, request_id=None):
+    """Produce the options a question offered, in the order they appear on the survey."""
+    options = []
+    for value in values:
+        option = AvailableResponseOptionModel(
+            survey_id=survey_id,
+            request_key=request_key,
+            value=value,
+            request_id=request_id or request_key,
+            is_active=True,
+            runcycle_id=1,
+        )
+        db.session.add(option)
+        options.append(option)
+    db.session.commit()
+    return options
+
+
+def factory_response_type_option_model(survey_id, request_key, participant_id, values, request_id=None):
+    """Produce the answers one participant gave to a question."""
+    responses = []
+    for value in values:
+        response = ResponseTypeOptionModel(
+            survey_id=survey_id,
+            request_key=request_key,
+            participant_id=participant_id,
+            value=value,
+            request_id=request_id or request_key,
+            is_active=True,
+            runcycle_id=1,
+        )
+        db.session.add(response)
+        responses.append(response)
+    db.session.commit()
+    return responses

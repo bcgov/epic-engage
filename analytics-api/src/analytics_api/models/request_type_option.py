@@ -4,7 +4,7 @@ Manages the option type questions (radio/checkbox) on a survey
 """
 from collections import defaultdict
 
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_, distinct, func, or_
 from sqlalchemy.sql.expression import true
 
 from analytics_api.models.available_response_option import AvailableResponseOption as AvailableResponseOptionModel
@@ -42,7 +42,23 @@ def _fetch_count_map(analytics_survey_id):
     return {(r.request_key, r.value): r.count for r in rows}
 
 
-def _build_matrix_entry(parent, all_questions, avail_by_key, count_map):
+def _fetch_respondent_map(analytics_survey_id):
+    """Fetch the number of distinct respondents per request_key.
+
+    Needed for checkbox questions, where the number of selections is larger than the
+    number of respondents, so a percentage of respondents cannot be derived from the counts.
+    """
+    rows = (db.session.query(ResponseTypeOptionModel.request_key,
+                             func.count(distinct(ResponseTypeOptionModel.participant_id)).label('respondents'))
+            .filter(ResponseTypeOptionModel.survey_id.in_(analytics_survey_id),  # pylint: disable=no-member
+                    ResponseTypeOptionModel.is_active == true(),
+                    ResponseTypeOptionModel.participant_id.isnot(None))
+            .group_by(ResponseTypeOptionModel.request_key)
+            .all())
+    return {r.request_key: r.respondents for r in rows}
+
+
+def _build_matrix_entry(parent, all_questions, avail_by_key, count_map, respondent_map):
     """Build a grouped matrix result entry for a simplesurvey or simpleranking parent row."""
     is_ranking = parent.type == FormIoComponentType.RANKING.value
     children = sorted(
@@ -50,23 +66,31 @@ def _build_matrix_entry(parent, all_questions, avail_by_key, count_map):
         key=lambda c: c.position,
     )
     matrix_rows = []
+    scale = []
     for child in children:
         scale_values = list(avail_by_key.get(child.key, []))
         if not scale_values:
             continue
         if is_ranking:
             scale_values.sort(key=lambda v: int(v) if v.isdigit() else 0)
+        # Every row of a matrix shares the same scale; keep the first one seen for the
+        # chart legend and axis labels.
+        if not scale:
+            scale = scale_values
         counts = [count_map.get((child.key, v), 0) for v in scale_values]
         total = sum(counts)
         pcts = [round(c * 100 / total) if total > 0 else 0 for c in counts]
         matrix_rows.append({'label': child.label, 'pcts': pcts, 'n': total})
     if not matrix_rows:
         return None
+    # Rows of a matrix are answered by the same set of respondents, so the largest row
+    # is the respondent count for the question as a whole.
+    respondents = max((respondent_map.get(c.key, 0) for c in children), default=0)
     return {'position': parent.position, 'question': parent.label, 'key': parent.key,
-            'type': parent.type, 'result': matrix_rows}
+            'type': parent.type, 'scale': scale, 'respondents': respondents, 'result': matrix_rows}
 
 
-def _build_flat_entry(q, avail_by_key, count_map):
+def _build_flat_entry(q, avail_by_key, count_map, respondent_map):
     """Build a flat value/count result entry for a non-matrix or orphaned matrix question."""
     scale_values = avail_by_key.get(q.key)
     if scale_values:
@@ -75,7 +99,9 @@ def _build_flat_entry(q, avail_by_key, count_map):
         result = [{'value': val, 'count': cnt} for (key, val), cnt in count_map.items() if key == q.key]
     if not result:
         return None
-    return {'position': q.position, 'question': q.label, 'key': q.key, 'type': q.type, 'result': result}
+    respondents = respondent_map.get(q.key, 0)
+    return {'position': q.position, 'question': q.label, 'key': q.key, 'type': q.type,
+            'respondents': respondents, 'result': result}
 
 
 class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-public-methods
@@ -222,15 +248,16 @@ class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-pub
 
         avail_by_key = _fetch_available_by_key(analytics_survey_id)
         count_map = _fetch_count_map(analytics_survey_id)
+        respondent_map = _fetch_respondent_map(analytics_survey_id)
 
         results = []
         for q in all_questions:
             if q.request_id in child_rids and any(q.request_id.startswith(p + '-') for p in parent_rids):
                 continue  # rolled up into parent matrix entry
             if q.request_id in parent_rids:
-                entry = _build_matrix_entry(q, all_questions, avail_by_key, count_map)
+                entry = _build_matrix_entry(q, all_questions, avail_by_key, count_map, respondent_map)
             else:
-                entry = _build_flat_entry(q, avail_by_key, count_map)
+                entry = _build_flat_entry(q, avail_by_key, count_map, respondent_map)
             if entry:
                 results.append(entry)
 

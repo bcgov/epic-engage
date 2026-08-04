@@ -1,27 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
+import { buildScaleColors, dividePcts, findNeutralIndex, isDarkSegment } from './likertScale';
 
-// Scale colors: [negative, neutral, somewhat, positive, strongly positive]
-const COLORS = ['#C03F2C', '#C8C3BE', '#E8A94A', '#7EB8D4', '#1B5E8C'];
-// true = white label text on this segment color
-const WHITE_LABEL = [true, false, false, false, true];
-
-const LABEL_W = 220;
-const N_COL_W = 70;
-const BAR_GAP = 20;
-const BAR_H = 24;
-const ROW_H = 44;
-const PAD_TOP = 30;
+const LABEL_W = 200;
+const COUNT_W = 48;
 const PAD_L = 12;
-const PAD_R = 12;
+const PAD_R = 80;
+const GAP = 10;
+const BAR_H = 22;
+const PAD_TOP = 32;
+const BASE_ROW_H = 44;
+const LINE_H = 16;
+const WRAP_CHARS = 28;
 const CORNER_R = 3;
-
-const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
 
 export interface LikertRow {
     label: string;
-    pcts: number[]; // [negative, neutral, somewhat, positive, strongly_positive]
+    // One percentage per scale option, in survey order.
+    pcts: number[];
     n: number;
 }
 
@@ -42,7 +39,10 @@ interface SegmentDef {
 
 // SVG path helpers for segments with single-side rounded corners
 function pathRoundedLeft(x: number, y: number, w: number, h: number, r: number): string {
-    return `M${x + r},${y} h${w - r} v${h} h${-(w - r)} a${r},${r} 0 0 1 -${r},-${r} v${-(h - 2 * r)} a${r},${r} 0 0 1 ${r},-${r} z`;
+    return `M${x + r},${y} h${w - r} v${h} h${-(w - r)} a${r},${r} 0 0 1 -${r},-${r} v${-(
+        h -
+        2 * r
+    )} a${r},${r} 0 0 1 ${r},-${r} z`;
 }
 function pathRoundedRight(x: number, y: number, w: number, h: number, r: number): string {
     return `M${x},${y} h${w - r} a${r},${r} 0 0 1 ${r},${r} v${h - 2 * r} a${r},${r} 0 0 1 -${r},${r} h${-(w - r)} z`;
@@ -58,23 +58,32 @@ function segmentPath(s: SegmentDef): string {
     return pathRect(x, 0, w, BAR_H);
 }
 
-// Wrap label text at last word boundary before maxChars
-function wrapLabel(label: string, maxChars = 34): [string, string] {
-    if (label.length <= maxChars) return [label, ''];
-    const breakAt = label.lastIndexOf(' ', maxChars);
-    if (breakAt === -1) return [label.slice(0, maxChars), label.slice(maxChars)];
-    return [label.slice(0, breakAt), label.slice(breakAt + 1)];
+// Wrap label text onto as many lines as it needs, breaking on word boundaries.
+function wrapText(text: string, maxChars = WRAP_CHARS): string[] {
+    if (text.length <= maxChars) return [text];
+    const lines: string[] = [];
+    let current = '';
+    text.split(' ').forEach((word) => {
+        const candidate = current ? `${current} ${word}` : word;
+        if (candidate.length <= maxChars) {
+            current = candidate;
+        } else {
+            if (current) lines.push(current);
+            current = word;
+        }
+    });
+    if (current) lines.push(current);
+    return lines;
 }
 
 interface LikertChartProps {
     data: LikertRow[];
-    // Left and right axis header labels, e.g. ['Not effective', 'Very effective']
-    axisLabels: [string, string];
-    // Labels for each of the 5 scale points (used in tooltips and legend)
-    scaleLabels?: string[];
+    // The answer scale in survey order, e.g. ['Least important', ..., 'Most important'].
+    // Drives the legend, the axis headers and the segment colours.
+    scaleLabels: string[];
 }
 
-export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABELS }: LikertChartProps) => {
+export const LikertChart = ({ data, scaleLabels }: LikertChartProps) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
@@ -91,18 +100,32 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
         return () => observer.disconnect();
     }, []);
 
-    const sorted = [...data].sort((a, b) => {
-        const net = (d: LikertRow) => (d.pcts[3] + d.pcts[4]) - d.pcts[0];
-        return net(b) - net(a);
-    });
+    const colors = buildScaleColors(scaleLabels);
+    const neutralIndex = findNeutralIndex(scaleLabels);
+    const axisStart = scaleLabels[0] ?? '';
+    const axisEnd = scaleLabels[scaleLabels.length - 1] ?? '';
+
+    // Rows keep the order they appear on the survey.
+    const extents = data.map((row) => dividePcts(row.pcts, neutralIndex));
+    const maxLeft = Math.max(...extents.map((e) => e.left), 0);
+    const maxRight = Math.max(...extents.map((e) => e.right), 0);
+    const totalPct = maxLeft + maxRight || 100;
 
     const totalW = width || 700;
-    const barLeft = LABEL_W + PAD_L + 16;
-    const barRight = totalW - PAD_R - N_COL_W - BAR_GAP;
+    const barLeft = PAD_L + LABEL_W + GAP;
+    const barRight = totalW - PAD_R - COUNT_W - GAP;
     const barColW = barRight - barLeft;
-    const cx = barLeft + barColW / 2;
-    const svgH = PAD_TOP + sorted.length * ROW_H + 8;
-    const px = barColW / 100;
+    const px = barColW / totalPct;
+    // Centre line sits at the same x for every row so the rows can be compared.
+    const centreX = barLeft + maxLeft * px;
+
+    const rowLines = data.map((row) => wrapText(row.label));
+    const rowHeights = rowLines.map((lines) => Math.max(BASE_ROW_H, lines.length * LINE_H + 20));
+    const rowTops = rowHeights.reduce<number[]>((tops, height, i) => {
+        tops.push(i === 0 ? PAD_TOP : tops[i - 1] + rowHeights[i - 1]);
+        return tops;
+    }, []);
+    const svgH = PAD_TOP + rowHeights.reduce((sum, h) => sum + h, 0) + 8;
 
     return (
         <Box>
@@ -110,7 +133,9 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
             <Box sx={{ display: 'flex', flexWrap: 'wrap', rowGap: 0.75, columnGap: 2, mb: 1.75 }}>
                 {scaleLabels.map((lbl, i) => (
                     <Box key={lbl} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                        <Box sx={{ width: 13, height: 13, borderRadius: '3px', flexShrink: 0, background: COLORS[i] }} />
+                        <Box
+                            sx={{ width: 13, height: 13, borderRadius: '3px', flexShrink: 0, background: colors[i] }}
+                        />
                         <Typography sx={{ fontSize: 12, color: '#474543' }}>{lbl}</Typography>
                     </Box>
                 ))}
@@ -130,55 +155,120 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
                         <text x={PAD_L} y={18} fontSize={10} fontWeight={600} fill="#474543" letterSpacing={0.5}>
                             RESPONSE
                         </text>
-                        <text x={cx} y={18} fontSize={10} fontWeight={600} fill="#474543" letterSpacing={0.5} textAnchor="middle">
-                            {`← ${axisLabels[0].toUpperCase()}  |  ${axisLabels[1].toUpperCase()} →`}
+                        <text
+                            x={centreX}
+                            y={18}
+                            fontSize={10}
+                            fontWeight={600}
+                            fill="#474543"
+                            letterSpacing={0.5}
+                            textAnchor="middle"
+                        >
+                            {`← ${axisStart.toUpperCase()}  |  ${axisEnd.toUpperCase()} →`}
                         </text>
-                        <text x={barRight + BAR_GAP} y={18} fontSize={10} fontWeight={600} fill="#474543" letterSpacing={0.5}>
+                        <text
+                            x={barRight + GAP}
+                            y={18}
+                            fontSize={10}
+                            fontWeight={600}
+                            fill="#474543"
+                            letterSpacing={0.5}
+                        >
                             COUNT
                         </text>
-                        <line x1={PAD_L} y1={PAD_TOP - 4} x2={totalW - PAD_R} y2={PAD_TOP - 4} stroke="#D8D8D8" strokeWidth={1} />
+                        <line
+                            x1={PAD_L}
+                            y1={PAD_TOP - 4}
+                            x2={totalW - PAD_R}
+                            y2={PAD_TOP - 4}
+                            stroke="#D8D8D8"
+                            strokeWidth={1}
+                        />
 
-                        {sorted.map((row, i) => {
-                            const y0 = PAD_TOP + i * ROW_H;
-                            const barY = y0 + (ROW_H - BAR_H) / 2;
-                            const [sn, nt, n, p, sp] = row.pcts;
+                        {data.map((row, i) => {
+                            const y0 = rowTops[i];
+                            const rowH = rowHeights[i];
+                            const barY = y0 + (rowH - BAR_H) / 2;
 
-                            const wSN = sn * px, wNT = nt * px, wN = n * px, wP = p * px, wSP = sp * px;
-                            const segs: SegmentDef[] = [
-                                { x: cx - wSN, w: wSN, pct: sn, ci: 0, isFirst: true,  isLast: false },
-                                { x: cx,       w: wNT, pct: nt, ci: 1, isFirst: false, isLast: false },
-                                { x: cx + wNT,           w: wN,  pct: n,  ci: 2, isFirst: false, isLast: false },
-                                { x: cx + wNT + wN,      w: wP,  pct: p,  ci: 3, isFirst: false, isLast: false },
-                                { x: cx + wNT + wN + wP, w: wSP, pct: sp, ci: 4, isFirst: false, isLast: true  },
-                            ];
+                            // Segments are laid out from the centre line outwards: the neutral option is
+                            // split in half across it, everything before it grows left, the rest grows right.
+                            const halfNeutral = neutralIndex === -1 ? 0 : ((row.pcts[neutralIndex] ?? 0) * px) / 2;
+                            const segs: SegmentDef[] = [];
+                            let leftEdge = centreX - halfNeutral;
+                            for (
+                                let ci = (neutralIndex === -1 ? row.pcts.length / 2 : neutralIndex) - 1;
+                                ci >= 0;
+                                ci--
+                            ) {
+                                const w = row.pcts[ci] * px;
+                                leftEdge -= w;
+                                segs.push({ x: leftEdge, w, pct: row.pcts[ci], ci, isFirst: ci === 0, isLast: false });
+                            }
+                            if (neutralIndex !== -1) {
+                                segs.push({
+                                    x: centreX - halfNeutral,
+                                    w: halfNeutral * 2,
+                                    pct: row.pcts[neutralIndex] ?? 0,
+                                    ci: neutralIndex,
+                                    isFirst: neutralIndex === 0,
+                                    isLast: neutralIndex === row.pcts.length - 1,
+                                });
+                            }
+                            let rightEdge = centreX + halfNeutral;
+                            const firstPositive = neutralIndex === -1 ? row.pcts.length / 2 : neutralIndex + 1;
+                            for (let ci = firstPositive; ci < row.pcts.length; ci++) {
+                                const w = row.pcts[ci] * px;
+                                segs.push({
+                                    x: rightEdge,
+                                    w,
+                                    pct: row.pcts[ci],
+                                    ci,
+                                    isFirst: false,
+                                    isLast: ci === row.pcts.length - 1,
+                                });
+                                rightEdge += w;
+                            }
 
-                            const [line1, line2] = wrapLabel(row.label);
-                            const tY = line2 ? barY + BAR_H / 2 - 5 : barY + BAR_H / 2 + 4;
+                            const lines = rowLines[i];
+                            const textTop = barY + BAR_H / 2 + 4 - ((lines.length - 1) * LINE_H) / 2;
 
                             return (
                                 <g key={row.label}>
                                     {/* Alternating row background */}
                                     {i % 2 === 0 && (
-                                        <rect x={PAD_L} y={y0} width={totalW - PAD_L - PAD_R} height={ROW_H} fill="#F7F8FA" rx={2} />
+                                        <rect
+                                            x={PAD_L}
+                                            y={y0}
+                                            width={totalW - PAD_L - PAD_R}
+                                            height={rowH}
+                                            fill="#F7F8FA"
+                                            rx={2}
+                                        />
                                     )}
 
-                                    {/* Row label (up to 2 lines) */}
-                                    <text x={PAD_L + 4} y={tY} fontSize={12} fill="#2D2D2D">{line1}</text>
-                                    {line2 && (
-                                        <text x={PAD_L + 4} y={tY + 14} fontSize={12} fill="#2D2D2D">{line2}</text>
-                                    )}
+                                    {/* Row label */}
+                                    {lines.map((line, li) => (
+                                        <text
+                                            key={line}
+                                            x={PAD_L + 4}
+                                            y={textTop + li * LINE_H}
+                                            fontSize={12}
+                                            fill="#2D2D2D"
+                                        >
+                                            {line}
+                                        </text>
+                                    ))}
 
                                     {/* Bar segments */}
                                     <g clipPath={`url(#${clipId})`} transform={`translate(0, ${barY})`}>
                                         {segs.map((s) => {
                                             if (s.w < 0.5) return null;
-                                            const path = segmentPath(s);
-                                            const labelColor = WHITE_LABEL[s.ci] ? '#fff' : '#2D2D2D';
+                                            const labelColor = isDarkSegment(colors[s.ci]) ? '#fff' : '#2D2D2D';
                                             return (
                                                 <g key={s.ci}>
                                                     <path
-                                                        d={path}
-                                                        fill={COLORS[s.ci]}
+                                                        d={segmentPath(s)}
+                                                        fill={colors[s.ci]}
                                                         style={{ cursor: 'default', transition: 'opacity 0.15s' }}
                                                         onMouseMove={(e) =>
                                                             setTooltip({
@@ -209,22 +299,26 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
 
                                     {/* Centre axis dashed line */}
                                     <line
-                                        x1={cx} y1={barY - 1}
-                                        x2={cx} y2={barY + BAR_H + 1}
+                                        x1={centreX}
+                                        y1={barY - 1}
+                                        x2={centreX}
+                                        y2={barY + BAR_H + 1}
                                         stroke="#9F9D9C"
                                         strokeWidth={1.5}
                                         strokeDasharray="3,2"
                                     />
 
                                     {/* N count */}
-                                    <text x={barRight + BAR_GAP} y={barY + BAR_H / 2 + 4} fontSize={11} fill="#474543">
+                                    <text x={barRight + GAP} y={barY + BAR_H / 2 + 4} fontSize={11} fill="#474543">
                                         {row.n.toLocaleString()}
                                     </text>
 
                                     {/* Row divider */}
                                     <line
-                                        x1={PAD_L} y1={y0 + ROW_H}
-                                        x2={totalW - PAD_R} y2={y0 + ROW_H}
+                                        x1={PAD_L}
+                                        y1={y0 + rowH}
+                                        x2={totalW - PAD_R}
+                                        y2={y0 + rowH}
                                         stroke="#ECEAE8"
                                         strokeWidth={1}
                                     />

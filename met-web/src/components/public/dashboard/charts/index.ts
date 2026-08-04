@@ -12,5 +12,6 @@ export type { RankOrderItem } from './RankOrderChart';
 
 export { Comments } from './Comments';
 
-export { CheckboxChart } from './CheckboxChart';
-export type { CheckboxChartItem } from './CheckboxChart';
+export { ConditionalBlock } from './ConditionalBlock';
+
+export { QuestionTypeLabel } from './QuestionTypeLabel';

@@ -374,6 +374,41 @@ def test_get_survey_dashboard(client, session):  # pylint:disable=unused-argumen
     ]
 
 
+conditional_survey_info = {
+    **TestSurveyInfo.survey1.value,
+    'form_json': {
+        'display': 'wizard',
+        'components': [
+            {
+                'type': 'panel', 'title': 'Page 1', 'key': 'page1', 'input': False,
+                'components': [
+                    {'key': 'location', 'input': True, 'type': 'simpleradios'},
+                    {
+                        'key': 'locationOther', 'input': True, 'type': 'simpletextfield',
+                        'conditional': {'show': True, 'when': 'location', 'eq': 'Other'},
+                    },
+                    {
+                        'key': 'customCondition', 'input': True, 'type': 'simpletextfield',
+                        'conditional': {'show': None, 'when': None, 'eq': ''},
+                    },
+                ],
+            },
+        ],
+    },
+}
+
+
+def test_get_survey_dashboard_conditionals(client, session):  # pylint:disable=unused-argument
+    """Assert that the dashboard endpoint reports which questions are conditional."""
+    survey, _ = factory_survey_and_eng_model(conditional_survey_info)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    # Only the simple show-when condition is reported; the empty one is ignored.
+    assert rv.json.get('conditionals') == [{'key': 'locationOther', 'when': 'location', 'eq': 'Other'}]
+
+
 def test_get_survey_dashboard_non_wizard(client, session):  # pylint:disable=unused-argument
     """Assert that a single page survey returns no pages for the dashboard."""
     survey, _ = factory_survey_and_eng_model()

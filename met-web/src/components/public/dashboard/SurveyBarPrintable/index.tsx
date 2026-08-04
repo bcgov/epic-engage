@@ -4,7 +4,7 @@ import { MetHeader1, MetPaper, MetLabel } from 'components/shared/common';
 import { SurveyBarData } from '../types';
 import { getSurveyResultData } from 'services/analytics/surveyResult';
 import { Engagement } from 'models/engagement';
-import { SurveyResultData, createSurveyResultData } from 'models/analytics/surveyResult';
+import { SurveyResultData, createSurveyResultData, toFlatSurveyResultData } from 'models/analytics/surveyResult';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
 import { DASHBOARD } from 'components/shared/analytics/constants';
 
@@ -25,13 +25,15 @@ export const SurveyBarPrintable = ({ engagement, engagementIsLoading, dashboardT
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const response = await getSurveyResultData(Number(engagement.id), dashboardType);
-            response.data[0].result = response.data[0].result.map((answer) => {
-                const value =
-                    answer.value.length > 25 ? answer.value.slice(0, 25).trimEnd().concat('...') : answer.value;
-                const count = answer.count;
-                return { count, value };
-            });
+            const response = toFlatSurveyResultData(await getSurveyResultData(Number(engagement.id), dashboardType));
+            if (response.data.length) {
+                response.data[0].result = response.data[0].result.map((answer) => {
+                    const value =
+                        answer.value.length > 25 ? answer.value.slice(0, 25).trimEnd().concat('...') : answer.value;
+                    const count = answer.count;
+                    return { count, value };
+                });
+            }
             setData(response);
             setIsLoading(false);
             setIsError(false);

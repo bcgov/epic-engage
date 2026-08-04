@@ -8,7 +8,7 @@ import { BarBlock } from './BarBlock';
 import { TreemapBlock } from './TreemapBlock';
 import { getSurveyResultData } from 'services/analytics/surveyResult';
 import { Engagement } from 'models/engagement';
-import { SurveyResultData, defaultData } from 'models/analytics/surveyResult';
+import { SurveyResultData, defaultData, toFlatSurveyResultData } from 'models/analytics/surveyResult';
 import { ErrorBox } from '../../ErrorBox';
 import { NoData } from '../../NoData';
 import { If, Then, Else, When } from 'react-if';
@@ -48,9 +48,9 @@ export const SurveyBar = ({ readComments, engagement, engagementIsLoading, dashb
         setIsLoading(true);
         setIsError(false);
         try {
-            const response = await getSurveyResultData(Number(engagement.id), dashboardType);
-            setData(response);
-            setSelectedData(response?.data[0]);
+            const response = toFlatSurveyResultData(await getSurveyResultData(Number(engagement.id), dashboardType));
+            setData(response.data.length ? response : null);
+            setSelectedData(response.data[0] ?? defaultData[0]);
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 setErrors(error);

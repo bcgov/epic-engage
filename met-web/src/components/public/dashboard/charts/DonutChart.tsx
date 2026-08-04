@@ -1,8 +1,20 @@
 import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
+import { HorizontalBarList } from './HorizontalBarList';
 
-const COLORS = ['#1B5E8C', '#4A90C4', '#90C0DE', '#FCBA19', '#E07B39', '#C8C3BE', '#72B09D', '#E8866F', '#7B6FA0', '#5C9E6A'];
+const COLORS = [
+    '#1B5E8C',
+    '#4A90C4',
+    '#90C0DE',
+    '#FCBA19',
+    '#E07B39',
+    '#C8C3BE',
+    '#72B09D',
+    '#E8866F',
+    '#7B6FA0',
+    '#5C9E6A',
+];
 
 // Label text is white on dark segments (indices 0, 1, 4) and dark on lighter ones.
 const LABEL_COLOR = (i: number) => (i < 2 || i === 4 ? '#fff' : '#2D2D2D');
@@ -25,7 +37,10 @@ interface Segment {
 }
 
 function buildSegments(data: DonutChartItem[]): Segment[] {
-    const cx = 100, cy = 100, R = 80, r = 50;
+    const cx = 100,
+        cy = 100,
+        R = 80,
+        r = 50;
     const total = data.reduce((s, d) => s + d.pct, 0);
     const top = data.reduce((a, b) => (a.pct > b.pct ? a : b));
     let startAngle = -Math.PI / 2;
@@ -38,10 +53,14 @@ function buildSegments(data: DonutChartItem[]): Segment[] {
         const s = startAngle + gap / 2;
         const e = end - gap / 2;
 
-        const x1 = cx + R * Math.cos(s), y1 = cy + R * Math.sin(s);
-        const x2 = cx + R * Math.cos(e), y2 = cy + R * Math.sin(e);
-        const x3 = cx + r * Math.cos(e), y3 = cy + r * Math.sin(e);
-        const x4 = cx + r * Math.cos(s), y4 = cy + r * Math.sin(s);
+        const x1 = cx + R * Math.cos(s),
+            y1 = cy + R * Math.sin(s);
+        const x2 = cx + R * Math.cos(e),
+            y2 = cy + R * Math.sin(e);
+        const x3 = cx + r * Math.cos(e),
+            y3 = cy + r * Math.sin(e);
+        const x4 = cx + r * Math.cos(s),
+            y4 = cy + r * Math.sin(s);
         const large = slice > Math.PI ? 1 : 0;
 
         const path = `M${x1},${y1} A${R},${R} 0 ${large},1 ${x2},${y2} L${x3},${y3} A${r},${r} 0 ${large},0 ${x4},${y4} Z`;
@@ -82,9 +101,9 @@ interface DonutChartProps {
 }
 
 export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutChartProps) => {
-    const sorted = [...data].sort((a, b) => b.pct - a.pct);
-    const segments = buildSegments(sorted);
-    const topItem = sorted[0];
+    // Responses stay in survey order; only the emphasis follows the largest response.
+    const segments = buildSegments(data);
+    const topItem = data.reduce((a, b) => (a.pct >= b.pct ? a : b), data[0]);
 
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
@@ -150,65 +169,12 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
 
             {/* Legend list */}
             <Box sx={{ flex: 1, minWidth: 220 }}>
-                <Box
-                    sx={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 44px 64px',
-                        gap: 1,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                        color: '#474543',
-                        px: 0.5,
-                        pb: 0.75,
-                        borderBottom: '1px solid #D8D8D8',
-                        mb: 0.5,
-                    }}
-                >
-                    <span>{categoryLabel}</span>
-                    <Box sx={{ textAlign: 'right' }}>% of Respondents</Box>
-                    <Box sx={{ textAlign: 'right' }}>Count</Box>
-                </Box>
-                {sorted.map((item, i) => {
-                    const isTop = item === topItem;
-                    return (
-                        <Box
-                            key={item.label}
-                            sx={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 44px 64px',
-                                alignItems: 'center',
-                                gap: 1,
-                                px: 0.5,
-                                py: 1,
-                                borderBottom: i < sorted.length - 1 ? '1px solid #F0EFEE' : 'none',
-                                '&:hover': { background: '#F7F8FA', borderRadius: '4px' },
-                            }}
-                        >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                                <Box
-                                    sx={{
-                                        width: 10,
-                                        height: 10,
-                                        borderRadius: '50%',
-                                        flexShrink: 0,
-                                        background: COLORS[i % COLORS.length],
-                                    }}
-                                />
-                                <Typography sx={{ fontSize: 13, color: Palette.text.primary, fontWeight: isTop ? 700 : 400 }}>
-                                    {item.label}
-                                </Typography>
-                            </Box>
-                            <Typography sx={{ fontSize: 13, fontWeight: 700, color: Palette.primary.main, textAlign: 'right' }}>
-                                {item.pct}%
-                            </Typography>
-                            <Typography sx={{ fontSize: 12, color: '#474543', textAlign: 'right' }}>
-                                {item.count.toLocaleString()}
-                            </Typography>
-                        </Box>
-                    );
-                })}
+                <HorizontalBarList
+                    data={data}
+                    colors={COLORS}
+                    highlightLabel={topItem?.label}
+                    categoryLabel={categoryLabel}
+                />
             </Box>
 
             {/* Floating tooltip */}

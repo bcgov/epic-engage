@@ -91,12 +91,32 @@ class SurveyService:
             for column in component.get('columns', []) or []:
                 SurveyService._collect_question_keys(column, keys)
 
+    @staticmethod
+    def _collect_conditionals(component: dict, conditionals: list):
+        """Recursively collect simple show-when conditions on nested formio components.
+
+        Only formio's simple conditional (show this component when another component
+        equals a value) is collected; custom javascript/JSON conditions are ignored.
+        """
+        if isinstance(component, dict):
+            key = component.get('key')
+            conditional = component.get('conditional') or {}
+            when = conditional.get('when')
+            show = conditional.get('show')
+            if key and when and show not in (None, '', False, 'false'):
+                conditionals.append({'key': key, 'when': when, 'eq': conditional.get('eq')})
+            for child in component.get('components', []) or []:
+                SurveyService._collect_conditionals(child, conditionals)
+            for column in component.get('columns', []) or []:
+                SurveyService._collect_conditionals(column, conditionals)
+
     @classmethod
     def get_for_dashboard(cls, survey_id):
         """Get a reduced survey form for the public results dashboard.
 
-        Only the page structure is exposed (page title + the question keys on each page),
-        not the question text, options or any other survey content. Question keys are
+        Only the page structure is exposed (page title, the question keys on each page and
+        which questions are conditional on another question's answer), not the question
+        text, options or any other survey content. Question keys and answer values are
         already surfaced through the analytics survey result, so no extra data is leaked.
         """
         survey_model = SurveyModel.get_for_dashboard(survey_id)
@@ -106,13 +126,15 @@ class SurveyService:
         form_json = survey_model.form_json or {}
         display = form_json.get('display')
         pages = []
-        if display == 'wizard':
-            for page in form_json.get('components', []) or []:
+        conditionals = []
+        for component in form_json.get('components', []) or []:
+            cls._collect_conditionals(component, conditionals)
+            if display == 'wizard':
                 keys = []
-                cls._collect_question_keys(page, keys)
-                pages.append({'title': page.get('title', ''), 'questions': keys})
+                cls._collect_question_keys(component, keys)
+                pages.append({'title': component.get('title', ''), 'questions': keys})
 
-        return {'id': survey_model.id, 'display': display, 'pages': pages}
+        return {'id': survey_model.id, 'display': display, 'pages': pages, 'conditionals': conditionals}
 
     @staticmethod
     def get_surveys_paginated(

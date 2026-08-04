@@ -2,10 +2,30 @@ import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
 
-// Colors indexed by rank position (0 = 1st place, 4 = 5th place)
-const RANK_COLORS = ['#1B5E8C', '#4A90C4', '#90C0DE', '#F5C97A', '#E07B39'];
-const RANK_TEXT_COLORS = ['#fff', '#fff', '#2D2D2D', '#2D2D2D', '#fff'];
-const RANK_LABELS = ['1st', '2nd', '3rd', '4th', '5th'];
+// Ramp running from 1st place to last place. A survey can rank any number of options, so for
+// more places than the ramp has stops the colour is sampled across it.
+const RANK_RAMP = ['#1B5E8C', '#4A90C4', '#90C0DE', '#F5C97A', '#E07B39'];
+const DARK_RANK_COLORS = new Set(['#1B5E8C', '#4A90C4', '#E07B39']);
+
+const rankColor = (place: number, places: number): string => {
+    if (places <= RANK_RAMP.length) {
+        return RANK_RAMP[place] ?? RANK_RAMP[RANK_RAMP.length - 1];
+    }
+    return RANK_RAMP[Math.round((place * (RANK_RAMP.length - 1)) / (places - 1))];
+};
+
+const rankTextColor = (place: number, places: number): string =>
+    DARK_RANK_COLORS.has(rankColor(place, places)) ? '#fff' : '#2D2D2D';
+
+// 1st, 2nd, 3rd, 4th ... 11th, 12th, 13th, 21st
+const ordinal = (place: number): string => {
+    const n = place + 1;
+    const tens = n % 100;
+    if (tens >= 11 && tens <= 13) {
+        return `${n}th`;
+    }
+    return `${n}${['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
+};
 
 export interface RankOrderItem {
     label: string;
@@ -34,44 +54,41 @@ interface RankOrderChartProps {
 export const RankOrderChart = ({ data }: RankOrderChartProps) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-    const scored: ScoredItem[] = [...data]
-        .map((d) => ({ ...d, score: computeScore(d.ranks) }))
-        .sort((a, b) => a.score - b.score);
+    // Options stay in survey order; the medal shows where each one placed on the
+    // weighted score (a lower average rank is a better placing).
+    const scored: ScoredItem[] = data.map((d) => ({ ...d, score: computeScore(d.ranks) }));
+    const byScore = [...scored].sort((a, b) => a.score - b.score);
+    const placeOf = (item: ScoredItem) => byScore.indexOf(item);
 
-    const numRanks = data[0]?.ranks.length ?? 5;
-    const rankLabels = RANK_LABELS.slice(0, numRanks);
+    const numRanks = data[0]?.ranks.length ?? 0;
+    const rankLabels = Array.from({ length: numRanks }, (_, i) => ordinal(i));
 
     return (
         <Box>
             {/* Legend */}
             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.25, mb: 2 }}>
                 <Typography sx={{ fontSize: 12, color: '#474543', fontWeight: 600 }}>Ranked:</Typography>
-                {/* Reversed so legend reads 5th→1st left-to-right, matching the bar stack */}
-                {[...rankLabels].reverse().map((lbl, ri) => {
-                    const origIndex = numRanks - 1 - ri;
-                    return (
-                        <Box key={lbl} sx={{ display: 'flex', alignItems: 'center', gap: 0.625 }}>
-                            <Box
-                                sx={{
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: '2px',
-                                    flexShrink: 0,
-                                    background: RANK_COLORS[origIndex],
-                                }}
-                            />
-                            <Typography sx={{ fontSize: 12, color: '#474543' }}>{lbl}</Typography>
-                        </Box>
-                    );
-                })}
+                {rankLabels.map((lbl, ri) => (
+                    <Box key={lbl} sx={{ display: 'flex', alignItems: 'center', gap: 0.625 }}>
+                        <Box
+                            sx={{
+                                width: 12,
+                                height: 12,
+                                borderRadius: '2px',
+                                flexShrink: 0,
+                                background: rankColor(ri, numRanks),
+                            }}
+                        />
+                        <Typography sx={{ fontSize: 12, color: '#474543' }}>{lbl}</Typography>
+                    </Box>
+                ))}
             </Box>
 
             {/* Rows */}
             {scored.map((item, i) => {
-                // Stack renders lowest-ranked (rightmost index) first so 1st-rank anchors the right
-                const stackSegments = [...item.ranks]
-                    .map((pct, rankIndex) => ({ pct, rankIndex }))
-                    .reverse();
+                // Stack reads 1st place first, matching the legend
+                const stackSegments = item.ranks.map((pct, rankIndex) => ({ pct, rankIndex }));
+                const place = placeOf(item);
 
                 return (
                     <Box
@@ -97,13 +114,13 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 flexShrink: 0,
-                                background: RANK_COLORS[i] ?? '#C8C3BE',
-                                color: RANK_TEXT_COLORS[i] ?? '#2D2D2D',
+                                background: rankColor(place, scored.length),
+                                color: rankTextColor(place, scored.length),
                                 fontSize: 11,
                                 fontWeight: 700,
                             }}
                         >
-                            {i + 1}
+                            {place + 1}
                         </Box>
 
                         {/* Label + stacked bar */}
@@ -137,8 +154,8 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                                                 overflow: 'hidden',
                                                 cursor: 'default',
                                                 transition: 'opacity 0.15s',
-                                                background: RANK_COLORS[rankIndex] ?? '#C8C3BE',
-                                                color: RANK_TEXT_COLORS[rankIndex] ?? '#2D2D2D',
+                                                background: rankColor(rankIndex, numRanks),
+                                                color: rankTextColor(rankIndex, numRanks),
                                                 '&:hover': { opacity: 0.82 },
                                             }}
                                             onMouseMove={(e) =>

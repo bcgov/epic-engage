@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Box, Divider, Skeleton } from '@mui/material';
 import { MetPaper, MetHeader4, MetDescription } from 'components/shared/common';
-import { DonutChart, LikertChart, RankOrderChart, Comments, CheckboxChart } from './charts';
-import { QuestionTypeLabel } from './charts/QuestionTypeLabel';
+import {
+    DonutChart,
+    LikertChart,
+    RankOrderChart,
+    Comments,
+    HorizontalBarList,
+    ConditionalBlock,
+    QuestionTypeLabel,
+} from './charts';
 import { getSurveyResultData } from 'services/analytics/surveyResult';
 import { getSurveyForDashboard } from 'services/surveyService';
 import { TypedSurveyData, TypedSurveyResultData, FlatResultItem, MatrixResultRow } from 'models/analytics/surveyResult';
@@ -10,7 +17,7 @@ import { Engagement } from 'models/engagement';
 import { ErrorBox } from 'components/shared/analytics/ErrorBox';
 import { NoData } from 'components/shared/analytics/NoData';
 import FormStepper from 'components/public/survey/submit/Stepper';
-import { buildResultPages, ResultPage, DashboardSurveyForm } from './surveyPages';
+import { buildQuestionGroups, buildResultPages, QuestionGroup, ResultPage, DashboardSurveyForm } from './surveyPages';
 import axios from 'axios';
 
 const COMPONENT_TYPE = {
@@ -33,6 +40,8 @@ const TYPE_LABELS: Record<string, string> = {
     simpleranking: 'Rank Order',
 };
 
+const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
+
 const isMatrixRow = (r: FlatResultItem | MatrixResultRow): r is MatrixResultRow => 'pcts' in r;
 
 function toFlatItems(result: (FlatResultItem | MatrixResultRow)[]): FlatResultItem[] {
@@ -43,8 +52,15 @@ function toMatrixRows(result: (FlatResultItem | MatrixResultRow)[]): MatrixResul
     return result.filter(isMatrixRow);
 }
 
-function flatToChartItems(items: FlatResultItem[]) {
-    const total = items.reduce((sum, r) => sum + r.count, 0);
+/**
+ * Percentages are of respondents, not of answers: a checkbox question has more answers than
+ * respondents. Falls back to the total number of answers for results gathered before the
+ * analytics API started reporting a respondent count.
+ */
+function flatToChartItems(question: TypedSurveyData) {
+    const items = toFlatItems(question.result);
+    const answers = items.reduce((sum, r) => sum + r.count, 0);
+    const total = question.respondents || answers;
     return {
         total,
         data: items.map((r) => ({
@@ -55,78 +71,103 @@ function flatToChartItems(items: FlatResultItem[]) {
     };
 }
 
-interface QuestionChartProps {
-    question: TypedSurveyData;
+function matrixRespondents(question: TypedSurveyData, rows: MatrixResultRow[]) {
+    return question.respondents || Math.max(...rows.map((r) => r.n), 0);
 }
 
-const QuestionChart = ({ question }: QuestionChartProps) => {
-    const { label, type, result } = question;
+const respondentText = (count: number) => `${count.toLocaleString()} respondents`;
+
+interface QuestionCardContent {
+    // Count shown under the question title; the donut carries its own count in the middle.
+    subText?: string;
+    body: JSX.Element | null;
+}
+
+/**
+ * The chart for a single question, without the card around it, so a question can be
+ * rendered either on its own or inside the card of the question it is conditional on.
+ */
+const questionContent = (question: TypedSurveyData): QuestionCardContent => {
+    const { type, result } = question;
 
     switch (type) {
         case COMPONENT_TYPE.RADIO:
         case COMPONENT_TYPE.SELECT: {
-            const { data, total } = flatToChartItems(toFlatItems(result));
-            return (
-                <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
-                    <QuestionTypeLabel label={TYPE_LABELS[type]} />
-                    <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
-                    <MetDescription sx={{ mb: '18px' }}>{total.toLocaleString()} respondents</MetDescription>
-                    <DonutChart data={data} total={total} />
-                </MetPaper>
-            );
+            const { data, total } = flatToChartItems(question);
+            return { body: <DonutChart data={data} total={total} /> };
         }
 
         case COMPONENT_TYPE.CHECKBOX: {
-            const { data, total } = flatToChartItems(toFlatItems(result));
-            return (
-                <CheckboxChart
-                    question={label}
-                    respondentCount={total}
-                    data={data}
-                    questionType={TYPE_LABELS[type]}
-                />
-            );
+            const { data, total } = flatToChartItems(question);
+            return { subText: respondentText(total), body: <HorizontalBarList data={data} /> };
         }
 
         case COMPONENT_TYPE.SURVEY: {
             const rows = toMatrixRows(result);
-            return (
-                <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
-                    <QuestionTypeLabel label={TYPE_LABELS[type]} />
-                    <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
-                    <LikertChart data={rows} axisLabels={['Not Effective', 'Effective']} />
-                </MetPaper>
-            );
+            return {
+                subText: respondentText(matrixRespondents(question, rows)),
+                body: (
+                    <LikertChart
+                        data={rows}
+                        scaleLabels={question.scale?.length ? question.scale : DEFAULT_SCALE_LABELS}
+                    />
+                ),
+            };
         }
 
         case COMPONENT_TYPE.RANKING: {
             const rows = toMatrixRows(result);
-            return (
-                <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
-                    <QuestionTypeLabel label={TYPE_LABELS[type]} />
-                    <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
-                    <MetDescription sx={{ mb: '18px' }}>1 = most important</MetDescription>
-                    <RankOrderChart data={rows.map((r) => ({ label: r.label, ranks: r.pcts }))} />
-                </MetPaper>
-            );
+            return {
+                subText: respondentText(matrixRespondents(question, rows)),
+                body: <RankOrderChart data={rows.map((r) => ({ label: r.label, ranks: r.pcts }))} />,
+            };
         }
 
         case COMPONENT_TYPE.TEXTAREA:
         case COMPONENT_TYPE.TEXTFIELD: {
             const responses = toFlatItems(result).map((r) => r.value);
-            return (
-                <Comments
-                    question={label}
-                    subText="Submitted responses"
-                    responses={responses}
-                    questionType={TYPE_LABELS[type]}
-                />
-            );
+            return {
+                subText: `${responses.length.toLocaleString()} comments`,
+                body: <Comments subText="Submitted responses" responses={responses} />,
+            };
         }
 
         default:
-            return null;
+            return { body: null };
     }
+};
+
+interface QuestionChartProps {
+    group: QuestionGroup;
+}
+
+const QuestionChart = ({ group }: QuestionChartProps) => {
+    const { question, conditionals } = group;
+    const { subText, body } = questionContent(question);
+
+    if (!body) {
+        return null;
+    }
+
+    return (
+        <MetPaper sx={{ p: 3, border: '1px solid #d8d8d8' }}>
+            <QuestionTypeLabel label={TYPE_LABELS[question.type]} />
+            <MetHeader4 sx={{ lineHeight: 1.4 }}>{question.label}</MetHeader4>
+            {subText && <MetDescription sx={{ mb: '18px' }}>{subText}</MetDescription>}
+            {body}
+            {conditionals.map(({ question: conditionalQuestion, eq }) => {
+                const conditionalContent = questionContent(conditionalQuestion);
+                return conditionalContent.body ? (
+                    <ConditionalBlock key={conditionalQuestion.key} question={conditionalQuestion.label} eq={eq}>
+                        {conditionalContent.subText && (
+                            <MetDescription sx={{ mb: '12px' }}>{conditionalContent.subText}</MetDescription>
+                        )}
+                        {conditionalContent.body}
+                    </ConditionalBlock>
+                ) : null;
+            })}
+        </MetPaper>
+    );
 };
 
 interface ChartPreviewProps {
@@ -188,7 +229,7 @@ export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }:
     }
     const pages: ResultPage[] | null = buildResultPages(form, data.data);
     const safePage = pages ? Math.min(currentPage, pages.length - 1) : 0;
-    const questionsToShow = pages ? pages[safePage].questions : data.data;
+    const groupsToShow = pages ? pages[safePage].questions : buildQuestionGroups(data.data, form?.conditionals);
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 4 }}>
             <Divider sx={{ mb: 1 }}>
@@ -197,8 +238,8 @@ export const ChartPreview = ({ engagement, engagementIsLoading, dashboardType }:
             {pages && pages.length > 1 && (
                 <FormStepper currentPage={safePage} pages={pages} onStepClick={(index) => setCurrentPage(index)} />
             )}
-            {questionsToShow.length ? (
-                questionsToShow.map((question) => <QuestionChart key={question.key} question={question} />)
+            {groupsToShow.length ? (
+                groupsToShow.map((group) => <QuestionChart key={group.question.key} group={group} />)
             ) : (
                 <NoData />
             )}
