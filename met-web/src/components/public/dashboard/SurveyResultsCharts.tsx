@@ -54,17 +54,38 @@ export function toMatrixRows(result: (FlatResultItem | MatrixResultRow)[]): Matr
     return result.filter(isMatrixRow);
 }
 
-export function flatToChartItems(items: FlatResultItem[]) {
+// `pctBase` is what each option's percentage is measured against. Single-select questions leave it
+// unset so slices are a share of all responses and add up to 100%. Multi-select questions pass the
+// respondent count, because one person can tick several options and the column reports the share of
+// people who picked each one, not the share of ticks.
+export function flatToChartItems(items: FlatResultItem[], pctBase?: number) {
     const total = items.reduce((sum, r) => sum + r.count, 0);
+    const base = pctBase && pctBase > 0 ? pctBase : total;
     return {
         total,
         data: items.map((r) => ({
             label: r.value,
-            pct: total > 0 ? Math.round((r.count / total) * 100) : 0,
+            pct: base > 0 ? Math.round((r.count / base) * 100) : 0,
             count: r.count,
         })),
     };
 }
+
+// The backend counts distinct participants per question, but responses whose participant couldn't
+// be resolved during ETL carry no participant id and go uncounted. Rather than print a number known
+// to be short - or fall back to summing response counts, which counts one person several times on a
+// multi-select - the count is left off entirely when the backend has nothing to report.
+const RespondentCount = ({ count, suffix }: { count?: number; suffix?: string }) => {
+    if (!count) {
+        return suffix ? <MetDescription sx={{ mb: '18px' }}>{suffix}</MetDescription> : null;
+    }
+    return (
+        <MetDescription sx={{ mb: '18px' }}>
+            {count.toLocaleString()} respondents
+            {suffix ? ` · ${suffix}` : ''}
+        </MetDescription>
+    );
+};
 
 // A matrix question (simplesurvey/simpleranking) whose analytics rows were synced by an
 // older met-etl version, before it started writing the parent row matrix results roll up
@@ -153,7 +174,7 @@ export const QuestionChart = ({
     dashboardType,
     bare = false,
 }: QuestionChartProps) => {
-    const { label, type, result } = question;
+    const { label, type, result, respondent_count: respondentCount, scale_labels: scaleLabels } = question;
     const questionType = dashboardType === DashboardType.INTERNAL ? TYPE_LABELS[type] : undefined;
 
     switch (type) {
@@ -162,8 +183,8 @@ export const QuestionChart = ({
             const { data, total } = flatToChartItems(toFlatItems(result));
             const content = (
                 <>
-                    <MetDescription sx={{ mb: '18px' }}>{total.toLocaleString()} respondents</MetDescription>
-                    <DonutChart data={data} total={total} />
+                    <RespondentCount count={respondentCount} />
+                    <DonutChart data={data} total={respondentCount ?? total} />
                     {renderFollowUps(followUps, type)}
                 </>
             );
@@ -180,11 +201,11 @@ export const QuestionChart = ({
         }
 
         case COMPONENT_TYPE.CHECKBOX: {
-            const { data, total } = flatToChartItems(toFlatItems(result));
+            const { data } = flatToChartItems(toFlatItems(result), respondentCount);
             return (
                 <CheckboxChart
                     question={label}
-                    respondentCount={total}
+                    respondentCount={respondentCount}
                     data={data}
                     questionType={questionType}
                     bare={bare}
@@ -196,7 +217,8 @@ export const QuestionChart = ({
             const rows = toMatrixRows(result);
             const content = (
                 <>
-                    <LikertChart data={rows} axisLabels={['Not Effective', 'Effective']} />
+                    <RespondentCount count={respondentCount} />
+                    <LikertChart data={rows} scaleLabels={scaleLabels} />
                     {renderFollowUps(followUps, type)}
                 </>
             );
@@ -216,7 +238,7 @@ export const QuestionChart = ({
             const rows = toMatrixRows(result);
             const content = (
                 <>
-                    <MetDescription sx={{ mb: '18px' }}>1 = most important</MetDescription>
+                    <RespondentCount count={respondentCount} suffix="1 = most important" />
                     <RankOrderChart data={rows.map((r) => ({ label: r.label, ranks: r.pcts }))} />
                     {renderFollowUps(followUps, type)}
                 </>

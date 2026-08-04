@@ -15,6 +15,9 @@ export interface RankOrderItem {
 
 interface ScoredItem extends RankOrderItem {
     score: number;
+    // 0-based placement once items are ordered by weighted score, independent of the row's
+    // render position - rows render in survey option order, not score order.
+    placement: number;
 }
 
 function computeScore(ranks: number[]): number {
@@ -34,9 +37,13 @@ interface RankOrderChartProps {
 export const RankOrderChart = ({ data }: RankOrderChartProps) => {
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-    const scored: ScoredItem[] = [...data]
-        .map((d) => ({ ...d, score: computeScore(d.ranks) }))
-        .sort((a, b) => a.score - b.score);
+    const scores = data.map((d) => computeScore(d.ranks));
+    // Lower weighted score = ranked more highly, so placement is the count of items that beat it.
+    const scored: ScoredItem[] = data.map((d, i) => ({
+        ...d,
+        score: scores[i],
+        placement: scores.filter((s, j) => s < scores[i] || (s === scores[i] && j < i)).length,
+    }));
 
     const numRanks = data[0]?.ranks.length ?? 5;
     const rankLabels = RANK_LABELS.slice(0, numRanks);
@@ -97,13 +104,13 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 flexShrink: 0,
-                                background: RANK_COLORS[i] ?? Palette.chart.fallback.swatch,
-                                color: RANK_TEXT_COLORS[i] ?? Palette.chart.fallback.label,
+                                background: RANK_COLORS[item.placement] ?? Palette.chart.fallback.swatch,
+                                color: RANK_TEXT_COLORS[item.placement] ?? Palette.chart.fallback.label,
                                 fontSize: 11,
                                 fontWeight: 700,
                             }}
                         >
-                            {i + 1}
+                            {item.placement + 1}
                         </Box>
 
                         {/* Label + stacked bar */}

@@ -138,7 +138,8 @@ def factory_available_response_option_model(survey_id, request_key, value, reque
     return option
 
 
-def factory_response_type_option_model(survey_id, request_key, value, request_id=None, is_active=True):
+def factory_response_type_option_model(survey_id, request_key, value, request_id=None, is_active=True,
+                                       participant_id=None):
     """Produce a response type option (a submitted answer) model."""
     option = ResponseTypeOptionModel(
         survey_id=survey_id,
@@ -146,6 +147,7 @@ def factory_response_type_option_model(survey_id, request_key, value, request_id
         value=value,
         request_id=request_id,
         is_active=is_active,
+        participant_id=participant_id,
     )
     db.session.add(option)
     db.session.commit()
