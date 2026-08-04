@@ -20,6 +20,8 @@ export interface TypedSurveyData {
     position: number;
     key: string;
     type: string;
+    respondent_count?: number;
+    scale_labels?: string[];
     result: FlatResultItem[] | MatrixResultRow[];
 }
 

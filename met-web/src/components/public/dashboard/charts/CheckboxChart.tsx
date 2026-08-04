@@ -11,7 +11,7 @@ export interface CheckboxChartItem {
 
 interface CheckboxChartProps {
     question: string;
-    respondentCount: number;
+    respondentCount?: number;
     data: CheckboxChartItem[];
     questionType?: string;
     // Renders just the chart content, without the surrounding MetPaper card/title, for callers
@@ -19,13 +19,20 @@ interface CheckboxChartProps {
     bare?: boolean;
 }
 
-export const CheckboxChart = ({ question, respondentCount, data, questionType, bare = false }: CheckboxChartProps) => {
-    const sorted = [...data].sort((a, b) => b.pct - a.pct);
+const HEADER_SX = {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    textTransform: 'uppercase',
+    color: Palette.text.secondary,
+};
 
+export const CheckboxChart = ({ question, respondentCount, data, questionType, bare = false }: CheckboxChartProps) => {
     const content = (
         <>
             <MetDescription sx={{ mb: '18px' }}>
-                Multiple selections allowed · {respondentCount.toLocaleString()} respondents
+                Multiple selections allowed
+                {respondentCount ? ` · ${respondentCount.toLocaleString()} respondents` : ''}
             </MetDescription>
             <Box
                 sx={{
@@ -45,42 +52,19 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
             <Box
                 sx={{
                     display: 'flex',
-                    justifyContent: 'flex-end',
-                    columnGap: 1,
+                    alignItems: 'center',
+                    px: 0.5,
                     pb: 0.75,
                     borderBottom: `1px solid ${Palette.border.default}`,
                     mb: 0.5,
                 }}
             >
-                <Typography
-                    sx={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                        color: Palette.text.secondary,
-                        width: 80,
-                        textAlign: 'right',
-                    }}
-                >
-                    % of Respondents
-                </Typography>
-                <Typography
-                    sx={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                        color: Palette.text.secondary,
-                        width: 64,
-                        textAlign: 'right',
-                    }}
-                >
-                    Count
-                </Typography>
+                <Typography sx={{ ...HEADER_SX, flex: 1 }}>Response</Typography>
+                <Typography sx={{ ...HEADER_SX, width: 64, textAlign: 'right' }}>% of Respondents</Typography>
+                <Typography sx={{ ...HEADER_SX, width: 64, textAlign: 'right' }}>Count</Typography>
             </Box>
 
-            {sorted.map((item, i) => (
+            {data.map((item, i) => (
                 <Box
                     key={item.label}
                     sx={{
@@ -88,7 +72,7 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                         alignItems: 'center',
                         px: 0.5,
                         py: 0.75,
-                        borderBottom: i < sorted.length - 1 ? `1px solid ${Palette.chart.surface.rowDivider}` : 'none',
+                        borderBottom: i < data.length - 1 ? `1px solid ${Palette.chart.surface.rowDivider}` : 'none',
                         '&:hover': { background: Palette.chart.surface.rowHover, borderRadius: '4px' },
                     }}
                 >

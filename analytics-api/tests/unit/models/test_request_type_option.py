@@ -182,3 +182,106 @@ def test_results_sorted_by_position(session):  # pylint:disable=unused-argument
     result = RequestTypeOptionModel.get_survey_result_with_type(109, True)
 
     assert [e['key'] for e in result] == ['first', 'second']
+
+
+def test_respondent_count_counts_people_not_responses(session):  # pylint:disable=unused-argument
+    """Assert that a multi-select question counts each person once, however many options they tick."""
+    survey = _survey(engagement_id=110)
+    factory_request_type_option_model(survey.id, 'check1', 'simplecheckboxes', 'Pick any', 'check1', position=1)
+    factory_available_response_option_model(survey.id, 'check1', 'cycling')
+    factory_available_response_option_model(survey.id, 'check1', 'walking')
+    # Two people, four ticks between them.
+    factory_response_type_option_model(survey.id, 'check1', 'cycling', participant_id=1)
+    factory_response_type_option_model(survey.id, 'check1', 'walking', participant_id=1)
+    factory_response_type_option_model(survey.id, 'check1', 'cycling', participant_id=2)
+    factory_response_type_option_model(survey.id, 'check1', 'walking', participant_id=2)
+
+    result = RequestTypeOptionModel.get_survey_result_with_type(110, True)
+
+    entry = result[0]
+    assert entry['respondent_count'] == 2
+    assert sum(r['count'] for r in entry['result']) == 4
+
+
+def test_respondent_count_ignores_responses_without_a_participant(session):  # pylint:disable=unused-argument
+    """Assert that responses whose participant could not be resolved during ETL are not counted."""
+    survey = _survey(engagement_id=111)
+    factory_request_type_option_model(survey.id, 'radio1', 'simpleradios', 'Pick one', 'radio1', position=1)
+    factory_available_response_option_model(survey.id, 'radio1', 'yes')
+    factory_response_type_option_model(survey.id, 'radio1', 'yes', participant_id=1)
+    factory_response_type_option_model(survey.id, 'radio1', 'yes', participant_id=None)
+
+    result = RequestTypeOptionModel.get_survey_result_with_type(111, True)
+
+    assert result[0]['respondent_count'] == 1
+
+
+def test_matrix_respondent_count_unions_sub_questions(session):  # pylint:disable=unused-argument
+    """Assert that a matrix counts anyone who answered any row, even if no single row saw them all.
+
+    Taking the largest row count instead would report 1 here, since each person answered one row.
+    """
+    survey = _survey(engagement_id=112)
+    factory_request_type_option_model(survey.id, 'likert1', 'simplesurvey', 'Satisfaction', 'likert1', position=1)
+    factory_request_type_option_model(survey.id, 'rowA', 'simplesurvey', 'Row A', 'likert1-1', position=2)
+    factory_request_type_option_model(survey.id, 'rowB', 'simplesurvey', 'Row B', 'likert1-2', position=3)
+    factory_available_response_option_model(survey.id, 'rowA', 'agree')
+    factory_available_response_option_model(survey.id, 'rowB', 'agree')
+    # Each person answered one row and skipped the other.
+    factory_response_type_option_model(survey.id, 'rowA', 'agree', participant_id=1)
+    factory_response_type_option_model(survey.id, 'rowB', 'agree', participant_id=2)
+
+    result = RequestTypeOptionModel.get_survey_result_with_type(112, True)
+
+    entry = result[0]
+    assert entry['key'] == 'likert1'
+    assert [row['n'] for row in entry['result']] == [1, 1]
+    assert entry['respondent_count'] == 2
+
+
+def test_matrix_respondent_count_does_not_double_count_a_person(session):  # pylint:disable=unused-argument
+    """Assert that someone who answered every row of a matrix still counts once."""
+    survey = _survey(engagement_id=113)
+    factory_request_type_option_model(survey.id, 'likert1', 'simplesurvey', 'Satisfaction', 'likert1', position=1)
+    factory_request_type_option_model(survey.id, 'rowA', 'simplesurvey', 'Row A', 'likert1-1', position=2)
+    factory_request_type_option_model(survey.id, 'rowB', 'simplesurvey', 'Row B', 'likert1-2', position=3)
+    factory_available_response_option_model(survey.id, 'rowA', 'agree')
+    factory_available_response_option_model(survey.id, 'rowB', 'agree')
+    factory_response_type_option_model(survey.id, 'rowA', 'agree', participant_id=1)
+    factory_response_type_option_model(survey.id, 'rowB', 'agree', participant_id=1)
+
+    result = RequestTypeOptionModel.get_survey_result_with_type(113, True)
+
+    assert result[0]['respondent_count'] == 1
+
+
+def test_likert_sends_the_surveys_own_scale_wording(session):  # pylint:disable=unused-argument
+    """Assert that a likert entry carries the scale wordings the survey author chose, in order."""
+    survey = _survey(engagement_id=114)
+    factory_request_type_option_model(survey.id, 'likert1', 'simplesurvey', 'Concern', 'likert1', position=1)
+    factory_request_type_option_model(survey.id, 'rowA', 'simplesurvey', 'Row A', 'likert1-1', position=2)
+    factory_request_type_option_model(survey.id, 'rowB', 'simplesurvey', 'Row B', 'likert1-2', position=3)
+    for row in ('rowA', 'rowB'):
+        for label in ('Not concerned', 'Neutral', 'Somewhat concerned', 'Concerned', 'Very concerned'):
+            factory_available_response_option_model(survey.id, row, label)
+    factory_response_type_option_model(survey.id, 'rowA', 'Neutral', participant_id=1)
+
+    result = RequestTypeOptionModel.get_survey_result_with_type(114, True)
+
+    assert result[0]['scale_labels'] == [
+        'Not concerned', 'Neutral', 'Somewhat concerned', 'Concerned', 'Very concerned']
+
+
+def test_ranking_sends_no_scale_labels(session):  # pylint:disable=unused-argument
+    """Assert that ranking questions carry no scale wording - their values are rank positions."""
+    survey = _survey(engagement_id=115)
+    factory_request_type_option_model(survey.id, 'rank1', 'simpleranking', 'Rank these', 'rank1', position=1)
+    factory_request_type_option_model(survey.id, 'optA', 'simpleranking', 'Option A', 'rank1-1', position=2)
+    factory_available_response_option_model(survey.id, 'optA', '1')
+    factory_available_response_option_model(survey.id, 'optA', '2')
+    factory_response_type_option_model(survey.id, 'optA', '1', participant_id=1)
+
+    result = RequestTypeOptionModel.get_survey_result_with_type(115, True)
+
+    assert result[0]['type'] == 'simpleranking'
+    assert result[0]['scale_labels'] == []

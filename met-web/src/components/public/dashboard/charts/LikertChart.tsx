@@ -19,9 +19,11 @@ const CORNER_R = 3;
 
 const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
 
+const NEUTRAL_INDEX = 1;
+
 export interface LikertRow {
     label: string;
-    pcts: number[]; // [negative, neutral, somewhat, positive, strongly_positive]
+    pcts: number[];
     n: number;
 }
 
@@ -68,13 +70,13 @@ function wrapLabel(label: string, maxChars = 34): [string, string] {
 
 interface LikertChartProps {
     data: LikertRow[];
-    // Left and right axis header labels, e.g. ['Not effective', 'Very effective']
-    axisLabels: [string, string];
-    // Labels for each of the 5 scale points (used in tooltips and legend)
+    // Labels for each scale point, in order, used by the legend, axis header and tooltips.
     scaleLabels?: string[];
+    // Overrides the axis header, which otherwise names the two ends of the scale above.
+    axisLabels?: [string, string];
 }
 
-export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABELS }: LikertChartProps) => {
+export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabels }: LikertChartProps) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
@@ -91,26 +93,43 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
         return () => observer.disconnect();
     }, []);
 
-    const sorted = [...data].sort((a, b) => {
-        const net = (d: LikertRow) => (d.pcts[3] + d.pcts[4]) - d.pcts[0];
-        return net(b) - net(a);
-    });
+    const scaleLength = data.reduce((longest, d) => Math.max(longest, d.pcts.length), 0);
+    const labels = Array.from({ length: scaleLength }, (_, i) => scaleLabels[i] ?? `Scale point ${i + 1}`);
+    const [axisStart, axisEnd] = axisLabels ?? [labels[0] ?? 'Negative', labels[labels.length - 1] ?? 'Positive'];
 
     const totalW = width || 700;
     const barLeft = LABEL_W + PAD_L + 16;
     const barRight = totalW - PAD_R - N_COL_W - BAR_GAP;
     const barColW = barRight - barLeft;
-    const cx = barLeft + barColW / 2;
-    const svgH = PAD_TOP + sorted.length * ROW_H + 8;
-    const px = barColW / 100;
+    const svgH = PAD_TOP + data.length * ROW_H + 8;
+
+    const leftOfAxis = (pcts: number[]) => (pcts[NEUTRAL_INDEX] ?? 0) / 2
+        + pcts.slice(0, NEUTRAL_INDEX).reduce((sum, pct) => sum + pct, 0);
+    const rightOfAxis = (pcts: number[]) => (pcts[NEUTRAL_INDEX] ?? 0) / 2
+        + pcts.slice(NEUTRAL_INDEX + 1).reduce((sum, pct) => sum + pct, 0);
+
+    const leftExtent = data.reduce((widest, d) => Math.max(widest, leftOfAxis(d.pcts)), 0);
+    const rightExtent = data.reduce((widest, d) => Math.max(widest, rightOfAxis(d.pcts)), 0);
+    const span = leftExtent + rightExtent || 100;
+    const px = barColW / span;
+    const cx = barLeft + leftExtent * px;
+    const headerX = barLeft + barColW / 2;
 
     return (
         <Box>
             {/* Legend */}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', rowGap: 0.75, columnGap: 2, mb: 1.75 }}>
-                {scaleLabels.map((lbl, i) => (
+                {labels.map((lbl, i) => (
                     <Box key={lbl} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                        <Box sx={{ width: 13, height: 13, borderRadius: '3px', flexShrink: 0, background: COLORS[i] }} />
+                        <Box
+                            sx={{
+                                width: 13,
+                                height: 13,
+                                borderRadius: '3px',
+                                flexShrink: 0,
+                                background: COLORS[i] ?? Palette.chart.fallback.swatch,
+                            }}
+                        />
                         <Typography sx={{ fontSize: 12, color: Palette.text.secondary }}>{lbl}</Typography>
                     </Box>
                 ))}
@@ -130,27 +149,33 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
                         <text x={PAD_L} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
                             RESPONSE
                         </text>
-                        <text x={cx} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="middle">
-                            {`← ${axisLabels[0].toUpperCase()}  |  ${axisLabels[1].toUpperCase()} →`}
+                        <text x={headerX} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="middle">
+                            {`← ${axisStart.toUpperCase()}  |  ${axisEnd.toUpperCase()} →`}
                         </text>
                         <text x={barRight + BAR_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
                             COUNT
                         </text>
                         <line x1={PAD_L} y1={PAD_TOP - 4} x2={totalW - PAD_R} y2={PAD_TOP - 4} stroke={Palette.border.default} strokeWidth={1} />
 
-                        {sorted.map((row, i) => {
+                        {data.map((row, i) => {
                             const y0 = PAD_TOP + i * ROW_H;
                             const barY = y0 + (ROW_H - BAR_H) / 2;
-                            const [sn, nt, n, p, sp] = row.pcts;
 
-                            const wSN = sn * px, wNT = nt * px, wN = n * px, wP = p * px, wSP = sp * px;
-                            const segs: SegmentDef[] = [
-                                { x: cx - wSN, w: wSN, pct: sn, ci: 0, isFirst: true,  isLast: false },
-                                { x: cx,       w: wNT, pct: nt, ci: 1, isFirst: false, isLast: false },
-                                { x: cx + wNT,           w: wN,  pct: n,  ci: 2, isFirst: false, isLast: false },
-                                { x: cx + wNT + wN,      w: wP,  pct: p,  ci: 3, isFirst: false, isLast: false },
-                                { x: cx + wNT + wN + wP, w: wSP, pct: sp, ci: 4, isFirst: false, isLast: true  },
-                            ];
+                            const lastIndex = row.pcts.length - 1;
+                            let cursor = cx - leftOfAxis(row.pcts) * px;
+                            const segs: SegmentDef[] = row.pcts.map((pct, ci) => {
+                                const w = pct * px;
+                                const seg: SegmentDef = {
+                                    x: cursor,
+                                    w,
+                                    pct,
+                                    ci,
+                                    isFirst: ci === 0,
+                                    isLast: ci === lastIndex,
+                                };
+                                cursor += w;
+                                return seg;
+                            });
 
                             const [line1, line2] = wrapLabel(row.label);
                             const tY = line2 ? barY + BAR_H / 2 - 5 : barY + BAR_H / 2 + 4;
@@ -178,13 +203,13 @@ export const LikertChart = ({ data, axisLabels, scaleLabels = DEFAULT_SCALE_LABE
                                                 <g key={s.ci}>
                                                     <path
                                                         d={path}
-                                                        fill={COLORS[s.ci]}
+                                                        fill={COLORS[s.ci] ?? Palette.chart.fallback.swatch}
                                                         style={{ cursor: 'default', transition: 'opacity 0.15s' }}
                                                         onMouseMove={(e) =>
                                                             setTooltip({
                                                                 x: e.clientX,
                                                                 y: e.clientY,
-                                                                text: `${scaleLabels[s.ci]}: ${s.pct}%`,
+                                                                text: `${labels[s.ci]}: ${s.pct}%`,
                                                             })
                                                         }
                                                         onMouseLeave={() => setTooltip(null)}

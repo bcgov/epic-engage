@@ -25,10 +25,9 @@ interface Segment {
     pct: number;
 }
 
-function buildSegments(data: DonutChartItem[]): Segment[] {
+function buildSegments(data: DonutChartItem[], top: DonutChartItem | undefined): Segment[] {
     const cx = 100, cy = 100, R = 80, r = 50;
     const total = data.reduce((s, d) => s + d.pct, 0);
-    const top = data.reduce((a, b) => (a.pct > b.pct ? a : b));
     let startAngle = -Math.PI / 2;
 
     return data.map((d, i) => {
@@ -83,9 +82,12 @@ interface DonutChartProps {
 }
 
 export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutChartProps) => {
-    const sorted = [...data].sort((a, b) => b.pct - a.pct);
-    const segments = buildSegments(sorted);
-    const topItem = sorted[0];
+    // Slices stay in survey option order; only the highlight picks out the largest response.
+    const topItem = data.reduce<DonutChartItem | undefined>(
+        (best, d) => (best && best.pct >= d.pct ? best : d),
+        undefined,
+    );
+    const segments = buildSegments(data, topItem);
 
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
@@ -171,7 +173,7 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
                     <Box sx={{ textAlign: 'right' }}>% of Respondents</Box>
                     <Box sx={{ textAlign: 'right' }}>Count</Box>
                 </Box>
-                {sorted.map((item, i) => {
+                {data.map((item, i) => {
                     const isTop = item === topItem;
                     return (
                         <Box
@@ -183,7 +185,7 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
                                 gap: 1,
                                 px: 0.5,
                                 py: 1,
-                                borderBottom: i < sorted.length - 1 ? `1px solid ${Palette.chart.surface.rowDivider}` : 'none',
+                                borderBottom: i < data.length - 1 ? `1px solid ${Palette.chart.surface.rowDivider}` : 'none',
                                 '&:hover': { background: Palette.chart.surface.rowHover, borderRadius: '4px' },
                             }}
                         >
