@@ -11,41 +11,45 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Colour palette and cell styling helpers for the dashboard spreadsheet export.
+"""Colour palette for the dashboard spreadsheet export.
 
-The dashboard export colour-codes rows two ways at once:
-
-* by survey page - every data row belonging to a page is zebra striped in two tints of
-  that page's colour, so the page a row came from is readable at a glance and matches the
-  page header;
-* by question type - the question header row for each question is filled with that
-  component type's colour (radio green, Likert yellow, ranking purple, checkbox blue,
-  drop-down red), matching the type pills shown on the dashboard itself.
-
-Colours are kept here rather than in the service so every sheet builder styles rows the
-same way.
+Cells are colour-coded by survey page (four shades each) and by question type. Values come
+from the approved export design, and live here so every sheet builder styles rows the same.
 """
+from typing import NamedTuple
+
 from met_api.constants.report_setting_type import FormIoComponentType
 
 
-# Base colour per survey page, cycled by page index. Page 1 is blue to match the
-# dashboard's own page header treatment.
-PAGE_BASE_COLOURS = (
-    '1B5E8C',  # blue
-    '00696E',  # teal
-    '5C2D91',  # purple
-    'A5541F',  # orange
-    '2E6B3E',  # green
-    '8A2F5E',  # magenta
-    '3B4A8C',  # indigo
-    '7A4F00',  # brown
+class PageColours(NamedTuple):
+    """The four shades a single survey page is rendered in."""
+
+    banner: str  # page title row
+    header: str  # question title / option label rows
+    band_light: str  # odd data rows
+    band_dark: str  # even data rows
+
+
+PAGE_COLOURS = (
+    PageColours('1A3A6B', '254E8F', 'F0F4FB', 'E2E9F5'),  # blue
+    PageColours('1A5C35', '227A47', 'EEF7F1', 'DFF0E3'),  # green
+    PageColours('7A4800', '9A5C00', 'FDF5EA', 'F7E9D4'),  # amber
+    PageColours('4A1A8C', '6030A8', 'F4EEFB', 'E9DEF5'),  # purple
+    PageColours('7A1A1A', '9A3030', 'FBEEEE', 'F5DCDC'),  # red
+    PageColours('006064', '007B80', 'EBF7F8', 'D9EFF1'),  # teal
+    PageColours('4A3000', '6A4800', 'FBF5EA', 'F5E8D3'),  # brown
+    PageColours('1A4A3A', '236B52', 'EBF7F3', 'D8EFE4'),  # forest
 )
 
-# Fraction of white blended into a page's base colour for each zebra band. Both bands stay
-# light enough to keep black body text readable.
-ZEBRA_BAND_TINTS = (0.88, 0.97)
+# Respondent id column
+RESPONDENT_HEADER_COLOUR = '5A6473'
+RESPONDENT_HEADER_FONT_COLOUR = 'FFFFFF'
+RESPONDENT_TYPE_COLOUR = 'F3F2F1'
+RESPONDENT_TYPE_FONT_COLOUR = '605E5C'
+RESPONDENT_BANDS = ('F3F2F1', 'E9E7E5')
+RESPONDENT_FONT_COLOUR = '898785'
 
-# Fill/font pairs per FormIO component type, matching the dashboard's question type pills.
+# Fill/font per component type, matching the dashboard's question type pills.
 QUESTION_TYPE_COLOURS = {
     FormIoComponentType.RADIO.value: ('EAF3DE', '27500A'),  # green
     FormIoComponentType.SURVEY.value: ('FEF1D8', '7A4F00'),  # yellow
@@ -56,47 +60,76 @@ QUESTION_TYPE_COLOURS = {
     FormIoComponentType.TEXTFIELD.value: ('F0F0F0', '474543'),  # grey - free text
 }
 
-# Used for a question whose component type has no colour assigned above.
+# Fallback for an unrecognised component type.
 DEFAULT_QUESTION_TYPE_COLOUR = ('F0F0F0', '474543')
 
-# Sheet title banner (row 1 of every sheet) and the column header row beneath it.
-SHEET_TITLE_COLOUR = '013366'
-SHEET_TITLE_FONT_COLOUR = 'FFFFFF'
-COLUMN_HEADER_COLOUR = 'F0EFEE'
-COLUMN_HEADER_FONT_COLOUR = '2D2D2D'
+# Type label shown in the type header row.
+QUESTION_TYPE_LABELS = {
+    FormIoComponentType.RADIO.value: 'RADIO',
+    FormIoComponentType.SURVEY.value: 'LIKERT MATRIX',
+    FormIoComponentType.RANKING.value: 'RANK ORDER',
+    FormIoComponentType.CHECKBOX.value: 'CHECKBOX',
+    FormIoComponentType.SELECTLIST.value: 'DROPDOWN',
+    FormIoComponentType.TEXTAREA.value: 'MULTIPLE LINES ANSWER',
+    FormIoComponentType.TEXTFIELD.value: 'SINGLE LINE ANSWER',
+}
+
+BODY_FONT_COLOUR = '2D2D2D'
+CELL_BORDER_COLOUR = 'E0DEDC'
+
+NUMERIC_FONT_COLOUR = '013366'  # Likert scale and rank order positions
+CHECKBOX_SELECTED_FONT_COLOUR = '1C7A5E'  # a ticked checkbox
+MUTED_FONT_COLOUR = 'C8C3BE'  # an unticked checkbox, and any unanswered question
+
+# Aggregated sheet headers, grouped by which question types the columns apply to.
+AGGREGATE_HEADER_DESCRIBE_COLOUR = '5A6473'  # type, question, option
+AGGREGATE_HEADER_TALLY_COLOUR = '1E5189'  # count and percentage
+AGGREGATE_HEADER_LIKERT_COLOUR = '9A5C00'  # Likert matrix only
+AGGREGATE_HEADER_RANK_COLOUR = '4A1A8C'  # rank order only
+
+# Neutral, so it divides the page rather than competing with the page banner.
+QUESTION_BANNER_COLOUR = 'E7E6E6'
+
+# Neutral an unanswered cell's band is blended toward, and how far.
+MUTED_FILL_NEUTRAL = 'E8E6E4'
+MUTED_FILL_STRENGTH = 0.5
 
 
-def blend_with_white(hex_colour: str, white_fraction: float) -> str:
-    """Lighten a hex colour by blending the given fraction of white into it.
+def get_page_colours(page_index: int) -> PageColours:
+    """Get the colour set for a survey page, cycling the palette for long surveys."""
+    return PAGE_COLOURS[page_index % len(PAGE_COLOURS)]
 
-    `white_fraction` of 0 returns the colour unchanged, 1 returns pure white.
+
+def mute_colour(hex_colour: str) -> str:
+    """Drain a fill toward neutral grey, for a cell holding no answer.
+
+    An empty cell has no text to grey, so the greying happens in the fill. Blending rather
+    than replacing keeps the page's colour coding readable.
     """
-    white_fraction = min(max(white_fraction, 0.0), 1.0)
-    channels = (hex_colour[0:2], hex_colour[2:4], hex_colour[4:6])
+    channels = ((hex_colour[i:i + 2], MUTED_FILL_NEUTRAL[i:i + 2]) for i in (0, 2, 4))
     blended = (
-        round(int(channel, 16) + (255 - int(channel, 16)) * white_fraction)
-        for channel in channels
+        round(int(source, 16) + (int(target, 16) - int(source, 16)) * MUTED_FILL_STRENGTH)
+        for source, target in channels
     )
     return ''.join(f'{value:02X}' for value in blended)
 
 
-def get_page_colour(page_index: int) -> str:
-    """Get the base colour for a survey page, cycling the palette for long surveys."""
-    return PAGE_BASE_COLOURS[page_index % len(PAGE_BASE_COLOURS)]
-
-
-def get_page_band_colours(page_index: int) -> tuple:
-    """Get the two zebra stripe colours for a survey page, as tints of its base colour."""
-    base = get_page_colour(page_index)
-    return tuple(blend_with_white(base, tint) for tint in ZEBRA_BAND_TINTS)
-
-
 def get_zebra_colour(page_index: int, row_index: int) -> str:
-    """Get the zebra stripe colour for a data row, given its page and position in that page."""
-    bands = get_page_band_colours(page_index)
-    return bands[row_index % len(bands)]
+    """Get the zebra stripe fill for a data row within a page's columns."""
+    colours = get_page_colours(page_index)
+    return colours.band_light if row_index % 2 == 0 else colours.band_dark
+
+
+def get_respondent_zebra_colour(row_index: int) -> str:
+    """Get the zebra stripe fill for a data row in the respondent id column."""
+    return RESPONDENT_BANDS[row_index % len(RESPONDENT_BANDS)]
 
 
 def get_question_type_colours(component_type: str) -> tuple:
-    """Get the (fill, font) colours for a question header row of the given component type."""
+    """Get the (fill, font) colours for the type label of the given component type."""
     return QUESTION_TYPE_COLOURS.get(component_type, DEFAULT_QUESTION_TYPE_COLOUR)
+
+
+def get_question_type_label(component_type: str) -> str:
+    """Get the display label shown in the type header row for a component type."""
+    return QUESTION_TYPE_LABELS.get(component_type, '')
