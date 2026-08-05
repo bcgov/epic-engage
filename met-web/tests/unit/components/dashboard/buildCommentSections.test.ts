@@ -13,6 +13,7 @@ describe('buildCommentSections', () => {
                 questions: [
                     { label: 'Age', position: 0, key: 'age', type: 'simpleradios', result: [] },
                 ],
+                keys: ['age'],
             },
         ];
         expect(buildCommentSections(pages)).toEqual([]);
@@ -34,6 +35,7 @@ describe('buildCommentSections', () => {
                         ],
                     },
                 ],
+                keys: ['location-other'],
             },
         ];
 
@@ -71,6 +73,7 @@ describe('buildCommentSections', () => {
                         ],
                     },
                 ],
+                keys: ['valued-air-quality', 'valued-water-quality'],
             },
         ];
 
@@ -114,6 +117,7 @@ describe('buildCommentSections', () => {
                         result: [{ value: 'Nope', count: 1 }],
                     },
                 ],
+                keys: ['q1', 'q2'],
             },
         ];
 
@@ -141,6 +145,7 @@ describe('buildCommentSections', () => {
                         ],
                     },
                 ],
+                keys: ['design-comments'],
             },
         ];
 

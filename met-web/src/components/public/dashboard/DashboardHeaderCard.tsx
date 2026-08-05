@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { MouseEvent, useContext, useEffect, useState } from 'react';
 import { Box, Menu, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
@@ -201,7 +201,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                         }}
                                     />
                                 }
-                                onClick={(event) => setExportAnchorEl(event.currentTarget)}
+                                onClick={(event: MouseEvent<HTMLElement>) => setExportAnchorEl(event.currentTarget)}
                                 loading={isExporting}
                                 disabled={!surveyId}
                                 aria-haspopup="true"
