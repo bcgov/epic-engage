@@ -26,12 +26,17 @@ export const SurveyBarPrintable = ({ engagement, engagementIsLoading, dashboardT
         setIsLoading(true);
         try {
             const response = await getSurveyResultData(Number(engagement.id), dashboardType);
-            response.data[0].result = response.data[0].result.map((answer) => {
-                const value =
-                    answer.value.length > 25 ? answer.value.slice(0, 25).trimEnd().concat('...') : answer.value;
-                const count = answer.count;
-                return { count, value };
-            });
+            response.data = response.data.filter((question) =>
+                question.result.every((answer) => answer.value !== undefined),
+            );
+            if (response.data.length) {
+                response.data[0].result = response.data[0].result.map((answer) => {
+                    const value =
+                        answer.value.length > 25 ? answer.value.slice(0, 25).trimEnd().concat('...') : answer.value;
+                    const count = answer.count;
+                    return { count, value };
+                });
+            }
             setData(response);
             setIsLoading(false);
             setIsError(false);

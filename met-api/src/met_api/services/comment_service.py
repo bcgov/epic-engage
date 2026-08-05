@@ -91,6 +91,23 @@ class CommentService:
         }
 
     @classmethod
+    def get_comments_grouped_by_question(cls, survey_id):
+        """Get free-text comments grouped by question."""
+        can_view_all_comments = CommentService.can_view_unapproved_comments(survey_id)
+
+        rows = Comment.get_comments_grouped_by_question(survey_id, can_view_all_comments)
+        return [
+            {
+                'key': row.key,
+                'label': row.label,
+                'type': row.type,
+                'comments': list(row.comments),
+                'count': len(row.comments),
+            }
+            for row in rows
+        ]
+
+    @classmethod
     def create_comments(cls, comments: list, session):
         """Create comment."""
         for comment in comments:

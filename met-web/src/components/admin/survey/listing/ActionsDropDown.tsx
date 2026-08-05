@@ -120,7 +120,7 @@ export const ActionsDropDown = ({
                 value: 5,
                 label: 'Edit Settings',
                 action: () => {
-                    navigate(`/surveys/${survey.id}/report`);
+                    navigate(`/surveys/${survey.id}/build?tab=report`);
                 },
                 condition: canEditSurvey(),
             },

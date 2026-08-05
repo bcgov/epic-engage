@@ -1,0 +1,57 @@
+import { TypedSurveyData } from 'models/analytics/surveyResult';
+
+// Reduced survey structure served by the dashboard endpoint: only page titles and the
+// question keys on each page (no question text/options).
+export interface DashboardSurveyPage {
+    title: string;
+    questions: string[]; // question keys
+}
+
+// A conditionally-shown free-text question's link back to the question/row that triggers it.
+// row_key/row_label are null when the trigger is a plain radio/select question rather than a
+// specific Likert row or Ranking statement.
+export interface ConditionalLink {
+    trigger_key: string;
+    row_key: string | null;
+    row_label: string | null;
+    trigger_values: string[];
+    trigger_value_labels: string[];
+}
+
+export interface DashboardSurveyForm {
+    id: number;
+    display?: string;
+    pages: DashboardSurveyPage[];
+    // Keyed by the follow-up question's key.
+    conditional_links?: Record<string, ConditionalLink>;
+}
+
+export interface ResultPage {
+    title: string;
+    questions: TypedSurveyData[];
+    // The page's question keys in true form field order. Chart data (analytics) and comment
+    // data (met-api) are fetched separately and each only cover a subset of question types, so
+    // this lets callers that need both interleave them in the order they appear on the form.
+    keys: string[];
+    // index signature so a ResultPage is also a valid FormInfo (consumed by FormStepper)
+    [key: string]: unknown;
+}
+
+/**
+ * Group typed survey result questions into the survey's wizard pages so the
+ * public dashboard can step through results the same way the survey is filled out.
+ * Returns null when the form is not a multi-page (wizard) form.
+ */
+export const buildResultPages = (
+    form: DashboardSurveyForm | undefined,
+    questions: TypedSurveyData[],
+): ResultPage[] | null => {
+    const isWizard = form?.display === 'wizard' && (form?.pages?.length ?? 0) > 0;
+    if (!isWizard || !form) {
+        return null;
+    }
+    return form.pages.map((page) => {
+        const keys = new Set(page.questions);
+        return { title: page.title, questions: questions.filter((q) => keys.has(q.key)), keys: page.questions };
+    });
+};

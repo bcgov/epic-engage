@@ -30,7 +30,7 @@ const TabButton = styled('button')({
     padding: '12px 20px',
     border: 'none',
     borderBottom: '3px solid transparent',
-    background: 'none',
+    backgroundColor: 'transparent',
     fontFamily: 'inherit',
     fontSize: '16px',
     fontWeight: 400,
@@ -45,6 +45,7 @@ const TabButton = styled('button')({
     '&:hover': {
         color: Palette.primary.main,
         fontWeight: 700,
+        backgroundColor: 'transparent',
     },
     '&.active': {
         color: Palette.primary.main,
@@ -54,6 +55,7 @@ const TabButton = styled('button')({
     '&:focus-visible': {
         outline: `2px solid ${Palette.primary.main}`,
         outlineOffset: '2px',
+        backgroundColor: 'transparent',
     },
 });
 

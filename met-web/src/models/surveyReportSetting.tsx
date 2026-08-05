@@ -6,4 +6,5 @@ export interface SurveyReportSetting {
     question_type: string;
     question: string;
     display: boolean;
+    description?: string | null;
 }

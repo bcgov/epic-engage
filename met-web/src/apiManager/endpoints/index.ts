@@ -43,6 +43,8 @@ const Endpoints = {
         LINK_TO_ENGAGEMENT: `${AppConfig.apiUrl}/surveys/survey_id/link/engagement/engagement_id`,
         UNLINK_FROM_ENGAGEMENT: `${AppConfig.apiUrl}/surveys/survey_id/unlink/engagement/engagement_id`,
         GET: `${AppConfig.apiUrl}/surveys/survey_id`,
+        GET_DASHBOARD: `${AppConfig.apiUrl}/surveys/survey_id/dashboard`,
+        GET_DASHBOARD_SHEET: `${AppConfig.apiUrl}/surveys/survey_id/dashboard/sheet`,
         DELETE: `${AppConfig.apiUrl}/surveys/survey_id`,
     },
     SurveySubmission: {
@@ -76,6 +78,7 @@ const Endpoints = {
     },
     Comment: {
         GET_LIST: `${AppConfig.apiUrl}/comments/survey/survey_id`,
+        GET_GROUPED: `${AppConfig.apiUrl}/comments/survey/survey_id/grouped`,
         GET_STAFF_SPREAD_SHEET: `${AppConfig.apiUrl}/comments/survey/survey_id/sheet/staff`,
         GET_PROPONENT_SPREAD_SHEET: `${AppConfig.apiUrl}/comments/survey/survey_id/sheet/proponent`,
     },

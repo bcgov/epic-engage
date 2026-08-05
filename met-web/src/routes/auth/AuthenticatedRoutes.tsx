@@ -22,7 +22,6 @@ import AuthGate from './AuthGate';
 import { USER_ROLES } from 'services/userService/constants';
 import UserProfile from 'components/admin/userManagement/userDetails';
 import { ScrollToTop } from 'routes';
-import ReportSettings from 'components/admin/survey/report';
 import { FormioListener } from 'routes';
 import Images from 'components/admin/imageManagement/ImageListing';
 
@@ -38,7 +37,6 @@ const AuthenticatedRoutes = () => {
                 <Route path="/surveys/create" element={<CreateSurvey />} />
                 <Route path="/surveys/:surveyId/build" element={<SurveyFormBuilder />} />
                 <Route path="/surveys/:surveyId/submit" element={<SubmitSurvey />} />
-                <Route path="/surveys/:surveyId/report" element={<ReportSettings />} />
                 <Route element={<AuthGate allowedRoles={[USER_ROLES.VIEW_APPROVED_COMMENTS]} />}>
                     <Route path="/surveys/:surveyId/comments" element={<CommentReviewListing />} />
                 </Route>

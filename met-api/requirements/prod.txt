@@ -33,3 +33,4 @@ anytree
 geopandas
 awesome-slugify==1.6.5
 pytz
+openpyxl

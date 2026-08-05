@@ -359,11 +359,11 @@ def factory_survey_report_setting_model(report_setting_info: dict = TestReportSe
     return setting
 
 
-def factory_engagement_setting_model(engagement_id):
+def factory_engagement_setting_model(engagement_id, send_report=False):
     """Produce a engagement setting model."""
     setting = EngagementSettingsModel(
         engagement_id=engagement_id,
-        send_report=False,
+        send_report=send_report,
     )
     setting.save()
     return setting

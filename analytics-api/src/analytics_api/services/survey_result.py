@@ -13,7 +13,9 @@ class SurveyResultService:  # pylint: disable=too-few-public-methods
     def get_survey_result(engagement_id, can_view_all_survey_results) -> SurveyResultSchema:
         """Get Survey result by the engagement id."""
         if engagement_access_validator.check_engagement_access(engagement_id):
-            survey_result = RequestTypeOptionModel.get_survey_result(engagement_id, can_view_all_survey_results)
+            survey_result = RequestTypeOptionModel.get_survey_result_with_type(
+                engagement_id, can_view_all_survey_results
+            )
             survey_result_schema = SurveyResultSchema(many=True)
             return survey_result_schema.dump(survey_result)
         return {}

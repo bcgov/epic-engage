@@ -15,7 +15,7 @@
 
 from http import HTTPStatus
 
-from flask import request
+from flask import Response, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
@@ -25,6 +25,7 @@ from met_api.exceptions.business_exception import BusinessException
 from met_api.models.pagination_options import PaginationOptions
 from met_api.models.survey_search_options import SurveySearchOptions
 from met_api.schemas.survey import SurveySchema
+from met_api.services.dashboard_export_service import DashboardExportService
 from met_api.services.survey_service import SurveyService
 from met_api.utils.roles import Role
 from met_api.utils.tenant_validator import require_role
@@ -74,6 +75,52 @@ class Survey(Resource):
             return 'Survey was not found', HTTPStatus.NOT_FOUND
         except ValueError as err:
             return str(err), HTTPStatus.BAD_REQUEST
+
+
+@cors_preflight('GET,OPTIONS')
+@API.route('/<survey_id>/dashboard')
+class SurveyDashboard(Resource):
+    """Resource for fetching a survey form for the public results dashboard."""
+
+    @staticmethod
+    @cross_origin(origins=allowedorigins())
+    @auth.optional
+    def get(survey_id):
+        """Fetch a survey form for a published or closed engagement's dashboard."""
+        try:
+            survey_record = SurveyService().get_for_dashboard(survey_id)
+            return survey_record, HTTPStatus.OK
+        except KeyError:
+            return 'Survey was not found', HTTPStatus.NOT_FOUND
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@cors_preflight('GET,OPTIONS')
+@API.route('/<survey_id>/dashboard/sheet')
+class SurveyDashboardSheet(Resource):
+    """Resource for exporting the internal dashboard's survey data to a spreadsheet."""
+
+    @staticmethod
+    @cross_origin(origins=allowedorigins())
+    @require_role([Role.EXPORT_INTERNAL_COMMENT_SHEET.value])
+    def get(survey_id):
+        """Export the internal dashboard's survey data."""
+        try:
+            stream, file_name = DashboardExportService().export_dashboard_data_to_spread_sheet(survey_id)
+            headers = {
+                'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'content-disposition': f'attachment; filename="{file_name}"',
+            }
+            return Response(
+                response=stream.getvalue(),
+                status=HTTPStatus.OK,
+                headers=headers
+            )
+        except KeyError:
+            return 'Survey was not found', HTTPStatus.NOT_FOUND
+        except ValueError as err:
+            return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @cors_preflight('GET, POST, PUT, OPTIONS')

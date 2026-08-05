@@ -17,22 +17,36 @@
 Test-Suite to ensure that the /Engagement endpoint is working as expected.
 """
 import copy
+from datetime import datetime, timedelta
 from http import HTTPStatus
+from io import BytesIO
 import json
 
 from flask import current_app
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 import pytest
 
 from met_api.constants.engagement_status import Status
 from met_api.models.engagement import Engagement as EngagementModel
 from met_api.models.membership import Membership as MembershipModel
 from met_api.models.tenant import Tenant as TenantModel
+from met_api.services.dashboard_export_service import (
+    AGGREGATE_COLUMNS, AGGREGATE_HEADER_ROW, DASHBOARD_SHEETS, DATA_START_ROW, OPTION_LABEL_ROW,
+    PAGE_TITLE_ROW, QUANTITATIVE_AGGREGATED, QUANTITATIVE_NON_AGGREGATED, QUESTION_TITLE_ROW,
+    QUESTION_TYPE_ROW)
 from met_api.utils.constants import TENANT_ID_HEADER
 from met_api.utils.enums import ContentType, MembershipStatus
-from tests.utilities.factory_scenarios import TestJwtClaims, TestSurveyInfo, TestTenantInfo, TestUserInfo
+from met_api.utils.export_styles import (
+    BODY_FONT_COLOUR, CHECKBOX_SELECTED_FONT_COLOUR, MUTED_FONT_COLOUR, NUMERIC_FONT_COLOUR,
+    QUESTION_BANNER_COLOUR, get_page_colours, mute_colour)
+from tests.utilities.factory_scenarios import (
+    TestEngagementInfo, TestJwtClaims, TestParticipantInfo, TestSubmissionInfo, TestSurveyInfo,
+    TestTenantInfo, TestUserInfo)
 from tests.utilities.factory_utils import (
-    factory_auth_header, factory_engagement_model, factory_membership_model, factory_staff_user_model,
-    factory_survey_model, factory_tenant_model, set_global_tenant)
+    factory_auth_header, factory_engagement_model, factory_membership_model, factory_participant_model,
+    factory_staff_user_model, factory_submission_model, factory_survey_and_eng_model, factory_survey_model,
+    factory_tenant_model, set_global_tenant)
 
 
 surveys_url = '/api/surveys/'
@@ -367,3 +381,448 @@ def test_surveys_clone_team_member(mocker, client, jwt, session, survey_info):
     # Assert the response status code and data
     assert response.status_code == HTTPStatus.OK
     assert response.get_json().get('form_json') == survey.form_json
+
+
+wizard_survey_info = {
+    **TestSurveyInfo.survey1.value,
+    'form_json': {
+        'display': 'wizard',
+        'components': [
+            {
+                'type': 'panel', 'title': 'Page 1', 'key': 'page1', 'input': False,
+                'components': [{'key': 'question1', 'input': True, 'type': 'simpletextfield'}],
+            },
+            {
+                'type': 'panel', 'title': 'Page 2', 'key': 'page2', 'input': False,
+                'components': [{'key': 'question2', 'input': True, 'type': 'simplecheckboxes'}],
+            },
+        ],
+    },
+}
+
+wizard_survey_info_with_conditional = {
+    **TestSurveyInfo.survey1.value,
+    'form_json': {
+        'display': 'wizard',
+        'components': [
+            {
+                'type': 'panel', 'title': 'Page 1', 'key': 'page1', 'input': False,
+                'components': [
+                    {
+                        'key': 'question1', 'input': True, 'type': 'simpleradios',
+                        'values': [
+                            {'value': 'yes', 'label': 'Yes'},
+                            {'value': 'other', 'label': 'Other'},
+                        ],
+                    },
+                    {
+                        'key': 'followup1', 'input': True, 'type': 'simpletextarea',
+                        'customConditional': "show = data.question1 === 'other';",
+                    },
+                ],
+            },
+        ],
+    },
+}
+
+
+def test_get_survey_dashboard(client, session):  # pylint:disable=unused-argument
+    """Assert that the dashboard endpoint returns the wizard page structure without auth."""
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('display') == 'wizard'
+    pages = rv.json.get('pages')
+    assert pages == [
+        {'title': 'Page 1', 'questions': ['question1']},
+        {'title': 'Page 2', 'questions': ['question2']},
+    ]
+    assert rv.json.get('conditional_links') == {}
+
+
+def test_get_survey_dashboard_non_wizard(client, session):  # pylint:disable=unused-argument
+    """Assert that a single page survey returns no pages for the dashboard."""
+    survey, _ = factory_survey_and_eng_model()
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('pages') == []
+    assert rv.json.get('conditional_links') == {}
+
+
+def test_get_survey_dashboard_conditional_links(client, session):  # pylint:disable=unused-argument
+    """Assert that a conditionally-shown follow-up question is grouped under its trigger."""
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info_with_conditional)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('conditional_links') == {
+        'followup1': {
+            'trigger_key': 'question1',
+            'row_key': None,
+            'row_label': None,
+            'trigger_values': ['other'],
+            'trigger_value_labels': ['Other'],
+        },
+    }
+
+
+def test_get_survey_dashboard_draft_engagement(client, session):  # pylint:disable=unused-argument
+    """Assert that the dashboard endpoint hides surveys of unpublished engagements."""
+    eng = factory_engagement_model(status=Status.Draft.value)
+    survey = factory_survey_model()
+    survey.engagement_id = eng.id
+    survey.save()
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_get_survey_dashboard_closed_engagement_visible(client, session):  # pylint:disable=unused-argument
+    """Assert that a closed (but already-started) engagement's dashboard is still reachable."""
+    eng = factory_engagement_model(status=Status.Closed.value)
+    survey = factory_survey_model()
+    survey.engagement_id = eng.id
+    survey.save()
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+
+
+def test_get_survey_dashboard_not_yet_started_engagement_hidden(client, session):  # pylint:disable=unused-argument
+    """Assert that a published engagement whose start_date is still in the future is hidden."""
+    future_eng_info = {
+        **TestEngagementInfo.engagement1.value,
+        'start_date': (datetime.today() + timedelta(days=1)).strftime('%Y-%m-%d'),
+    }
+    eng = factory_engagement_model(eng_info=future_eng_info, status=Status.Published.value)
+    survey = factory_survey_model()
+    survey.engagement_id = eng.id
+    survey.save()
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_get_survey_dashboard_survey_not_found(client, session):  # pylint:disable=unused-argument
+    """Assert that a nonexistent survey id returns 404."""
+    rv = client.get(f'{surveys_url}999999999/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+def test_get_survey_dashboard_sheet(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that the dashboard export returns a workbook with the four labelled sheets."""
+    survey, _ = factory_survey_and_eng_model()
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    workbook = load_workbook(BytesIO(rv.data))
+    assert workbook.sheetnames == [sheet.tab_name for sheet in DASHBOARD_SHEETS]
+    # Excel caps tab names at 31 characters, so "All Data" is the shortened form of its title.
+    assert [sheet.title for sheet in DASHBOARD_SHEETS] == [
+        'Quantitative - Non-aggregated',
+        'Quantitative - Aggregated',
+        'All Data (Quantitative and Qualitative)',
+        'Qualitative Responses',
+    ]
+
+
+def test_get_survey_dashboard_sheet_unauthorized(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that the dashboard export is not available without the export role."""
+    survey, _ = factory_survey_and_eng_model()
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.public_user_role)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_get_survey_dashboard_sheet_survey_not_found(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that exporting a nonexistent survey returns 404."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+
+    rv = client.get(f'{surveys_url}999999999/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
+# A two page wizard covering every quantitative question type.
+quantitative_survey_info = {
+    **TestSurveyInfo.survey1.value,
+    'form_json': {
+        'display': 'wizard',
+        'components': [
+            {
+                'title': 'Demographics', 'key': 'page1', 'type': 'panel', 'components': [
+                    {
+                        'key': 'age', 'type': 'simpleradios', 'label': 'What is your age?', 'input': True,
+                        'values': [{'value': 'a1', 'label': '18-34'}, {'value': 'a2', 'label': '35-54'}],
+                    },
+                    {
+                        'key': 'freq', 'type': 'simpleselect', 'label': 'How often?', 'input': True,
+                        'values': [{'value': 'm', 'label': 'Monthly'}, {'value': 'w', 'label': 'Weekly'}],
+                    },
+                ],
+            },
+            {
+                'title': 'Outreach', 'key': 'page2', 'type': 'panel', 'components': [
+                    {
+                        'key': 'reach', 'type': 'simplesurvey', 'label': 'Rate each method', 'input': True,
+                        'questions': [{'value': 'email', 'label': 'Email'}, {'value': 'radio', 'label': 'Radio'}],
+                        'values': [{'value': '1', 'label': 'Low'}, {'value': '5', 'label': 'High'}],
+                    },
+                    {
+                        'key': 'rank', 'type': 'simpleranking', 'label': 'Rank these', 'input': True,
+                        'statements': [{'id': 's1', 'label': 'Recreation'}, {'id': 's2', 'label': 'Wildlife'}],
+                    },
+                    {
+                        'key': 'acts', 'type': 'simplecheckboxes', 'label': 'Which activities?', 'input': True,
+                        'values': [{'value': 'fish', 'label': 'Fishing'}, {'value': 'hike', 'label': 'Hiking'}],
+                    },
+                    {
+                        'key': 'notes', 'type': 'simpletextarea', 'label': 'Anything else?', 'input': True,
+                    },
+                ],
+            },
+        ],
+    },
+}
+
+
+def _export_workbook(client, jwt, survey_id):
+    """Fetch the dashboard export and return its non-aggregated worksheet."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    rv = client.get(f'{surveys_url}{survey_id}/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.OK
+    return load_workbook(BytesIO(rv.data))[QUANTITATIVE_NON_AGGREGATED.tab_name]
+
+
+def test_dashboard_sheet_header_structure(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert the four header rows: page banners, question titles, option labels and types."""
+    survey, _ = factory_survey_and_eng_model(quantitative_survey_info)
+
+    sheet = _export_workbook(client, jwt, survey.id)
+
+    # Free-text excluded; radio/select take one column each, the rest one per row/option.
+    assert sheet.max_column == 1 + 8
+    assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == [
+        'Respondent ID', 'What is your age?', 'How often?', 'Rate each method', 'Rate each method',
+        'Rank these', 'Rank these', 'Which activities?', 'Which activities?',
+    ]
+    # Names the specific row/option; empty for radio and drop-down.
+    assert [c.value for c in sheet[OPTION_LABEL_ROW]] == [
+        None, None, None, 'Email', 'Radio', 'Recreation', 'Wildlife', 'Fishing', 'Hiking',
+    ]
+    assert [c.value for c in sheet[QUESTION_TYPE_ROW]] == [
+        'TYPE', 'RADIO', 'DROPDOWN', 'LIKERT MATRIX', 'LIKERT MATRIX',
+        'RANK ORDER', 'RANK ORDER', 'CHECKBOX', 'CHECKBOX',
+    ]
+    # Each page is bannered across its own columns.
+    assert sheet.cell(row=PAGE_TITLE_ROW, column=2).value == 'Page 1 - Demographics'
+    assert sheet.cell(row=PAGE_TITLE_ROW, column=4).value == 'Page 2 - Outreach'
+    assert {str(r) for r in sheet.merged_cells.ranges} == {'B1:C1', 'D1:I1'}
+
+
+def test_dashboard_sheet_respondent_rows(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert one row per respondent, with each question type's value written as designed."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    participant = factory_participant_model()
+    factory_submission_model(survey.id, eng.id, participant.id, {
+        **TestSubmissionInfo.submission1.value,
+        'submission_json': {
+            'age': 'a2', 'freq': 'w',
+            'reach': {'email': '5', 'radio': '1'},
+            'rank': {'s1': 2, 's2': 1},
+            'acts': {'fish': True, 'hike': False},
+            'notes': 'excluded from this sheet',
+        },
+    })
+
+    sheet = _export_workbook(client, jwt, survey.id)
+
+    assert sheet.max_row == DATA_START_ROW
+    assert [c.value for c in sheet[DATA_START_ROW]] == [
+        'R-0001',
+        '35-54',      # radio -> option label
+        'Weekly',     # drop-down -> option label
+        '5', '1',     # Likert -> scale code as stored
+        2, 1,         # rank order -> position
+        1, 0,         # checkbox -> selected / not selected
+    ]
+
+
+def test_dashboard_sheet_collapses_resubmissions(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert a participant's resubmission replaces their earlier row rather than adding one."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    participant = factory_participant_model()
+    other = factory_participant_model(TestParticipantInfo.participant2)
+    factory_submission_model(survey.id, eng.id, participant.id,
+                             {**TestSubmissionInfo.submission1.value, 'submission_json': {'age': 'a1'}})
+    factory_submission_model(survey.id, eng.id, participant.id,
+                             {**TestSubmissionInfo.submission1.value, 'submission_json': {'age': 'a2'}})
+    factory_submission_model(survey.id, eng.id, other.id,
+                             {**TestSubmissionInfo.submission1.value, 'submission_json': {'age': 'a1'}})
+
+    sheet = _export_workbook(client, jwt, survey.id)
+
+    # The repeat participant keeps only their most recent answer.
+    assert sheet.max_row == DATA_START_ROW + 1
+    assert [sheet.cell(row=r, column=1).value for r in (DATA_START_ROW, DATA_START_ROW + 1)] == \
+        ['R-0001', 'R-0002']
+    assert sheet.cell(row=DATA_START_ROW, column=2).value == '35-54'
+    assert sheet.cell(row=DATA_START_ROW + 1, column=2).value == '18-34'
+
+
+def test_dashboard_sheet_unanswered_questions_stay_blank(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert a question the respondent never answered is blank, not a zero."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    participant = factory_participant_model()
+    factory_submission_model(survey.id, eng.id, participant.id,
+                             {**TestSubmissionInfo.submission1.value, 'submission_json': {'age': 'a1'}})
+
+    sheet = _export_workbook(client, jwt, survey.id)
+
+    assert sheet.cell(row=DATA_START_ROW, column=2).value == '18-34'
+    # Checkbox especially must not report 0 for a question never shown - that would be
+    # indistinguishable from a deliberate "not selected".
+    assert [c.value for c in sheet[DATA_START_ROW]][2:] == [None] * 7
+
+
+def _aggregated_sheet(client, jwt, survey_id):
+    """Fetch the dashboard export and return its aggregated worksheet."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    rv = client.get(f'{surveys_url}{survey_id}/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.OK
+    return load_workbook(BytesIO(rv.data))[QUANTITATIVE_AGGREGATED.tab_name]
+
+
+def _seed_two_respondents(survey, eng):
+    """Add two submissions covering every quantitative question type."""
+    for answers in (
+        {'age': 'a1', 'freq': 'm', 'reach': {'email': '1', 'radio': '5'},
+         'rank': {'s1': 1, 's2': 2}, 'acts': {'fish': True, 'hike': False}},
+        {'age': 'a1', 'freq': 'w', 'reach': {'email': '5'},
+         'rank': {'s1': 2, 's2': 1}, 'acts': {'fish': True, 'hike': True}},
+    ):
+        factory_submission_model(survey.id, eng.id, factory_participant_model().id,
+                                 {**TestSubmissionInfo.submission1.value, 'submission_json': answers})
+
+
+def test_dashboard_aggregated_sheet_header_and_banners(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert the aligned header row, and that pages and questions each get their own banner."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    _seed_two_respondents(survey, eng)
+
+    sheet = _aggregated_sheet(client, jwt, survey.id)
+
+    # The design offset these by one; 'Question Key' is dropped so 'Question Type' sits
+    # over the column holding the type.
+    assert [c.value for c in sheet[AGGREGATE_HEADER_ROW]] == [
+        label for label, _ in AGGREGATE_COLUMNS
+    ]
+    assert sheet.cell(row=AGGREGATE_HEADER_ROW, column=1).value == 'Question Type'
+    assert sheet.cell(row=AGGREGATE_HEADER_ROW + 1, column=1).value == 'PAGE 1 - DEMOGRAPHICS'
+    assert sheet.cell(row=AGGREGATE_HEADER_ROW + 1, column=1).alignment.horizontal == 'left'
+
+    # Each question opens its own neutral, full-width banner.
+    question_banner = sheet.cell(row=AGGREGATE_HEADER_ROW + 2, column=1)
+    assert question_banner.value == 'What is your age?'
+    assert question_banner.fill.fgColor.rgb[2:] == QUESTION_BANNER_COLOUR
+    assert f'A2:{get_column_letter(len(AGGREGATE_COLUMNS))}2' in {
+        str(r) for r in sheet.merged_cells.ranges
+    }
+    # Each page banner takes its own page colour.
+    assert sheet.cell(row=AGGREGATE_HEADER_ROW + 1, column=1).fill.fgColor.rgb[2:] == \
+        get_page_colours(0).banner
+    page_two = [r for r in range(1, sheet.max_row + 1)
+                if sheet.cell(row=r, column=1).value == 'PAGE 2 - OUTREACH']
+    assert len(page_two) == 1
+    assert sheet.cell(row=page_two[0], column=1).fill.fgColor.rgb[2:] == get_page_colours(1).banner
+
+
+def test_dashboard_aggregated_sheet_tallies_by_question_type(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert each question type fills the columns the design assigns it."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    _seed_two_respondents(survey, eng)
+
+    sheet = _aggregated_sheet(client, jwt, survey.id)
+    rows = [[c.value for c in row] for row in sheet.iter_rows()]
+
+    def row_for(question_type, option, extra=None):
+        found = [r for r in rows if r[0] == question_type and
+                 r[2] == option and (extra is None or extra in r)]
+        assert len(found) == 1, f'expected one {question_type} row for {option}'
+        return found[0]
+
+    # Radio: one row per option, including one nobody picked.
+    assert row_for('RADIO', '18-34')[3:5] == [2, 1.0]
+    assert row_for('RADIO', '35-54')[3:5] == [0, 0.0]
+    # Drop-down behaves the same.
+    assert row_for('DROPDOWN', 'Monthly')[3:5] == [1, 0.5]
+
+    # Likert: one row per statement and scale point. Only one respondent rated 'Radio',
+    # so its denominator is 1.
+    assert row_for('LIKERT MATRIX', 'Email', 'Low')[3:7] == [1, 0.5, '1', 'Low']
+    assert row_for('LIKERT MATRIX', 'Radio', 'High')[3:7] == [1, 1.0, '5', 'High']
+
+    # Rank order reports through its own columns, leaving count/percentage empty.
+    recreation = row_for('RANK ORDER', 'Recreation', 'Ranked 1')
+    assert recreation[3:5] == [None, None]
+    assert recreation[7:10] == ['Ranked 1', 1, 0.5]
+
+    # Checkbox counts respondents, not selections, so percentages can exceed 100%.
+    assert row_for('CHECKBOX', 'Fishing')[3:5] == [2, 1.0]
+    assert row_for('CHECKBOX', 'Hiking')[3:5] == [1, 0.5]
+
+
+def test_dashboard_sheet_tones_answers_by_value(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert answers are toned by what they hold, and unanswered cells are muted."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    participant = factory_participant_model()
+    factory_submission_model(survey.id, eng.id, participant.id, {
+        **TestSubmissionInfo.submission1.value,
+        # 'freq' is left out, so its column is unanswered.
+        'submission_json': {
+            'age': 'a1', 'reach': {'email': '5'}, 'acts': {'fish': True, 'hike': False},
+        },
+    })
+
+    sheet = _export_workbook(client, jwt, survey.id)
+    row = DATA_START_ROW
+
+    def fill_of(column):
+        return sheet.cell(row=row, column=column).fill.fgColor.rgb[2:]
+
+    def font_of(column):
+        return sheet.cell(row=row, column=column).font.color.rgb[2:]
+
+    page_one_band = get_page_colours(0).band_light
+    page_two_band = get_page_colours(1).band_light
+
+    # Columns: 1 respondent id, 2 radio, 3 drop-down, 4-5 Likert, 6-7 rank, 8-9 checkbox.
+    assert font_of(2) == BODY_FONT_COLOUR  # radio label
+    assert font_of(4) == NUMERIC_FONT_COLOUR  # Likert scale value
+    assert font_of(8) == CHECKBOX_SELECTED_FONT_COLOUR  # ticked checkbox
+    # An unticked checkbox is muted but keeps its page band - it was answered, not a gap.
+    assert sheet.cell(row=row, column=9).value == 0
+    assert font_of(9) == MUTED_FONT_COLOUR
+    assert fill_of(9) == page_two_band
+    # The unanswered drop-down has no text to grey, so its band drains instead.
+    assert sheet.cell(row=row, column=3).value is None
+    assert fill_of(3) == mute_colour(page_one_band)
+    assert fill_of(2) == page_one_band

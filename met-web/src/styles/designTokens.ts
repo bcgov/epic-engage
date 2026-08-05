@@ -37,6 +37,19 @@ export const surfaceColorBackgroundLightGray = '#faf9f8';
 export const surfaceColorBackgroundLightBlue = '#f1f8fe';
 export const surfaceColorBackgroundDarkBlue = '#053662';
 
+// Neutral surfaces the results dashboard needs on top of the above
+// that sits lighter than `surfaceColorBorderDefault`.
+export const surfaceColorBackgroundOffWhite = '#f7f8fa';
+export const surfaceColorBackgroundGray = '#f2f2f2';
+export const surfaceColorBorderSubtle = '#f0efee';
+
+// Tinted blues for callouts, the active TOC entry and the activity bars.
+export const surfaceColorBackgroundPaleBlue = '#e3eef9';
+export const surfaceColorBackgroundSkyBlue = '#d8eafd';
+
+// Unfilled portion of a progress/proportion bar.
+export const surfaceColorTrack = '#eeeeee';
+
 export const surfaceColorBorderDefault = '#d8d8d8';
 export const surfaceColorBorderMedium = '#898785';
 export const surfaceColorBorderDark = '#353433';
@@ -74,6 +87,42 @@ export const supportSurfaceColorDanger = '#f4e1e2';
 export const supportBorderColorInfo = '#f8bb47';
 export const supportSurfaceColorInfo = '#fef1d8';
 
+// Darkened amber for warning *icons and text*, where the border/surface pair above is too light
+// to meet contrast against white.
+export const supportIconColorWarning = '#b54708';
+
+/* -------------------------------------------------------------------------- */
+/* Data visualisation                                                          */
+/*                                                                             */
+/* The B.C. Design System has no categorical chart palette, so these are the    */
+/* app's own series colours. They are not interchangeable with the brand and    */
+/* status colours above. Changing these recolours charts only.                   */
+/*                                                                             */
+/* Each swatch is paired with a label colour in `Palette.chart` (Theme.ts);     */
+/* if you retune a swatch, re-check that its label still passes contrast.       */
+/* -------------------------------------------------------------------------- */
+
+export const dataVizBlueDark = '#1b5e8c';
+export const dataVizBlueMedium = '#4a90c4';
+export const dataVizBlueLight = '#90c0de';
+export const dataVizBlueSky = '#7eb8d4';
+
+export const dataVizYellow = '#fcba19';
+export const dataVizYellowLight = '#f5c97a';
+export const dataVizAmber = '#e8a94a';
+export const dataVizOrange = '#e07b39';
+
+export const dataVizRed = '#c03f2c';
+export const dataVizSalmon = '#e8866f';
+
+export const dataVizGreen = '#72b09d';
+export const dataVizGreenDeep = '#5c9e6a';
+
+export const dataVizPurple = '#7b6fa0';
+
+// Used both as a mid-scale swatch and as the fallback when a series runs past the end of a scale.
+export const dataVizNeutral = '#c8c3be';
+
 /* -------------------------------------------------------------------------- */
 /* Typography                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -88,6 +137,9 @@ export const typographyColorPrimary = '#2d2d2d';
 export const typographyColorSecondary = '#474543';
 export const typographyColorPrimaryInvert = '#ffffff';
 export const typographyColorDisabled = '#9f9d9c';
+// Quieter than `secondary` but still legible.
+// Shares its value with `surfaceColorBorderMedium`; kept separate so text and borders can diverge.
+export const typographyColorMuted = '#898785';
 export const typographyColorPlaceholder = '#9f9d9c';
 export const typographyColorLink = '#255a90';
 export const typographyColorDanger = '#ce3e39';

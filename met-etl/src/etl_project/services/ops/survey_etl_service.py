@@ -189,6 +189,18 @@ def _do_etl_survey_inputs(session, survey_id, component, component_type, survey_
         if not questions:
             return position
 
+        # Parent row stores the matrix question label; sub-question rows link back via request_id prefix
+        session.add(EtlRequestTypeOption(survey_id=survey_id,
+                                         request_id=component['id'],
+                                         label=component['label'],
+                                         is_active=True,
+                                         key=component['key'],
+                                         type=component['type'],
+                                         runcycle_id=survey_new_runcycleid,
+                                         position=position
+                                         ))
+        session.commit()
+
         for question in questions:
             position = position + 1
             model_name = EtlRequestTypeOption(survey_id=survey_id,
@@ -209,6 +221,18 @@ def _do_etl_survey_inputs(session, survey_id, component, component_type, survey_
 
         if not statements:
             return position
+
+        # Parent row stores the ranking question label; statement rows link back via request_id prefix
+        session.add(EtlRequestTypeOption(survey_id=survey_id,
+                                         request_id=component['id'],
+                                         label=component['label'],
+                                         is_active=True,
+                                         key=component['key'],
+                                         type=component['type'],
+                                         runcycle_id=survey_new_runcycleid,
+                                         position=position
+                                         ))
+        session.commit()
 
         for statement in statements:
             position = position + 1
