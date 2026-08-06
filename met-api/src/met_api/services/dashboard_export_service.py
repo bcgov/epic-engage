@@ -13,8 +13,8 @@
 # limitations under the License.
 """Service for exporting internal dashboard survey data to a spreadsheet.
 
-Builds the four sheets the dashboard's data export offers. The last two are still created
-empty, and are populated by their own follow-up tickets.
+Builds the four sheets the dashboard's data export offers: the quantitative answers per
+respondent and aggregated, both combined with the free text, and the free text alone.
 
 An .xlsx rather than a literal .csv: a CSV is one flat text sheet, and cannot carry multiple
 sheets, zebra striping or colour coding.
@@ -42,7 +42,8 @@ from met_api.utils.export_styles import (
     get_zebra_colour, mute_colour)
 from met_api.utils.survey_export_aggregates import build_aggregate_rows
 from met_api.utils.survey_export_columns import (
-    build_export_columns, build_respondent_rows, format_respondent_id)
+    FREE_TEXT_TYPES, QUANTITATIVE_TYPES, build_export_columns, build_respondent_rows,
+    filter_respondents_with_comments, format_respondent_id)
 
 
 # Types whose answer is a number rather than an option label
@@ -80,6 +81,10 @@ FIRST_QUESTION_COLUMN = 2
 
 RESPONDENT_COLUMN_WIDTH = 12
 QUESTION_COLUMN_WIDTH = 22
+
+# The qualitative sheet drops the option and type rows.
+COMMENT_DATA_START_ROW = 3
+COMMENT_COLUMN_WIDTH = 48
 
 # The aggregated sheet's single header row, then banners and option rows beneath it.
 AGGREGATE_HEADER_ROW = 1
@@ -127,7 +132,9 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
 
         workbook.remove(workbook.active)
 
-        columns = build_export_columns(survey.form_json)
+        columns = build_export_columns(survey.form_json, QUANTITATIVE_TYPES)
+        all_columns = build_export_columns(survey.form_json, QUANTITATIVE_TYPES | FREE_TEXT_TYPES)
+        comment_columns = build_export_columns(survey.form_json, FREE_TEXT_TYPES)
         respondents = build_respondent_rows(SubmissionModel.get_by_survey_id(survey.id))
 
         for sheet in DASHBOARD_SHEETS:
@@ -138,6 +145,11 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
                 cls._build_aggregated_sheet(
                     worksheet, build_aggregate_rows(survey.form_json, respondents)
                 )
+            elif sheet is ALL_DATA:
+                # Same shape as the non-aggregated sheet, with the free-text columns kept in.
+                cls._build_non_aggregated_sheet(worksheet, all_columns, respondents)
+            elif sheet is QUALITATIVE_RESPONSES:
+                cls._build_qualitative_sheet(worksheet, comment_columns, respondents)
 
         stream = BytesIO()
         workbook.save(stream)
@@ -153,9 +165,12 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         cls._write_respondent_rows(worksheet, columns, respondents)
 
         worksheet.column_dimensions[get_column_letter(RESPONDENT_COLUMN)].width = RESPONDENT_COLUMN_WIDTH
-        for offset in range(len(columns)):
+        for offset, column in enumerate(columns):
             letter = get_column_letter(FIRST_QUESTION_COLUMN + offset)
-            worksheet.column_dimensions[letter].width = QUESTION_COLUMN_WIDTH
+            worksheet.column_dimensions[letter].width = (
+                COMMENT_COLUMN_WIDTH if column.component_type in FREE_TEXT_TYPES
+                else QUESTION_COLUMN_WIDTH
+            )
         # Keep the header and respondent id column in view while scrolling.
         worksheet.freeze_panes = worksheet.cell(row=DATA_START_ROW, column=FIRST_QUESTION_COLUMN)
 
@@ -203,6 +218,63 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
             striped_index += 1
 
         worksheet.freeze_panes = worksheet.cell(row=AGGREGATE_HEADER_ROW + 1, column=1)
+
+    @classmethod
+    def _build_qualitative_sheet(cls, worksheet, columns: list, respondents: list):
+        """Write the free-text sheet: page banners, question titles, then a row per commenter.
+
+        Pages holding no free-text question simply do not appear, but the page numbers of those
+        that do are left alone, so a banner can read "Page 5" with no Page 4 before it.
+        """
+        if not columns:
+            return
+
+        for row in (PAGE_TITLE_ROW, QUESTION_TITLE_ROW):
+            cls._style_header_cell(
+                worksheet.cell(row=row, column=RESPONDENT_COLUMN),
+                fill=RESPONDENT_HEADER_COLOUR,
+                font_colour=RESPONDENT_HEADER_FONT_COLOUR,
+                bold=True,
+            )
+        worksheet.cell(row=QUESTION_TITLE_ROW, column=RESPONDENT_COLUMN, value='Respondent ID')
+        worksheet.column_dimensions[get_column_letter(RESPONDENT_COLUMN)].width = RESPONDENT_COLUMN_WIDTH
+
+        cls._write_page_banners(worksheet, columns)
+        for offset, column in enumerate(columns):
+            index = FIRST_QUESTION_COLUMN + offset
+            cls._style_header_cell(
+                worksheet.cell(row=QUESTION_TITLE_ROW, column=index, value=column.question_label),
+                fill=get_page_colours(column.page_index).header,
+                font_colour='FFFFFF',
+                bold=True,
+            )
+            worksheet.column_dimensions[get_column_letter(index)].width = COMMENT_COLUMN_WIDTH
+
+        commenters = filter_respondents_with_comments(respondents, columns)
+        for row_index, (respondent_index, submission) in enumerate(commenters):
+            row = COMMENT_DATA_START_ROW + row_index
+            cls._style_data_cell(
+                worksheet.cell(
+                    row=row, column=RESPONDENT_COLUMN,
+                    value=format_respondent_id(respondent_index),
+                ),
+                fill=get_respondent_zebra_colour(row_index),
+                font_colour=RESPONDENT_FONT_COLOUR,
+            )
+            for offset, column in enumerate(columns):
+                answer = column.read_answer(submission.submission_json)
+                band = get_zebra_colour(column.page_index, row_index)
+                cls._style_data_cell(
+                    worksheet.cell(
+                        row=row, column=FIRST_QUESTION_COLUMN + offset, value=answer
+                    ),
+                    fill=band if answer is not None else mute_colour(band),
+                    font_colour=BODY_FONT_COLOUR if answer is not None else MUTED_FONT_COLOUR,
+                )
+
+        worksheet.freeze_panes = worksheet.cell(
+            row=COMMENT_DATA_START_ROW, column=FIRST_QUESTION_COLUMN
+        )
 
     @classmethod
     def _write_aggregate_banner(cls, worksheet, row: int, text: str, fill: str, font_colour: str):
