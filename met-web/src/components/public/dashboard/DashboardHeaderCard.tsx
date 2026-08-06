@@ -72,7 +72,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
             setIsExporting(true);
             const response = await getDashboardDataSheet(Number(surveyId));
             const timestamp = formatToUTC(Date(), 'YYYY-MM-DD');
-            downloadFile(response, `INTERNAL ONLY - ${engagement.name} - Dashboard Data - ${timestamp}.xlsx`);
+            downloadFile(response, `${engagement.name} - Dashboard Data - ${timestamp}.xlsx`);
         } catch (error) {
             dispatch(
                 openNotification({

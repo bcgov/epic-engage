@@ -21,12 +21,15 @@ answer, since the stored shape differs per type:
     simplesurvey (Likert)        data[key][rowKey]         -> scale code, kept as stored
     simpleranking (Rank order)   data[key][statementId]    -> rank position
     simplecheckboxes             data[key][optionKey]      -> 1 / 0
+    simpletextarea / textfield   data[key]                 -> the text itself
 
-Free-text questions are excluded.
+Callers pick which types they want, so a sheet can take the quantitative questions, the
+free-text ones, or both.
 """
 from typing import NamedTuple, Optional
 
 from met_api.constants.report_setting_type import FormIoComponentType
+from met_api.utils.survey_conditional_logic import extract_conditional_links
 
 
 # Question types that carry quantitative answers.
@@ -43,6 +46,15 @@ SINGLE_VALUE_TYPES = {
     FormIoComponentType.RADIO.value,
     FormIoComponentType.SELECTLIST.value,
 }
+
+# Free-text types that carry the qualitative answers
+FREE_TEXT_TYPES = {
+    FormIoComponentType.TEXTAREA.value,
+    FormIoComponentType.TEXTFIELD.value,
+}
+
+# Everything answered with one flat value, so one column and no option label.
+FLAT_VALUE_TYPES = SINGLE_VALUE_TYPES | FREE_TEXT_TYPES
 
 
 class ExportColumn(NamedTuple):
@@ -69,9 +81,10 @@ class ExportColumn(NamedTuple):
         """
         answer = (submission_json or {}).get(self.question_key)
 
-        if self.component_type in SINGLE_VALUE_TYPES:
+        if self.component_type in FLAT_VALUE_TYPES:
             if answer in (None, ''):
                 return None
+            # Free text has no option list, so it falls through as the text itself.
             return (self.value_labels or {}).get(answer, answer)
 
         if not isinstance(answer, dict):
@@ -103,12 +116,13 @@ def value_labels(component: dict) -> dict:
     return {v.get('value'): v.get('label') for v in component.get('values', []) or []}
 
 
-def iter_survey_questions(form_json: dict):
-    """Yield (page_index, page_title, component) for every quantitative question, in form order.
+def iter_survey_questions(form_json: dict, types: set = None):
+    """Yield (page_index, page_title, component) for every matching question, in form order.
 
     Wizard forms keep their page titles; a non-wizard form is treated as a single untitled
     page so callers still have a page to group by.
     """
+    types = QUANTITATIVE_TYPES if types is None else types
     form_json = form_json or {}
     top_level = form_json.get('components', []) or []
     is_wizard = form_json.get('display') == 'wizard' and bool(top_level)
@@ -118,15 +132,26 @@ def iter_survey_questions(form_json: dict):
         components = []
         _walk_components(page, components)
         for component in components:
-            if component.get('type') in QUANTITATIVE_TYPES:
+            if component.get('type') in types:
                 yield page_index, page.get('title') or '', component
 
 
-def _columns_for_component(component: dict, page_index: int, page_title: str) -> list:
-    """Expand a single quantitative component into its spreadsheet columns."""
+def _conditional_qualifier(link: dict) -> str:
+    """Name the option or matrix row that triggers a conditional follow-up."""
+    if not link:
+        return ''
+    if link.get('row_label'):
+        return link['row_label']
+    return ' or '.join(label for label in link.get('trigger_value_labels') or [] if label)
+
+
+def _columns_for_component(component: dict, page_index: int, page_title: str, qualifier: str) -> list:
+    """Expand a single component into its spreadsheet columns."""
     component_type = component.get('type')
     key = component.get('key')
     label = component.get('label') or key
+    if qualifier:
+        label = f'{label} ({qualifier})'
     shared = {
         'page_index': page_index,
         'page_title': page_title,
@@ -135,7 +160,7 @@ def _columns_for_component(component: dict, page_index: int, page_title: str) ->
         'component_type': component_type,
     }
 
-    if component_type in SINGLE_VALUE_TYPES:
+    if component_type in FLAT_VALUE_TYPES:
         return [ExportColumn(**shared, option_label='', value_labels=value_labels(component))]
 
     if component_type == FormIoComponentType.SURVEY.value:
@@ -159,12 +184,32 @@ def _columns_for_component(component: dict, page_index: int, page_title: str) ->
     ]
 
 
-def build_export_columns(form_json: dict) -> list:
-    """Flatten a survey form into ordered export columns, grouped by the survey's pages."""
+def build_export_columns(form_json: dict, types: set = None) -> list:
+    """Flatten a survey form into ordered export columns, in form order.
+
+    Conditional free-text follow-ups routinely share one label across several questions - one
+    per option of the question that triggers them - so the triggering option is appended to
+    keep otherwise identical column headers apart.
+    """
+    links = extract_conditional_links(form_json)
     columns = []
-    for page_index, page_title, component in iter_survey_questions(form_json):
-        columns.extend(_columns_for_component(component, page_index, page_title))
+    for page_index, page_title, component in iter_survey_questions(form_json, types):
+        qualifier = _conditional_qualifier(links.get(component.get('key')))
+        columns.extend(_columns_for_component(component, page_index, page_title, qualifier))
     return columns
+
+
+def filter_respondents_with_comments(respondents: list, columns: list) -> list:
+    """Keep the (index, respondent) pairs that answered at least one free-text question.
+
+    The index is the respondent's position in the full list, so their id stays the same one the
+    other sheets show and a reader can cross-reference between them.
+    """
+    return [
+        (index, respondent)
+        for index, respondent in enumerate(respondents)
+        if any(column.read_answer(respondent.submission_json) for column in columns)
+    ]
 
 
 def build_respondent_rows(submissions: list) -> list:

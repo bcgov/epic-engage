@@ -56,8 +56,8 @@ QUESTION_TYPE_COLOURS = {
     FormIoComponentType.RANKING.value: ('F3ECF8', '5C2D91'),  # purple
     FormIoComponentType.CHECKBOX.value: ('E6F1FB', '0C447C'),  # blue
     FormIoComponentType.SELECTLIST.value: ('FBE9F0', '7A0C3A'),  # red
-    FormIoComponentType.TEXTAREA.value: ('F0F0F0', '474543'),  # grey - free text
-    FormIoComponentType.TEXTFIELD.value: ('F0F0F0', '474543'),  # grey - free text
+    FormIoComponentType.TEXTAREA.value: ('E8F4F8', '006064'),  # teal - free text
+    FormIoComponentType.TEXTFIELD.value: ('E8F4F8', '006064'),  # teal - free text
 }
 
 # Fallback for an unrecognised component type.
@@ -70,8 +70,8 @@ QUESTION_TYPE_LABELS = {
     FormIoComponentType.RANKING.value: 'RANK ORDER',
     FormIoComponentType.CHECKBOX.value: 'CHECKBOX',
     FormIoComponentType.SELECTLIST.value: 'DROPDOWN',
-    FormIoComponentType.TEXTAREA.value: 'MULTIPLE LINES ANSWER',
-    FormIoComponentType.TEXTFIELD.value: 'SINGLE LINE ANSWER',
+    FormIoComponentType.TEXTAREA.value: 'FREE TEXT',
+    FormIoComponentType.TEXTFIELD.value: 'FREE TEXT',
 }
 
 BODY_FONT_COLOUR = '2D2D2D'
