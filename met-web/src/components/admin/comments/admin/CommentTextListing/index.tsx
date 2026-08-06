@@ -76,7 +76,7 @@ const CommentTextListing = () => {
         try {
             setIsExporting(true);
             const response = await getStaffCommentSheet({ survey_id: survey.id });
-            downloadFile(response, `INTERNAL ONLY - ${survey.engagement?.name || ''} - ${formatToUTC(Date())}.csv`);
+            downloadFile(response, `${survey.engagement?.name || ''} - ${formatToUTC(Date())}.csv`);
             setIsExporting(false);
             handleExportToCSVClose(); // Close the menu after export
         } catch (error) {
