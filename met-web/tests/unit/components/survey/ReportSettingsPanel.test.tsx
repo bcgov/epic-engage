@@ -117,6 +117,73 @@ describe('ReportSettingsPanel tests', () => {
         });
     });
 
+    test('Saving leaves the builder once the settings are persisted', async () => {
+        const onSaved = jest.fn();
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} onSaved={onSaved} />);
+
+        await waitFor(() => {
+            expect(screen.getByText(surveyReportSettingTwo.question)).toBeVisible();
+        });
+
+        fireEvent.click(screen.getByTestId(`report-setting-toggle-${surveyReportSettingTwo.id}`).children[0]);
+        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+
+        await waitFor(() => {
+            expect(onSaved).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    test('Saving with nothing changed still leaves the builder', async () => {
+        const onSaved = jest.fn();
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} onSaved={onSaved} />);
+
+        await waitFor(() => {
+            expect(screen.getByText(surveyReportSettingOne.question)).toBeVisible();
+        });
+
+        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+
+        await waitFor(() => {
+            expect(onSaved).toHaveBeenCalledTimes(1);
+        });
+        expect(updateSurveyReportSettingsMock).not.toHaveBeenCalled();
+    });
+
+    test('A failed save keeps the admin on the page', async () => {
+        updateSurveyReportSettingsMock.mockImplementation(() => Promise.reject(new Error('save failed')));
+        const onSaved = jest.fn();
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} onSaved={onSaved} />);
+
+        await waitFor(() => {
+            expect(screen.getByText(surveyReportSettingTwo.question)).toBeVisible();
+        });
+
+        fireEvent.click(screen.getByTestId(`report-setting-toggle-${surveyReportSettingTwo.id}`).children[0]);
+        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+
+        await waitFor(() => {
+            expect(updateSurveyReportSettingsMock).toHaveBeenCalledTimes(1);
+        });
+        expect(onSaved).not.toHaveBeenCalled();
+    });
+
+    test('Cancel leaves the builder without saving', async () => {
+        const onCancel = jest.fn();
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} onCancel={onCancel} />);
+
+        await waitFor(() => {
+            expect(screen.getByText(surveyReportSettingOne.question)).toBeVisible();
+        });
+
+        fireEvent.click(screen.getByTestId(`report-setting-toggle-${surveyReportSettingOne.id}`).children[0]);
+        fireEvent.click(screen.getByTestId('survey/report/cancel-button'));
+
+        await waitFor(() => {
+            expect(onCancel).toHaveBeenCalledTimes(1);
+        });
+        expect(updateSurveyReportSettingsMock).not.toHaveBeenCalled();
+    });
+
     test('Shows a no-responses placeholder for charts when the survey has no engagement', async () => {
         render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} />);
 

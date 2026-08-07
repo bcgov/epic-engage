@@ -6,6 +6,8 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import { PrimaryButton, SecondaryButton } from 'components/shared/common';
 import { Palette } from 'styles/Theme';
 
+const DESCRIPTION_FONT_SIZE = '12px';
+
 const AddDescriptionButton = styled('button')(() => ({
     display: 'inline-flex',
     alignItems: 'center',
@@ -15,7 +17,7 @@ const AddDescriptionButton = styled('button')(() => ({
     background: 'transparent',
     border: 'none',
     font: 'inherit',
-    fontSize: '12px',
+    fontSize: DESCRIPTION_FONT_SIZE,
     color: Palette.action.active,
     textDecoration: 'underline',
     cursor: 'pointer',
@@ -66,6 +68,7 @@ export const DescriptionEditor = ({ settingId, description, onSave }: Descriptio
                     placeholder="Add a description…"
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
+                    sx={{ '& .MuiInputBase-root': { fontSize: DESCRIPTION_FONT_SIZE, lineHeight: 1.5 } }}
                     inputProps={{
                         'aria-label': 'Description',
                         'data-testid': `report-setting-description-input-${settingId}`,
@@ -90,7 +93,7 @@ export const DescriptionEditor = ({ settingId, description, onSave }: Descriptio
     if (description) {
         return (
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5, mt: 1 }}>
-                <Typography sx={{ fontSize: '12px', color: Palette.text.secondary, lineHeight: 1.5 }}>
+                <Typography sx={{ fontSize: DESCRIPTION_FONT_SIZE, color: Palette.text.secondary, lineHeight: 1.5 }}>
                     {description}
                 </Typography>
                 <IconButton

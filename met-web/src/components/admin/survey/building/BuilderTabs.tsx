@@ -51,6 +51,7 @@ const TabButton = styled('button')({
         color: Palette.primary.main,
         fontWeight: 700,
         borderBottomColor: Palette.primary.main,
+        backgroundColor: 'transparent',
     },
     '&:focus-visible': {
         outline: `2px solid ${Palette.primary.main}`,
