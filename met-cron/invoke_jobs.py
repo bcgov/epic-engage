@@ -87,7 +87,8 @@ def run(job_name):
             EngagementClosingSoonMailer.do_email()
             application.logger.info('<<<< Completed MET CLOSING_SOON_EMAIL >>>>')
         else:
-            application.logger.debug('No valid args passed.Exiting job without running any ***************')
+            application.logger.error('No valid args passed.Exiting job without running any ***************')
+            sys.exit(1)
 
 
 if __name__ == "__main__":
