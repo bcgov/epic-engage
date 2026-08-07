@@ -13,9 +13,7 @@ export interface ProgressBarProps {
     [prop: string]: unknown;
 }
 
-// Keeps the step number (no checkmark) and just turns it blue when active or completed.
-const NumberStepIcon = ({ active, completed, icon }: StepIconProps) => {
-    const highlighted = active || completed;
+const NumberStepIcon = ({ active, icon }: StepIconProps) => {
     return (
         <Box
             sx={{
@@ -27,7 +25,7 @@ const NumberStepIcon = ({ active, completed, icon }: StepIconProps) => {
                 justifyContent: 'center',
                 fontSize: 14,
                 color: '#fff',
-                backgroundColor: highlighted ? 'primary.main' : 'grey.400',
+                backgroundColor: active ? 'primary.main' : 'grey.400',
             }}
         >
             {icon}
