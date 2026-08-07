@@ -25,7 +25,12 @@ const HEADER_SX = {
     letterSpacing: '0.04em',
     textTransform: 'uppercase',
     color: Palette.text.secondary,
+    whiteSpace: 'nowrap',
 };
+
+// Let the "% of Respondents" heading to sit on one line
+const PCT_COL_W = 132;
+const COUNT_COL_W = 72;
 
 export const CheckboxChart = ({ question, respondentCount, data, questionType, bare = false }: CheckboxChartProps) => {
     const content = (
@@ -59,9 +64,9 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                     mb: 0.5,
                 }}
             >
-                <Typography sx={{ ...HEADER_SX, flex: 1 }}>Response</Typography>
-                <Typography sx={{ ...HEADER_SX, width: 64, textAlign: 'right' }}>% of Respondents</Typography>
-                <Typography sx={{ ...HEADER_SX, width: 64, textAlign: 'right' }}>Count</Typography>
+                <Typography sx={{ ...HEADER_SX, flex: 1, minWidth: 0 }}>Response</Typography>
+                <Typography sx={{ ...HEADER_SX, width: PCT_COL_W, textAlign: 'right' }}>% of Respondents</Typography>
+                <Typography sx={{ ...HEADER_SX, width: COUNT_COL_W, textAlign: 'right' }}>Count</Typography>
             </Box>
 
             {data.map((item, i) => (
@@ -76,10 +81,12 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                         '&:hover': { background: Palette.chart.surface.rowHover, borderRadius: '4px' },
                     }}
                 >
-                    <Typography sx={{ flex: 1, fontSize: 13, color: Palette.text.primary }}>{item.label}</Typography>
+                    <Typography sx={{ flex: 1, minWidth: 0, fontSize: 13, color: Palette.text.primary }}>
+                        {item.label}
+                    </Typography>
                     <Typography
                         sx={{
-                            width: 64,
+                            width: PCT_COL_W,
                             fontSize: 13,
                             fontWeight: 700,
                             color: Palette.primary.main,
@@ -88,7 +95,9 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                     >
                         {item.pct}%
                     </Typography>
-                    <Typography sx={{ width: 64, fontSize: 12, color: Palette.text.secondary, textAlign: 'right' }}>
+                    <Typography
+                        sx={{ width: COUNT_COL_W, fontSize: 12, color: Palette.text.secondary, textAlign: 'right' }}
+                    >
                         {item.count.toLocaleString()}
                     </Typography>
                 </Box>

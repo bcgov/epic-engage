@@ -4,6 +4,9 @@ import { Palette } from 'styles/Theme';
 
 const COLORS = Palette.chart.categorical;
 
+// Let the "% of Respondents" heading sit on one line instead of wrapping.
+const COLUMNS = 'minmax(0, 1fr) 132px 72px';
+
 // Label text is white on the dark segments and dark on the lighter ones; the pairing lives with
 // the swatches in `Palette.chart` so the two indices can never drift apart.
 const LABEL_COLOR = (i: number) => Palette.chart.categoricalLabel[i % COLORS.length];
@@ -152,11 +155,11 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
             </Box>
 
             {/* Legend list */}
-            <Box sx={{ flex: 1, minWidth: 220 }}>
+            <Box sx={{ flex: 1, minWidth: 320 }}>
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: '1fr 44px 64px',
+                        gridTemplateColumns: COLUMNS,
                         gap: 1,
                         fontSize: 11,
                         fontWeight: 600,
@@ -169,9 +172,9 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
                         mb: 0.5,
                     }}
                 >
-                    <span>{categoryLabel}</span>
-                    <Box sx={{ textAlign: 'right' }}>% of Respondents</Box>
-                    <Box sx={{ textAlign: 'right' }}>Count</Box>
+                    <Box sx={{ whiteSpace: 'nowrap' }}>{categoryLabel}</Box>
+                    <Box sx={{ textAlign: 'right', whiteSpace: 'nowrap' }}>% of Respondents</Box>
+                    <Box sx={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Count</Box>
                 </Box>
                 {data.map((item, i) => {
                     const isTop = item === topItem;
@@ -180,7 +183,7 @@ export const DonutChart = ({ data, total, categoryLabel = 'Response' }: DonutCha
                             key={item.label}
                             sx={{
                                 display: 'grid',
-                                gridTemplateColumns: '1fr 44px 64px',
+                                gridTemplateColumns: COLUMNS,
                                 alignItems: 'center',
                                 gap: 1,
                                 px: 0.5,

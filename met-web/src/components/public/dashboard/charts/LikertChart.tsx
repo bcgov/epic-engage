@@ -16,6 +16,7 @@ const PAD_TOP = 30;
 const PAD_L = 12;
 const PAD_R = 12;
 const CORNER_R = 3;
+const HEADER_GAP = 6;
 
 const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
 
@@ -113,7 +114,6 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
     const span = leftExtent + rightExtent || 100;
     const px = barColW / span;
     const cx = barLeft + leftExtent * px;
-    const headerX = barLeft + barColW / 2;
 
     return (
         <Box>
@@ -149,8 +149,14 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                         <text x={PAD_L} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
                             RESPONSE
                         </text>
-                        <text x={headerX} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="middle">
-                            {`← ${axisStart.toUpperCase()}  |  ${axisEnd.toUpperCase()} →`}
+                        <text x={cx - HEADER_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="end">
+                            {`← ${axisStart.toUpperCase()}`}
+                        </text>
+                        <text x={cx} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} textAnchor="middle">
+                            |
+                        </text>
+                        <text x={cx + HEADER_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="start">
+                            {`${axisEnd.toUpperCase()} →`}
                         </text>
                         <text x={barRight + BAR_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
                             COUNT
