@@ -3,7 +3,7 @@ import { Stack, Divider, TextField, IconButton, FormGroup, FormControlLabel, Box
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import FormBuilder from 'components/shared/form/FormBuilder';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
-import ClearIcon from '@mui/icons-material/Clear';
+import CheckIcon from '@mui/icons-material/Check';
 import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -27,7 +27,7 @@ import { BuilderTabs, tabIds } from './BuilderTabs';
 import { ReportSettingsPanel, ReportSettingsPanelHandle } from './ReportSettingsPanel';
 import { debounce } from 'lodash';
 import { format } from 'date-fns';
-import { Palette } from 'styles/Theme';
+import { BaseTheme, Palette } from 'styles/Theme';
 
 const TAB_QUESTIONS = 'questions';
 const TAB_REPORT = 'report';
@@ -37,6 +37,20 @@ const TAB_REPORT = 'report';
 // formcomponents/formarea stack instead of sitting side by side, so there's nothing to align to.
 const FORMIO_BREAKPOINT_SM = '@media (min-width:576px)';
 const FORMAREA_LEFT = '220px';
+
+const NAME_FIELD_SX = {
+    width: '100%',
+    maxWidth: '600px',
+    '& .MuiInputBase-input': {
+        ...BaseTheme.typography.h3,
+        color: Palette.primary.main,
+        padding: '2px 8px',
+    },
+};
+
+const NAME_ICON_BUTTON_SX = {
+    '&:hover': { backgroundColor: 'transparent' },
+};
 
 interface SurveyForm {
     id: string;
@@ -58,6 +72,7 @@ const SurveyFormBuilder = () => {
     const [loading, setLoading] = useState(true);
     const [isNameFocused, setIsNamedFocused] = useState(false);
     const [name, setName] = useState(savedSurvey ? savedSurvey.name : '');
+    const [draftName, setDraftName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [savedEngagement, setSavedEngagement] = useState<Engagement | null>(null);
 
@@ -169,6 +184,20 @@ const SurveyFormBuilder = () => {
             );
             navigate('/survey/listing');
         }
+    };
+
+    const startEditingName = () => {
+        setDraftName(name);
+        setIsNamedFocused(true);
+    };
+
+    const cancelEditingName = () => {
+        setIsNamedFocused(false);
+    };
+
+    const commitName = () => {
+        setName(draftName.trim() || name);
+        setIsNamedFocused(false);
     };
 
     const currentValuesRef = useRef({ name, isHiddenSurvey, isTemplateSurvey });
@@ -325,20 +354,16 @@ const SurveyFormBuilder = () => {
                 <Stack direction="row" justifyContent="flex-start" alignItems="center">
                     {!isNameFocused ? (
                         <>
-                            <MetHeader3
-                                sx={{ p: 0.5, color: Palette.primary.main }}
-                                onClick={() => {
-                                    setIsNamedFocused(true);
-                                }}
-                            >
+                            <MetHeader3 sx={{ p: 0.5, color: Palette.primary.main }} onClick={startEditingName}>
                                 {name}
                             </MetHeader3>
                             <IconButton
                                 size="small"
-                                onClick={() => {
-                                    setIsNamedFocused(!isNameFocused);
-                                }}
+                                onClick={startEditingName}
                                 color="inherit"
+                                disableRipple
+                                aria-label="Edit survey name"
+                                sx={NAME_ICON_BUTTON_SX}
                             >
                                 <BorderColorIcon sx={{ fontSize: '1rem' }} />
                             </IconButton>
@@ -347,17 +372,30 @@ const SurveyFormBuilder = () => {
                         <>
                             <TextField
                                 autoFocus
-                                value={name}
-                                onChange={(event) => setName(event.target.value)}
-                                onBlur={(event) => setIsNamedFocused(false)}
+                                value={draftName}
+                                onChange={(event) => setDraftName(event.target.value)}
+                                onBlur={cancelEditingName}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                        commitName();
+                                    } else if (event.key === 'Escape') {
+                                        cancelEditingName();
+                                    }
+                                }}
+                                inputProps={{ 'aria-label': 'Survey name' }}
+                                sx={NAME_FIELD_SX}
                             />
                             <IconButton
-                                onClick={() => {
-                                    setIsNamedFocused(!isNameFocused);
-                                }}
+                                size="small"
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={commitName}
                                 color="inherit"
+                                disableRipple
+                                aria-label="Save survey name"
+                                sx={NAME_ICON_BUTTON_SX}
                             >
-                                <ClearIcon />
+                                <CheckIcon sx={{ fontSize: '1.25rem' }} />
                             </IconButton>
                         </>
                     )}
@@ -511,17 +549,14 @@ const SurveyFormBuilder = () => {
                 </>
             )}
             {tab === TAB_REPORT && (
-                <Box
-                    role="tabpanel"
-                    id={tabIds(TAB_REPORT).panel}
-                    aria-labelledby={tabIds(TAB_REPORT).tab}
-                    sx={{ maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 } }}
-                >
+                <Box role="tabpanel" id={tabIds(TAB_REPORT).panel} aria-labelledby={tabIds(TAB_REPORT).tab}>
                     <ReportSettingsPanel
                         ref={reportSettingsRef}
                         surveyId={String(surveyId)}
                         engagementId={savedSurvey?.engagement_id || undefined}
                         formDefinition={formDefinition}
+                        onSaved={() => navigate('/surveys')}
+                        onCancel={() => navigate('/surveys')}
                     />
                 </Box>
             )}

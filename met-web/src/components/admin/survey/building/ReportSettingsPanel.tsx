@@ -31,16 +31,22 @@ export interface ReportSettingsPanelProps {
     // question falls back to the "No responses yet" placeholder.
     engagementId?: number;
     formDefinition: FormBuilderData;
+    onSaved?: () => void;
+    onCancel?: () => void;
 }
 
 // Exposes an imperative save() so the builder page can flush unsaved toggle
 // changes when the admin switches away to the Survey questions tab.
 export interface ReportSettingsPanelHandle {
-    save: () => Promise<void>;
+    save: () => Promise<boolean>;
 }
 
+const contentSx = { maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, pt: 2 } as const;
+
+const dimmedSx = (hidden: boolean) => ({ opacity: hidden ? 0.38 : 1, transition: 'opacity 0.2s' });
+
 export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportSettingsPanelProps>(
-    ({ surveyId, engagementId, formDefinition }, ref) => {
+    ({ surveyId, engagementId, formDefinition, onSaved, onCancel }, ref) => {
         const dispatch = useAppDispatch();
         const [settings, setSettings] = useState<SurveyReportSetting[]>([]);
         const [displayedMap, setDisplayedMap] = useState<Record<number, boolean>>({});
@@ -126,7 +132,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
             setDescriptionMap((prev) => ({ ...prev, [settingId]: description }));
         };
 
-        const handleSave = async () => {
+        const handleSave = async (): Promise<boolean> => {
             const changedSettings: SurveyReportSetting[] = [];
             settings.forEach((setting) => {
                 const displayChanged = displayedMap[setting.id] !== setting.display;
@@ -144,7 +150,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
             });
 
             if (!changedSettings.length) {
-                return;
+                return true;
             }
 
             try {
@@ -153,10 +159,18 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                 const changedById = new Map(changedSettings.map((setting) => [setting.id, setting]));
                 setSettings(settings.map((setting) => changedById.get(setting.id) ?? setting));
                 dispatch(openNotification({ severity: 'success', text: 'Report settings saved successfully.' }));
+                return true;
             } catch (error) {
                 dispatch(openNotification({ severity: 'error', text: 'Error occurred while saving report settings.' }));
+                return false;
             } finally {
                 setSaving(false);
+            }
+        };
+
+        const handleSaveAndExit = async () => {
+            if (await handleSave()) {
+                onSaved?.();
             }
         };
 
@@ -164,7 +178,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
 
         if (loading) {
             return (
-                <Stack spacing={2} sx={{ pt: 2 }}>
+                <Stack spacing={2} sx={contentSx}>
                     <Skeleton variant="rounded" height={48} />
                     <Skeleton variant="rounded" height={120} />
                     <Skeleton variant="rounded" height={120} />
@@ -174,7 +188,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
 
         if (!settings.length) {
             return (
-                <Typography sx={{ pt: 2 }}>
+                <Typography sx={contentSx}>
                     Add questions to the survey to configure what appears in the public report.
                 </Typography>
             );
@@ -225,11 +239,12 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
         const renderFollowUp = (followUpSetting: SurveyReportSetting, triggerType: string) => {
             const link = conditionalLinks[followUpSetting.question_key];
             const responses = commentsByKey.get(followUpSetting.question_key) ?? [];
+            const hidden = !displayedMap[followUpSetting.id];
 
             return (
                 <Box key={followUpSetting.id} sx={{ mt: 2, pt: 2, borderTop: `2px dashed ${Palette.border.default}` }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Box sx={{ flex: 1, minWidth: 0, ...dimmedSx(hidden) }}>
                             <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 1.5 }}>
                                 <Box
                                     sx={{
@@ -263,7 +278,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                         </Box>
                         {renderVisibilityToggle(followUpSetting)}
                     </Stack>
-                    <Box sx={{ mt: 1.5 }}>
+                    <Box sx={{ mt: 1.5, ...dimmedSx(hidden) }}>
                         <Comments question={followUpSetting.question} responses={responses} bare />
                     </Box>
                 </Box>
@@ -271,70 +286,107 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
         };
 
         return (
-            <Box sx={{ pt: 2 }}>
-                {pages.length > 1 && (
-                    <FormStepper currentPage={safePage} pages={pages} onStepClick={(index) => setCurrentPage(index)} />
-                )}
-                <Stack spacing={2}>
-                    {pages[safePage]?.items.map(({ setting, followUps }) => (
-                        <MetPaper key={setting.id} sx={{ p: 3 }}>
-                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <QuestionTypeLabel
-                                        label={QUESTION_TYPE_LABELS[setting.question_type] ?? setting.question_type}
-                                    />
-                                    <Typography sx={{ fontSize: '16px', fontWeight: 700, color: Palette.text.primary }}>
-                                        {setting.question}
-                                    </Typography>
-                                    <DescriptionEditor
-                                        settingId={setting.id}
-                                        description={descriptionMap[setting.id] ?? ''}
-                                        onSave={handleDescriptionSave}
-                                    />
-                                </Box>
-                                {renderVisibilityToggle(setting)}
+            <>
+                <Box sx={contentSx}>
+                    {pages.length > 1 && (
+                        <FormStepper
+                            currentPage={safePage}
+                            pages={pages}
+                            onStepClick={(index) => setCurrentPage(index)}
+                        />
+                    )}
+                    <Stack spacing={2}>
+                        {pages[safePage]?.items.map(({ setting, followUps }) => {
+                            const hidden = !displayedMap[setting.id];
+                            return (
+                                <MetPaper key={setting.id} sx={{ p: 3, ...(hidden && { borderStyle: 'dashed' }) }}>
+                                    <Stack
+                                        direction="row"
+                                        justifyContent="space-between"
+                                        alignItems="flex-start"
+                                        spacing={2}
+                                    >
+                                        <Box sx={{ flex: 1, minWidth: 0, ...dimmedSx(hidden) }}>
+                                            <QuestionTypeLabel
+                                                label={
+                                                    QUESTION_TYPE_LABELS[setting.question_type] ?? setting.question_type
+                                                }
+                                            />
+                                            <Typography
+                                                sx={{ fontSize: '16px', fontWeight: 700, color: Palette.text.primary }}
+                                            >
+                                                {setting.question}
+                                            </Typography>
+                                            <DescriptionEditor
+                                                settingId={setting.id}
+                                                description={descriptionMap[setting.id] ?? ''}
+                                                onSave={handleDescriptionSave}
+                                            />
+                                        </Box>
+                                        {renderVisibilityToggle(setting)}
+                                    </Stack>
+                                    <Box sx={dimmedSx(hidden)}>{renderChartBody(setting)}</Box>
+                                    {followUps.map((followUpSetting) =>
+                                        renderFollowUp(followUpSetting, setting.question_type),
+                                    )}
+                                </MetPaper>
+                            );
+                        })}
+                    </Stack>
+                    {pages.length > 1 && (
+                        <Box sx={{ pt: 1 }}>
+                            <MetDescription
+                                sx={{
+                                    pt: 1.5,
+                                    mb: 1.5,
+                                    width: 'fit-content',
+                                    borderTop: `1px solid ${Palette.border.default}`,
+                                }}
+                            >
+                                Page {safePage + 1} of {pages.length}
+                            </MetDescription>
+                            <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }}>
+                                <SecondaryButton
+                                    startIcon={<ArrowBackIcon />}
+                                    disabled={safePage === 0}
+                                    onClick={() => setCurrentPage(safePage - 1)}
+                                >
+                                    Previous
+                                </SecondaryButton>
+                                <PrimaryButton
+                                    endIcon={<ArrowForwardIcon />}
+                                    disabled={safePage === pages.length - 1}
+                                    onClick={() => setCurrentPage(safePage + 1)}
+                                >
+                                    Next
+                                </PrimaryButton>
                             </Stack>
-                            {renderChartBody(setting)}
-                            {followUps.map((followUpSetting) => renderFollowUp(followUpSetting, setting.question_type))}
-                        </MetPaper>
-                    ))}
-                </Stack>
-                {pages.length > 1 && (
-                    <Box sx={{ pt: 1 }}>
-                        <MetDescription
-                            sx={{
-                                pt: 1.5,
-                                mb: 1.5,
-                                width: 'fit-content',
-                                borderTop: `1px solid ${Palette.border.default}`,
-                            }}
-                        >
-                            Page {safePage + 1} of {pages.length}
-                        </MetDescription>
-                        <Stack direction="row" justifyContent="space-between" sx={{ width: '100%' }}>
-                            <SecondaryButton
-                                startIcon={<ArrowBackIcon />}
-                                disabled={safePage === 0}
-                                onClick={() => setCurrentPage(safePage - 1)}
-                            >
-                                Previous
-                            </SecondaryButton>
-                            <PrimaryButton
-                                endIcon={<ArrowForwardIcon />}
-                                disabled={safePage === pages.length - 1}
-                                onClick={() => setCurrentPage(safePage + 1)}
-                            >
-                                Next
-                            </PrimaryButton>
-                        </Stack>
-                    </Box>
-                )}
-                <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-                    <PrimaryButton data-testid="survey/report/save-button" onClick={handleSave} loading={saving}>
+                        </Box>
+                    )}
+                </Box>
+                <Box
+                    sx={{
+                        position: 'sticky',
+                        bottom: 0,
+                        mt: 3,
+                        py: 2,
+                        px: { xs: 2, md: 3 },
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 2,
+                        backgroundColor: Palette.background.default,
+                        borderTop: `1px solid ${Palette.border.default}`,
+                        boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.06)',
+                    }}
+                >
+                    <SecondaryButton data-testid="survey/report/cancel-button" onClick={() => onCancel?.()}>
+                        Cancel
+                    </SecondaryButton>
+                    <PrimaryButton data-testid="survey/report/save-button" onClick={handleSaveAndExit} loading={saving}>
                         Save
                     </PrimaryButton>
-                </Stack>
-            </Box>
+                </Box>
+            </>
         );
     },
 );
