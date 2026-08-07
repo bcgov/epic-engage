@@ -129,9 +129,6 @@ PYTHON := python3.12
 run: ## Run the project in local
 	./docker-entrypoint.sh
 
-run_etl: ## Run the etl task in local
-	. venv/bin/activate && $(PYTHON) invoke_jobs.py EXTRACT_MET
-
 run_closeout: ## Run the closeout task in local
 	. venv/bin/activate && $(PYTHON) invoke_jobs.py ENGAGEMENT_CLOSEOUT
 
