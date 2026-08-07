@@ -11,7 +11,7 @@ jest.mock('components/public/dashboard/hooks/useSurveyResultPages');
 jest.mock('components/public/dashboard/hooks/useSurveyComments');
 
 jest.mock('components/public/dashboard/charts', () => ({
-    DonutChart: () => <div data-testid="donut-chart" />,
+    DonutChart: ({ total }: { total: number }) => <div data-testid="donut-chart">{total}</div>,
     LikertChart: () => <div data-testid="likert-chart" />,
     RankOrderChart: () => <div data-testid="rank-order-chart" />,
     CheckboxChart: ({ question }: { question: string }) => <div data-testid="checkbox-chart">{question}</div>,
@@ -101,6 +101,24 @@ describe('SurveyResultsCharts', () => {
 
         expect(screen.getByTestId('donut-chart')).toBeInTheDocument();
         expect(screen.getByText('Favourite colour?')).toBeInTheDocument();
+    });
+
+    it('falls back to the summed responses when a donut question reports no respondents', () => {
+        // Rows synced before the ETL recorded participant_id come back with respondent_count 0,
+        // which used to leave the donut centre reading "0".
+        setupHooks({ data: { data: [{ ...radioQuestion, respondent_count: 0 }] } });
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        expect(screen.getByTestId('donut-chart')).toHaveTextContent('4');
+        // The count belongs in the donut's centre only, never as a line under the title.
+        expect(screen.queryByText(/respondents/)).not.toBeInTheDocument();
+    });
+
+    it('prefers the reported respondent count over the summed responses', () => {
+        setupHooks({ data: { data: [{ ...radioQuestion, respondent_count: 9 }] } });
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        expect(screen.getByTestId('donut-chart')).toHaveTextContent('9');
     });
 
     it('routes checkbox and free-text questions to their dedicated chart components', () => {

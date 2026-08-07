@@ -122,10 +122,15 @@ describe('LikertChart', () => {
         expect(Number(start) + Number(width) / 2).toBeCloseTo(axisX, 5);
     });
 
+    // The axis header is drawn as three separately anchored pieces so its divider can sit on
+    // the centre line, so read it back as the sentence those pieces spell out together.
+    const axisHeaderParts = (container: HTMLElement) =>
+        Array.from(container.querySelectorAll('svg > text')).filter((t) => (t.textContent ?? '').match(/←|\||→/));
+
     const axisHeader = (container: HTMLElement) =>
-        Array.from(container.querySelectorAll('svg > text'))
+        axisHeaderParts(container)
             .map((t) => t.textContent ?? '')
-            .find((t) => t.includes('|'));
+            .join(' ');
 
     it('names the axis after the two ends of the scale it was given', () => {
         const { container } = render(
@@ -135,7 +140,7 @@ describe('LikertChart', () => {
             />,
         );
 
-        expect(axisHeader(container)?.replace(/\s+/g, ' ')).toBe('← NOT CONCERNED | VERY CONCERNED →');
+        expect(axisHeader(container).replace(/\s+/g, ' ')).toBe('← NOT CONCERNED | VERY CONCERNED →');
     });
 
     it('keeps the axis and the legend describing the same scale when none was supplied', () => {
@@ -144,7 +149,7 @@ describe('LikertChart', () => {
 
         expect(screen.getByText('Not effective')).toBeInTheDocument();
         expect(screen.getByText('Very effective')).toBeInTheDocument();
-        expect(axisHeader(container)?.replace(/\s+/g, ' ')).toBe('← NOT EFFECTIVE | VERY EFFECTIVE →');
+        expect(axisHeader(container).replace(/\s+/g, ' ')).toBe('← NOT EFFECTIVE | VERY EFFECTIVE →');
     });
 
     it('adapts to a scale length other than the default', () => {
@@ -159,7 +164,7 @@ describe('LikertChart', () => {
         expect(container.querySelectorAll('svg path')).toHaveLength(4);
     });
 
-    it('keeps every bar inside the bar column and centres the scale header over it', () => {
+    it('keeps every bar inside the bar column and puts the scale divider on the axis', () => {
         // Widest negative and widest positive come from different rows - what used to clip.
         const lopsided = [
             { label: 'Cost', pcts: [50, 30, 10, 5, 5], n: 100 },
@@ -183,11 +188,11 @@ describe('LikertChart', () => {
             expect(end).toBeLessThanOrEqual(colRight);
         });
 
-        const header = Array.from(container.querySelectorAll('svg > text')).find((t) =>
-            t.textContent?.includes('EFFECTIVE'),
-        ) as SVGTextElement;
-        expect(header.getAttribute('text-anchor')).toBe('middle');
-        expect(Number(header.getAttribute('x'))).toBeCloseTo(colLeft + colWidth / 2, 5);
+        // The header's divider marks the same axis the bars pivot on, so the two must line up.
+        const divider = axisHeaderParts(container).find((t) => t.textContent === '|') as SVGTextElement;
+        const axisX = Number((container.querySelector('line[stroke-dasharray]') as SVGLineElement).getAttribute('x1'));
+        expect(divider.getAttribute('text-anchor')).toBe('middle');
+        expect(Number(divider.getAttribute('x'))).toBeCloseTo(axisX, 5);
     });
 
     it('renders the column headers from the acceptance criteria', () => {
@@ -196,7 +201,7 @@ describe('LikertChart', () => {
         const headers = labelsInOrder(container, 'svg text');
         expect(headers).toContain('RESPONSE');
         expect(headers).toContain('COUNT');
-        expect(headers.map((h) => h?.replace(/\s+/g, ' '))).toContain('← LEAST IMPORTANT | MOST IMPORTANT →');
+        expect(axisHeader(container).replace(/\s+/g, ' ')).toBe('← LEAST IMPORTANT | MOST IMPORTANT →');
     });
 });
 

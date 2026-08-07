@@ -67,10 +67,11 @@ export function flatToChartItems(items: FlatResultItem[], pctBase?: number) {
     };
 }
 
+const TitleGap = () => <Box sx={{ mb: '18px' }} />;
 
 const RespondentCount = ({ count, suffix }: { count?: number; suffix?: string }) => {
     if (!count) {
-        return suffix ? <MetDescription sx={{ mb: '18px' }}>{suffix}</MetDescription> : null;
+        return suffix ? <MetDescription sx={{ mb: '18px' }}>{suffix}</MetDescription> : <TitleGap />;
     }
     return (
         <MetDescription sx={{ mb: '18px' }}>
@@ -174,10 +175,12 @@ export const QuestionChart = ({
         case COMPONENT_TYPE.RADIO:
         case COMPONENT_TYPE.SELECT: {
             const { data, total } = flatToChartItems(toFlatItems(result));
+            const respondents = respondentCount || total;
             const content = (
                 <>
-                    <RespondentCount count={respondentCount} />
-                    <DonutChart data={data} total={respondentCount ?? total} />
+                    {/* The donut carries the respondent count in its centre, so it isn't repeated here. */}
+                    <TitleGap />
+                    <DonutChart data={data} total={respondents} />
                     {renderFollowUps(followUps, type)}
                 </>
             );
