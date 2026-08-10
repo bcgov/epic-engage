@@ -34,7 +34,7 @@ export const ReportButtons = ({ survey }: { survey: Survey }) => {
                     },
                 }}
                 disabled={!canViewPublic}
-                onClick={() => navigate(`/engagements/${engagementId}/dashboard/public`)}
+                onClick={() => navigate(`/surveys/${survey.id}/dashboard/public`)}
             >
                 Public Report
             </SecondaryButton>
@@ -51,7 +51,7 @@ export const ReportButtons = ({ survey }: { survey: Survey }) => {
                     },
                 }}
                 disabled={!canViewInternal}
-                onClick={() => navigate(`/engagements/${engagementId}/dashboard/internal`)}
+                onClick={() => navigate(`/surveys/${survey.id}/dashboard/internal`)}
             >
                 Internal Report
             </SecondaryButton>

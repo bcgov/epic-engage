@@ -37,6 +37,7 @@ const AuthenticatedRoutes = () => {
                 <Route path="/surveys/create" element={<CreateSurvey />} />
                 <Route path="/surveys/:surveyId/build" element={<SurveyFormBuilder />} />
                 <Route path="/surveys/:surveyId/submit" element={<SubmitSurvey />} />
+                <Route path="/surveys/:surveyId/dashboard/:dashboardType" element={<PublicDashboard />} />
                 <Route element={<AuthGate allowedRoles={[USER_ROLES.VIEW_APPROVED_COMMENTS]} />}>
                     <Route path="/surveys/:surveyId/comments" element={<CommentReviewListing />} />
                 </Route>
