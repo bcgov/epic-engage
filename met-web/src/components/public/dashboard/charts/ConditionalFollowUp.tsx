@@ -5,22 +5,49 @@ import { MetIconText, PrimaryButton } from 'components/shared/common';
 import { CommentsDrawer } from './CommentsDrawer';
 import { Palette } from 'styles/Theme';
 
-interface ConditionalFollowUpProps {
-    // e.g. `Conditional — shown to respondents who selected "Other"`
-    conditionLabel: string;
+export interface FollowUpSection {
+    // The Likert row / Ranking statement this follow-up hangs off - the only thing telling
+    // merged follow-ups apart, since they all share one condition.
+    rowLabel?: string;
     // The follow-up question's own label/prompt, e.g. "Please tell us more about your
-    // connection to the project area." - shown inline and used as the comments drawer title.
+    // connection to the project area."
     question: string;
     responses: string[];
 }
 
-export const ConditionalFollowUp = ({ conditionLabel, question, responses }: ConditionalFollowUpProps) => {
+interface ConditionalFollowUpProps {
+    // e.g. `Conditional — shown to respondents who selected "Other"`
+    conditionLabel: string;
+    sections: FollowUpSection[];
+    // The trigger question's label when the block merges several follow-ups, since none of
+    // their own questions covers the rest.
+    drawerTitle: string;
+    // e.g. `comments received`, or `comments across all rows` for a merged block.
+    countLabel: string;
+}
+
+export const ConditionalFollowUp = ({
+    conditionLabel,
+    sections,
+    drawerTitle,
+    countLabel,
+}: ConditionalFollowUpProps) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const isMerged = sections.length > 1;
+    const totalResponses = sections.reduce((total, section) => total + section.responses.length, 0);
 
     return (
         <Box sx={{ mt: 2, pt: 2, borderTop: `2px dashed ${Palette.border.default}` }}>
             <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 1.5 }}>
-                <Box sx={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: Palette.chart.conditionalMarker, flexShrink: 0 }} />
+                <Box
+                    sx={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        backgroundColor: Palette.chart.conditionalMarker,
+                        flexShrink: 0,
+                    }}
+                />
                 <MetIconText
                     sx={{
                         fontSize: 11,
@@ -33,7 +60,12 @@ export const ConditionalFollowUp = ({ conditionLabel, question, responses }: Con
                     {conditionLabel}
                 </MetIconText>
             </Stack>
-            <Typography sx={{ fontSize: '13px', fontWeight: 600, color: Palette.text.primary, mb: '10px' }}>{question}</Typography>
+            {/* A merged block has a different question per row - those are listed in the drawer. */}
+            {!isMerged && (
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: Palette.text.primary, mb: '10px' }}>
+                    {sections[0].question}
+                </Typography>
+            )}
             <Box
                 sx={{
                     display: 'flex',
@@ -47,7 +79,7 @@ export const ConditionalFollowUp = ({ conditionLabel, question, responses }: Con
             >
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                     <Box sx={{ fontSize: '28px', fontWeight: 700, color: Palette.primary.main, lineHeight: 1 }}>
-                        {responses.length}
+                        {totalResponses.toLocaleString()}
                     </Box>
                     <MetIconText
                         sx={{
@@ -57,7 +89,7 @@ export const ConditionalFollowUp = ({ conditionLabel, question, responses }: Con
                             letterSpacing: '0.04em',
                         }}
                     >
-                        comments received
+                        {countLabel}
                     </MetIconText>
                 </Box>
                 <PrimaryButton
@@ -71,8 +103,9 @@ export const ConditionalFollowUp = ({ conditionLabel, question, responses }: Con
             <CommentsDrawer
                 open={isDrawerOpen}
                 onClose={() => setIsDrawerOpen(false)}
-                question={question}
-                responses={responses}
+                question={drawerTitle}
+                responses={isMerged ? [] : sections[0].responses}
+                sections={isMerged ? sections : undefined}
             />
         </Box>
     );
