@@ -8,7 +8,7 @@ replicaCount: 1
 
 resources:
   cpu:
-    limit: 100m
+    limit: 1000m
     request: 100m
   memory:
     limit: 512Mi
