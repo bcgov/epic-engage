@@ -20,9 +20,20 @@ jest.mock('components/public/dashboard/charts', () => ({
             {question}: {responses.join(', ')}
         </div>
     ),
-    ConditionalFollowUp: ({ conditionLabel, question }: { conditionLabel: string; question: string }) => (
+    ConditionalFollowUp: ({
+        conditionLabel,
+        sections,
+        countLabel,
+    }: {
+        conditionLabel: string;
+        sections: { rowLabel?: string; question: string }[];
+        countLabel: string;
+    }) => (
         <div data-testid="conditional-follow-up">
-            {conditionLabel} | {question}
+            {conditionLabel} | {countLabel} |{' '}
+            {sections
+                .map((section) => `${section.rowLabel ? `${section.rowLabel}: ` : ''}${section.question}`)
+                .join(', ')}
         </div>
     ),
 }));
@@ -222,6 +233,111 @@ describe('SurveyResultsCharts', () => {
             'Conditional — shown to respondents who selected "Other"',
         );
         expect(screen.queryByTestId('comments')).not.toBeInTheDocument();
+    });
+
+    it('merges per-row follow-ups shown on the same answer into a single conditional block', () => {
+        const likert: TypedSurveyData = {
+            label: 'How important are these to you?',
+            position: 0,
+            key: 'simplesurvey1',
+            type: 'simplesurvey',
+            result: [
+                { label: 'Air quality', pcts: [10, 90], n: 10 },
+                { label: 'Wildlife', pcts: [20, 80], n: 10 },
+            ],
+        };
+        const link = (rowKey: string, rowLabel: string) => ({
+            trigger_key: 'simplesurvey1',
+            row_key: rowKey,
+            row_label: rowLabel,
+            trigger_values: ['important', 'mostImportant'],
+            trigger_value_labels: ['Important', 'Most important'],
+        });
+        const followUp = (key: string, label: string): TypedSurveyData => ({
+            label,
+            position: 1,
+            key,
+            type: 'simpletextarea',
+            result: [{ value: 'a comment', count: 1 }],
+        });
+        setupHooks(
+            {
+                data: { data: [likert] },
+                conditionalLinks: {
+                    followupAir: link('airQuality', 'Air quality'),
+                    followupWildlife: link('wildlife', 'Wildlife'),
+                },
+            },
+            {
+                data: {
+                    data: [
+                        followUp('followupAir', 'Why is air quality important to you?'),
+                        followUp('followupWildlife', 'Why is wildlife important to you?'),
+                    ],
+                },
+            },
+        );
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        const blocks = screen.getAllByTestId('conditional-follow-up');
+        expect(blocks).toHaveLength(1);
+        expect(blocks[0]).toHaveTextContent(
+            'Conditional — shown to respondents who answered "Important" or "Most important" for any row',
+        );
+        expect(blocks[0]).toHaveTextContent('comments across all rows');
+        expect(blocks[0]).toHaveTextContent('Air quality: Why is air quality important to you?');
+        expect(blocks[0]).toHaveTextContent('Wildlife: Why is wildlife important to you?');
+    });
+
+    it('keeps follow-up comments under a notice when their trigger question has no chart', () => {
+        const followUpComment: TypedSurveyData = {
+            label: 'Please elaborate',
+            position: 1,
+            key: 'followup1',
+            type: 'simpletextarea',
+            result: [{ value: 'more detail', count: 1 }],
+        };
+        setupHooks(
+            {
+                data: { data: [] },
+                conditionalLinks: {
+                    followup1: {
+                        trigger_key: 'radioExcludedFromReport',
+                        row_key: null,
+                        row_label: null,
+                        trigger_values: ['other'],
+                        trigger_value_labels: ['Other'],
+                    },
+                },
+            },
+            { data: { data: [followUpComment] } },
+        );
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        expect(screen.getByText(/is not included in this report/i)).toBeInTheDocument();
+        expect(screen.getByTestId('conditional-follow-up')).toHaveTextContent('Please elaborate');
+    });
+
+    it('stays silent about a missing trigger question when its follow-up drew no comments', () => {
+        setupHooks({
+            data: { data: [radioQuestion] },
+            conditionalLinks: {
+                followup1: {
+                    trigger_key: 'radioExcludedFromReport',
+                    row_key: null,
+                    row_label: null,
+                    trigger_values: ['other'],
+                    trigger_value_labels: ['Other'],
+                },
+            },
+        });
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        expect(screen.queryByText(/is not included in this report/i)).not.toBeInTheDocument();
+        expect(screen.getByTestId('donut-chart')).toBeInTheDocument();
     });
 
     it('paginates through wizard pages using the stepper and next/previous controls', () => {

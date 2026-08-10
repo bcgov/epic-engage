@@ -27,10 +27,10 @@ different shape from the string-equality pattern this module parses.
 Form.io resolves a component's visibility from whichever of these is populated, in this
 precedence order: the Advanced JavaScript conditional (``customConditional``) or the Advanced
 Conditional / JSON Logic builder (``conditional.json``) - whichever has content wins over the
-simple conditional (``conditional.when``/``conditional.eq``). In practice only one of
+simple conditional (``conditional.show``/``when``/``eq``). In practice only one of
 customConditional/conditional.json is ever populated for a given component, but both still take
-priority over the simple conditional when present, so this module never reads
-``conditional.when``/``eq`` for a component that has either advanced field set.
+priority over the simple conditional when present, so this module only reads
+``conditional.when``/``eq`` for a component that has neither advanced field set.
 """
 import re
 
@@ -47,6 +47,15 @@ FOLLOW_UP_TYPES = {'simpletextarea', 'simpletextfield'}
 _JS_COMPARISON_RE = re.compile(
     r"data\.(?P<key>\w+)(?:\.(?P<row_key>\w+))?\s*(?P<op>===|!==)\s*['\"](?P<value>[^'\"]*)['\"]"
 )
+
+# Matches the array-membership form the same field takes when a condition covers several answers
+# at once, e.g. `['important', 'mostImportant'].includes(data.valuedComponents.airQuality)`. A
+# negated check is captured only so it can be dropped, like `!==` above.
+_JS_INCLUDES_RE = re.compile(
+    r'(?P<negated>!\s*)?\[(?P<values>[^\]]*)\]\s*\.includes\(\s*data\.(?P<key>\w+)(?:\.(?P<row_key>\w+))?\s*\)'
+)
+
+_JS_STRING_RE = re.compile(r"['\"]([^'\"]*)['\"]")
 
 
 def _walk_components(component, out):
@@ -89,19 +98,42 @@ def _value_labels(component: dict) -> dict:
 
 
 def _triggers_from_custom_conditional(js_expression: str) -> list:
-    """Extract (trigger_key, row_key, value) equality triggers from a raw customConditional JS string.
+    """Extract (trigger_key, row_key, value) triggers from a raw customConditional JS string.
 
-    `row_key` is ``None`` for a plain radio/select trigger (`data.key === 'value'`) and the
-    matrix sub-field for a Likert/Ranking trigger (`data.matrixKey.rowKey === 'value'`).
-    Comparisons using `!==` are dropped - a not-equal check can't be resolved to a specific,
-    enumerable set of trigger values the way an OR'd chain of `===` checks can.
+    Both hand-written shapes are read: an OR'd chain of `===` comparisons, and the
+    `['a', 'b'].includes(data.key)` membership check authors reach for when a condition covers
+    several answers. `row_key` is ``None`` for a plain radio/select trigger and the matrix
+    sub-field for a Likert/Ranking one. Negated checks are dropped - a not-equal check can't be
+    resolved to a specific, enumerable set of trigger values.
     """
     triggers = []
     for match in _JS_COMPARISON_RE.finditer(js_expression or ''):
         if match.group('op') != '===':
             continue
         triggers.append((match.group('key'), match.group('row_key'), match.group('value')))
+    for match in _JS_INCLUDES_RE.finditer(js_expression or ''):
+        if match.group('negated'):
+            continue
+        triggers.extend(
+            (match.group('key'), match.group('row_key'), value)
+            for value in _JS_STRING_RE.findall(match.group('values'))
+        )
     return triggers
+
+
+def _triggers_from_simple_conditional(conditional: dict) -> list:
+    """Extract the single trigger encoded by form.io's simple conditional (`show`/`when`/`eq`).
+
+    This is the "Conditional" tab in the builder - "Show this component when `when` is `eq`" -
+    and is how most single-answer follow-ups ("Other, please specify") are actually authored.
+    Only a show-when on a non-empty value is usable: a hide-when (`show: false`) names the
+    answers the follow-up is *not* shown for, and an empty `eq` names no answer at all.
+    """
+    when = conditional.get('when')
+    eq = conditional.get('eq')
+    if not when or eq in (None, '') or str(conditional.get('show')).lower() != 'true':
+        return []
+    return [(when, None, str(eq))]
 
 
 def _triggers_from_json_logic(node, trigger_key=None, row_key=None, out=None) -> list:
@@ -187,14 +219,19 @@ def _walk_or(or_args, trigger_key, row_key, out):
 
 
 def _triggers_for_component(component: dict) -> list:
-    """Get the raw (trigger_key, row_key, value) triggers for a follow-up component's conditional."""
-    json_logic = (component.get('conditional') or {}).get('json')
+    """Get the raw (trigger_key, row_key, value) triggers for a follow-up component's conditional.
+
+    Read in form.io's own resolution order, so the link describes the condition that actually
+    gates the question rather than a stale one left behind in another field.
+    """
+    conditional = component.get('conditional') or {}
+    json_logic = conditional.get('json')
     if json_logic:
         return _triggers_from_json_logic(json_logic)
     custom_conditional = component.get('customConditional')
     if custom_conditional:
         return _triggers_from_custom_conditional(custom_conditional)
-    return []
+    return _triggers_from_simple_conditional(conditional)
 
 
 def _resolve_link(triggers: list, matrix_row_labels: dict, simple_trigger_keys: set, components_by_key: dict):

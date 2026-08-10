@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { Box, Skeleton, Stack } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -89,6 +89,15 @@ interface StaleFormatNotice {
     staleKey: string;
 }
 
+// A trigger question that has follow-up comments but no chart of its own - it's excluded from
+// the report, or the ETL never synced it. Without this the follow-ups would be dropped from the
+// standalone list as conditionals and then have no chart to nest under, silently losing them.
+interface OrphanTriggerNotice {
+    orphanTriggerKey: string;
+}
+
+type PageItem = TypedSurveyData | StaleFormatNotice | OrphanTriggerNotice;
+
 const isStaleMatrixEntry = (q: TypedSurveyData) =>
     (q.type === COMPONENT_TYPE.SURVEY || q.type === COMPONENT_TYPE.RANKING) &&
     q.key.includes('-') &&
@@ -115,28 +124,35 @@ const formatOrdinal = (value: string): string => {
     return `${n}${suffix}`;
 };
 
-export const describeConditional = (link: ConditionalLink, triggerType?: string): string => {
-    const values =
-        triggerType === COMPONENT_TYPE.RANKING ? link.trigger_values.map(formatOrdinal) : link.trigger_value_labels;
-    const valuesPhrase = values.join('" or "');
+// `anyRow` states the answer without naming any single row, for a block that merges several
+// row-specific follow-ups sharing one condition (see groupFollowUps).
+export const describeConditional = (link: ConditionalLink, triggerType?: string, anyRow = false): string => {
+    const isRanking = triggerType === COMPONENT_TYPE.RANKING;
+    const valuesPhrase = isRanking
+        ? link.trigger_values.map(formatOrdinal).join(' or ')
+        : link.trigger_value_labels.map((label) => `"${label}"`).join(' or ');
 
-    if (!link.row_label) {
-        return `Conditional — shown to respondents who selected "${valuesPhrase}"`;
+    if (anyRow) {
+        return isRanking
+            ? `Conditional — shown to respondents who ranked a statement ${valuesPhrase}`
+            : `Conditional — shown to respondents who answered ${valuesPhrase} for any row`;
     }
-    if (triggerType === COMPONENT_TYPE.RANKING) {
+    if (!link.row_label) {
+        return `Conditional — shown to respondents who selected ${valuesPhrase}`;
+    }
+    if (isRanking) {
         return `Conditional — shown to respondents who ranked "${link.row_label}" ${valuesPhrase}`;
     }
-    return `Conditional — shown to respondents who answered "${valuesPhrase}" for "${link.row_label}"`;
+    return `Conditional — shown to respondents who answered ${valuesPhrase} for "${link.row_label}"`;
 };
 
-const StaleFormatCard = ({ questionKey }: { questionKey: string }) => (
+const NoticeCard = ({ message, children }: { message: string; children?: ReactNode }) => (
     <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <WarningAmberIcon fontSize="small" sx={{ color: Palette.icons.warning }} />
-            <MetDescription sx={{ color: Palette.text.secondary }}>
-                Survey data for &quot;{questionKey}&quot; has not been updated to a format compatible with this chart.
-            </MetDescription>
+            <MetDescription sx={{ color: Palette.text.secondary }}>{message}</MetDescription>
         </Box>
+        {children}
     </MetPaper>
 );
 
@@ -151,15 +167,51 @@ export interface QuestionChartProps {
     bare?: boolean;
 }
 
-const renderFollowUps = (followUps: ResolvedFollowUp[], type: string) =>
-    followUps.map((followUp) => (
-        <ConditionalFollowUp
-            key={followUp.key}
-            conditionLabel={describeConditional(followUp.link, type)}
-            question={followUp.question}
-            responses={followUp.responses}
-        />
-    ));
+const conditionKey = (link: ConditionalLink) => [link.trigger_key, ...link.trigger_values].join('|');
+
+// A matrix commonly has one "tell us why" follow-up per row, all shown on the same answer; the
+// wireframe collapses those into a single block rather than repeating a near-identical one per
+// row. Only row-specific follow-ups merge - two on the same radio option would be
+// indistinguishable once merged.
+const groupFollowUps = (followUps: ResolvedFollowUp[]): ResolvedFollowUp[][] => {
+    const groups: ResolvedFollowUp[][] = [];
+    const groupsByCondition = new Map<string, ResolvedFollowUp[]>();
+    followUps.forEach((followUp) => {
+        if (!followUp.link.row_label) {
+            groups.push([followUp]);
+            return;
+        }
+        const existing = groupsByCondition.get(conditionKey(followUp.link));
+        if (existing) {
+            existing.push(followUp);
+            return;
+        }
+        const group = [followUp];
+        groupsByCondition.set(conditionKey(followUp.link), group);
+        groups.push(group);
+    });
+    return groups;
+};
+
+const renderFollowUps = (followUps: ResolvedFollowUp[], type: string, triggerLabel: string) =>
+    groupFollowUps(followUps).map((group) => {
+        const [first] = group;
+        const isMerged = group.length > 1;
+        const rowNoun = type === COMPONENT_TYPE.RANKING ? 'statements' : 'rows';
+        return (
+            <ConditionalFollowUp
+                key={first.key}
+                conditionLabel={describeConditional(first.link, type, isMerged)}
+                drawerTitle={isMerged ? triggerLabel : first.question}
+                countLabel={isMerged ? `comments across all ${rowNoun}` : 'comments received'}
+                sections={group.map((followUp) => ({
+                    rowLabel: isMerged ? followUp.link.row_label ?? undefined : undefined,
+                    question: followUp.question,
+                    responses: followUp.responses,
+                }))}
+            />
+        );
+    });
 
 export const QuestionChart = ({
     question,
@@ -181,7 +233,7 @@ export const QuestionChart = ({
                     {/* The donut carries the respondent count in its centre, so it isn't repeated here. */}
                     <TitleGap />
                     <DonutChart data={data} total={respondents} />
-                    {renderFollowUps(followUps, type)}
+                    {renderFollowUps(followUps, type, label)}
                 </>
             );
             if (bare) {
@@ -215,7 +267,7 @@ export const QuestionChart = ({
                 <>
                     <RespondentCount count={respondentCount} />
                     <LikertChart data={rows} scaleLabels={scaleLabels} />
-                    {renderFollowUps(followUps, type)}
+                    {renderFollowUps(followUps, type, label)}
                 </>
             );
             if (bare) {
@@ -236,7 +288,7 @@ export const QuestionChart = ({
                 <>
                     <RespondentCount count={respondentCount} suffix="1 = most important" />
                     <RankOrderChart data={rows.map((r) => ({ label: r.label, ranks: r.pcts }))} />
-                    {renderFollowUps(followUps, type)}
+                    {renderFollowUps(followUps, type, label)}
                 </>
             );
             if (bare) {
@@ -305,6 +357,11 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
         followUpsByTrigger.set(link.trigger_key, [...(followUpsByTrigger.get(link.trigger_key) ?? []), resolved]);
     });
 
+    // Only worth a placeholder when there are comments to rescue - a link whose follow-up drew no
+    // comments would just add an unexplained warning card to every page it appears on.
+    const hasStrandedFollowUps = (triggerKey: string) =>
+        (followUpsByTrigger.get(triggerKey) ?? []).some((followUp) => followUp.responses.length > 0);
+
     if (isLoading || commentsIsLoading || engagementIsLoading) {
         return (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 4 }}>
@@ -333,12 +390,12 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
     // Rebuild the page's question order from its true form field order (page.keys) so
     // chart questions and comment questions interleave correctly - the two datasets are
     // fetched separately and each only cover a disjoint subset of the page's questions.
-    let questionsToShow: (TypedSurveyData | StaleFormatNotice)[];
+    let questionsToShow: PageItem[];
     if (pages) {
         const chartPage = pages[safePage];
         const chartQuestionsByKey = new Map(chartPage.questions.map((q) => [q.key, q]));
         questionsToShow = chartPage.keys
-            .map((key): TypedSurveyData | StaleFormatNotice | undefined => {
+            .map((key): PageItem | undefined => {
                 // Rendered nested under its trigger question's chart instead of standalone.
                 if (conditionalLinks[key]) {
                     return undefined;
@@ -354,14 +411,15 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
                 const hasStaleMatrixData = (data?.data ?? []).some(
                     (q) => q.key.startsWith(`${key}-`) && isStaleMatrixEntry(q),
                 );
-                return hasStaleMatrixData ? { staleKey: key } : undefined;
+                if (hasStaleMatrixData) {
+                    return { staleKey: key };
+                }
+                return hasStrandedFollowUps(key) ? { orphanTriggerKey: key } : undefined;
             })
-            .filter((q): q is TypedSurveyData | StaleFormatNotice => Boolean(q));
+            .filter((q): q is PageItem => Boolean(q));
     } else {
         const seenStaleBaseKeys = new Set<string>();
-        questionsToShow = [...(data?.data ?? []), ...(commentsData?.data ?? [])].reduce<
-            (TypedSurveyData | StaleFormatNotice)[]
-        >((items, q) => {
+        questionsToShow = [...(data?.data ?? []), ...(commentsData?.data ?? [])].reduce<PageItem[]>((items, q) => {
             // Rendered nested under its trigger question's chart instead of standalone.
             if (conditionalLinks[q.key]) {
                 return items;
@@ -377,6 +435,12 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
             items.push(q);
             return items;
         }, []);
+        const renderedKeys = new Set(
+            questionsToShow.map((item) => ('key' in item ? item.key : (item as StaleFormatNotice).staleKey)),
+        );
+        [...followUpsByTrigger.keys()]
+            .filter((triggerKey) => !renderedKeys.has(triggerKey) && hasStrandedFollowUps(triggerKey))
+            .forEach((triggerKey) => questionsToShow.push({ orphanTriggerKey: triggerKey }));
     }
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, mt: 4 }}>
@@ -387,19 +451,39 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
                 <MetHeader3 sx={{ color: Palette.primary.main }}>{pages[safePage].title}</MetHeader3>
             )}
             {questionsToShow.length ? (
-                questionsToShow.map((question) =>
-                    'staleKey' in question ? (
-                        <StaleFormatCard key={question.staleKey} questionKey={question.staleKey} />
-                    ) : (
+                questionsToShow.map((item) => {
+                    if ('staleKey' in item) {
+                        return (
+                            <NoticeCard
+                                key={item.staleKey}
+                                message={`Survey data for "${item.staleKey}" has not been updated to a format compatible with this chart.`}
+                            />
+                        );
+                    }
+                    if ('orphanTriggerKey' in item) {
+                        return (
+                            <NoticeCard
+                                key={item.orphanTriggerKey}
+                                message="The question these comments were shown for is not included in this report."
+                            >
+                                {renderFollowUps(
+                                    followUpsByTrigger.get(item.orphanTriggerKey) ?? [],
+                                    '',
+                                    'Conditional comments',
+                                )}
+                            </NoticeCard>
+                        );
+                    }
+                    return (
                         <QuestionChart
-                            key={question.key}
-                            question={question}
+                            key={item.key}
+                            question={item}
                             commentsByKey={commentsByKey}
-                            followUps={followUpsByTrigger.get(question.key) ?? []}
+                            followUps={followUpsByTrigger.get(item.key) ?? []}
                             dashboardType={dashboardType}
                         />
-                    ),
-                )
+                    );
+                })
             ) : (
                 <NoData />
             )}

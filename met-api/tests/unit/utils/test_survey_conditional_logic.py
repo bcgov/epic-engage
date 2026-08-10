@@ -83,6 +83,99 @@ def test_real_tofino_custom_conditional_example():
     }
 
 
+def test_real_valued_components_includes_example():
+    """The `[...].includes(data.<matrix>.<row>)` pattern real EAO surveys use for Likert rows."""
+    likert = _likert_component()
+    followup = _followup_component(
+        'simpletextarea1',
+        custom_conditional="show = ['agree', 'disagree'].includes(data.simplesurvey1.rowB)",
+    )
+    form_json = _wizard_form(likert, followup)
+
+    assert extract_conditional_links(form_json) == {
+        'simpletextarea1': {
+            'trigger_key': 'simplesurvey1',
+            'row_key': 'rowB',
+            'row_label': 'Row B label',
+            'trigger_values': ['agree', 'disagree'],
+            'trigger_value_labels': ['Agree', 'Disagree'],
+        },
+    }
+
+
+def test_includes_on_plain_radio_trigger():
+    """The same membership pattern against a radio's value directly, so there's no row."""
+    radio = {
+        'key': 'simpleradios1',
+        'type': 'simpleradios',
+        'values': [{'value': 'yes', 'label': 'Yes'}, {'value': 'other', 'label': 'Other'}],
+    }
+    followup = _followup_component(
+        'followup1',
+        custom_conditional='show = ["other"].includes(data.simpleradios1);',
+    )
+    form_json = _wizard_form(radio, followup)
+
+    assert extract_conditional_links(form_json)['followup1']['trigger_values'] == ['other']
+
+
+def test_negated_includes_is_dropped():
+    """A negated includes names the answers a follow-up is hidden for, so it can't be linked."""
+    likert = _likert_component()
+    followup = _followup_component(
+        'followup1',
+        custom_conditional="show = !['agree'].includes(data.simplesurvey1.rowA);",
+    )
+    form_json = _wizard_form(likert, followup)
+
+    assert not extract_conditional_links(form_json)
+
+
+def test_simple_conditional_show_when_eq():
+    """The builder's simple Conditional tab - how most "Other, please specify" follow-ups are set."""
+    radio = {
+        'key': 'simpleradios1',
+        'type': 'simpleradios',
+        'values': [{'value': 'yes', 'label': 'Yes'}, {'value': 'other', 'label': 'Other'}],
+    }
+    followup = _followup_component(
+        'followup1',
+        conditional={'show': True, 'when': 'simpleradios1', 'eq': 'other'},
+    )
+    form_json = _wizard_form(radio, followup)
+
+    assert extract_conditional_links(form_json) == {
+        'followup1': {
+            'trigger_key': 'simpleradios1',
+            'row_key': None,
+            'row_label': None,
+            'trigger_values': ['other'],
+            'trigger_value_labels': ['Other'],
+        },
+    }
+
+
+def test_simple_conditional_hide_when_is_dropped():
+    """A hide-when (`show: false`) names the answers the follow-up is *not* shown for."""
+    radio = {'key': 'simpleradios1', 'type': 'simpleradios', 'values': [{'value': 'other', 'label': 'Other'}]}
+    followup = _followup_component(
+        'followup1',
+        conditional={'show': False, 'when': 'simpleradios1', 'eq': 'other'},
+    )
+    form_json = _wizard_form(radio, followup)
+
+    assert not extract_conditional_links(form_json)
+
+
+def test_simple_conditional_without_a_value_is_dropped():
+    """A `when` with an empty `eq` - left behind when a condition is rebuilt as an advanced one."""
+    radio = {'key': 'simpleradios1', 'type': 'simpleradios', 'values': [{'value': 'other', 'label': 'Other'}]}
+    followup = _followup_component('followup1', conditional={'show': True, 'when': 'simpleradios1', 'eq': ''})
+    form_json = _wizard_form(radio, followup)
+
+    assert not extract_conditional_links(form_json)
+
+
 def test_json_logic_likert_in_shape():
     """A Likert row conditional built with the visual condition builder (conditional.json)."""
     likert = _likert_component()
