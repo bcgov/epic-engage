@@ -7,18 +7,22 @@ import { getEngagement } from 'services/engagementService';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { getErrorMessage } from 'utils';
 import { getEngagementIdBySlug } from 'services/engagementSlugService';
+import { getSurvey } from 'services/surveyService';
+import { Survey } from 'models/survey';
 import { DashboardType } from 'constants/dashboardType';
 
 export interface DashboardContextState {
     engagement: Engagement;
     isEngagementLoading: boolean;
     dashboardType: string;
+    originSurvey: Survey | null;
 }
 
 export const DashboardContext = createContext<DashboardContextState>({
     engagement: createDefaultEngagement(),
     isEngagementLoading: true,
     dashboardType: DashboardType.PUBLIC,
+    originSurvey: null,
 });
 
 interface DashboardContextProviderProps {
@@ -28,11 +32,17 @@ interface DashboardContextProviderProps {
 type EngagementParams = {
     engagementId?: string;
     slug?: string;
+    surveyId?: string;
     dashboardType?: string;
 };
 
 export const DashboardContextProvider = ({ children }: DashboardContextProviderProps) => {
-    const { engagementId: engagementIdParam, slug, dashboardType: dashboardTypeParam } = useParams<EngagementParams>();
+    const {
+        engagementId: engagementIdParam,
+        slug,
+        surveyId,
+        dashboardType: dashboardTypeParam,
+    } = useParams<EngagementParams>();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
     const roles = useAppSelector((state) => state.user.roles);
@@ -43,6 +53,7 @@ export const DashboardContextProvider = ({ children }: DashboardContextProviderP
 
     const [engagement, setEngagement] = useState<Engagement>(createDefaultEngagement());
     const [isEngagementLoading, setEngagementLoading] = useState(true);
+    const [originSurvey, setOriginSurvey] = useState<Survey | null>(null);
 
     const dashboardType = dashboardTypeParam ? dashboardTypeParam : DashboardType.PUBLIC;
 
@@ -67,7 +78,8 @@ export const DashboardContextProvider = ({ children }: DashboardContextProviderP
     };
 
     const fetchEngagement = async () => {
-        if (!engagementId && slug) {
+        // The slug and survey routes resolve the engagement id asynchronously.
+        if (!engagementId && (slug || surveyId)) {
             return;
         }
         if (isNaN(Number(engagementId))) {
@@ -108,12 +120,30 @@ export const DashboardContextProvider = ({ children }: DashboardContextProviderP
         handleFetchEngagementIdBySlug();
     }, [slug]);
 
+    const handleFetchOriginSurvey = async () => {
+        if (!surveyId) {
+            return;
+        }
+        try {
+            const result = await getSurvey(Number(surveyId));
+            setOriginSurvey(result);
+            setEngagementId(result.engagement_id);
+        } catch (error) {
+            navigate('/not-found');
+        }
+    };
+
+    useEffect(() => {
+        handleFetchOriginSurvey();
+    }, [surveyId]);
+
     return (
         <DashboardContext.Provider
             value={{
                 engagement,
                 isEngagementLoading,
                 dashboardType,
+                originSurvey,
             }}
         >
             {children}

@@ -96,7 +96,7 @@ export const ActionsDropDown = ({
                 value: 2,
                 label: 'View Report - Public',
                 action: () => {
-                    navigate(`/engagements/${engagementId}/dashboard/public`);
+                    navigate(`/surveys/${survey.id}/dashboard/public`);
                 },
                 condition: canViewReport(),
             },
@@ -104,7 +104,7 @@ export const ActionsDropDown = ({
                 value: 3,
                 label: 'View Report - Internal',
                 action: () => {
-                    navigate(`/engagements/${engagementId}/dashboard/internal`);
+                    navigate(`/surveys/${survey.id}/dashboard/internal`);
                 },
                 condition: canViewInternalReport(),
             },

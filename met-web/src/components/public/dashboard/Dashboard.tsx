@@ -4,19 +4,37 @@ import { useParams } from 'react-router-dom';
 import { When } from 'react-if';
 import { SurveyResultsCharts } from './SurveyResultsCharts';
 import { CommentsTab } from './comments/CommentsTab';
-import { Breadcrumb } from './Breadcrumb';
+import { Breadcrumb, BreadcrumbItem } from './Breadcrumb';
 import { DashboardHeaderCard } from './DashboardHeaderCard';
 import { DashboardTabBar, RESULTS_TAB, COMMENTS_TAB } from './DashboardTabBar';
 import { DashboardContext } from './DashboardContext';
 import { DashboardType } from 'constants/dashboardType';
+import { useAppSelector } from 'hooks';
 import { Palette } from 'styles/Theme';
 
 const Dashboard = () => {
     const { slug } = useParams();
-    const { engagement, isEngagementLoading, dashboardType } = useContext(DashboardContext);
+    const { engagement, isEngagementLoading, dashboardType, originSurvey } = useContext(DashboardContext);
+    const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
     const [activeTab, setActiveTab] = useState(RESULTS_TAB);
     const [hasViewedComments, setHasViewedComments] = useState(false);
     const basePath = slug ? `/${slug}` : `/engagements/${engagement?.id}/view`;
+    const reportLabel = dashboardType === DashboardType.INTERNAL ? 'Internal Report' : 'Public Report';
+
+    /* The report is reachable from both the Surveys and the Engagements listings. Retrace whichever
+    route the user took. */
+    const breadcrumbItems: BreadcrumbItem[] = originSurvey
+        ? [
+              { label: 'Surveys', to: '/surveys' },
+              { label: originSurvey.name, to: `/surveys/${originSurvey.id}/submit` },
+              { label: reportLabel },
+          ]
+        : [
+              // Signed-out visitors have no /engagements listing; the landing page is their engagement browser.
+              { label: 'Engagements', to: isLoggedIn ? '/engagements' : '/' },
+              { label: engagement.name, to: basePath },
+              { label: reportLabel },
+          ];
 
     const handleTabChange = (tab: string) => {
         setActiveTab(tab);
@@ -27,13 +45,7 @@ const Dashboard = () => {
 
     return (
         <Box sx={{ pt: 3 }}>
-            <Breadcrumb
-                items={[
-                    { label: 'Engagements', to: '/' },
-                    { label: engagement.name, to: basePath },
-                    { label: dashboardType === DashboardType.INTERNAL ? 'Internal Report' : 'Public Report' },
-                ]}
-            />
+            <Breadcrumb items={breadcrumbItems} />
             <DashboardHeaderCard engagement={engagement} engagementIsLoading={isEngagementLoading} />
             <DashboardTabBar activeTab={activeTab} onChange={handleTabChange} />
             <Box sx={{ backgroundColor: Palette.background.default }}>

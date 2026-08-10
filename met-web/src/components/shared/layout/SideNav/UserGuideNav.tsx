@@ -27,6 +27,8 @@ const UserGuideNav = () => {
         '/engagements/1/comments': `${HELP_URL}/posts/preview-engagement/`,
         '/engagements/1/dashboard/public': `${HELP_URL}/posts/report/`,
         '/engagements/1/dashboard/internal': `${HELP_URL}/posts/report/`,
+        '/surveys/1/dashboard/public': `${HELP_URL}/posts/report/`,
+        '/surveys/1/dashboard/internal': `${HELP_URL}/posts/report/`,
         '/feedback': `${HELP_URL}/posts/website-feedback-tool/`,
         '/calendar': HELP_URL,
         '/reporting': `${HELP_URL}/posts/report/`,

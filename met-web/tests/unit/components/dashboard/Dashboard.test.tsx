@@ -6,7 +6,10 @@ import { Provider } from 'react-redux';
 import { store } from 'redux/store';
 import Dashboard from 'components/public/dashboard/Dashboard';
 import { DashboardContext } from 'components/public/dashboard/DashboardContext';
+import { Survey } from 'models/survey';
 import { openEngagement } from '../factory';
+
+const originSurvey = openEngagement.surveys[0];
 
 jest.mock('components/public/dashboard/SurveyResultsCharts', () => ({
     __esModule: true,
@@ -21,12 +24,17 @@ jest.mock('components/public/dashboard/comments/CommentsTab', () => ({
 // DashboardHeaderCard reads auth state and roles from the store to decide whether to offer the
 // internal export, so Dashboard cannot render without one. The default store state is signed out
 // with no roles, which is what this test wants: the export button stays hidden either way.
-const renderDashboard = () =>
+const renderDashboard = (originSurveyValue: Survey | null = null) =>
     render(
         <Provider store={store}>
             <MemoryRouter>
                 <DashboardContext.Provider
-                    value={{ engagement: openEngagement, isEngagementLoading: false, dashboardType: 'public' }}
+                    value={{
+                        engagement: openEngagement,
+                        isEngagementLoading: false,
+                        dashboardType: 'public',
+                        originSurvey: originSurveyValue,
+                    }}
                 >
                     <Dashboard />
                 </DashboardContext.Provider>
@@ -41,6 +49,26 @@ describe('Dashboard', () => {
         expect(screen.getByText(openEngagement.name)).toBeInTheDocument();
         expect(screen.getByText('Public Report')).toBeInTheDocument();
         expect(screen.getByTestId('survey-results-charts')).toBeInTheDocument();
+    });
+
+    // Signed out, the landing page is the visitor's engagement browser;
+    // /engagements is a staff-only route.
+    it('points the Engagements crumb at the landing page for signed-out visitors', () => {
+        renderDashboard();
+
+        expect(screen.getByRole('link', { name: 'Engagements' })).toHaveAttribute('href', '/');
+    });
+
+    it('retraces the Surveys listing when the report was opened from a survey', () => {
+        renderDashboard(originSurvey);
+
+        expect(screen.getByRole('link', { name: 'Surveys' })).toHaveAttribute('href', '/surveys');
+        expect(screen.getByRole('link', { name: originSurvey.name })).toHaveAttribute(
+            'href',
+            `/surveys/${originSurvey.id}/submit`,
+        );
+        expect(screen.queryByRole('link', { name: 'Engagements' })).not.toBeInTheDocument();
+        expect(screen.getByText('Public Report')).toBeInTheDocument();
     });
 
     it('does not mount the Comments tab until the user visits it', () => {
