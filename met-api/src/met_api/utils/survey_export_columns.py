@@ -29,6 +29,7 @@ free-text ones, or both.
 from typing import NamedTuple, Optional
 
 from met_api.constants.report_setting_type import FormIoComponentType
+from met_api.utils.form_components import iter_pages
 from met_api.utils.survey_conditional_logic import extract_conditional_links
 
 
@@ -99,18 +100,6 @@ class ExportColumn(NamedTuple):
         return None if value in (None, '') else value
 
 
-def _walk_components(component: dict, found: list):
-    """Depth-first collect every component nested under `component`, `component` included."""
-    if not isinstance(component, dict):
-        return
-    if component.get('key'):
-        found.append(component)
-    for child in component.get('components', []) or []:
-        _walk_components(child, found)
-    for column in component.get('columns', []) or []:
-        _walk_components(column, found)
-
-
 def value_labels(component: dict) -> dict:
     """Map a component's option value codes to their display labels."""
     return {v.get('value'): v.get('label') for v in component.get('values', []) or []}
@@ -123,14 +112,7 @@ def iter_survey_questions(form_json: dict, types: set = None):
     page so callers still have a page to group by.
     """
     types = QUANTITATIVE_TYPES if types is None else types
-    form_json = form_json or {}
-    top_level = form_json.get('components', []) or []
-    is_wizard = form_json.get('display') == 'wizard' and bool(top_level)
-    pages = top_level if is_wizard else [{'components': top_level, 'title': ''}]
-
-    for page_index, page in enumerate(pages):
-        components = []
-        _walk_components(page, components)
+    for page_index, (page, components) in enumerate(iter_pages(form_json)):
         for component in components:
             if component.get('type') in types:
                 yield page_index, page.get('title') or '', component

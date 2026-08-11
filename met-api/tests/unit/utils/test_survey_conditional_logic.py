@@ -6,6 +6,7 @@ def _likert_component(key='simplesurvey1'):
     return {
         'key': key,
         'type': 'simplesurvey',
+        'label': 'How much do you agree?',
         'questions': [
             {'value': 'rowA', 'label': 'Row A label'},
             {'value': 'rowB', 'label': 'Row B label'},
@@ -22,6 +23,7 @@ def _ranking_component(key='simpleranking1'):
     return {
         'key': key,
         'type': 'simpleranking',
+        'label': 'Rank these statements',
         'statements': [
             {'id': 'stmt1', 'label': 'Statement one'},
             {'id': 'stmt2', 'label': 'Statement two'},
@@ -29,8 +31,20 @@ def _ranking_component(key='simpleranking1'):
     }
 
 
+def _checkbox_component(key='simplecheckboxes1'):
+    return {
+        'key': key,
+        'type': 'simplecheckboxes',
+        'label': 'Which components matter to you?',
+        'values': [
+            {'value': 'airQuality', 'label': 'Air quality'},
+            {'value': 'waterQuality', 'label': 'Water quality'},
+        ],
+    }
+
+
 def _followup_component(key, conditional=None, custom_conditional=None):
-    component = {'key': key, 'type': 'simpletextarea'}
+    component = {'key': key, 'type': 'simpletextarea', 'label': 'Tell us more'}
     if conditional is not None:
         component['conditional'] = conditional
     if custom_conditional is not None:
@@ -53,6 +67,7 @@ def test_real_tofino_custom_conditional_example():
     likert = {
         'key': 'simplesurvey1',
         'type': 'simplesurvey',
+        'label': 'How much do you agree with the following?',
         'questions': [
             {
                 'value': 'iWouldConsiderVisitingTofinoWithinTheNextFewYears',
@@ -75,10 +90,12 @@ def test_real_tofino_custom_conditional_example():
     assert links == {
         'simpletextarea1': {
             'trigger_key': 'simplesurvey1',
+            'trigger_label': 'How much do you agree with the following?',
             'row_key': 'iWouldConsiderVisitingTofinoWithinTheNextFewYears',
             'row_label': 'I would consider visiting Tofino within the next few years.',
             'trigger_values': ['disagree', 'stronglyDisagree'],
             'trigger_value_labels': ['Disagree', 'Strongly Disagree'],
+            'follow_up_label': 'Tell us more',
         },
     }
 
@@ -95,10 +112,12 @@ def test_real_valued_components_includes_example():
     assert extract_conditional_links(form_json) == {
         'simpletextarea1': {
             'trigger_key': 'simplesurvey1',
+            'trigger_label': 'How much do you agree?',
             'row_key': 'rowB',
             'row_label': 'Row B label',
             'trigger_values': ['agree', 'disagree'],
             'trigger_value_labels': ['Agree', 'Disagree'],
+            'follow_up_label': 'Tell us more',
         },
     }
 
@@ -108,6 +127,7 @@ def test_includes_on_plain_radio_trigger():
     radio = {
         'key': 'simpleradios1',
         'type': 'simpleradios',
+        'label': 'How did you hear about us?',
         'values': [{'value': 'yes', 'label': 'Yes'}, {'value': 'other', 'label': 'Other'}],
     }
     followup = _followup_component(
@@ -136,6 +156,7 @@ def test_simple_conditional_show_when_eq():
     radio = {
         'key': 'simpleradios1',
         'type': 'simpleradios',
+        'label': 'How did you hear about us?',
         'values': [{'value': 'yes', 'label': 'Yes'}, {'value': 'other', 'label': 'Other'}],
     }
     followup = _followup_component(
@@ -147,17 +168,24 @@ def test_simple_conditional_show_when_eq():
     assert extract_conditional_links(form_json) == {
         'followup1': {
             'trigger_key': 'simpleradios1',
+            'trigger_label': 'How did you hear about us?',
             'row_key': None,
             'row_label': None,
             'trigger_values': ['other'],
             'trigger_value_labels': ['Other'],
+            'follow_up_label': 'Tell us more',
         },
     }
 
 
 def test_simple_conditional_hide_when_is_dropped():
     """A hide-when (`show: false`) names the answers the follow-up is *not* shown for."""
-    radio = {'key': 'simpleradios1', 'type': 'simpleradios', 'values': [{'value': 'other', 'label': 'Other'}]}
+    radio = {
+        'key': 'simpleradios1',
+        'type': 'simpleradios',
+        'label': 'How did you hear about us?',
+        'values': [{'value': 'other', 'label': 'Other'}],
+    }
     followup = _followup_component(
         'followup1',
         conditional={'show': False, 'when': 'simpleradios1', 'eq': 'other'},
@@ -169,7 +197,12 @@ def test_simple_conditional_hide_when_is_dropped():
 
 def test_simple_conditional_without_a_value_is_dropped():
     """A `when` with an empty `eq` - left behind when a condition is rebuilt as an advanced one."""
-    radio = {'key': 'simpleradios1', 'type': 'simpleradios', 'values': [{'value': 'other', 'label': 'Other'}]}
+    radio = {
+        'key': 'simpleradios1',
+        'type': 'simpleradios',
+        'label': 'How did you hear about us?',
+        'values': [{'value': 'other', 'label': 'Other'}],
+    }
     followup = _followup_component('followup1', conditional={'show': True, 'when': 'simpleradios1', 'eq': ''})
     form_json = _wizard_form(radio, followup)
 
@@ -190,10 +223,12 @@ def test_json_logic_likert_in_shape():
     assert links == {
         'followup1': {
             'trigger_key': 'simplesurvey1',
+            'trigger_label': 'How much do you agree?',
             'row_key': 'rowA',
             'row_label': 'Row A label',
             'trigger_values': ['disagree', 'stronglyDisagree'],
             'trigger_value_labels': ['Disagree', 'Strongly Disagree'],
+            'follow_up_label': 'Tell us more',
         },
     }
 
@@ -224,11 +259,13 @@ def test_json_logic_ranking_some_and_shape():
     assert links == {
         'followup1': {
             'trigger_key': 'simpleranking1',
+            'trigger_label': 'Rank these statements',
             'row_key': 'stmt2',
             'row_label': 'Statement two',
             'trigger_values': ['1', '2'],
             # Ranking has no per-value label list - raw rank numbers pass through unresolved.
             'trigger_value_labels': ['1', '2'],
+            'follow_up_label': 'Tell us more',
         },
     }
 
@@ -313,6 +350,7 @@ def test_plain_radio_trigger_via_custom_conditional():
     radio = {
         'key': 'simpleradios1',
         'type': 'simpleradios',
+        'label': 'How did you hear about us?',
         'values': [{'value': 'yes', 'label': 'Yes'}, {'value': 'other', 'label': 'Other'}],
     }
     followup = _followup_component(
@@ -324,10 +362,12 @@ def test_plain_radio_trigger_via_custom_conditional():
     assert extract_conditional_links(form_json) == {
         'followup1': {
             'trigger_key': 'simpleradios1',
+            'trigger_label': 'How did you hear about us?',
             'row_key': None,
             'row_label': None,
             'trigger_values': ['other'],
             'trigger_value_labels': ['Other'],
+            'follow_up_label': 'Tell us more',
         },
     }
 
@@ -337,6 +377,7 @@ def test_plain_select_trigger_via_json_logic():
     select = {
         'key': 'simpleselect1',
         'type': 'simpleselect',
+        'label': 'How did you hear about us?',
         'values': [{'value': 'yes', 'label': 'Yes'}, {'value': 'other', 'label': 'Other'}],
     }
     followup = _followup_component(
@@ -348,24 +389,235 @@ def test_plain_select_trigger_via_json_logic():
     assert extract_conditional_links(form_json) == {
         'followup1': {
             'trigger_key': 'simpleselect1',
+            'trigger_label': 'How did you hear about us?',
             'row_key': None,
             'row_label': None,
             'trigger_values': ['other'],
             'trigger_value_labels': ['Other'],
+            'follow_up_label': 'Tell us more',
         },
     }
 
 
-def test_checkbox_trigger_is_not_resolved():
-    """Checkbox triggers are out of scope - the submitted value is an object, not a string."""
-    checkbox = {'key': 'simplecheckboxes1', 'type': 'simplecheckboxes'}
+def test_checkbox_option_trigger_via_bare_truthiness():
+    """`show = data.<checkbox>.<option>` - a ticked box has no value to compare against."""
+    checkbox = _checkbox_component()
     followup = _followup_component(
         'followup1',
-        custom_conditional="show = data.simplecheckboxes1.other === 'true';",
+        custom_conditional='show = data.simplecheckboxes1.airQuality',
+    )
+    form_json = _wizard_form(checkbox, followup)
+
+    assert extract_conditional_links(form_json) == {
+        'followup1': {
+            'trigger_key': 'simplecheckboxes1',
+            'trigger_label': 'Which components matter to you?',
+            # The option is the row: it is what distinguishes this follow-up from its siblings.
+            'row_key': 'airQuality',
+            'row_label': 'Air quality',
+            'trigger_values': ['true'],
+            'trigger_value_labels': ['Selected'],
+            'follow_up_label': 'Tell us more',
+        },
+    }
+
+
+def test_checkbox_option_trigger_via_equality():
+    """The same condition written out as an explicit comparison resolves identically."""
+    checkbox = _checkbox_component()
+    followup = _followup_component(
+        'followup1',
+        custom_conditional="show = data.simplecheckboxes1.airQuality === 'true';",
+    )
+    form_json = _wizard_form(checkbox, followup)
+
+    assert extract_conditional_links(form_json)['followup1'] == {
+        'trigger_key': 'simplecheckboxes1',
+        'trigger_label': 'Which components matter to you?',
+        'row_key': 'airQuality',
+        'row_label': 'Air quality',
+        'trigger_values': ['true'],
+        'trigger_value_labels': ['Selected'],
+        'follow_up_label': 'Tell us more',
+    }
+
+
+def test_checkbox_follow_ups_share_one_condition():
+    """Every option's follow-up carries the same trigger and value, which is what groups them.
+
+    The dashboard collapses row follow-ups that share a trigger key and trigger values into one
+    block; per-option follow-ups only merge because a ticked box always reports 'true'.
+    """
+    checkbox = _checkbox_component()
+    form_json = _wizard_form(
+        checkbox,
+        _followup_component('air', custom_conditional='show = data.simplecheckboxes1.airQuality'),
+        _followup_component('water', custom_conditional='show = data.simplecheckboxes1.waterQuality;'),
+    )
+
+    links = extract_conditional_links(form_json)
+    assert [(link['trigger_key'], link['trigger_values']) for link in links.values()] == [
+        ('simplecheckboxes1', ['true']),
+        ('simplecheckboxes1', ['true']),
+    ]
+    assert [link['row_label'] for link in links.values()] == ['Air quality', 'Water quality']
+
+
+def test_negated_truthiness_is_dropped():
+    """`show = !data.<checkbox>.<option>` names when the follow-up is hidden, not shown."""
+    checkbox = _checkbox_component()
+    followup = _followup_component(
+        'followup1',
+        custom_conditional='show = !data.simplecheckboxes1.airQuality',
     )
     form_json = _wizard_form(checkbox, followup)
 
     assert not extract_conditional_links(form_json)
+
+
+def test_truthiness_on_an_unsupported_comparison_is_dropped():
+    """A comparison this module can't read decides the answer, so the bare read is not trusted."""
+    checkbox = _checkbox_component()
+    followup = _followup_component(
+        'followup1',
+        custom_conditional="show = data.simplecheckboxes1.airQuality == 'false'",
+    )
+    form_json = _wizard_form(checkbox, followup)
+
+    assert not extract_conditional_links(form_json)
+
+
+def test_checkbox_option_not_on_the_component_is_omitted():
+    """An option that no longer exists on the checkbox can't be labelled, so it is dropped."""
+    checkbox = _checkbox_component()
+    followup = _followup_component(
+        'followup1',
+        custom_conditional='show = data.simplecheckboxes1.removedOption',
+    )
+    form_json = _wizard_form(checkbox, followup)
+
+    assert not extract_conditional_links(form_json)
+
+
+def _multi_select_component(key='simpleselect1'):
+    """Build a dropdown with `multiple` set, which submits an array of option keys."""
+    return {
+        'key': key,
+        'type': 'simpleselect',
+        'label': 'Which components matter to you?',
+        'multiple': True,
+        'values': [
+            {'value': 'airQuality', 'label': 'Air quality'},
+            {'value': 'waterQuality', 'label': 'Water quality'},
+        ],
+    }
+
+
+def test_multi_select_option_trigger_via_data_includes():
+    """`data.<select>.includes('<option>')` - the answer is the array, so the option is the needle."""
+    followup = _followup_component(
+        'followup1',
+        custom_conditional="show = data.simpleselect1.includes('airQuality');",
+    )
+    form_json = _wizard_form(_multi_select_component(), followup)
+
+    assert extract_conditional_links(form_json) == {
+        'followup1': {
+            'trigger_key': 'simpleselect1',
+            'trigger_label': 'Which components matter to you?',
+            'row_key': 'airQuality',
+            'row_label': 'Air quality',
+            'trigger_values': ['true'],
+            'trigger_value_labels': ['Selected'],
+            'follow_up_label': 'Tell us more',
+        },
+    }
+
+
+def test_multi_select_option_trigger_via_json_logic():
+    """The visual builder swaps the `in` operands round when the answer is the collection."""
+    followup = _followup_component(
+        'followup1',
+        conditional={'json': {'in': ['waterQuality', {'var': 'simpleselect1'}]}},
+    )
+    form_json = _wizard_form(_multi_select_component(), followup)
+
+    assert extract_conditional_links(form_json)['followup1'] == {
+        'trigger_key': 'simpleselect1',
+        'trigger_label': 'Which components matter to you?',
+        'row_key': 'waterQuality',
+        'row_label': 'Water quality',
+        'trigger_values': ['true'],
+        'trigger_value_labels': ['Selected'],
+        'follow_up_label': 'Tell us more',
+    }
+
+
+def test_negated_data_includes_is_dropped():
+    """`!data.<select>.includes(...)` names when the follow-up is hidden, not when it shows."""
+    followup = _followup_component(
+        'followup1',
+        custom_conditional="show = !data.simpleselect1.includes('airQuality');",
+    )
+    form_json = _wizard_form(_multi_select_component(), followup)
+
+    assert not extract_conditional_links(form_json)
+
+
+def test_data_includes_is_not_read_as_a_truthiness_check():
+    """`.includes` must not be mistaken for the option in a bare `data.<key>.<option>` read."""
+    followup = _followup_component(
+        'followup1',
+        custom_conditional="show = data.simpleselect1.includes('airQuality');",
+    )
+    form_json = _wizard_form(_multi_select_component(), followup)
+
+    assert extract_conditional_links(form_json)['followup1']['row_key'] == 'airQuality'
+
+
+def test_single_select_trigger_is_unaffected_by_membership_support():
+    """A single-value dropdown still resolves to the answer given, with no row."""
+    select = {
+        'key': 'simpleselect1',
+        'type': 'simpleselect',
+        'label': 'How did you hear about us?',
+        'values': [{'value': 'other', 'label': 'Other'}],
+    }
+    followup = _followup_component(
+        'followup1',
+        custom_conditional="show = data.simpleselect1 === 'other';",
+    )
+    form_json = _wizard_form(select, followup)
+
+    assert extract_conditional_links(form_json)['followup1'] == {
+        'trigger_key': 'simpleselect1',
+        'trigger_label': 'How did you hear about us?',
+        'row_key': None,
+        'row_label': None,
+        'trigger_values': ['other'],
+        'trigger_value_labels': ['Other'],
+        'follow_up_label': 'Tell us more',
+    }
+
+
+def test_simple_conditional_on_a_checkbox_option():
+    """The builder's simple tab addresses an option as "<key>.<option>", same as the JS does."""
+    checkbox = _checkbox_component()
+    followup = _followup_component(
+        'followup1',
+        conditional={'show': True, 'when': 'simplecheckboxes1.waterQuality', 'eq': True},
+    )
+    form_json = _wizard_form(checkbox, followup)
+
+    assert extract_conditional_links(form_json)['followup1'] == {
+        'trigger_key': 'simplecheckboxes1',
+        'trigger_label': 'Which components matter to you?',
+        'row_key': 'waterQuality',
+        'row_label': 'Water quality',
+        'trigger_values': ['true'],
+        'trigger_value_labels': ['Selected'],
+        'follow_up_label': 'Tell us more',
+    }
 
 
 def test_non_wizard_flat_form_is_supported():

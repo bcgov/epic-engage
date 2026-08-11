@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { Box, Typography } from '@mui/material';
 import { MetPaper, MetHeader4, MetDescription } from 'components/shared/common';
 import { Palette } from 'styles/Theme';
@@ -17,6 +18,8 @@ interface CheckboxChartProps {
     // Renders just the chart content, without the surrounding MetPaper card/title, for callers
     // that render their own.
     bare?: boolean;
+    // Rendered below the chart and inside the card - the conditional follow-ups hung off an option.
+    children?: ReactNode;
 }
 
 const HEADER_SX = {
@@ -32,7 +35,14 @@ const HEADER_SX = {
 const PCT_COL_W = 132;
 const COUNT_COL_W = 72;
 
-export const CheckboxChart = ({ question, respondentCount, data, questionType, bare = false }: CheckboxChartProps) => {
+export const CheckboxChart = ({
+    question,
+    respondentCount,
+    data,
+    questionType,
+    bare = false,
+    children,
+}: CheckboxChartProps) => {
     const content = (
         <>
             <MetDescription sx={{ mb: '18px' }}>
@@ -102,6 +112,7 @@ export const CheckboxChart = ({ question, respondentCount, data, questionType, b
                     </Typography>
                 </Box>
             ))}
+            {children}
         </>
     );
 

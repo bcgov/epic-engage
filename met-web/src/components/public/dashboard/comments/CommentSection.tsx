@@ -9,30 +9,26 @@ interface CommentSectionProps {
     registerRef: (id: string, el: HTMLDivElement | null) => void;
 }
 
-const CountPill = ({ count }: { count: number }) => (
-    <Box
-        component="span"
-        sx={{
-            fontSize: '11px',
-            color: Palette.text.secondary,
-            backgroundColor: Palette.background.gray,
-            border: `1px solid ${Palette.border.default}`,
-            borderRadius: '20px',
-            padding: '2px 10px',
-            ml: 1,
-        }}
-    >
-        {count} comment{count === 1 ? '' : 's'}
-    </Box>
-);
+// formio leaves an unnamed wizard page titled "Page 3", remove duplicate numbers if defaulted
+const describePage = (pageNumber: number, pageTitle: string) =>
+    /^page\s*\d/i.test(pageTitle) ? pageTitle : `Page ${pageNumber} – ${pageTitle}`;
+
+const describeSection = ({ commentCount, pageNumber, pageTitle }: CommentSectionData) => {
+    const comments = `${commentCount.toLocaleString()} comment${commentCount === 1 ? '' : 's'}`;
+    return pageTitle ? `${comments} · ${describePage(pageNumber, pageTitle)}` : comments;
+};
 
 export const CommentSection = ({ section, registerRef }: CommentSectionProps) => {
     return (
-        <Box id={section.id} ref={(el: HTMLDivElement | null) => registerRef(section.id, el)} sx={{ scrollMarginTop: '12px' }}>
+        <Box
+            id={section.id}
+            ref={(el: HTMLDivElement | null) => registerRef(section.id, el)}
+            sx={{ scrollMarginTop: 'calc(var(--comments-sticky-top, 0px) + 12px)' }}
+        >
             <Box
                 sx={{
                     position: 'sticky',
-                    top: 0,
+                    top: 'var(--comments-sticky-top, 0px)',
                     backgroundColor: Palette.background.default,
                     zIndex: 2,
                     padding: '12px 0 8px',
@@ -40,11 +36,12 @@ export const CommentSection = ({ section, registerRef }: CommentSectionProps) =>
                     mb: '12px',
                 }}
             >
-                <MetHeader4 sx={{ display: 'inline', color: Palette.primary.main }}>
+                <MetHeader4 sx={{ color: Palette.primary.main, fontSize: '15px', lineHeight: 1.4 }}>
                     {section.title}
-                    <CountPill count={section.commentCount} />
                 </MetHeader4>
-                <MetDescription sx={{ mt: '2px', fontSize: '12px' }}>{section.pageTitle}</MetDescription>
+                <MetDescription sx={{ mt: '2px', fontSize: '12px', lineHeight: 1.4 }}>
+                    {describeSection(section)}
+                </MetDescription>
             </Box>
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -54,7 +51,8 @@ export const CommentSection = ({ section, registerRef }: CommentSectionProps) =>
                               key={sub.id}
                               id={sub.id}
                               ref={(el: HTMLDivElement | null) => registerRef(sub.id, el)}
-                              sx={{ scrollMarginTop: '80px' }}
+                              // Clears the app bar and the section's own sticky header above it.
+                              sx={{ scrollMarginTop: 'calc(var(--comments-sticky-top, 0px) + 80px)' }}
                           >
                               <MetDescription
                                   sx={{
@@ -77,7 +75,9 @@ export const CommentSection = ({ section, registerRef }: CommentSectionProps) =>
                               </Box>
                           </Box>
                       ))
-                    : section.responses?.map((text, index) => <CommentItem key={`${section.id}-${index}`} text={text} />)}
+                    : section.responses?.map((text, index) => (
+                          <CommentItem key={`${section.id}-${index}`} text={text} />
+                      ))}
             </Box>
         </Box>
     );

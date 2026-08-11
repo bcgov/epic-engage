@@ -6,6 +6,7 @@ from met_api.models.report_setting import ReportSetting as ReportSettingModel
 from met_api.models.survey import Survey as SurveyModel
 from met_api.schemas.report_setting import ReportSettingSchema
 from met_api.services import authorization
+from met_api.utils.form_components import flatten_components
 from met_api.utils.roles import Role
 
 
@@ -43,19 +44,12 @@ class ReportSettingService:
         form_json = report_setting_data.get('form_json', None)
         form_type = form_json.get('display', None)
 
-        is_single_page_survey = form_type == 'form'
-        is_multi_page_survey = form_type == 'wizard'
         survey_question_keys = []
 
-        if is_single_page_survey:
-            form_components = form_json.get('components', None)
-            cls._extract_form_component(survey_id, form_components, survey_question_keys)
-
-        if is_multi_page_survey:
-            pages = form_json.get('components', None)
-            for page in pages:
-                form_components = page.get('components', None)
-                cls._extract_form_component(survey_id, form_components, survey_question_keys)
+        if form_type in ('form', 'wizard'):
+            # Every question in the form, however deeply the builder nested it. A question with no
+            # setting is left out of the report
+            cls._extract_form_component(survey_id, flatten_components(form_json), survey_question_keys)
 
         cls._delete_questions_removed_from_form(survey_id, survey_question_keys)
 

@@ -1,6 +1,4 @@
 """Service for comment management."""
-import itertools
-
 from met_api.constants.comment_status import Status
 from met_api.constants.export_comments import RejectionReason
 from met_api.constants.membership_type import MembershipType
@@ -17,6 +15,7 @@ from met_api.schemas.survey import SurveySchema
 from met_api.services import authorization
 from met_api.services.document_generation_service import DocumentGenerationService
 from met_api.utils.enums import GeneratedDocumentTypes, MembershipStatus
+from met_api.utils.form_components import flatten_components
 from met_api.utils.roles import Role
 from met_api.utils.token_info import TokenInfo
 
@@ -137,17 +136,16 @@ class CommentService:
 
     @classmethod
     def extract_components(cls, survey_form: dict):
-        """Extract components from survey form."""
-        components = list(survey_form.get('components', []))
+        """Extract components from survey form.
 
-        is_comments_from_form_survey = survey_form.get('display') == cls.form_display
-        if is_comments_from_form_survey:
-            return components
-
-        is_comments_from_wizard_survey = survey_form.get('display') == cls.wizard_display
-        if is_comments_from_wizard_survey:
-            return list(itertools.chain.from_iterable([page.get('components', []) for page in components]))
-        return []
+        Descends through layout containers rather than reading one level: a question nested in a
+        panel or column is still a question, and skipping it means its answers never become
+        comments at all.
+        """
+        survey_form = survey_form or {}
+        if survey_form.get('display') not in (cls.form_display, cls.wizard_display):
+            return []
+        return flatten_components(survey_form)
 
     @classmethod
     def extract_comments_from_survey(cls, survey_submission: SubmissionSchema, survey: SurveySchema):

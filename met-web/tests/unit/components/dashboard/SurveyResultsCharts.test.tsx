@@ -14,7 +14,12 @@ jest.mock('components/public/dashboard/charts', () => ({
     DonutChart: ({ total }: { total: number }) => <div data-testid="donut-chart">{total}</div>,
     LikertChart: () => <div data-testid="likert-chart" />,
     RankOrderChart: () => <div data-testid="rank-order-chart" />,
-    CheckboxChart: ({ question }: { question: string }) => <div data-testid="checkbox-chart">{question}</div>,
+    CheckboxChart: ({ question, children }: { question: string; children?: React.ReactNode }) => (
+        <div data-testid="checkbox-chart">
+            {question}
+            {children}
+        </div>
+    ),
     Comments: ({ question, responses }: { question: string; responses: string[] }) => (
         <div data-testid="comments">
             {question}: {responses.join(', ')}
@@ -288,6 +293,186 @@ describe('SurveyResultsCharts', () => {
         expect(blocks[0]).toHaveTextContent('comments across all rows');
         expect(blocks[0]).toHaveTextContent('Air quality: Why is air quality important to you?');
         expect(blocks[0]).toHaveTextContent('Wildlife: Why is wildlife important to you?');
+    });
+
+    it('merges per-option follow-ups under a checkbox trigger and names the option, not the tick', () => {
+        const checkbox: TypedSurveyData = {
+            label: 'Which components matter to you?',
+            position: 0,
+            key: 'simplecheckboxes1',
+            type: 'simplecheckboxes',
+            result: [
+                { value: 'Air quality', count: 9 },
+                { value: 'Water quality', count: 6 },
+            ],
+        };
+        // Every ticked option reports the same 'true', which is what merges the follow-ups.
+        const link = (rowKey: string, rowLabel: string) => ({
+            trigger_key: 'simplecheckboxes1',
+            row_key: rowKey,
+            row_label: rowLabel,
+            trigger_values: ['true'],
+            trigger_value_labels: ['Selected'],
+        });
+        const followUp = (key: string): TypedSurveyData => ({
+            label: 'Why is this component important to you?',
+            position: 1,
+            key,
+            type: 'simpletextarea',
+            result: [{ value: 'a comment', count: 1 }],
+        });
+        setupHooks(
+            {
+                data: { data: [checkbox] },
+                conditionalLinks: {
+                    followupAir: link('airQuality', 'Air quality'),
+                    followupWater: link('waterQuality', 'Water quality'),
+                },
+            },
+            { data: { data: [followUp('followupAir'), followUp('followupWater')] } },
+        );
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        const blocks = screen.getAllByTestId('conditional-follow-up');
+        expect(blocks).toHaveLength(1);
+        expect(blocks[0]).toHaveTextContent('Conditional — shown to respondents who selected any of these options');
+        expect(blocks[0]).toHaveTextContent('comments across all options');
+        expect(blocks[0]).toHaveTextContent('Air quality: Why is this component important to you?');
+        expect(blocks[0]).toHaveTextContent('Water quality: Why is this component important to you?');
+        // The follow-ups are nested under the checkbox chart, not standalone.
+        expect(screen.queryByTestId('comments')).not.toBeInTheDocument();
+    });
+
+    it('names a single checkbox option rather than repeating that it was ticked', () => {
+        const checkbox: TypedSurveyData = {
+            label: 'Which components matter to you?',
+            position: 0,
+            key: 'simplecheckboxes1',
+            type: 'simplecheckboxes',
+            result: [{ value: 'Air quality', count: 9 }],
+        };
+        setupHooks(
+            {
+                data: { data: [checkbox] },
+                conditionalLinks: {
+                    followup1: {
+                        trigger_key: 'simplecheckboxes1',
+                        row_key: 'airQuality',
+                        row_label: 'Air quality',
+                        trigger_values: ['true'],
+                        trigger_value_labels: ['Selected'],
+                    },
+                },
+            },
+            {
+                data: {
+                    data: [
+                        {
+                            label: 'Tell us why',
+                            position: 1,
+                            key: 'followup1',
+                            type: 'simpletextarea',
+                            result: [{ value: 'a comment', count: 1 }],
+                        } as TypedSurveyData,
+                    ],
+                },
+            },
+        );
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        expect(screen.getByTestId('conditional-follow-up')).toHaveTextContent(
+            'Conditional — shown to respondents who selected "Air quality"',
+        );
+    });
+
+    it('describes a multi-select dropdown option like a ticked box, not as an answer given', () => {
+        const dropdown: TypedSurveyData = {
+            label: 'Which components matter to you?',
+            position: 0,
+            key: 'simpleselect1',
+            type: 'simpleselect',
+            result: [
+                { value: 'Air quality', count: 9 },
+                { value: 'Water quality', count: 6 },
+            ],
+        };
+        // A picked option out of a multi-select carries the same 'true' a ticked checkbox does.
+        const link = (rowKey: string, rowLabel: string) => ({
+            trigger_key: 'simpleselect1',
+            trigger_label: 'Which components matter to you?',
+            row_key: rowKey,
+            row_label: rowLabel,
+            trigger_values: ['true'],
+            trigger_value_labels: ['Selected'],
+        });
+        const followUp = (key: string, label: string): TypedSurveyData => ({
+            label,
+            position: 1,
+            key,
+            type: 'simpletextarea',
+            result: [{ value: 'a comment', count: 1 }],
+        });
+        setupHooks(
+            {
+                data: { data: [dropdown] },
+                conditionalLinks: {
+                    followupAir: link('airQuality', 'Air quality'),
+                    followupWater: link('waterQuality', 'Water quality'),
+                },
+            },
+            {
+                data: {
+                    data: [
+                        followUp('followupAir', 'Why is air quality important to you?'),
+                        followUp('followupWater', 'Why is water quality important to you?'),
+                    ],
+                },
+            },
+        );
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        const blocks = screen.getAllByTestId('conditional-follow-up');
+        expect(blocks).toHaveLength(1);
+        expect(blocks[0]).toHaveTextContent('Conditional — shown to respondents who selected any of these options');
+        expect(blocks[0]).toHaveTextContent('comments across all options');
+    });
+
+    it('names a follow-up from the form when it has no comment data, never by its key', () => {
+        const radio: TypedSurveyData = {
+            label: 'Where do you live?',
+            position: 0,
+            key: 'simpleradios1',
+            type: 'simpleradios',
+            result: [{ value: 'Other', count: 4 }],
+        };
+        // No comment question for the follow-up: it draws no approved comments, or is not
+        // published in the survey's report settings. Either way the key is not a question.
+        setupHooks(
+            {
+                data: { data: [radio] },
+                conditionalLinks: {
+                    simpletextfield1: {
+                        trigger_key: 'simpleradios1',
+                        trigger_label: 'Where do you live?',
+                        follow_up_label: 'Please specify where you live',
+                        row_key: null,
+                        row_label: null,
+                        trigger_values: ['other'],
+                        trigger_value_labels: ['Other'],
+                    },
+                },
+            },
+            { data: { data: [] } },
+        );
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        const block = screen.getByTestId('conditional-follow-up');
+        expect(block).toHaveTextContent('Please specify where you live');
+        expect(block).not.toHaveTextContent('simpletextfield1');
     });
 
     it('keeps follow-up comments under a notice when their trigger question has no chart', () => {
