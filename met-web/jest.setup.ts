@@ -17,6 +17,9 @@ class ResizeObserver {
 
 global.ResizeObserver = ResizeObserver;
 
+// jsdom has no canvas for charts. Return null so they fall back to their own estimate quietly.
+HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
+
 // Polyfill crypto.randomUUID for jsdom test environment
 if (!global.crypto) {
   global.crypto = {} as Crypto;
