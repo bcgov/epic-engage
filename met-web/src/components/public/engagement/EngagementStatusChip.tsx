@@ -12,8 +12,11 @@ const Open = ({ active, clickable }: ChipParams) => {
     return (
         <Chip
             label="Open"
-            color={active ? 'success' : 'default'}
-            sx={[{ ...Chip_Font_Weight }, clickable && { cursor: 'pointer' }]}
+            sx={[
+                { ...Chip_Font_Weight },
+                active && { backgroundColor: Palette.success.emphasis, color: Palette.text.invert },
+                clickable && { cursor: 'pointer' },
+            ]}
         />
     );
 };
