@@ -743,6 +743,13 @@ div[disabled] {
         flex: 1 1 auto;
         max-width: none;
         width: auto;
+
+        // let builder shrink to fit long strings
+        min-width: 0;
+    }
+
+    .formio .formbuilder {
+        flex-wrap: nowrap;
     }
 }
 
@@ -791,4 +798,8 @@ div[disabled] {
     border-radius: 8px;
     padding: 20px 28px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    // Long strings break onto the next line, and anything that still can't fit (wide tables) scrolls
+    overflow-wrap: break-word;
+    overflow-x: auto;
 }
