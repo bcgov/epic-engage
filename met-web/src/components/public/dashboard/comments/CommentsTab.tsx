@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Box, Skeleton } from '@mui/material';
 import { MetHeader4 } from 'components/shared/common';
 import { ErrorBox } from 'components/shared/analytics/ErrorBox';
@@ -10,9 +10,6 @@ import { buildCommentSections } from './buildCommentSections';
 import { CommentsSidebarToc } from './CommentsSidebarToc';
 import { CommentSection } from './CommentSection';
 import { Palette } from 'styles/Theme';
-
-// How long a TOC click keeps the highlight before the scroll spy takes over again.
-const NAVIGATION_SETTLE_MS = 1000;
 
 interface CommentsTabProps {
     engagement: Engagement;
@@ -43,67 +40,14 @@ export const CommentsTab = ({ engagement, engagementIsLoading, dashboardType }: 
     const headerOffset = useFixedHeaderOffset();
     const [activeId, setActiveId] = useState<string | null>(null);
     const sectionRefs = useRef(new Map<string, HTMLDivElement>());
-    const intersectingIds = useRef(new Set<string>());
-    const pendingId = useRef<string | null>(null);
-    const settleTimer = useRef<ReturnType<typeof setTimeout>>();
 
-    // Watch deepest entries: a section wrapper always intersects.
-    const observedIds = useMemo(
-        () => sections.flatMap((section) => section.subSections?.map((sub) => sub.id) ?? [section.id]),
-        [sections],
-    );
-
-    useEffect(() => {
-        intersectingIds.current.clear();
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting) {
-                        intersectingIds.current.add(entry.target.id);
-                    } else {
-                        intersectingIds.current.delete(entry.target.id);
-                    }
-                });
-
-                const topmost = observedIds.find((id) => intersectingIds.current.has(id));
-                if (!topmost) {
-                    return;
-                }
-                if (pendingId.current) {
-                    if (pendingId.current === topmost) {
-                        pendingId.current = null;
-                    }
-                    return;
-                }
-                setActiveId(topmost);
-            },
-            { rootMargin: `-${headerOffset + 16}px 0px -70% 0px`, threshold: 0 },
-        );
-
-        observedIds.forEach((id) => {
-            const el = sectionRefs.current.get(id);
-            if (el) {
-                observer.observe(el);
-            }
-        });
-        return () => observer.disconnect();
-    }, [observedIds, headerOffset]);
-
-    useEffect(() => () => clearTimeout(settleTimer.current), []);
-
+    // The highlight marks where the reader was sent.
     const handleNavigate = (id: string) => {
         const el = sectionRefs.current.get(id);
         if (!el) {
             return;
         }
-        const section = sections.find((candidate) => candidate.id === id);
-        const leafId = section?.subSections?.[0]?.id ?? id;
-        pendingId.current = leafId;
-        setActiveId(leafId);
-        clearTimeout(settleTimer.current);
-        settleTimer.current = setTimeout(() => {
-            pendingId.current = null;
-        }, NAVIGATION_SETTLE_MS);
+        setActiveId(id);
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
 

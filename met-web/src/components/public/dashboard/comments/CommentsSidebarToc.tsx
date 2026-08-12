@@ -17,10 +17,6 @@ export const CommentsSidebarToc = ({ sections, activeId, onNavigate }: CommentsS
     const listRef = useRef<HTMLDivElement | null>(null);
     const activeEntryRef = useRef<HTMLButtonElement | null>(null);
 
-    // Spy reports the deepest entry.
-    const isSectionActive = (section: CommentSection) =>
-        section.id === activeId || Boolean(section.subSections?.some((sub) => sub.id === activeId));
-
     useEffect(() => {
         const list = listRef.current;
         const entry = activeEntryRef.current;
@@ -93,7 +89,7 @@ export const CommentsSidebarToc = ({ sections, activeId, onNavigate }: CommentsS
                     }}
                 >
                     {sections.map((section, index) => {
-                        const sectionActive = isSectionActive(section);
+                        const sectionActive = section.id === activeId;
                         return (
                             <Box key={section.id} sx={{ display: 'flex', flexDirection: 'column' }}>
                                 <Link
@@ -142,7 +138,6 @@ export const CommentsSidebarToc = ({ sections, activeId, onNavigate }: CommentsS
                                         sx={{
                                             display: 'flex',
                                             flexDirection: 'column',
-                                            pl: '14px',
                                             ml: '23px',
                                             mr: '14px',
                                             mb: '4px',
@@ -158,17 +153,18 @@ export const CommentsSidebarToc = ({ sections, activeId, onNavigate }: CommentsS
                                                 onClick={() => onNavigate(sub.id)}
                                                 aria-current={activeId === sub.id ? 'location' : undefined}
                                                 underline="none"
+                                                // Same active treatment as a section entry
                                                 sx={{
                                                     fontSize: '12px',
                                                     lineHeight: 1.4,
                                                     textAlign: 'left',
-                                                    padding: '3px 6px',
-                                                    borderRadius: '3px',
-                                                    borderLeft: '2px solid transparent',
+                                                    padding: '3px 6px 3px 14px',
+                                                    borderLeft: '3px solid transparent',
                                                     ...(activeId === sub.id && {
-                                                        fontWeight: 700,
-                                                        color: Palette.primary.main,
+                                                        backgroundColor: Palette.background.paleBlue,
                                                         borderLeftColor: Palette.primary.main,
+                                                        color: Palette.primary.main,
+                                                        fontWeight: 700,
                                                     }),
                                                 }}
                                             >
