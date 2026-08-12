@@ -1,5 +1,5 @@
 import React from 'react';
-import { ButtonBase } from '@mui/material';
+import { ButtonBase, alpha } from '@mui/material';
 import { Palette, statusStyles } from 'styles/Theme';
 import { CommentStatus } from 'constants/commentStatus';
 import Icon from '@mui/material/Icon';
@@ -13,9 +13,10 @@ export const ApprovedIcon = ({ children, onClick }: BadgeProps) => {
         <ButtonBase onClick={onClick}>
             <Icon
                 sx={{
-                    backgroundColor: statusStyles[CommentStatus.Approved].background,
+                    backgroundColor: alpha(Palette.success.emphasis, 0.2),
                     '&:hover': {
-                        backgroundColor: statusStyles[CommentStatus.Approved].borderColor,
+                        backgroundColor: Palette.success.emphasis,
+                        color: Palette.text.invert,
                     },
                     borderRadius: '3px',
                     fontWeight: 'bold',

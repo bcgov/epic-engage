@@ -42,6 +42,7 @@ export const surfaceColorBackgroundDarkBlue = '#053662';
 export const surfaceColorBackgroundOffWhite = '#f7f8fa';
 export const surfaceColorBackgroundGray = '#f2f2f2';
 export const surfaceColorBorderSubtle = '#f0efee';
+export const surfaceColorBackgroundInfo = '#f7f9fc';
 
 // Tinted blues for callouts, the active TOC entry and the activity bars.
 export const surfaceColorBackgroundPaleBlue = '#e3eef9';

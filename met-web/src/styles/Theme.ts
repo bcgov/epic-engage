@@ -20,7 +20,7 @@ export const Palette = {
     secondary: {
         main: tokens.supportBorderColorWarning,
         dark: tokens.supportBorderColorWarning,
-        light: tokens.supportSurfaceColorWarning,
+        light: tokens.surfaceColorBackgroundInfo,
     },
     hover: {
         light: tokens.surfaceColorPrimaryHover,
@@ -42,6 +42,7 @@ export const Palette = {
     success: {
         main: tokens.supportBorderColorSuccess,
         light: tokens.supportSurfaceColorSuccess,
+        emphasis: tokens.iconsColorSuccess,
     },
     error: {
         main: tokens.supportBorderColorDanger,
