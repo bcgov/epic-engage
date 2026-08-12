@@ -12,11 +12,33 @@ export interface DashboardSurveyPage {
 // specific Likert row or Ranking statement.
 export interface ConditionalLink {
     trigger_key: string;
+    // The trigger question's own label
+    trigger_label?: string | null;
+    // The follow-up's own label from the form.
+    follow_up_label?: string | null;
     row_key: string | null;
     row_label: string | null;
     trigger_values: string[];
     trigger_value_labels: string[];
 }
+
+/**
+ * Identity of the condition that reveals a follow-up: the trigger question plus the answers that
+ * show it. Row-specific follow-ups sharing one condition are the same question asked once per row,
+ * so both dashboard tabs collapse them into a single block rather than repeating it per row.
+ */
+export const conditionKey = (link: ConditionalLink) => [link.trigger_key, ...link.trigger_values].join('|');
+
+// Represents that an option was picked, not which answer.
+const SELECTED_VALUE = 'true';
+
+/**
+ * Whether the link's condition is "this option was picked" - a ticked checkbox option or one
+ * option of a multi-select dropdown. The row names the option, and there is no separate answer
+ * alongside it, so callers describe such a link by its row rather than by its value.
+ */
+export const isMembershipTrigger = (link: ConditionalLink) =>
+    Boolean(link.row_label) && link.trigger_values.length === 1 && link.trigger_values[0] === SELECTED_VALUE;
 
 export interface DashboardSurveyForm {
     id: number;

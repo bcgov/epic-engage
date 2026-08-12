@@ -121,11 +121,18 @@ class SurveyService:
                 cls._collect_question_keys(page, keys)
                 pages.append({'title': page.get('title', ''), 'questions': keys})
 
+        # A question staff excluded from the report is not part of the dashboard. Drop it here
+        # or it renders as an empty block in the survey results tab
+        excluded_keys = ReportSetting.find_excluded_question_keys(survey_id)
+        conditional_links = {
+            key: link for key, link in extract_conditional_links(form_json).items() if key not in excluded_keys
+        }
+
         return {
             'id': survey_model.id,
             'display': display,
             'pages': pages,
-            'conditional_links': extract_conditional_links(form_json),
+            'conditional_links': conditional_links,
         }
 
     @staticmethod

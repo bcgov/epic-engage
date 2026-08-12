@@ -38,6 +38,19 @@ class ReportSetting(BaseModel):  # pylint: disable=too-few-public-methods
         return report_settings
 
     @classmethod
+    def find_excluded_question_keys(cls, survey_id) -> set:
+        """Return the question keys staff have excluded from this survey's report.
+
+        Only questions explicitly switched off. A question with no setting at all has not been
+        excluded by anyone - it has never been through `refresh_report_setting` - so it is left
+        alone rather than silently hidden.
+        """
+        rows = db.session.query(ReportSetting.question_key) \
+            .filter(ReportSetting.survey_id == survey_id, ReportSetting.display.is_(False)) \
+            .all()
+        return {row.question_key for row in rows}
+
+    @classmethod
     def find_by_question_key(cls, survey_id, question_key):
         """Return report setting by survey id."""
         report_settings = db.session.query(ReportSetting) \

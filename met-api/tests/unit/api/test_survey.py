@@ -46,7 +46,7 @@ from tests.utilities.factory_scenarios import (
 from tests.utilities.factory_utils import (
     factory_auth_header, factory_engagement_model, factory_membership_model, factory_participant_model,
     factory_staff_user_model, factory_submission_model, factory_survey_and_eng_model, factory_survey_model,
-    factory_tenant_model, set_global_tenant)
+    factory_survey_report_setting_model, factory_tenant_model, set_global_tenant)
 
 
 surveys_url = '/api/surveys/'
@@ -410,6 +410,7 @@ wizard_survey_info_with_conditional = {
                 'components': [
                     {
                         'key': 'question1', 'input': True, 'type': 'simpleradios',
+                        'label': 'How did you hear about us?',
                         'values': [
                             {'value': 'yes', 'label': 'Yes'},
                             {'value': 'other', 'label': 'Other'},
@@ -417,6 +418,7 @@ wizard_survey_info_with_conditional = {
                     },
                     {
                         'key': 'followup1', 'input': True, 'type': 'simpletextarea',
+                        'label': 'Please specify',
                         'customConditional': "show = data.question1 === 'other';",
                     },
                 ],
@@ -463,12 +465,56 @@ def test_get_survey_dashboard_conditional_links(client, session):  # pylint:disa
     assert rv.json.get('conditional_links') == {
         'followup1': {
             'trigger_key': 'question1',
+            'trigger_label': 'How did you hear about us?',
             'row_key': None,
             'row_label': None,
             'trigger_values': ['other'],
             'trigger_value_labels': ['Other'],
+            'follow_up_label': 'Please specify',
         },
     }
+
+
+def test_get_survey_dashboard_excluded_question_has_no_conditional_link(
+        client, session):  # pylint:disable=unused-argument
+    """Assert that a follow-up excluded from the report is not sent to the dashboard.
+
+    Charts and comments already drop an excluded question - the analytics result and the
+    grouped-comment query both filter on the report setting - so leaving its conditional link in
+    would render it as a block with nothing in it. The export still reports on it.
+    """
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info_with_conditional)
+    factory_survey_report_setting_model({
+        'survey_id': survey.id,
+        'question_id': 'followup1',
+        'question_key': 'followup1',
+        'question_type': 'simpletextarea',
+        'question': 'Please specify',
+        'display': False,
+    })
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('conditional_links') == {}
+
+
+def test_get_survey_dashboard_displayed_question_keeps_its_conditional_link(
+        client, session):  # pylint:disable=unused-argument
+    """Assert that a report setting left switched on changes nothing."""
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info_with_conditional)
+    factory_survey_report_setting_model({
+        'survey_id': survey.id,
+        'question_id': 'followup1',
+        'question_key': 'followup1',
+        'question_type': 'simpletextarea',
+        'question': 'Please specify',
+        'display': True,
+    })
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert list(rv.json.get('conditional_links')) == ['followup1']
 
 
 def test_get_survey_dashboard_draft_engagement(client, session):  # pylint:disable=unused-argument

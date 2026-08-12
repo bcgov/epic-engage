@@ -20,7 +20,7 @@ import { NoData } from 'components/shared/analytics/NoData';
 import FormStepper from 'components/public/survey/submit/Stepper';
 import { useSurveyResultPages } from './hooks/useSurveyResultPages';
 import { useSurveyComments } from './hooks/useSurveyComments';
-import { ConditionalLink } from './surveyPages';
+import { ConditionalLink, conditionKey, isMembershipTrigger } from './surveyPages';
 import { DashboardType } from 'constants/dashboardType';
 import { Palette } from 'styles/Theme';
 
@@ -132,6 +132,11 @@ export const describeConditional = (link: ConditionalLink, triggerType?: string,
         ? link.trigger_values.map(formatOrdinal).join(' or ')
         : link.trigger_value_labels.map((label) => `"${label}"`).join(' or ');
 
+    if (isMembershipTrigger(link)) {
+        return anyRow
+            ? 'Conditional — shown to respondents who selected any of these options'
+            : `Conditional — shown to respondents who selected "${link.row_label}"`;
+    }
     if (anyRow) {
         return isRanking
             ? `Conditional — shown to respondents who ranked a statement ${valuesPhrase}`
@@ -167,8 +172,6 @@ export interface QuestionChartProps {
     bare?: boolean;
 }
 
-const conditionKey = (link: ConditionalLink) => [link.trigger_key, ...link.trigger_values].join('|');
-
 // A matrix commonly has one "tell us why" follow-up per row, all shown on the same answer; the
 // wireframe collapses those into a single block rather than repeating a near-identical one per
 // row. Only row-specific follow-ups merge - two on the same radio option would be
@@ -193,11 +196,19 @@ const groupFollowUps = (followUps: ResolvedFollowUp[]): ResolvedFollowUp[][] => 
     return groups;
 };
 
+// What a merged block's follow-ups are each hung off, for the "comments across all ___" count. A
+// dropdown only reaches this when it is multi-select, where its rows are picked options.
+const ROW_NOUNS: Record<string, string> = {
+    [COMPONENT_TYPE.RANKING]: 'statements',
+    [COMPONENT_TYPE.CHECKBOX]: 'options',
+    [COMPONENT_TYPE.SELECT]: 'options',
+};
+
 const renderFollowUps = (followUps: ResolvedFollowUp[], type: string, triggerLabel: string) =>
     groupFollowUps(followUps).map((group) => {
         const [first] = group;
         const isMerged = group.length > 1;
-        const rowNoun = type === COMPONENT_TYPE.RANKING ? 'statements' : 'rows';
+        const rowNoun = ROW_NOUNS[type] ?? 'rows';
         return (
             <ConditionalFollowUp
                 key={first.key}
@@ -257,7 +268,9 @@ export const QuestionChart = ({
                     data={data}
                     questionType={questionType}
                     bare={bare}
-                />
+                >
+                    {renderFollowUps(followUps, type, label)}
+                </CheckboxChart>
             );
         }
 
@@ -351,7 +364,7 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
         const resolved: ResolvedFollowUp = {
             key: followUpKey,
             link,
-            question: commentQuestionsByKey.get(followUpKey)?.label ?? followUpKey,
+            question: commentQuestionsByKey.get(followUpKey)?.label ?? link.follow_up_label ?? followUpKey,
             responses: commentsByKey.get(followUpKey) ?? [],
         };
         followUpsByTrigger.set(link.trigger_key, [...(followUpsByTrigger.get(link.trigger_key) ?? []), resolved]);

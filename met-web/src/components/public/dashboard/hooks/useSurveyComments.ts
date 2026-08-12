@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { getGroupedComments } from 'services/commentService';
 import { getSurveyForDashboard } from 'services/surveyService';
 import { GroupedComment } from 'models/comment';
 import { TypedSurveyData, TypedSurveyResultData } from 'models/analytics/surveyResult';
-import { buildResultPages, ResultPage, DashboardSurveyForm } from '../surveyPages';
+import { buildResultPages, ResultPage, DashboardSurveyForm, ConditionalLink } from '../surveyPages';
 
 interface UseSurveyCommentsResult {
     data: TypedSurveyResultData | null;
     pages: ResultPage[] | null;
+    conditionalLinks: Record<string, ConditionalLink>;
     isLoading: boolean;
     isError: boolean;
     refetch: () => void;
@@ -67,9 +68,10 @@ export const useSurveyComments = (
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [engagementId, surveyId]);
 
-    const pages = data?.data?.length ? buildResultPages(form, data.data) : null;
+    const pages = useMemo(() => (data?.data?.length ? buildResultPages(form, data.data) : null), [data, form]);
+    const conditionalLinks = useMemo(() => form?.conditional_links ?? {}, [form]);
 
-    return { data, pages, isLoading, isError, refetch: fetchData };
+    return { data, pages, conditionalLinks, isLoading, isError, refetch: fetchData };
 };
 
 export default useSurveyComments;
