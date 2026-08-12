@@ -10,3 +10,4 @@ export { default as Unauthorized } from './status/Unauthorized';
 export { default as UnderConstruction } from './status/UnderConstruction';
 export { default as ScrollToTop } from './ScrollToTop';
 export { default as FormioListener } from './FormioListener';
+export { routerFutureFlags } from './futureFlags';

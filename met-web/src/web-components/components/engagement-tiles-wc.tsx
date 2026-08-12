@@ -8,6 +8,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import TileBlock from 'components/public/landing/TileBlock';
 import { store } from '../../redux/store';
 import { BaseTheme } from 'styles/Theme';
+import { routerFutureFlags } from 'routes/futureFlags';
 
 export default class EngagementTilesWC extends HTMLElement {
     connectedCallback() {
@@ -29,7 +30,7 @@ export default class EngagementTilesWC extends HTMLElement {
                 <Provider store={store}>
                     <CacheProvider value={cache}>
                         <ThemeProvider theme={shadowTheme}>
-                            <Router>
+                            <Router future={routerFutureFlags}>
                                 <TileBlock />
                             </Router>
                         </ThemeProvider>

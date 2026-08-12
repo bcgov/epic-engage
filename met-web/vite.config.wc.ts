@@ -39,6 +39,14 @@ export default defineConfig({
             'met-formio': path.resolve(__dirname, 'node_modules/met-formio'),
         },
     },
+    css: {
+        preprocessorOptions: {
+            // Sass' legacy JS API (Vite's default in 5.x) is removed in Dart Sass 2.
+            scss: {
+                api: 'modern-compiler' as const,
+            },
+        },
+    },
     define: {
         'process.env.NODE_ENV': JSON.stringify('production'),
     },
