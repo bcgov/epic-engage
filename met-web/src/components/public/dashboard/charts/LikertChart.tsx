@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
+import { MET_Header_Font_Family } from 'styles/constants';
 
 // Scale colors: [negative, neutral, somewhat, positive, strongly positive]
 const COLORS = Palette.chart.likert;
@@ -17,6 +18,13 @@ const PAD_L = 12;
 const PAD_R = 12;
 const CORNER_R = 3;
 const HEADER_GAP = 6;
+const LABEL_FONT_SIZE = 12;
+const LABEL_LINE_H = 14;
+// Labels are inset from both edges of the column so they never touch the bars.
+const LABEL_INSET = 4;
+const LABEL_MAX_W = LABEL_W - LABEL_INSET * 2;
+// Last line is ellipsised.
+const LABEL_MAX_LINES = 4;
 
 const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
 
@@ -61,12 +69,66 @@ function segmentPath(s: SegmentDef): string {
     return pathRect(x, 0, w, BAR_H);
 }
 
-// Wrap label text at last word boundary before maxChars
-function wrapLabel(label: string, maxChars = 34): [string, string] {
-    if (label.length <= maxChars) return [label, ''];
-    const breakAt = label.lastIndexOf(' ', maxChars);
-    if (breakAt === -1) return [label.slice(0, maxChars), label.slice(maxChars)];
-    return [label.slice(0, breakAt), label.slice(breakAt + 1)];
+// measure label lines off-screen with a canvas.
+let measureCtx: CanvasRenderingContext2D | null | undefined;
+function getMeasureContext(): CanvasRenderingContext2D | null {
+    if (measureCtx === undefined) {
+        try {
+            measureCtx = document.createElement('canvas').getContext('2d');
+        } catch {
+            measureCtx = null;
+        }
+        if (measureCtx) measureCtx.font = `${LABEL_FONT_SIZE}px ${MET_Header_Font_Family}`;
+    }
+    return measureCtx;
+}
+
+// Falls back to an average-width estimate.
+function textWidth(text: string): number {
+    const ctx = getMeasureContext();
+    if (ctx) return ctx.measureText(text).width;
+    return text.length * LABEL_FONT_SIZE * 0.55;
+}
+
+function ellipsise(line: string, maxWidth: number): string {
+    let text = `${line}…`;
+    while (text.length > 1 && textWidth(text) > maxWidth) {
+        text = `${text.slice(0, -2)}…`;
+    }
+    return text;
+}
+
+// Wrap label text on word boundaries so it fits inside label column.
+function wrapLabel(label: string, maxWidth = LABEL_MAX_W, maxLines = LABEL_MAX_LINES): string[] {
+    const lines: string[] = [];
+    let current = '';
+
+    for (const word of label.split(/\s+/).filter(Boolean)) {
+        const candidate = current ? `${current} ${word}` : word;
+        if (textWidth(candidate) <= maxWidth) {
+            current = candidate;
+            continue;
+        }
+        if (current) lines.push(current);
+
+        let rest = word;
+        while (textWidth(rest) > maxWidth) {
+            let cut = rest.length - 1;
+            while (cut > 1 && textWidth(rest.slice(0, cut)) > maxWidth) cut--;
+            lines.push(rest.slice(0, cut));
+            rest = rest.slice(cut);
+        }
+        current = rest;
+    }
+    if (current) lines.push(current);
+    if (!lines.length) return [label];
+
+    if (lines.length > maxLines) {
+        const kept = lines.slice(0, maxLines);
+        kept[maxLines - 1] = ellipsise(kept[maxLines - 1], maxWidth);
+        return kept;
+    }
+    return lines;
 }
 
 interface LikertChartProps {
@@ -102,7 +164,19 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
     const barLeft = LABEL_W + PAD_L + 16;
     const barRight = totalW - PAD_R - N_COL_W - BAR_GAP;
     const barColW = barRight - barLeft;
-    const svgH = PAD_TOP + data.length * ROW_H + 8;
+
+    // Grow rows to fit however many lines their label wraps to
+    const rows = useMemo(() => {
+        let y = PAD_TOP;
+        return data.map((row) => {
+            const lines = wrapLabel(row.label);
+            const h = Math.max(ROW_H, lines.length * LABEL_LINE_H + 16);
+            const layout = { row, lines, y, h };
+            y += h;
+            return layout;
+        });
+    }, [data]);
+    const svgH = rows.reduce((sum, r) => sum + r.h, PAD_TOP + 8);
 
     const leftOfAxis = (pcts: number[]) => (pcts[NEUTRAL_INDEX] ?? 0) / 2
         + pcts.slice(0, NEUTRAL_INDEX).reduce((sum, pct) => sum + pct, 0);
@@ -163,9 +237,8 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                         </text>
                         <line x1={PAD_L} y1={PAD_TOP - 4} x2={totalW - PAD_R} y2={PAD_TOP - 4} stroke={Palette.border.default} strokeWidth={1} />
 
-                        {data.map((row, i) => {
-                            const y0 = PAD_TOP + i * ROW_H;
-                            const barY = y0 + (ROW_H - BAR_H) / 2;
+                        {rows.map(({ row, lines, y: y0, h: rowH }, i) => {
+                            const barY = y0 + (rowH - BAR_H) / 2;
 
                             const lastIndex = row.pcts.length - 1;
                             let cursor = cx - leftOfAxis(row.pcts) * px;
@@ -183,21 +256,30 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                 return seg;
                             });
 
-                            const [line1, line2] = wrapLabel(row.label);
-                            const tY = line2 ? barY + BAR_H / 2 - 5 : barY + BAR_H / 2 + 4;
+                            const firstBaseline = y0 + (rowH - lines.length * LABEL_LINE_H) / 2 + LABEL_LINE_H - 3;
 
                             return (
                                 <g key={row.label}>
                                     {/* Alternating row background */}
                                     {i % 2 === 0 && (
-                                        <rect x={PAD_L} y={y0} width={totalW - PAD_L - PAD_R} height={ROW_H} fill={Palette.chart.surface.rowHover} rx={2} />
+                                        <rect x={PAD_L} y={y0} width={totalW - PAD_L - PAD_R} height={rowH} fill={Palette.chart.surface.rowHover} rx={2} />
                                     )}
 
-                                    {/* Row label (up to 2 lines) */}
-                                    <text x={PAD_L + 4} y={tY} fontSize={12} fill={Palette.text.primary}>{line1}</text>
-                                    {line2 && (
-                                        <text x={PAD_L + 4} y={tY + 14} fontSize={12} fill={Palette.text.primary}>{line2}</text>
-                                    )}
+                                    {/* Row label */}
+                                    <g>
+                                        <title>{row.label}</title>
+                                        {lines.map((line, li) => (
+                                            <text
+                                                key={line + li}
+                                                x={PAD_L + LABEL_INSET}
+                                                y={firstBaseline + li * LABEL_LINE_H}
+                                                fontSize={LABEL_FONT_SIZE}
+                                                fill={Palette.text.primary}
+                                            >
+                                                {line}
+                                            </text>
+                                        ))}
+                                    </g>
 
                                     {/* Bar segments */}
                                     <g clipPath={`url(#${clipId})`} transform={`translate(0, ${barY})`}>
@@ -254,8 +336,8 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
 
                                     {/* Row divider */}
                                     <line
-                                        x1={PAD_L} y1={y0 + ROW_H}
-                                        x2={totalW - PAD_R} y2={y0 + ROW_H}
+                                        x1={PAD_L} y1={y0 + rowH}
+                                        x2={totalW - PAD_R} y2={y0 + rowH}
                                         stroke={Palette.chart.surface.rowDivider}
                                         strokeWidth={1}
                                     />
