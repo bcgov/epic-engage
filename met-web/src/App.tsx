@@ -8,6 +8,7 @@ import { Box, Container, Toolbar } from '@mui/material';
 import InternalHeader from 'components/shared/layout/Header/InternalHeader';
 import PublicHeader from 'components/shared/layout/Header/PublicHeader';
 import { UnauthenticatedRoutes } from 'routes';
+import { routerFutureFlags } from 'routes';
 import { AuthenticatedRoutes } from 'routes';
 import { Notification } from 'components/shared/common/Notifications/Notification';
 import PageViewTracker from 'routes/PageViewTracker';
@@ -135,7 +136,7 @@ const App = () => {
 
     if (!tenant.isLoaded && !tenant.loading) {
         return (
-            <Router>
+            <Router future={routerFutureFlags}>
                 <DocumentTitle />
                 <Routes>
                     <Route path="*" element={<NotFound />} />
@@ -146,7 +147,7 @@ const App = () => {
 
     if (!isLoggedIn) {
         return (
-            <Router basename={tenant.basename}>
+            <Router basename={tenant.basename} future={routerFutureFlags}>
                 <DocumentTitle />
                 <PageViewTracker />
                 <Notification />
@@ -161,7 +162,7 @@ const App = () => {
 
     if (roles.length === 0) {
         return (
-            <Router basename={tenant.basename}>
+            <Router basename={tenant.basename} future={routerFutureFlags}>
                 <DocumentTitle />
                 <PublicHeader />
                 <Container>
@@ -174,7 +175,7 @@ const App = () => {
     }
 
     return (
-        <Router basename={tenant.basename}>
+        <Router basename={tenant.basename} future={routerFutureFlags}>
             <DocumentTitle />
             <Box sx={{ display: 'flex' }}>
                 <InternalHeader drawerWidth={drawerWidth} />
