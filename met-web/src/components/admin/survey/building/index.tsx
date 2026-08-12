@@ -32,7 +32,7 @@ import { BaseTheme, Palette } from 'styles/Theme';
 const TAB_QUESTIONS = 'questions';
 const TAB_REPORT = 'report';
 
-// Formio's builder grid gets its layout from Bootstrap 5 (formio-bootstrap.scss), not MUI's
+// Formio's builder grid gets its layout from Bootstrap 5 (formio.scss), not MUI's
 // theme, so this uses Bootstrap's breakpoint (576px) rather than MUI's xs/sm (600px). Below it,
 // formcomponents/formarea stack instead of sitting side by side, so there's nothing to align to.
 const FORMIO_BREAKPOINT_SM = '@media (min-width:576px)';

@@ -61,6 +61,14 @@ export default defineConfig(({ mode }) => {
                     mainFields: ['module', 'main'],
                 },
             },
+        css: {
+            preprocessorOptions: {
+                // Sass' legacy JS API (Vite's default in 5.x) is removed in Dart Sass 2.
+                scss: {
+                    api: 'modern-compiler' as const,
+                },
+            },
+        },
         server: {
             port: 3000,
             open: true,
