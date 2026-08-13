@@ -31,17 +31,8 @@ export const ActionsDropDown = ({
     const submissionIsClosed = !!engagement && [SubmissionStatus.Closed].includes(engagement.submission_status);
     const isEngagementDraft = !!engagement && engagement.engagement_status.id === EngagementStatus.Draft;
 
-    const canEditSurvey = (): boolean => {
-        if (submissionIsClosed) {
-            return false;
-        }
-
-        if (roles.includes(USER_ROLES.EDIT_ALL_SURVEYS)) {
-            return true;
-        }
-
-        return false;
-    };
+    // Once submissions close the survey can no longer be changed, but the builder can be opened to view
+    const canOpenBuilder = (): boolean => roles.includes(USER_ROLES.EDIT_ALL_SURVEYS);
 
     const canViewReport = (): boolean => {
         return (
@@ -86,11 +77,11 @@ export const ActionsDropDown = ({
         () => [
             {
                 value: 1,
-                label: 'Edit Survey',
+                label: submissionIsClosed ? 'View Survey' : 'Edit Survey',
                 action: () => {
                     navigate(`/surveys/${survey.id}/build`);
                 },
-                condition: canEditSurvey(),
+                condition: canOpenBuilder(),
             },
             {
                 value: 2,
@@ -118,11 +109,11 @@ export const ActionsDropDown = ({
             },
             {
                 value: 5,
-                label: 'Edit Settings',
+                label: submissionIsClosed ? 'View Settings' : 'Edit Settings',
                 action: () => {
                     navigate(`/surveys/${survey.id}/build?tab=report`);
                 },
-                condition: canEditSurvey(),
+                condition: canOpenBuilder(),
             },
             {
                 value: 6,

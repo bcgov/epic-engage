@@ -34,12 +34,13 @@ export interface DescriptionEditorProps {
     settingId: number;
     description: string;
     onSave: (settingId: number, description: string) => void;
+    readOnly?: boolean;
 }
 
 // Add/edit/save/cancel flow for a report setting's optional description. Saving here only
 // commits the draft into the panel's local state - it's persisted along with any other unsaved
 // changes when the panel's own Save button is clicked.
-export const DescriptionEditor = ({ settingId, description, onSave }: DescriptionEditorProps) => {
+export const DescriptionEditor = ({ settingId, description, onSave, readOnly }: DescriptionEditorProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [draft, setDraft] = useState(description);
 
@@ -56,6 +57,14 @@ export const DescriptionEditor = ({ settingId, description, onSave }: Descriptio
     const handleCancel = () => {
         setIsEditing(false);
     };
+
+    if (readOnly) {
+        return description ? (
+            <Typography sx={{ fontSize: DESCRIPTION_FONT_SIZE, color: Palette.text.secondary, lineHeight: 1.5, mt: 1 }}>
+                {description}
+            </Typography>
+        ) : null;
+    }
 
     if (isEditing) {
         return (

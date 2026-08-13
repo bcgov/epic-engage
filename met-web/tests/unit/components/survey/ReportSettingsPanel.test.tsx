@@ -220,6 +220,19 @@ describe('ReportSettingsPanel tests', () => {
         });
     });
 
+    test('Read-only mode shows the settings but offers no way to change them', async () => {
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} readOnly />);
+
+        await waitFor(() => {
+            expect(screen.getByText(surveyReportSettingOne.question)).toBeVisible();
+            expect(screen.getByText(surveyReportSettingTwo.question)).toBeVisible();
+        });
+
+        expect(screen.getByTestId(`report-setting-toggle-${surveyReportSettingOne.id}`).children[0]).toBeDisabled();
+        expect(screen.queryByTestId('survey/report/save-button')).not.toBeInTheDocument();
+        expect(screen.queryByText('Add description')).not.toBeInTheDocument();
+    });
+
     test('Paginates between survey pages with the previous/next footer', async () => {
         const multiPageFormDefinition: FormBuilderData = {
             display: 'wizard',
