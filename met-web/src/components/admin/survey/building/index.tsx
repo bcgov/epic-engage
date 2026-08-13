@@ -16,7 +16,6 @@ import { MetHeader3, PrimaryButton, SecondaryButton } from 'components/shared/co
 import { Breadcrumb } from 'components/public/dashboard/Breadcrumb';
 import FormBuilderSkeleton from './FormBuilderSkeleton';
 import { FormBuilderData } from 'components/shared/form/FormBuilder/types';
-import { EngagementStatus } from 'constants/engagementStatus';
 import { getEngagement } from 'services/engagementService';
 import { Engagement } from 'models/engagement';
 import { openNotificationModal } from 'services/notificationModalService/notificationModalSlice';
@@ -25,12 +24,25 @@ import { AutoSaveSnackBar } from './AutoSaveSnackBar';
 import { AdditionalSettings, SurveySwitch } from './AdditionalSettings';
 import { BuilderTabs, tabIds } from './BuilderTabs';
 import { ReportSettingsPanel, ReportSettingsPanelHandle } from './ReportSettingsPanel';
-import { debounce } from 'lodash';
-import { format } from 'date-fns';
+import { getSurveyEditRules, SURVEY_LOCKED_MESSAGE } from './surveyEditRules';
+import { debounce, throttle } from 'lodash';
 import { BaseTheme, Palette } from 'styles/Theme';
 
 const TAB_QUESTIONS = 'questions';
 const TAB_REPORT = 'report';
+
+// Intervale before showing again that a locked survey can't be changed.
+const LOCKED_NOTICE_INTERVAL = 5000;
+
+// The wizard builder's page tabs. Track to keep clickable on a locked survey.
+const PAGE_TAB_SELECTOR = '[ref="gotoPage"]';
+
+// Makes the builder inert apart from those page tabs. Clicks land on the wrapper instead.
+const LOCKED_BUILDER_SX = {
+    cursor: 'not-allowed',
+    '& .formio': { pointerEvents: 'none' },
+    [`& .formio .wizard-pages ${PAGE_TAB_SELECTOR}`]: { pointerEvents: 'auto', cursor: 'pointer' },
+};
 
 // Formio's builder grid gets its layout from Bootstrap 5 (formio.scss), not MUI's
 // theme, so this uses Bootstrap's breakpoint (576px) rather than MUI's xs/sm (600px). Below it,
@@ -78,21 +90,11 @@ const SurveyFormBuilder = () => {
 
     const [formDefinition, setFormDefinition] = useState<FormBuilderData>({ display: 'form', components: [] });
     const isMultiPage = formDefinition.display === 'wizard';
-    const hasEngagement = Boolean(savedSurvey?.engagement_id);
-    const isEngagementDraft = savedEngagement?.status_id === EngagementStatus.Draft;
-    const isNonDraftEngagement = hasEngagement && !isEngagementDraft;
     const [isHiddenSurvey, setIsHiddenSurvey] = useState(savedSurvey ? savedSurvey.is_hidden : false);
     const [isTemplateSurvey, setIsTemplateSurvey] = useState(savedSurvey ? savedSurvey.is_template : false);
 
-    const engagementUnpublishedBeforeGoLive = useMemo(() => {
-        const today = format(new Date(), 'yyyy-MM-dd');
-        return savedEngagement?.status_id === EngagementStatus.Unpublished && today < savedEngagement?.start_date;
-    }, [savedEngagement]);
-
-    const engagementScheduledToGoLive = useMemo(() => {
-        const today = format(new Date(), 'yyyy-MM-dd');
-        return savedEngagement?.status_id === EngagementStatus.Scheduled && today < savedEngagement?.start_date;
-    }, [savedEngagement]);
+    const editRules = useMemo(() => getSurveyEditRules(savedEngagement), [savedEngagement]);
+    const canEdit = editRules.canEdit;
 
     const [autoSaveNotificationOpen, setAutoSaveNotificationOpen] = useState(false);
     const [tab, setTab] = useState(searchParams.get('tab') === TAB_REPORT ? TAB_REPORT : TAB_QUESTIONS);
@@ -103,28 +105,8 @@ const SurveyFormBuilder = () => {
     }, []);
 
     useEffect(() => {
-        if (savedEngagement && isNonDraftEngagement) {
-            // Engagement scheduled to go live in the future
-            if (engagementScheduledToGoLive || engagementUnpublishedBeforeGoLive) {
-                dispatch(
-                    openNotification({
-                        severity: 'warning',
-                        text: 'Engagement is scheduled to go live. Please be careful while editing the survey.',
-                    }),
-                );
-            }
-            // Engagement already published/was live
-            else if (
-                savedEngagement.status_id === EngagementStatus.Published ||
-                savedEngagement.status_id === EngagementStatus.Unpublished
-            ) {
-                dispatch(
-                    openNotification({
-                        severity: 'warning',
-                        text: 'Engagement already published. Please be careful while editing the survey.',
-                    }),
-                );
-            }
+        if (editRules.message) {
+            dispatch(openNotification({ severity: editRules.severity, text: editRules.message }));
         }
     }, [savedEngagement]);
 
@@ -252,12 +234,36 @@ const SurveyFormBuilder = () => {
         }, AUTO_SAVE_INTERVAL),
     ).current;
 
+    // Says why the survey is locked the moment it's touched.
+    const notifyLocked = useRef(
+        throttle(
+            () => {
+                dispatch(openNotification({ severity: 'error', text: SURVEY_LOCKED_MESSAGE }));
+            },
+            LOCKED_NOTICE_INTERVAL,
+            { trailing: false },
+        ),
+    ).current;
+
+    // Formio reorders pages on mousedown but switches page on click. Blocking only mousedown stops
+    // the reorder and leaves paging through the survey working.
+    const handleLockedMouseDown = (event: React.MouseEvent) => {
+        event.stopPropagation();
+        if (!(event.target as HTMLElement).closest(PAGE_TAB_SELECTOR)) {
+            notifyLocked();
+        }
+    };
+
     const handleFormChange = (form: FormBuilderData) => {
         if (!form.components) {
             return;
         }
         setFormData(form);
-        debounceAutoSaveForm(form);
+        if (canEdit) {
+            debounceAutoSaveForm(form);
+        } else {
+            notifyLocked();
+        }
     };
 
     const doSaveForm = async () => {
@@ -271,6 +277,11 @@ const SurveyFormBuilder = () => {
     };
 
     const handleSaveForm = async (nextTab: string = TAB_REPORT) => {
+        if (!canEdit) {
+            setTab(nextTab);
+            return;
+        }
+
         if (!savedSurvey) {
             dispatch(
                 openNotification({
@@ -287,9 +298,9 @@ const SurveyFormBuilder = () => {
             dispatch(
                 openNotification({
                     severity: 'success',
-                    text: savedSurvey.engagement?.id
-                        ? `Survey was successfully added to engagement`
-                        : 'The survey was successfully built',
+                    text: savedEngagement?.name
+                        ? `Your survey has been saved to "${savedEngagement.name}".`
+                        : 'Your survey has been saved.',
                 }),
             );
 
@@ -324,9 +335,14 @@ const SurveyFormBuilder = () => {
     const reportSettingsRef = useRef<ReportSettingsPanelHandle>(null);
 
     // Switching tabs should never discard unsaved work: leaving the questions tab saves the
-    // survey form, leaving the report tab flushes any pending visibility toggle changes.
+    // survey form, leaving the report tab flushes any pending visibility toggle changes. A locked
+    // survey has no unsaved work to flush, so both tabs stay browsable without a save attempt.
     const handleTabChange = async (nextTab: string) => {
         if (nextTab === tab) {
+            return;
+        }
+        if (!canEdit) {
+            setTab(nextTab);
             return;
         }
         if (tab === TAB_QUESTIONS) {
@@ -430,7 +446,10 @@ const SurveyFormBuilder = () => {
                             spacing={1}
                             sx={{ pt: 1, borderBottom: `1px solid ${Palette.border.default}`, pb: 2, mb: 2 }}
                         >
-                            <Box sx={{ position: 'relative' }}>
+                            <Box
+                                sx={{ position: 'relative', ...(canEdit ? {} : LOCKED_BUILDER_SX) }}
+                                onMouseDownCapture={canEdit ? undefined : handleLockedMouseDown}
+                            >
                                 <Box
                                     sx={{
                                         position: 'static',
@@ -454,7 +473,11 @@ const SurveyFormBuilder = () => {
                                             control={
                                                 <SurveySwitch
                                                     checked={isMultiPage}
-                                                    onChange={(e) => {
+                                                    onChange={() => {
+                                                        if (!canEdit) {
+                                                            notifyLocked();
+                                                            return;
+                                                        }
                                                         dispatch(
                                                             openNotificationModal({
                                                                 open: true,
@@ -530,13 +553,15 @@ const SurveyFormBuilder = () => {
                             boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.06)',
                         }}
                     >
-                        <SecondaryButton
-                            disabled={!formData}
-                            loading={isSaving}
-                            onClick={() => handleSaveForm(TAB_QUESTIONS)}
-                        >
-                            Save
-                        </SecondaryButton>
+                        {canEdit && (
+                            <SecondaryButton
+                                disabled={!formData}
+                                loading={isSaving}
+                                onClick={() => handleSaveForm(TAB_QUESTIONS)}
+                            >
+                                Save
+                            </SecondaryButton>
+                        )}
                         <PrimaryButton
                             disabled={!formData}
                             loading={isSaving}
@@ -555,6 +580,7 @@ const SurveyFormBuilder = () => {
                         surveyId={String(surveyId)}
                         engagementId={savedSurvey?.engagement_id || undefined}
                         formDefinition={formDefinition}
+                        readOnly={!canEdit}
                         onSaved={() => navigate('/surveys')}
                         onCancel={() => navigate('/surveys')}
                     />

@@ -1,5 +1,5 @@
 """Service for survey management."""
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from http import HTTPStatus
 
 from flask import g
@@ -274,12 +274,7 @@ class SurveyService:
         is_template = survey.get('is_template', None)
         cls.validate_template_surveys_edit_access(is_template, user_roles)
 
-        engagement_status_id = engagement.get('status_id', None) if engagement else None
-
-        if engagement and engagement_status_id not in [Status.Draft.value, Status.Published.value] and not (
-            engagement_status_id in [Status.Unpublished.value, Status.Scheduled.value] and
-            not cls._did_survey_go_live(engagement_id)
-        ):
+        if not cls._is_survey_editable(engagement):
             raise ValueError('This survey already went live as part of a published Engagement and cannot be modified.')
 
         updated_survey = SurveyModel.update_survey(data)
@@ -393,22 +388,59 @@ class SurveyService:
 
         if not (
             status_id == Status.Draft.value or
-            (status_id == Status.Unpublished.value and not cls._did_survey_go_live(linked_engagement.get('id')))
+            (status_id == Status.Unpublished.value and not cls._has_gone_live(linked_engagement))
         ):
             raise ValueError('Cannot unlink survey from engagement with status ' + status_name)
 
+    @classmethod
+    def _is_survey_editable(cls, engagement) -> bool:
+        """Check whether the engagement a survey belongs to still allows the survey to be modified.
+
+        Takes the engagement as its caller already has it - a dumped EngagementSchema. A survey with
+        no engagement behind it is always editable. Otherwise editing follows the engagement: open
+        while it is a draft, scheduled or published, and closed for good once it has closed.
+        """
+        if not engagement:
+            return True
+
+        status_id = engagement.get('status_id', None)
+
+        if status_id == Status.Draft.value:
+            return True
+
+        if status_id == Status.Published.value:
+            # A published engagement is closed to editing as soon as its submission window ends,
+            # whether or not the daily close-out job has flipped the status yet.
+            return not cls._has_closed(engagement)
+
+        if status_id in (Status.Unpublished.value, Status.Scheduled.value):
+            # Long-standing rule kept as-is. It reads true for Unpublished, where the engagement was
+            # published at some point and so a past start date means the public saw the survey. It is
+            # stricter than it needs to be for Scheduled, which was never published at all.
+            return not cls._has_gone_live(engagement)
+
+        return False
+
+    @classmethod
+    def _has_gone_live(cls, engagement) -> bool:
+        """Check whether the engagement's start date has arrived - surveys go live on that date."""
+        start_date = cls._engagement_date(engagement, 'start_date')
+        return bool(start_date) and local_datetime().date() >= start_date
+
+    @classmethod
+    def _has_closed(cls, engagement) -> bool:
+        """Check whether the submission window has ended - surveys stay open all of the end date."""
+        end_date = cls._engagement_date(engagement, 'end_date')
+        return bool(end_date) and local_datetime().date() > end_date
+
     @staticmethod
-    def _did_survey_go_live(engagement_id: int) -> bool:
-        """Check if the survey has gone live based on engagement start_date."""
-        if not engagement_id:
-            return False
-
-        engagement = EngagementModel.find_by_id(engagement_id)
-        if not engagement or not engagement.start_date:
-            return False
-
-        # Compare dates only (surveys go live on the start date)
-        start_date = engagement.start_date.date()
-        current_date = local_datetime().date()
-
-        return current_date >= start_date
+    def _engagement_date(engagement, key: str):
+        """Read a date off a dumped engagement, which serializes its dates as yyyy-MM-dd strings."""
+        value = engagement.get(key, None)
+        if not value:
+            return None
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
+        return date.fromisoformat(str(value)[:10])

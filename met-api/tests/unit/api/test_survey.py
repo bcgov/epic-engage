@@ -303,6 +303,86 @@ def test_get_template_survey(client, jwt, session):  # pylint:disable=unused-arg
     assert rv.json.get('total') == 1
 
 
+def _put_survey_name(client, headers, survey_id):
+    """Rename a survey through the API and hand back the response."""
+    return client.put(surveys_url, data=json.dumps({'id': str(survey_id), 'name': 'new_survey_name'}),
+                      headers=headers, content_type=ContentType.JSON.value)
+
+
+@pytest.mark.parametrize('status', [
+    Status.Draft.value,
+    Status.Scheduled.value,
+    Status.Published.value,
+])
+def test_put_survey_editable_engagement_statuses(client, jwt, session, status):  # pylint:disable=unused-argument
+    """Assert that a survey on an engagement that has not closed can still be edited."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    survey, engagement = factory_survey_and_eng_model()
+    engagement.status_id = status
+    engagement.start_date = datetime.today() + timedelta(days=1)
+    engagement.end_date = datetime.today() + timedelta(days=2)
+    engagement.save()
+
+    assert _put_survey_name(client, headers, survey.id).status_code == HTTPStatus.OK
+
+
+def test_put_survey_open_engagement(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a survey on an open engagement can still be edited."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    survey, _ = factory_survey_and_eng_model()
+
+    assert _put_survey_name(client, headers, survey.id).status_code == HTTPStatus.OK
+
+
+def test_put_survey_closed_engagement(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a survey on a closed engagement cannot be edited."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    survey, engagement = factory_survey_and_eng_model()
+    engagement.status_id = Status.Closed.value
+    engagement.save()
+
+    rv = _put_survey_name(client, headers, survey.id)
+
+    assert rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+    assert 'cannot be modified' in rv.json.get('message')
+
+
+def test_put_survey_published_engagement_past_end_date(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a published engagement past its end date is closed to editing.
+
+    The nightly close-out job may not have flipped the status to Closed yet.
+    """
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    survey, engagement = factory_survey_and_eng_model()
+    engagement.start_date = datetime.today() - timedelta(days=5)
+    engagement.end_date = datetime.today() - timedelta(days=1)
+    engagement.save()
+
+    rv = _put_survey_name(client, headers, survey.id)
+
+    assert rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
+    assert 'cannot be modified' in rv.json.get('message')
+
+
+def test_unlink_survey_from_unpublished_engagement(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that an unpublished engagement can be unlinked only while it has not gone live."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    survey, engagement = factory_survey_and_eng_model()
+    engagement.status_id = Status.Unpublished.value
+    engagement.start_date = datetime.today() - timedelta(days=1)
+    engagement.save()
+
+    unlink_url = f'{surveys_url}{survey.id}/unlink/engagement/{engagement.id}'
+    rv = client.delete(unlink_url, headers=headers, content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.INTERNAL_SERVER_ERROR, 'The survey went live, so it stays linked'
+
+    engagement.start_date = datetime.today() + timedelta(days=1)
+    engagement.save()
+
+    rv = client.delete(unlink_url, headers=headers, content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.OK, 'The survey never went live, so it can be unlinked'
+
+
 def test_edit_template_survey_for_admins(client, jwt, session):  # pylint:disable=unused-argument
     """Assert that a hidden survey cannot be fetched by team members."""
     headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)

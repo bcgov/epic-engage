@@ -33,6 +33,7 @@ export interface ReportSettingsPanelProps {
     formDefinition: FormBuilderData;
     onSaved?: () => void;
     onCancel?: () => void;
+    readOnly?: boolean;
 }
 
 // Exposes an imperative save() so the builder page can flush unsaved toggle
@@ -46,7 +47,7 @@ const contentSx = { maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, pt: 2 } as
 const dimmedSx = (hidden: boolean) => ({ opacity: hidden ? 0.38 : 1, transition: 'opacity 0.2s' });
 
 export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportSettingsPanelProps>(
-    ({ surveyId, engagementId, formDefinition, onSaved, onCancel }, ref) => {
+    ({ surveyId, engagementId, formDefinition, onSaved, onCancel, readOnly = false }, ref) => {
         const dispatch = useAppDispatch();
         const [settings, setSettings] = useState<SurveyReportSetting[]>([]);
         const [displayedMap, setDisplayedMap] = useState<Record<number, boolean>>({});
@@ -133,6 +134,10 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
         };
 
         const handleSave = async (): Promise<boolean> => {
+            if (readOnly) {
+                return true;
+            }
+
             const changedSettings: SurveyReportSetting[] = [];
             settings.forEach((setting) => {
                 const displayChanged = displayedMap[setting.id] !== setting.display;
@@ -202,6 +207,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                 <SurveySwitch
                     data-testid={`report-setting-toggle-${setting.id}`}
                     checked={Boolean(displayedMap[setting.id])}
+                    disabled={readOnly}
                     onChange={(event) => setDisplayedMap({ ...displayedMap, [setting.id]: event.target.checked })}
                     inputProps={{ 'aria-label': `Show "${setting.question}" in public report` }}
                 />
@@ -274,6 +280,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                                 settingId={followUpSetting.id}
                                 description={descriptionMap[followUpSetting.id] ?? ''}
                                 onSave={handleDescriptionSave}
+                                readOnly={readOnly}
                             />
                         </Box>
                         {renderVisibilityToggle(followUpSetting)}
@@ -321,6 +328,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                                                 settingId={setting.id}
                                                 description={descriptionMap[setting.id] ?? ''}
                                                 onSave={handleDescriptionSave}
+                                                readOnly={readOnly}
                                             />
                                         </Box>
                                         {renderVisibilityToggle(setting)}
@@ -380,11 +388,17 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                     }}
                 >
                     <SecondaryButton data-testid="survey/report/cancel-button" onClick={() => onCancel?.()}>
-                        Cancel
+                        {readOnly ? 'Close' : 'Cancel'}
                     </SecondaryButton>
-                    <PrimaryButton data-testid="survey/report/save-button" onClick={handleSaveAndExit} loading={saving}>
-                        Save
-                    </PrimaryButton>
+                    {!readOnly && (
+                        <PrimaryButton
+                            data-testid="survey/report/save-button"
+                            onClick={handleSaveAndExit}
+                            loading={saving}
+                        >
+                            Save
+                        </PrimaryButton>
+                    )}
                 </Box>
             </>
         );

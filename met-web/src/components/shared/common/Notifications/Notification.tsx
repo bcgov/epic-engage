@@ -1,5 +1,5 @@
 import * as React from 'react';
-import Snackbar from '@mui/material/Snackbar';
+import Snackbar, { SnackbarCloseReason } from '@mui/material/Snackbar';
 import MuiAlert, { AlertProps } from '@mui/material/Alert';
 import { useAppSelector, useAppDispatch } from 'hooks';
 import { closeNotification } from 'services/notificationService/notificationSlice';
@@ -14,7 +14,10 @@ export const Notification = () => {
     const severity = useAppSelector((state) => state.notification.severity);
     const text = useAppSelector((state) => state.notification.text);
 
-    function handleClose() {
+    function handleClose(event?: React.SyntheticEvent | Event, reason?: SnackbarCloseReason) {
+        if (reason === 'clickaway') {
+            return;
+        }
         dispatch(closeNotification());
     }
 
