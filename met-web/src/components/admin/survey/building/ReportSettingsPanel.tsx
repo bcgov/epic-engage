@@ -16,6 +16,7 @@ import {
     toFlatItems,
     describeConditional,
 } from 'components/public/dashboard/SurveyResultsCharts';
+import { ConditionalLink } from 'components/public/dashboard/surveyPages';
 import { useSurveyResultPages } from 'components/public/dashboard/hooks/useSurveyResultPages';
 import { useSurveyComments } from 'components/public/dashboard/hooks/useSurveyComments';
 import { DashboardType } from 'constants/dashboardType';
@@ -31,6 +32,8 @@ export interface ReportSettingsPanelProps {
     // question falls back to the "No responses yet" placeholder.
     engagementId?: number;
     formDefinition: FormBuilderData;
+    // Conditional follow-ups keyed to their trigger question, so they can be nested underneath
+    conditionalLinks?: Record<string, ConditionalLink>;
     onSaved?: () => void;
     onCancel?: () => void;
     readOnly?: boolean;
@@ -47,7 +50,7 @@ const contentSx = { maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, pt: 2 } as
 const dimmedSx = (hidden: boolean) => ({ opacity: hidden ? 0.38 : 1, transition: 'opacity 0.2s' });
 
 export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportSettingsPanelProps>(
-    ({ surveyId, engagementId, formDefinition, onSaved, onCancel, readOnly = false }, ref) => {
+    ({ surveyId, engagementId, formDefinition, conditionalLinks, onSaved, onCancel, readOnly = false }, ref) => {
         const dispatch = useAppDispatch();
         const [settings, setSettings] = useState<SurveyReportSetting[]>([]);
         const [displayedMap, setDisplayedMap] = useState<Record<number, boolean>>({});
@@ -92,9 +95,10 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
 
         const {
             data: resultData,
-            conditionalLinks,
+            conditionalLinks: dashboardConditionalLinks,
             isLoading: resultLoading,
         } = useSurveyResultPages(engagementId, Number(surveyId), DashboardType.INTERNAL);
+        const links = conditionalLinks ?? dashboardConditionalLinks;
         const { data: commentsData, isLoading: commentsLoading } = useSurveyComments(
             engagementId,
             Number(surveyId),
@@ -124,8 +128,8 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
         );
 
         const pages = useMemo(
-            () => groupReportSettingsByPage(formDefinition, settings, conditionalLinks),
-            [formDefinition, settings, conditionalLinks],
+            () => groupReportSettingsByPage(formDefinition, settings, links),
+            [formDefinition, settings, links],
         );
         const safePage = Math.min(currentPage, Math.max(pages.length - 1, 0));
 
@@ -243,7 +247,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
         };
 
         const renderFollowUp = (followUpSetting: SurveyReportSetting, triggerType: string) => {
-            const link = conditionalLinks[followUpSetting.question_key];
+            const link = links[followUpSetting.question_key];
             const responses = commentsByKey.get(followUpSetting.question_key) ?? [];
             const hidden = !displayedMap[followUpSetting.id];
 

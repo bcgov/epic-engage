@@ -220,6 +220,37 @@ describe('ReportSettingsPanel tests', () => {
         });
     });
 
+    test('Nests a conditional follow-up under its trigger using the links it is given', async () => {
+        // Question two is only shown when question one is answered "other".
+        render(
+            <ReportSettingsPanel
+                surveyId="1"
+                formDefinition={formDefinition}
+                conditionalLinks={{
+                    [surveyReportSettingTwo.question_key]: {
+                        trigger_key: surveyReportSettingOne.question_key,
+                        trigger_label: surveyReportSettingOne.question,
+                        row_key: null,
+                        row_label: null,
+                        trigger_values: ['other'],
+                        trigger_value_labels: ['Other'],
+                    },
+                }}
+            />,
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText(surveyReportSettingTwo.question)).toBeVisible();
+        });
+
+        // The follow-up renders inside its trigger's block, labelled with the condition, rather
+        // than as a top-level question of its own.
+        const followUp = screen.getByText(surveyReportSettingTwo.question);
+        const trigger = screen.getByText(surveyReportSettingOne.question);
+        expect(trigger.closest('.MuiPaper-root')).toContainElement(followUp);
+        expect(screen.getByText(/Other/)).toBeVisible();
+    });
+
     test('Read-only mode shows the settings but offers no way to change them', async () => {
         render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} readOnly />);
 
