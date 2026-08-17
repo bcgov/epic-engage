@@ -580,6 +580,7 @@ const SurveyFormBuilder = () => {
                         surveyId={String(surveyId)}
                         engagementId={savedSurvey?.engagement_id || undefined}
                         formDefinition={formDefinition}
+                        conditionalLinks={savedSurvey?.conditional_links}
                         readOnly={!canEdit}
                         onSaved={() => navigate('/surveys')}
                         onCancel={() => navigate('/surveys')}

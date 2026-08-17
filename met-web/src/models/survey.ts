@@ -1,4 +1,5 @@
 import { FormBuilderData } from 'components/shared/form/FormBuilder/types';
+import { ConditionalLink } from 'components/public/dashboard/surveyPages';
 import { createDefaultEngagement, Engagement } from './engagement';
 
 export interface Survey {
@@ -14,6 +15,10 @@ export interface Survey {
     comments_meta_data: SurveyCommentData;
     engagement_id: number;
     engagement_status_id?: number;
+    // Each conditionally-shown follow-up question keyed to the question that triggers it. Derived
+    // from form_json by the API, and unlike the dashboard's copy it covers every question whatever
+    // state the engagement is in.
+    conditional_links?: Record<string, ConditionalLink>;
 }
 
 export interface SurveyCommentData {

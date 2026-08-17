@@ -555,6 +555,24 @@ def test_get_survey_dashboard_conditional_links(client, session):  # pylint:disa
     }
 
 
+def test_get_survey_returns_conditional_links_before_going_live(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that fetching a survey carries its conditional links whatever state the engagement is in.
+
+    The builder's report settings tab nests follow-ups under their trigger from these, and it is
+    used well before the engagement goes live - the dashboard endpoint has nothing to offer it then.
+    """
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    survey, engagement = factory_survey_and_eng_model(wizard_survey_info_with_conditional)
+    engagement.status_id = Status.Draft.value
+    engagement.start_date = datetime.today() + timedelta(days=1)
+    engagement.save()
+
+    rv = client.get(f'{surveys_url}{survey.id}', headers=headers, content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('conditional_links', {}).get('followup1', {}).get('trigger_key') == 'question1'
+
+
 def test_get_survey_dashboard_excluded_question_has_no_conditional_link(
         client, session):  # pylint:disable=unused-argument
     """Assert that a follow-up excluded from the report is not sent to the dashboard.

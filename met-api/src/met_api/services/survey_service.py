@@ -67,6 +67,9 @@ class SurveyService:
             authorization.check_auth(one_of_roles=one_of_roles, engagement_id=eng_id)
 
         survey = SurveySchema().dump(survey_model)
+        # The builder's report settings tab groups conditional follow-ups under the question that
+        # triggers them.
+        survey['conditional_links'] = extract_conditional_links(survey_model.form_json)
         return survey
 
     @classmethod
