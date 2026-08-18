@@ -579,6 +579,48 @@ def test_get_survey_dashboard_excluded_question_has_no_conditional_link(
     assert rv.json.get('conditional_links') == {}
 
 
+def test_get_survey_dashboard_internal_keeps_excluded_conditional_link(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that the internal dashboard still groups a follow-up hidden from the public report."""
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info_with_conditional)
+    factory_survey_report_setting_model({
+        'survey_id': survey.id,
+        'question_id': 'followup1',
+        'question_key': 'followup1',
+        'question_type': 'simpletextarea',
+        'question': 'Please specify',
+        'display': False,
+    })
+    claims = copy.deepcopy(TestJwtClaims.staff_admin_role.value)
+    claims['realm_access']['roles'].append('view_all_survey_results')
+    headers = factory_auth_header(jwt=jwt, claims=claims)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard?dashboard_type=internal',
+                    headers=headers, content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert list(rv.json.get('conditional_links')) == ['followup1']
+
+
+def test_get_survey_dashboard_internal_view_needs_the_role(client, session):  # pylint:disable=unused-argument
+    """Assert that asking for the internal view without the role still gets the public one."""
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info_with_conditional)
+    factory_survey_report_setting_model({
+        'survey_id': survey.id,
+        'question_id': 'followup1',
+        'question_key': 'followup1',
+        'question_type': 'simpletextarea',
+        'question': 'Please specify',
+        'display': False,
+    })
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard?dashboard_type=internal',
+                    content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('conditional_links') == {}
+
+
 def test_get_survey_dashboard_displayed_question_keeps_its_conditional_link(
         client, session):  # pylint:disable=unused-argument
     """Assert that a report setting left switched on changes nothing."""

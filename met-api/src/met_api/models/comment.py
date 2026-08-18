@@ -138,13 +138,15 @@ class Comment(BaseModel):
         return page.items, page.total
 
     @classmethod
-    def get_comments_grouped_by_question(cls, survey_id, can_view_all_comments=False):
-        """Get approved, report-visible free-text comments grouped by question.
+    def get_comments_grouped_by_question(cls, survey_id, can_view_all_comments=False, include_hidden=False):
+        """Get approved free-text comments grouped by question.
 
         Mirrors the join/visibility filters of get_accepted_comments_by_survey_id_paginated,
         restricted to free-text (comment) questions and aggregated by question instead of
         returned as flat rows.
         """
+        visibility_filters = [] if include_hidden else [ReportSetting.display == true()]
+
         query = db.session.query(
             ReportSetting.question_key.label('key'),
             ReportSetting.question.label('label'),
@@ -162,8 +164,8 @@ class Comment(BaseModel):
                 and_(
                     Comment.survey_id == survey_id,
                     CommentStatusModel.id == CommentStatus.Approved.value,
-                    ReportSetting.display == true(),
                     ReportSetting.question_type.in_(_FREE_TEXT_QUESTION_TYPES),
+                    *visibility_filters,
                 ))
 
         if not can_view_all_comments:

@@ -27,6 +27,7 @@ from met_api.models.survey_search_options import SurveySearchOptions
 from met_api.schemas.survey import SurveySchema
 from met_api.services.dashboard_export_service import DashboardExportService
 from met_api.services.survey_service import SurveyService
+from met_api.utils.dashboard_visibility import include_hidden_questions
 from met_api.utils.roles import Role
 from met_api.utils.tenant_validator import require_role
 from met_api.utils.token_info import TokenInfo
@@ -88,7 +89,8 @@ class SurveyDashboard(Resource):
     def get(survey_id):
         """Fetch a survey form for a published or closed engagement's dashboard."""
         try:
-            survey_record = SurveyService().get_for_dashboard(survey_id)
+            survey_record = SurveyService().get_for_dashboard(
+                survey_id, include_hidden=include_hidden_questions())
             return survey_record, HTTPStatus.OK
         except KeyError:
             return 'Survey was not found', HTTPStatus.NOT_FOUND

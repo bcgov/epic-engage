@@ -90,11 +90,11 @@ class CommentService:
         }
 
     @classmethod
-    def get_comments_grouped_by_question(cls, survey_id):
+    def get_comments_grouped_by_question(cls, survey_id, include_hidden=False):
         """Get free-text comments grouped by question."""
         can_view_all_comments = CommentService.can_view_unapproved_comments(survey_id)
 
-        rows = Comment.get_comments_grouped_by_question(survey_id, can_view_all_comments)
+        rows = Comment.get_comments_grouped_by_question(survey_id, can_view_all_comments, include_hidden)
         return [
             {
                 'key': row.key,

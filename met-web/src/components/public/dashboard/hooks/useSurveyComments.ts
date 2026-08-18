@@ -45,8 +45,12 @@ export const useSurveyComments = (
         setIsError(false);
         try {
             const [comments, survey] = await Promise.all([
-                surveyId ? getGroupedComments({ survey_id: surveyId }) : Promise.resolve([]),
-                surveyId ? getSurveyForDashboard(surveyId).catch(() => undefined) : Promise.resolve(undefined),
+                surveyId
+                    ? getGroupedComments({ survey_id: surveyId, dashboard_type: dashboardType })
+                    : Promise.resolve([]),
+                surveyId
+                    ? getSurveyForDashboard(surveyId, dashboardType).catch(() => undefined)
+                    : Promise.resolve(undefined),
             ]);
             setData({ data: toTypedSurveyData(comments) });
             setForm(survey);

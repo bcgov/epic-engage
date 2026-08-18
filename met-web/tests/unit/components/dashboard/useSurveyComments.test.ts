@@ -43,6 +43,18 @@ describe('useSurveyComments', () => {
         expect(result.current.data).toEqual({ data: [] });
     });
 
+    it('passes the dashboard type to both met-api calls', async () => {
+        mockGetGroupedComments.mockResolvedValue(groupedComments);
+        mockGetSurveyForDashboard.mockResolvedValue(wizardForm);
+
+        const { result } = renderHook(() => useSurveyComments(1, 1, 'internal'));
+
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        expect(mockGetGroupedComments).toHaveBeenCalledWith({ survey_id: 1, dashboard_type: 'internal' });
+        expect(mockGetSurveyForDashboard).toHaveBeenCalledWith(1, 'internal');
+    });
+
     it('converts grouped comments into typed survey data and groups them into pages', async () => {
         mockGetGroupedComments.mockResolvedValue(groupedComments);
         mockGetSurveyForDashboard.mockResolvedValue(wizardForm);
@@ -51,7 +63,7 @@ describe('useSurveyComments', () => {
 
         await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-        expect(mockGetGroupedComments).toHaveBeenCalledWith({ survey_id: 1 });
+        expect(mockGetGroupedComments).toHaveBeenCalledWith({ survey_id: 1, dashboard_type: 'public' });
         expect(result.current.data).toEqual({
             data: [
                 {
