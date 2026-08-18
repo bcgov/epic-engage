@@ -35,7 +35,9 @@ export const useSurveyResultPages = (
         try {
             const [response, survey] = await Promise.all([
                 getSurveyResultData(Number(engagementId), dashboardType),
-                surveyId ? getSurveyForDashboard(surveyId).catch(() => undefined) : Promise.resolve(undefined),
+                surveyId
+                    ? getSurveyForDashboard(surveyId, dashboardType).catch(() => undefined)
+                    : Promise.resolve(undefined),
             ]);
             setData(response as unknown as TypedSurveyResultData);
             setForm(survey);

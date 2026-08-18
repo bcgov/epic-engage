@@ -96,7 +96,7 @@ class SurveyService:
                 SurveyService._collect_question_keys(column, keys)
 
     @classmethod
-    def get_for_dashboard(cls, survey_id):
+    def get_for_dashboard(cls, survey_id, include_hidden=False):
         """Get a reduced survey form for the public results dashboard.
 
         Only the page structure is exposed (page title + the question keys on each page),
@@ -124,12 +124,12 @@ class SurveyService:
                 cls._collect_question_keys(page, keys)
                 pages.append({'title': page.get('title', ''), 'questions': keys})
 
-        # A question staff excluded from the report is not part of the dashboard. Drop it here
-        # or it renders as an empty block in the survey results tab
-        excluded_keys = ReportSetting.find_excluded_question_keys(survey_id)
-        conditional_links = {
-            key: link for key, link in extract_conditional_links(form_json).items() if key not in excluded_keys
-        }
+        conditional_links = extract_conditional_links(form_json)
+        if not include_hidden:
+            excluded_keys = ReportSetting.find_excluded_question_keys(survey_id)
+            conditional_links = {
+                key: link for key, link in conditional_links.items() if key not in excluded_keys
+            }
 
         return {
             'id': survey_model.id,

@@ -4,6 +4,7 @@ import Endpoints from 'apiManager/endpoints';
 
 import { replaceUrl } from 'utils/helpers';
 import { Page } from 'services/type';
+import { DashboardType } from 'constants/dashboardType';
 
 interface GetCommentsParams {
     survey_id: number;
@@ -33,10 +34,14 @@ export const getCommentsPage = async ({
 
 interface GetGroupedCommentsParams {
     survey_id: number;
+    dashboard_type?: string;
 }
-export const getGroupedComments = async ({ survey_id }: GetGroupedCommentsParams): Promise<GroupedComment[]> => {
+export const getGroupedComments = async ({
+    survey_id,
+    dashboard_type = DashboardType.PUBLIC,
+}: GetGroupedCommentsParams): Promise<GroupedComment[]> => {
     const url = replaceUrl(Endpoints.Comment.GET_GROUPED, 'survey_id', String(survey_id));
-    const responseData = await http.GetRequest<GroupedComment[]>(url);
+    const responseData = await http.GetRequest<GroupedComment[]>(url, { dashboard_type });
     return responseData.data ?? [];
 };
 

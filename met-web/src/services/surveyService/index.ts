@@ -4,6 +4,7 @@ import { DashboardSurveyForm } from 'components/public/dashboard/surveyPages';
 import Endpoints from 'apiManager/endpoints';
 import { replaceAllInURL, replaceUrl } from 'utils/helpers';
 import { Page } from 'services/type';
+import { DashboardType } from 'constants/dashboardType';
 
 interface FetchSurveyParams {
     is_unlinked?: boolean;
@@ -54,13 +55,15 @@ export const getSurvey = async (surveyId: number): Promise<Survey> => {
     return Promise.reject('Failed to fetch survey');
 };
 
-// Fetch the reduced survey page structure (page titles + question keys only) for the public results dashboard.
-export const getSurveyForDashboard = async (surveyId: number): Promise<DashboardSurveyForm> => {
+export const getSurveyForDashboard = async (
+    surveyId: number,
+    dashboardType: string = DashboardType.PUBLIC,
+): Promise<DashboardSurveyForm> => {
     const url = replaceUrl(Endpoints.Survey.GET_DASHBOARD, 'survey_id', String(surveyId));
     if (!surveyId || isNaN(Number(surveyId))) {
         return Promise.reject('Invalid Survey Id ' + surveyId);
     }
-    const response = await http.GetRequest<DashboardSurveyForm>(url);
+    const response = await http.GetRequest<DashboardSurveyForm>(url, { dashboard_type: dashboardType });
     if (response.data) {
         return response.data;
     }

@@ -16,10 +16,12 @@
 
 Test-Suite to ensure that free-text comments are correctly grouped by question.
 """
+import copy
+
 from met_api.utils.enums import ContentType
-from tests.utilities.factory_scenarios import TestSubmissionInfo
+from tests.utilities.factory_scenarios import TestJwtClaims, TestSubmissionInfo
 from tests.utilities.factory_utils import (
-    factory_comment_model, factory_engagement_setting_model, factory_participant_model,
+    factory_auth_header, factory_comment_model, factory_engagement_setting_model, factory_participant_model,
     factory_submission_model, factory_survey_and_eng_model,
     factory_survey_report_setting_model)
 
@@ -27,6 +29,32 @@ from tests.utilities.factory_utils import (
 def _approved_submission(survey, eng, participant):
     return factory_submission_model(
         survey.id, eng.id, participant.id, submission_info=TestSubmissionInfo.approved_submission)
+
+
+def _survey_results_viewer_claims():
+    """Staff claims carrying the role the internal dashboard is gated on."""
+    claims = copy.deepcopy(TestJwtClaims.staff_admin_role.value)
+    claims['realm_access']['roles'].append('view_all_survey_results')
+    return claims
+
+
+def _hidden_question_survey():
+    """Build a survey with one approved comment on a question switched off in the public report."""
+    participant = factory_participant_model()
+    survey, eng = factory_survey_and_eng_model()
+    factory_engagement_setting_model(eng.id, send_report=True)
+    factory_survey_report_setting_model({
+        'survey_id': survey.id,
+        'question_key': 'simpletextarea1',
+        'question_type': 'simpletextarea',
+        'question': 'Hidden question',
+        'display': False,
+    })
+    submission = _approved_submission(survey, eng, participant)
+    factory_comment_model(survey.id, submission.id, comment_info={
+        'text': 'Only staff see this', 'component_id': 'simpletextarea1', 'submission_date': None,
+    })
+    return survey
 
 
 def test_get_comments_grouped_by_question(client, session):  # pylint:disable=unused-argument
@@ -124,6 +152,33 @@ def test_get_comments_grouped_excludes_non_display_question(client, session):  #
     })
 
     rv = client.get(f'/api/comments/survey/{survey.id}/grouped', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == 200
+    assert rv.json == []
+
+
+def test_get_comments_grouped_internal_keeps_non_display_question(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that the internal dashboard shows a question hidden from the public report."""
+    survey = _hidden_question_survey()
+    headers = factory_auth_header(jwt=jwt, claims=_survey_results_viewer_claims())
+
+    rv = client.get(f'/api/comments/survey/{survey.id}/grouped?dashboard_type=internal',
+                    headers=headers, content_type=ContentType.JSON.value)
+
+    assert rv.status_code == 200
+    data = rv.json
+    assert len(data) == 1
+    assert data[0]['key'] == 'simpletextarea1'
+    assert data[0]['comments'] == ['Only staff see this']
+
+
+def test_get_comments_grouped_internal_needs_the_role(client, session):  # pylint:disable=unused-argument
+    """Assert that asking for the internal view without the role still gets the public one."""
+    survey = _hidden_question_survey()
+
+    rv = client.get(f'/api/comments/survey/{survey.id}/grouped?dashboard_type=internal',
+                    content_type=ContentType.JSON.value)
 
     assert rv.status_code == 200
     assert rv.json == []

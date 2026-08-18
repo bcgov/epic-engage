@@ -44,7 +44,7 @@ describe('useSurveyResultPages', () => {
         await waitFor(() => expect(result.current.isLoading).toBe(false));
 
         expect(mockGetSurveyResultData).toHaveBeenCalledWith(1, 'public');
-        expect(mockGetSurveyForDashboard).toHaveBeenCalledWith(1);
+        expect(mockGetSurveyForDashboard).toHaveBeenCalledWith(1, 'public');
         expect(result.current.isError).toBe(false);
         expect(result.current.data).toEqual(resultData);
         expect(result.current.pages).toEqual([

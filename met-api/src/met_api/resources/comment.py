@@ -22,6 +22,7 @@ from flask_restx import Namespace, Resource
 from met_api.auth import auth
 from met_api.models.pagination_options import PaginationOptions
 from met_api.services.comment_service import CommentService
+from met_api.utils.dashboard_visibility import include_hidden_questions
 from met_api.utils.roles import Role
 from met_api.utils.tenant_validator import require_role
 from met_api.utils.util import allowedorigins, cors_preflight
@@ -73,7 +74,8 @@ class SurveyCommentsGrouped(Resource):
     def get(survey_id):
         """Get free-text comments grouped by question."""
         try:
-            records = CommentService().get_comments_grouped_by_question(survey_id)
+            records = CommentService().get_comments_grouped_by_question(
+                survey_id, include_hidden=include_hidden_questions())
             return records, HTTPStatus.OK
         except ValueError as err:
             current_app.logger.error('Error fetching grouped survey comments: %s', str(err))
