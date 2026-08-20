@@ -255,7 +255,7 @@ const SurveyFormBuilder = () => {
     };
 
     const handleFormChange = (form: FormBuilderData) => {
-        if (!form.components) {
+        if (!form?.components) {
             return;
         }
         setFormData(form);
