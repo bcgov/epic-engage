@@ -1,14 +1,14 @@
 """Checks for scheduled job run logging and redaction."""
-import pytest
 from flask import Flask
+import pytest
 
 from met_cron.services.job_log_service import JobLogService
 from met_cron.utils.scrub import scrub_sensitive
 
 
 PARTICIPANT_ERROR = (
-    "(psycopg2.errors.UniqueViolation) duplicate key\n"
-    "[SQL: INSERT INTO submission (id, comment) VALUES (%(id)s, %(comment)s)]\n"
+    '(psycopg2.errors.UniqueViolation) duplicate key\n'
+    '[SQL: INSERT INTO submission (id, comment) VALUES (%(id)s, %(comment)s)]\n'
     "[parameters: {'id': 4471, 'comment': 'this project is a disaster', "
     "'email': 'participant@example.com'}]"
 )
@@ -49,6 +49,7 @@ def _stub_recording(monkeypatch, calls):
 
 
 def test_successful_run_is_recorded(monkeypatch):
+    """A job that completes is recorded as a success."""
     calls = []
     _stub_recording(monkeypatch, calls)
 
@@ -61,6 +62,7 @@ def test_successful_run_is_recorded(monkeypatch):
 
 
 def test_failed_run_is_recorded_with_redacted_detail_and_reraises(monkeypatch):
+    """A job that raises is recorded with a scrubbed traceback, and the error still escapes."""
     calls = []
     _stub_recording(monkeypatch, calls)
 
