@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Stack, Divider, TextField, IconButton, FormGroup, FormControlLabel, Box } from '@mui/material';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import FormBuilder from 'components/shared/form/FormBuilder';
@@ -254,17 +254,27 @@ const SurveyFormBuilder = () => {
         }
     };
 
-    const handleFormChange = (form: FormBuilderData) => {
-        if (!form?.components) {
-            return;
-        }
-        setFormData(form);
-        if (canEdit) {
-            debounceAutoSaveForm(form);
-        } else {
-            notifyLocked();
-        }
-    };
+    // Read through a ref so handleFormChange can stay referentially stable, which is what keeps
+    // the memoized FormBuilder from re-rendering and leaking formio listeners.
+    const canEditRef = useRef(canEdit);
+    useEffect(() => {
+        canEditRef.current = canEdit;
+    }, [canEdit]);
+
+    const handleFormChange = useCallback(
+        (form: FormBuilderData) => {
+            if (!form?.components) {
+                return;
+            }
+            setFormData(form);
+            if (canEditRef.current) {
+                debounceAutoSaveForm(form);
+            } else {
+                notifyLocked();
+            }
+        },
+        [debounceAutoSaveForm, notifyLocked],
+    );
 
     const doSaveForm = async () => {
         await putSurvey({
