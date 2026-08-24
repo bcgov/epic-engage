@@ -11,6 +11,7 @@ from met_api.models.participant import Participant as ParticipantModel
 from met_api.models.subscription import Subscription as SubscriptionModel
 from met_api.services.email_verification_service import EmailVerificationService
 from met_api.utils import notification
+from met_cron.utils.scrub import scrub_sensitive
 from met_cron.utils.subscription_checker import CheckSubscription
 
 from met_cron.models.db import db
@@ -44,7 +45,8 @@ class EmailService:  # pylint: disable=too-few-public-methods
                                                                   args,
                                                                   template_id)
                 except Exception as exc:  # noqa: B902
-                    current_app.logger.error('<Extracting email address for subscribers failed', exc)
+                    current_app.logger.error('<Extracting email address for subscribers failed: %s',
+                                             scrub_sensitive(str(exc)))
                     raise BusinessException(
                         error='Error extracting email address for subscribers.',
                         status_code=HTTPStatus.INTERNAL_SERVER_ERROR) from exc
@@ -97,7 +99,8 @@ class EmailService:  # pylint: disable=too-few-public-methods
                                     args=args,
                                     template_id=template_id)                
         except Exception as exc:  # noqa: B902
-            current_app.logger.error('<Notification for publish engagement failed', exc)
+            current_app.logger.error('<Notification for publish engagement failed: %s',
+                                     scrub_sensitive(str(exc)))
             raise BusinessException(
                 error='Error sending publish engagement notification email.',
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR) from exc

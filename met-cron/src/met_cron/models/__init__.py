@@ -15,3 +15,4 @@
 """This exports all of the models and schemas used by the application."""
 
 from .db import db, ma, migrate
+from .job_run_log import JobRunLog
