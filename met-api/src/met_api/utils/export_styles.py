@@ -120,9 +120,13 @@ def get_zebra_colour(page_index: int, row_index: int) -> str:
     return colours.band_light if row_index % 2 == 0 else colours.band_dark
 
 
-def get_respondent_zebra_colour(row_index: int) -> str:
-    """Get the zebra stripe fill for a data row in the respondent id column."""
-    return RESPONDENT_BANDS[row_index % len(RESPONDENT_BANDS)]
+def get_respondent_zebra_colour(group_index: int) -> str:
+    """Get the stripe fill for the respondent columns of a data row.
+
+    Banded by email group rather than by row, so every submission from one person shares a
+    colour and a run of them reads as a single block.
+    """
+    return RESPONDENT_BANDS[group_index % len(RESPONDENT_BANDS)]
 
 
 def get_question_type_colours(component_type: str) -> tuple:

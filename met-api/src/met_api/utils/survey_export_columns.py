@@ -181,39 +181,66 @@ def build_export_columns(form_json: dict, types: set = None) -> list:
     return columns
 
 
-def filter_respondents_with_comments(respondents: list, columns: list) -> list:
-    """Keep the (index, respondent) pairs that answered at least one free-text question.
+class RespondentRow(NamedTuple):
+    """One submission, with the respondent identity the export shows for it."""
 
-    The index is the respondent's position in the full list, so their id stays the same one the
-    other sheets show and a reader can cross-reference between them.
+    submission: object
+    # 'R-0001-01': the respondent, then which of their submissions this is.
+    respondent_id: str
+    # 0-based group of submissions sharing an email, which the shared colour band marks.
+    group_index: int
+    # How many submissions came from this email, repeated on each of its rows.
+    submission_count: int
+
+
+def filter_respondents_with_comments(respondents: list, columns: list) -> list:
+    """Keep the respondents who answered at least one free-text question.
+
+    Each row carries its own id, so dropping the silent respondents cannot shift the ids of the
+    ones that remain and a reader can still cross-reference between sheets.
     """
     return [
-        (index, respondent)
-        for index, respondent in enumerate(respondents)
-        if any(column.read_answer(respondent.submission_json) for column in columns)
+        respondent
+        for respondent in respondents
+        if any(column.read_answer(respondent.submission.submission_json) for column in columns)
     ]
 
 
 def build_respondent_rows(submissions: list) -> list:
-    """Reduce submissions to one row per respondent, newest winning.
+    """Expand submissions into one row each, grouped by the email they came from.
 
-    A participant's resubmission replaces their earlier one rather than appearing as a second
-    respondent. Anonymous submissions have no participant to group on, so each stays its own.
+    A participant's resubmissions keep their own answers rather than being collapsed into the
+    newest one, and share a respondent number so they read as one person: R-0001-01, R-0001-02.
+    Anonymous submissions have no participant to group on, so each is its own respondent.
+
+    Groups are ordered by their earliest submission, and each group's rows by submission id, so
+    a re-run assigns the same ids and one email's rows always sit together.
     """
-    latest_by_participant = {}
-    anonymous = []
+    groups = {}
     for submission in submissions:
-        if submission.participant_id is None:
-            anonymous.append(submission)
-            continue
-        current = latest_by_participant.get(submission.participant_id)
-        if current is None or submission.id > current.id:
-            latest_by_participant[submission.participant_id] = submission
+        # None is not a shared key: each anonymous submission is its own group.
+        key = submission.participant_id if submission.participant_id is not None else ('anonymous', submission.id)
+        groups.setdefault(key, []).append(submission)
 
-    # By submission id, so a re-run assigns the same respondent ids.
-    return sorted([*latest_by_participant.values(), *anonymous], key=lambda s: s.id)
+    ordered = sorted(groups.values(), key=lambda group: min(s.id for s in group))
+
+    rows = []
+    for group_index, group in enumerate(ordered):
+        group = sorted(group, key=lambda s: s.id)
+        for sequence, submission in enumerate(group, start=1):
+            rows.append(RespondentRow(
+                submission=submission,
+                respondent_id=format_respondent_id(group_index, sequence),
+                group_index=group_index,
+                submission_count=len(group),
+            ))
+    return rows
 
 
-def format_respondent_id(index: int) -> str:
-    """Build the display id for the nth respondent, e.g. 'R-0001'."""
-    return f'R-{index + 1:04d}'
+def format_respondent_id(group_index: int, sequence: int) -> str:
+    """Build the display id for a respondent's nth submission, e.g. 'R-0001-01'.
+
+    The sequence is padded too, so a respondent's tenth submission sorts after their second
+    rather than between their first and second.
+    """
+    return f'R-{group_index + 1:04d}-{sequence:02d}'
