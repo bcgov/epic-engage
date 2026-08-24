@@ -14,7 +14,11 @@
 """Service for exporting internal dashboard survey data to a spreadsheet.
 
 Builds the four sheets the dashboard's data export offers: the quantitative answers per
-respondent and aggregated, both combined with the free text, and the free text alone.
+submission and aggregated, both combined with the free text, and the free text alone.
+
+Every submission gets its own row and its own id. Resubmissions from one email share a
+respondent number (R-0001-01, R-0001-02), sit together, and carry a count of how many came from
+that email, so repeated submissions meant to skew the results are easy to spot.
 
 An .xlsx rather than a literal .csv: a CSV is one flat text sheet, and cannot carry multiple
 sheets, zebra striping or colour coding.
@@ -43,7 +47,7 @@ from met_api.utils.export_styles import (
 from met_api.utils.survey_export_aggregates import build_aggregate_rows
 from met_api.utils.survey_export_columns import (
     FREE_TEXT_TYPES, QUANTITATIVE_TYPES, build_export_columns, build_respondent_rows,
-    filter_respondents_with_comments, format_respondent_id)
+    filter_respondents_with_comments)
 
 
 # Types whose answer is a number rather than an option label
@@ -77,9 +81,14 @@ QUESTION_TYPE_ROW = 4
 DATA_START_ROW = 5
 
 RESPONDENT_COLUMN = 1
-FIRST_QUESTION_COLUMN = 2
+SUBMISSION_COUNT_COLUMN = 2
+FIRST_QUESTION_COLUMN = 3
+
+# The two columns identifying who answered, ahead of any question.
+RESPONDENT_COLUMNS = (RESPONDENT_COLUMN, SUBMISSION_COUNT_COLUMN)
 
 RESPONDENT_COLUMN_WIDTH = 12
+SUBMISSION_COUNT_COLUMN_WIDTH = 12
 QUESTION_COLUMN_WIDTH = 22
 
 # The qualitative sheet drops the option and type rows.
@@ -142,8 +151,13 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
             if sheet is QUANTITATIVE_NON_AGGREGATED:
                 cls._build_non_aggregated_sheet(worksheet, columns, respondents)
             elif sheet is QUANTITATIVE_AGGREGATED:
+                # Every submission is tallied, resubmissions included, so the totals agree with
+                # the row counts on the other sheets and with the dashboard's own charts.
                 cls._build_aggregated_sheet(
-                    worksheet, build_aggregate_rows(survey.form_json, respondents)
+                    worksheet,
+                    build_aggregate_rows(
+                        survey.form_json, [row.submission for row in respondents]
+                    ),
                 )
             elif sheet is ALL_DATA:
                 # Same shape as the non-aggregated sheet, with the free-text columns kept in.
@@ -164,7 +178,7 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         cls._write_question_headers(worksheet, columns)
         cls._write_respondent_rows(worksheet, columns, respondents)
 
-        worksheet.column_dimensions[get_column_letter(RESPONDENT_COLUMN)].width = RESPONDENT_COLUMN_WIDTH
+        cls._set_respondent_column_widths(worksheet)
         for offset, column in enumerate(columns):
             letter = get_column_letter(FIRST_QUESTION_COLUMN + offset)
             worksheet.column_dimensions[letter].width = (
@@ -230,14 +244,16 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
             return
 
         for row in (PAGE_TITLE_ROW, QUESTION_TITLE_ROW):
-            cls._style_header_cell(
-                worksheet.cell(row=row, column=RESPONDENT_COLUMN),
-                fill=RESPONDENT_HEADER_COLOUR,
-                font_colour=RESPONDENT_HEADER_FONT_COLOUR,
-                bold=True,
-            )
+            for column in RESPONDENT_COLUMNS:
+                cls._style_header_cell(
+                    worksheet.cell(row=row, column=column),
+                    fill=RESPONDENT_HEADER_COLOUR,
+                    font_colour=RESPONDENT_HEADER_FONT_COLOUR,
+                    bold=True,
+                )
         worksheet.cell(row=QUESTION_TITLE_ROW, column=RESPONDENT_COLUMN, value='Respondent ID')
-        worksheet.column_dimensions[get_column_letter(RESPONDENT_COLUMN)].width = RESPONDENT_COLUMN_WIDTH
+        worksheet.cell(row=QUESTION_TITLE_ROW, column=SUBMISSION_COUNT_COLUMN, value='Submissions')
+        cls._set_respondent_column_widths(worksheet)
 
         cls._write_page_banners(worksheet, columns)
         for offset, column in enumerate(columns):
@@ -251,18 +267,11 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
             worksheet.column_dimensions[get_column_letter(index)].width = COMMENT_COLUMN_WIDTH
 
         commenters = filter_respondents_with_comments(respondents, columns)
-        for row_index, (respondent_index, submission) in enumerate(commenters):
+        for row_index, respondent in enumerate(commenters):
             row = COMMENT_DATA_START_ROW + row_index
-            cls._style_data_cell(
-                worksheet.cell(
-                    row=row, column=RESPONDENT_COLUMN,
-                    value=format_respondent_id(respondent_index),
-                ),
-                fill=get_respondent_zebra_colour(row_index),
-                font_colour=RESPONDENT_FONT_COLOUR,
-            )
+            cls._write_identity_cells(worksheet, row, respondent)
             for offset, column in enumerate(columns):
-                answer = column.read_answer(submission.submission_json)
+                answer = column.read_answer(respondent.submission.submission_json)
                 band = get_zebra_colour(column.page_index, row_index)
                 cls._style_data_cell(
                     worksheet.cell(
@@ -322,21 +331,25 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
 
     @classmethod
     def _write_respondent_header(cls, worksheet):
-        """Write the respondent id column's header, kept neutral as it belongs to no page."""
+        """Write the respondent columns' headers, kept neutral as they belong to no page."""
         for row in (PAGE_TITLE_ROW, QUESTION_TITLE_ROW, OPTION_LABEL_ROW):
+            for column in RESPONDENT_COLUMNS:
+                cls._style_header_cell(
+                    worksheet.cell(row=row, column=column),
+                    fill=RESPONDENT_HEADER_COLOUR,
+                    font_colour=RESPONDENT_HEADER_FONT_COLOUR,
+                    bold=True,
+                )
+        worksheet.cell(row=QUESTION_TITLE_ROW, column=RESPONDENT_COLUMN, value='Respondent ID')
+        worksheet.cell(row=QUESTION_TITLE_ROW, column=SUBMISSION_COUNT_COLUMN, value='Submissions')
+        # Only the id column names the type row; the count column just carries the band across.
+        for column, value in zip(RESPONDENT_COLUMNS, ('TYPE', None)):
             cls._style_header_cell(
-                worksheet.cell(row=row, column=RESPONDENT_COLUMN),
-                fill=RESPONDENT_HEADER_COLOUR,
-                font_colour=RESPONDENT_HEADER_FONT_COLOUR,
+                worksheet.cell(row=QUESTION_TYPE_ROW, column=column, value=value),
+                fill=RESPONDENT_TYPE_COLOUR,
+                font_colour=RESPONDENT_TYPE_FONT_COLOUR,
                 bold=True,
             )
-        worksheet.cell(row=QUESTION_TITLE_ROW, column=RESPONDENT_COLUMN, value='Respondent ID')
-        cls._style_header_cell(
-            worksheet.cell(row=QUESTION_TYPE_ROW, column=RESPONDENT_COLUMN, value='TYPE'),
-            fill=RESPONDENT_TYPE_COLOUR,
-            font_colour=RESPONDENT_TYPE_FONT_COLOUR,
-            bold=True,
-        )
 
     @classmethod
     def _write_page_banners(cls, worksheet, columns: list):
@@ -397,20 +410,29 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
             )
 
     @classmethod
-    def _write_respondent_rows(cls, worksheet, columns: list, respondents: list):
-        """Write one row per respondent, zebra striped in their page's two band colours."""
-        for row_index, submission in enumerate(respondents):
-            row = DATA_START_ROW + row_index
+    def _write_identity_cells(cls, worksheet, row: int, respondent):
+        """Write the respondent id and submission count, banded per email rather than per row.
 
+        Every submission from one email shares a band, so a group of them reads as a single
+        block and a reviewer can see at a glance that they came from the same person.
+        """
+        values = (respondent.respondent_id, respondent.submission_count)
+        for column, value in zip(RESPONDENT_COLUMNS, values):
             cls._style_data_cell(
-                worksheet.cell(
-                    row=row, column=RESPONDENT_COLUMN, value=format_respondent_id(row_index)
-                ),
-                fill=get_respondent_zebra_colour(row_index),
+                worksheet.cell(row=row, column=column, value=value),
+                fill=get_respondent_zebra_colour(respondent.group_index),
                 font_colour=RESPONDENT_FONT_COLOUR,
             )
+
+    @classmethod
+    def _write_respondent_rows(cls, worksheet, columns: list, respondents: list):
+        """Write one row per submission, zebra striped in their page's two band colours."""
+        for row_index, respondent in enumerate(respondents):
+            row = DATA_START_ROW + row_index
+
+            cls._write_identity_cells(worksheet, row, respondent)
             for offset, column in enumerate(columns):
-                answer = column.read_answer(submission.submission_json)
+                answer = column.read_answer(respondent.submission.submission_json)
                 band = get_zebra_colour(column.page_index, row_index)
                 cls._style_data_cell(
                     worksheet.cell(
@@ -430,6 +452,13 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         if column.component_type in NUMERIC_ANSWER_TYPES:
             return NUMERIC_FONT_COLOUR
         return BODY_FONT_COLOUR
+
+    @staticmethod
+    def _set_respondent_column_widths(worksheet):
+        """Size the two identity columns, shared by every sheet that lists respondents."""
+        widths = (RESPONDENT_COLUMN_WIDTH, SUBMISSION_COUNT_COLUMN_WIDTH)
+        for column, width in zip(RESPONDENT_COLUMNS, widths):
+            worksheet.column_dimensions[get_column_letter(column)].width = width
 
     @staticmethod
     def _page_spans(columns: list) -> list:

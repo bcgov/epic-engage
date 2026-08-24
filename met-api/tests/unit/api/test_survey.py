@@ -804,23 +804,25 @@ def test_dashboard_sheet_header_structure(client, jwt, session):  # pylint:disab
     sheet = _export_workbook(client, jwt, survey.id)
 
     # Free-text excluded; radio/select take one column each, the rest one per row/option.
-    assert sheet.max_column == 1 + 8
+    # The two identity columns sit ahead of them.
+    assert sheet.max_column == 2 + 8
     assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == [
-        'Respondent ID', 'What is your age?', 'How often?', 'Rate each method', 'Rate each method',
+        'Respondent ID', 'Submissions',
+        'What is your age?', 'How often?', 'Rate each method', 'Rate each method',
         'Rank these', 'Rank these', 'Which activities?', 'Which activities?',
     ]
     # Names the specific row/option; empty for radio and drop-down.
     assert [c.value for c in sheet[OPTION_LABEL_ROW]] == [
-        None, None, None, 'Email', 'Radio', 'Recreation', 'Wildlife', 'Fishing', 'Hiking',
+        None, None, None, None, 'Email', 'Radio', 'Recreation', 'Wildlife', 'Fishing', 'Hiking',
     ]
     assert [c.value for c in sheet[QUESTION_TYPE_ROW]] == [
-        'TYPE', 'RADIO', 'DROPDOWN', 'LIKERT MATRIX', 'LIKERT MATRIX',
+        'TYPE', None, 'RADIO', 'DROPDOWN', 'LIKERT MATRIX', 'LIKERT MATRIX',
         'RANK ORDER', 'RANK ORDER', 'CHECKBOX', 'CHECKBOX',
     ]
     # Each page is bannered across its own columns.
-    assert sheet.cell(row=PAGE_TITLE_ROW, column=2).value == 'Page 1 - Demographics'
-    assert sheet.cell(row=PAGE_TITLE_ROW, column=4).value == 'Page 2 - Outreach'
-    assert {str(r) for r in sheet.merged_cells.ranges} == {'B1:C1', 'D1:I1'}
+    assert sheet.cell(row=PAGE_TITLE_ROW, column=3).value == 'Page 1 - Demographics'
+    assert sheet.cell(row=PAGE_TITLE_ROW, column=5).value == 'Page 2 - Outreach'
+    assert {str(r) for r in sheet.merged_cells.ranges} == {'C1:D1', 'E1:J1'}
 
 
 def test_dashboard_sheet_respondent_rows(client, jwt, session):  # pylint:disable=unused-argument
@@ -842,7 +844,8 @@ def test_dashboard_sheet_respondent_rows(client, jwt, session):  # pylint:disabl
 
     assert sheet.max_row == DATA_START_ROW
     assert [c.value for c in sheet[DATA_START_ROW]] == [
-        'R-0001',
+        'R-0001-01',
+        1,            # their only submission
         '35-54',      # radio -> option label
         'Weekly',     # drop-down -> option label
         '5', '1',     # Likert -> scale code as stored
@@ -851,8 +854,8 @@ def test_dashboard_sheet_respondent_rows(client, jwt, session):  # pylint:disabl
     ]
 
 
-def test_dashboard_sheet_collapses_resubmissions(client, jwt, session):  # pylint:disable=unused-argument
-    """Assert a participant's resubmission replaces their earlier row rather than adding one."""
+def test_dashboard_sheet_keeps_every_resubmission(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert a participant's resubmissions each get their own row, sharing a respondent number."""
     survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
     participant = factory_participant_model()
     other = factory_participant_model(TestParticipantInfo.participant2)
@@ -864,13 +867,34 @@ def test_dashboard_sheet_collapses_resubmissions(client, jwt, session):  # pylin
                              {**TestSubmissionInfo.submission1.value, 'submission_json': {'age': 'a1'}})
 
     sheet = _export_workbook(client, jwt, survey.id)
+    rows = (DATA_START_ROW, DATA_START_ROW + 1, DATA_START_ROW + 2)
 
-    # The repeat participant keeps only their most recent answer.
-    assert sheet.max_row == DATA_START_ROW + 1
-    assert [sheet.cell(row=r, column=1).value for r in (DATA_START_ROW, DATA_START_ROW + 1)] == \
-        ['R-0001', 'R-0002']
-    assert sheet.cell(row=DATA_START_ROW, column=2).value == '35-54'
-    assert sheet.cell(row=DATA_START_ROW + 1, column=2).value == '18-34'
+    # The repeat participant's two submissions sit together under one respondent number.
+    assert sheet.max_row == DATA_START_ROW + 2
+    assert [sheet.cell(row=r, column=1).value for r in rows] == \
+        ['R-0001-01', 'R-0001-02', 'R-0002-01']
+    # The count is repeated on each of an email's rows, so sorting on it surfaces the group.
+    assert [sheet.cell(row=r, column=2).value for r in rows] == [2, 2, 1]
+    # Both of their answers survive; the earlier one is no longer dropped.
+    assert [sheet.cell(row=r, column=3).value for r in rows] == ['18-34', '35-54', '18-34']
+    # One band per email, so the repeat group reads as a single block.
+    fills = [sheet.cell(row=r, column=1).fill.fgColor.rgb for r in rows]
+    assert fills[0] == fills[1] != fills[2]
+
+
+def test_dashboard_sheet_anonymous_submissions_stay_separate(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert submissions with no participant are each their own respondent, never grouped."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    for answers in ({'age': 'a1'}, {'age': 'a2'}):
+        factory_submission_model(survey.id, eng.id, None,
+                                 {**TestSubmissionInfo.submission1.value, 'submission_json': answers})
+
+    sheet = _export_workbook(client, jwt, survey.id)
+    rows = (DATA_START_ROW, DATA_START_ROW + 1)
+
+    # No email to group on, so neither shares a respondent number with the other.
+    assert [sheet.cell(row=r, column=1).value for r in rows] == ['R-0001-01', 'R-0002-01']
+    assert [sheet.cell(row=r, column=2).value for r in rows] == [1, 1]
 
 
 def test_dashboard_sheet_unanswered_questions_stay_blank(client, jwt, session):  # pylint:disable=unused-argument
@@ -882,10 +906,10 @@ def test_dashboard_sheet_unanswered_questions_stay_blank(client, jwt, session): 
 
     sheet = _export_workbook(client, jwt, survey.id)
 
-    assert sheet.cell(row=DATA_START_ROW, column=2).value == '18-34'
+    assert sheet.cell(row=DATA_START_ROW, column=3).value == '18-34'
     # Checkbox especially must not report 0 for a question never shown - that would be
     # indistinguishable from a deliberate "not selected".
-    assert [c.value for c in sheet[DATA_START_ROW]][2:] == [None] * 7
+    assert [c.value for c in sheet[DATA_START_ROW]][3:] == [None] * 7
 
 
 def _aggregated_sheet(client, jwt, survey_id):
@@ -976,6 +1000,25 @@ def test_dashboard_aggregated_sheet_tallies_by_question_type(client, jwt, sessio
     assert row_for('CHECKBOX', 'Hiking')[3:5] == [1, 0.5]
 
 
+def test_dashboard_aggregated_sheet_counts_resubmissions(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert every submission is tallied, so the totals match the rows on the other sheets."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    participant = factory_participant_model()
+    for answers in ({'age': 'a1'}, {'age': 'a1'}, {'age': 'a2'}):
+        factory_submission_model(survey.id, eng.id, participant.id,
+                                 {**TestSubmissionInfo.submission1.value, 'submission_json': answers})
+
+    sheet = _aggregated_sheet(client, jwt, survey.id)
+    rows = [[c.value for c in row] for row in sheet.iter_rows()]
+
+    def radio_row(option):
+        return next(r for r in rows if r[0] == 'RADIO' and r[2] == option)
+
+    # All three submissions count, not just the participant's latest.
+    assert radio_row('18-34')[3:5] == [2, 2 / 3]
+    assert radio_row('35-54')[3:5] == [1, 1 / 3]
+
+
 # Two free-text follow-ups sharing a label, each shown for a different selected option.
 conditional_comment_survey_info = {
     **TestSurveyInfo.survey1.value,
@@ -1021,9 +1064,10 @@ def test_all_data_sheet_combines_quantitative_and_free_text(client, jwt, session
     sheet = _all_data_sheet(client, jwt, survey.id)
 
     # The quantitative sheet's 8 question columns, plus the survey's one free-text question.
-    assert sheet.max_column == 1 + 9
+    assert sheet.max_column == 2 + 9
     assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == [
-        'Respondent ID', 'What is your age?', 'How often?', 'Rate each method', 'Rate each method',
+        'Respondent ID', 'Submissions',
+        'What is your age?', 'How often?', 'Rate each method', 'Rate each method',
         'Rank these', 'Rank these', 'Which activities?', 'Which activities?', 'Anything else?',
     ]
     # Free text sits in form order rather than being appended, and carries its own type label
@@ -1043,10 +1087,10 @@ def test_all_data_sheet_keeps_every_respondent(client, jwt, session):  # pylint:
 
     assert sheet.max_row == DATA_START_ROW + 1
     assert [sheet.cell(row=r, column=1).value
-            for r in (DATA_START_ROW, DATA_START_ROW + 1)] == ['R-0001', 'R-0002']
+            for r in (DATA_START_ROW, DATA_START_ROW + 1)] == ['R-0001-01', 'R-0002-01']
     # The second respondent is present with their quantitative answer but no comment.
-    assert sheet.cell(row=DATA_START_ROW + 1, column=2).value == '18-34'
-    assert sheet.cell(row=DATA_START_ROW + 1, column=10).value is None
+    assert sheet.cell(row=DATA_START_ROW + 1, column=3).value == '18-34'
+    assert sheet.cell(row=DATA_START_ROW + 1, column=11).value is None
 
 
 def _qualitative_sheet(client, jwt, survey_id):
@@ -1068,12 +1112,14 @@ def test_dashboard_qualitative_sheet_structure(client, jwt, session):  # pylint:
     sheet = _qualitative_sheet(client, jwt, survey.id)
 
     # Only the one free-text question earns a column; every quantitative one is left out.
-    assert sheet.max_column == 2
-    assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == ['Respondent ID', 'Anything else?']
+    assert sheet.max_column == 3
+    assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == [
+        'Respondent ID', 'Submissions', 'Anything else?',
+    ]
     # Page 1 holds no free text, so it is absent - but page 2 keeps its own number.
-    assert sheet.cell(row=PAGE_TITLE_ROW, column=2).value == 'Page 2 - Outreach'
-    assert sheet.cell(row=PAGE_TITLE_ROW, column=2).fill.fgColor.rgb[2:] == get_page_colours(1).banner
-    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=2).value == 'Some feedback'
+    assert sheet.cell(row=PAGE_TITLE_ROW, column=3).value == 'Page 2 - Outreach'
+    assert sheet.cell(row=PAGE_TITLE_ROW, column=3).fill.fgColor.rgb[2:] == get_page_colours(1).banner
+    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=3).value == 'Some feedback'
 
 
 def test_dashboard_qualitative_sheet_lists_only_commenters(client, jwt, session):  # pylint:disable=unused-argument
@@ -1085,11 +1131,13 @@ def test_dashboard_qualitative_sheet_lists_only_commenters(client, jwt, session)
 
     sheet = _qualitative_sheet(client, jwt, survey.id)
 
-    # The middle respondent left no free text, so their id is skipped rather than reused.
+    # The middle respondent left no free text, so their id is absent rather than reused - the
+    # two that remain still carry the ids the other sheets show them under.
     assert sheet.max_row == COMMENT_DATA_START_ROW + 1
     assert [sheet.cell(row=r, column=1).value
-            for r in (COMMENT_DATA_START_ROW, COMMENT_DATA_START_ROW + 1)] == ['R-0001', 'R-0003']
-    assert sheet.cell(row=COMMENT_DATA_START_ROW + 1, column=2).value == 'Third'
+            for r in (COMMENT_DATA_START_ROW, COMMENT_DATA_START_ROW + 1)] == \
+        ['R-0001-01', 'R-0003-01']
+    assert sheet.cell(row=COMMENT_DATA_START_ROW + 1, column=3).value == 'Third'
 
 
 def test_dashboard_qualitative_sheet_labels_follow_ups(client, jwt, session):  # pylint:disable=unused-argument
@@ -1103,13 +1151,14 @@ def test_dashboard_qualitative_sheet_labels_follow_ups(client, jwt, session):  #
 
     assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == [
         'Respondent ID',
+        'Submissions',
         'Why is this important? (Air quality)',
         'Why is this important? (Wildlife)',
     ]
     # The untriggered follow-up was never shown, so its cell is blank on a drained band.
     band = get_page_colours(1).band_light
-    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=3).value is None
-    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=3).fill.fgColor.rgb[2:] == mute_colour(band)
+    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=4).value is None
+    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=4).fill.fgColor.rgb[2:] == mute_colour(band)
 
 
 def test_dashboard_sheet_tones_answers_by_value(client, jwt, session):  # pylint:disable=unused-argument
@@ -1136,15 +1185,15 @@ def test_dashboard_sheet_tones_answers_by_value(client, jwt, session):  # pylint
     page_one_band = get_page_colours(0).band_light
     page_two_band = get_page_colours(1).band_light
 
-    # Columns: 1 respondent id, 2 radio, 3 drop-down, 4-5 Likert, 6-7 rank, 8-9 checkbox.
-    assert font_of(2) == BODY_FONT_COLOUR  # radio label
-    assert font_of(4) == NUMERIC_FONT_COLOUR  # Likert scale value
-    assert font_of(8) == CHECKBOX_SELECTED_FONT_COLOUR  # ticked checkbox
+    # Columns: 1-2 identity, 3 radio, 4 drop-down, 5-6 Likert, 7-8 rank, 9-10 checkbox.
+    assert font_of(3) == BODY_FONT_COLOUR  # radio label
+    assert font_of(5) == NUMERIC_FONT_COLOUR  # Likert scale value
+    assert font_of(9) == CHECKBOX_SELECTED_FONT_COLOUR  # ticked checkbox
     # An unticked checkbox is muted but keeps its page band - it was answered, not a gap.
-    assert sheet.cell(row=row, column=9).value == 0
-    assert font_of(9) == MUTED_FONT_COLOUR
-    assert fill_of(9) == page_two_band
+    assert sheet.cell(row=row, column=10).value == 0
+    assert font_of(10) == MUTED_FONT_COLOUR
+    assert fill_of(10) == page_two_band
     # The unanswered drop-down has no text to grey, so its band drains instead.
-    assert sheet.cell(row=row, column=3).value is None
-    assert fill_of(3) == mute_colour(page_one_band)
-    assert fill_of(2) == page_one_band
+    assert sheet.cell(row=row, column=4).value is None
+    assert fill_of(4) == mute_colour(page_one_band)
+    assert fill_of(3) == page_one_band
