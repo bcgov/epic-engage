@@ -35,7 +35,6 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     print(f'>>>>> Creating app in run_mode: {config.CONFIGURATION[run_mode]}')
 
     app.config.from_object(config.CONFIGURATION[run_mode])
-    # Configure Sentry
     app.logger.info(f'<<<< Starting Jobs >>>>')
     db.init_app(app)
     ma.init_app(app)
@@ -58,6 +57,7 @@ def register_shellcontext(app):
 
 
 def run(job_name):
+    from met_cron.services.job_log_service import JobLogService
     from tasks.closing_soon_mailer import EngagementClosingSoonMailer
     from tasks.met_closeout import MetEngagementCloseout
     from tasks.met_publish import MetEngagementPublish
@@ -66,28 +66,27 @@ def run(job_name):
     from tasks.subscription_mailer import SubscriptionMailer
     application = create_app()
 
+    jobs = {
+        'ENGAGEMENT_CLOSEOUT': MetEngagementCloseout.do_closeout,
+        'ENGAGEMENT_PUBLISH': MetEngagementPublish.do_publish,
+        'PURGE': MetPurge.do_purge,
+        'COMMENT_REDACT': MetCommentRedact.do_redact,
+        'PUBLISH_EMAIL': SubscriptionMailer.do_email,
+        'CLOSING_SOON_EMAIL': EngagementClosingSoonMailer.do_email,
+    }
+
     with application.app_context():
-        print('Requested Job:', job_name)
-        if job_name == 'ENGAGEMENT_CLOSEOUT':
-            MetEngagementCloseout.do_closeout()
-            application.logger.info(f'<<<< Completed MET Engagement Closeout >>>>')
-        elif job_name == 'ENGAGEMENT_PUBLISH':
-            MetEngagementPublish.do_publish()
-            application.logger.info(f'<<<< Completed MET Engagement Publish >>>>')
-        elif job_name == 'PURGE':
-            MetPurge.do_purge()
-            application.logger.info('<<<< Completed MET Purge >>>>')
-        elif job_name == 'COMMENT_REDACT':
-            MetCommentRedact.do_redact()
-            application.logger.info('<<<< Completed MET COMMENT_REDACT >>>>')
-        elif job_name == 'PUBLISH_EMAIL':
-            SubscriptionMailer.do_email()
-            application.logger.info('<<<< Completed MET PUBLISH_EMAIL >>>>')
-        elif job_name == 'CLOSING_SOON_EMAIL':
-            EngagementClosingSoonMailer.do_email()
-            application.logger.info('<<<< Completed MET CLOSING_SOON_EMAIL >>>>')
-        else:
+        job = jobs.get(job_name)
+        if job is None:
             application.logger.error('No valid args passed.Exiting job without running any ***************')
+            sys.exit(1)
+        try:
+            with JobLogService.track(job_name):
+                job()
+        except Exception:  # noqa: B902
+            # JobLogService already recorded the failure and logged the redacted traceback.
+            # Swallowing it here keeps the raw one, which can carry participant data,
+            # out of stdout while still failing the run for cron.
             sys.exit(1)
 
 

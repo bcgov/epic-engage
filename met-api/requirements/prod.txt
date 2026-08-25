@@ -18,7 +18,6 @@ marshmallow_enum
 jsonschema
 requests
 itsdangerous
-sentry-sdk[flask]
 bcrypt
 jaeger-client
 Werkzeug>=3.0.3

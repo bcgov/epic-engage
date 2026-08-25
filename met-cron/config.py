@@ -168,6 +168,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     # config for offset days to send reminder emails
     OFFSET_DAYS = os.getenv('OFFSET_DAYS', 2)
 
+    JOB_LOG_ERROR_MAX_CHARS = int(os.getenv('JOB_LOG_ERROR_MAX_CHARS', '4000'))
+
 class MigrationConfig(_Config):  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults for all the other configurations."""
 

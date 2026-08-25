@@ -6,6 +6,7 @@ from flask_marshmallow import Marshmallow
 from flask_migrate import Migrate
 
 from met_api.models import db
+from met_cron.utils.scrub import scrub_sensitive
 
 # Migrate initialize in __init__ file
 # Migrate database config
@@ -26,6 +27,6 @@ def session_scope():
         yield session
         session.commit()
     except Exception as e:  # noqa: B901, E722
-        current_app.logger.error(f'Error in session_scope: {e}')
+        current_app.logger.error('Error in session_scope: %s', scrub_sensitive(str(e)))
         session.rollback()
         raise

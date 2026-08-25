@@ -54,7 +54,7 @@ class CommentRedactService:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def _redact_comments_by_submission_ids(submission_ids: List[int], session):
-        current_app.logger.info(f'>>>>>Redacting comments for submissions: {submission_ids}')
+        current_app.logger.info('>>>>>Redacting comments for %s submissions.', len(submission_ids))
         session.query(MetCommentModel)\
         .filter(MetCommentModel.submission_id.in_(submission_ids))\
         .update(
@@ -68,14 +68,15 @@ class CommentRedactService:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def _redact_submission_json_comments(submission_ids: List[int], session):
-        current_app.logger.info(f'>>>>>Fetching keys to redact aka component_types from comments for submissions: {submission_ids}')
+        current_app.logger.info('>>>>>Fetching keys to redact aka component_types for %s submissions.',
+                                len(submission_ids))
         comments = session.query(MetCommentModel)\
         .filter(MetCommentModel.submission_id.in_(submission_ids))\
         .all()
         # e.g. ['simpletextarea', 'simpletextarea1', 'simpletextfield']
         keys_to_redact = [comment.component_id for comment in comments]
 
-        current_app.logger.info(f'>>>>>Redacting comments in submission_json for submissions: {submission_ids}')
+        current_app.logger.info('>>>>>Redacting comments in submission_json for %s submissions.', len(submission_ids))
         for submission in session.query(MetSubmissionModel).filter(MetSubmissionModel.id.in_(submission_ids)):
             new_submission_json = {}
             for key, value in submission.submission_json.items():
@@ -90,7 +91,7 @@ class CommentRedactService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def _redact_version_history_comments(submission_ids: List[int], session):
         """Redact comment text in version history snapshots for the given submissions."""
-        current_app.logger.info(f'>>>>>Redacting version history comments for submissions: {submission_ids}')
+        current_app.logger.info('>>>>>Redacting version history comments for %s submissions.', len(submission_ids))
         redaction_text = current_app.config.get('REDACTION_TEXT', '[Comment Redacted]')
         versions = session.query(MetSubmissionVersionModel)\
             .filter(MetSubmissionVersionModel.submission_id.in_(submission_ids))\
