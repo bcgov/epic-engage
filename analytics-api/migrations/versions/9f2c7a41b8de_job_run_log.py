@@ -3,7 +3,7 @@
 Durable log of met-cron scheduled job runs, so job history survives a server restart.
 
 Revision ID: 9f2c7a41b8de
-Revises: 05e82fada6fe
+Revises: 96878b3a07fd
 Create Date: 2026-08-24 00:00:00.000000
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '9f2c7a41b8de'
-down_revision = '05e82fada6fe'
+down_revision = '96878b3a07fd'
 branch_labels = None
 depends_on = None
 

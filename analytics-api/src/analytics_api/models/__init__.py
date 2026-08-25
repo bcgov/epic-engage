@@ -22,5 +22,6 @@ from .user_details import UserDetails
 from .user_feedback import UserFeedback
 from .user_response_detail import UserResponseDetail
 from .etlruncycle import EtlRunCycle
+from .job_run_log import JobRunLog
 from .request_type_option import RequestTypeOption
 from .response_type_option import ResponseTypeOption
