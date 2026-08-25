@@ -64,17 +64,6 @@ const initKeycloak = async (dispatch: Dispatch<AnyAction>) => {
 
         dispatch(userToken(KeycloakData.token));
 
-        // Check if tokens are defined before storing them in session storage
-        if (KeycloakData.token) {
-            sessionStorage.setItem('accessToken', KeycloakData.token);
-        }
-        if (KeycloakData.idToken) {
-            sessionStorage.setItem('idToken', KeycloakData.idToken);
-        }
-        if (KeycloakData.refreshToken) {
-            sessionStorage.setItem('refreshToken', KeycloakData.refreshToken);
-        }
-
         const userDetail: UserDetail = await KeycloakData.loadUserInfo();
         const updateUserResponse = await updateUser();
         if (updateUserResponse.data) {
@@ -105,16 +94,6 @@ const refreshToken = (dispatch: Dispatch<Action>) => {
                 const refreshed = await KeycloakData.updateToken(3000);
                 if (refreshed) {
                     dispatch(userToken(KeycloakData.token));
-                    // Check if tokens are defined before storing them in session storage
-                    if (KeycloakData.token) {
-                        sessionStorage.setItem('accessToken', KeycloakData.token);
-                    }
-                    if (KeycloakData.idToken) {
-                        sessionStorage.setItem('idToken', KeycloakData.idToken);
-                    }
-                    if (KeycloakData.refreshToken) {
-                        sessionStorage.setItem('refreshToken', KeycloakData.refreshToken);
-                    }
                 }
             } catch (error) {
                 console.log(error);
@@ -127,11 +106,8 @@ const refreshToken = (dispatch: Dispatch<Action>) => {
 const doLogin = (redirectUri?: string) => KeycloakData.login({ redirectUri: redirectUri ?? getBaseUrl() });
 
 const doLogout = async () => {
-    // Remove tokens from session storage
-    sessionStorage.removeItem('accessToken');
-    const idToken = sessionStorage.getItem('idToken'); // Get the stored ID token
-    sessionStorage.removeItem('idToken');
-    sessionStorage.removeItem('refreshToken');
+    // Tokens are held in memory by keycloak-js; only the logout flag is persisted.
+    const idToken = KeycloakData.idToken;
     sessionStorage.setItem('userLoggedOut', 'true');
     clearInterval(refreshInterval);
 
