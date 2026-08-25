@@ -15,14 +15,6 @@ declare global {
             VITE_PENGUIN_URL: string;
             VITE_PENGUIN_ENABLED: string;
 
-            // Formio
-            VITE_API_PROJECT_URL: string;
-            VITE_FORM_ID: string;
-            VITE_FORMIO_JWT_SECRET: string;
-            VITE_USER_RESOURCE_FORM_ID: string;
-            VITE_FORMIO_ANONYMOUS_USER: string;
-            VITE_ANONYMOUS_ID: string;
-
             // Keycloak
             VITE_KEYCLOAK_URL: string;
             VITE_KEYCLOAK_CLIENT: string;
@@ -66,15 +58,6 @@ const ANALYTICS_API_URL = localStorage.getItem('analytics-api-url') || getEnv('V
 const PENGUIN_ANALYTICS_URL = getEnv('VITE_PENGUIN_URL', '/analytics');
 const PENGUIN_ENABLED = getEnv('VITE_PENGUIN_ENABLED', 'false') === 'true';
 
-// Formio Environment Variables
-const FORMIO_PROJECT_URL = getEnv('VITE_API_PROJECT_URL');
-const FORMIO_API_URL = getEnv('VITE_API_PROJECT_URL');
-const FORMIO_FORM_ID = getEnv('VITE_FORM_ID');
-const FORMIO_JWT_SECRET = getEnv('VITE_FORMIO_JWT_SECRET');
-const FORMIO_USER_RESOURCE_FORM_ID = getEnv('VITE_USER_RESOURCE_FORM_ID');
-const FORMIO_ANONYMOUS_USER = getEnv('VITE_FORMIO_ANONYMOUS_USER');
-const FORMIO_ANONYMOUS_ID = getEnv('VITE_ANONYMOUS_ID');
-
 // Keycloak Environment Variables
 const KC_URL = getEnv('VITE_KEYCLOAK_URL');
 const KC_CLIENT = getEnv('VITE_KEYCLOAK_CLIENT');
@@ -108,16 +91,6 @@ export const AppConfig = {
     centreApiUrl: CENTRE_API_URL,
     penguinUrl: PENGUIN_ANALYTICS_URL,
     penguinEnabled: PENGUIN_ENABLED,
-    formio: {
-        projectUrl: FORMIO_PROJECT_URL,
-        apiUrl: FORMIO_API_URL,
-        formId: FORMIO_FORM_ID,
-        anonymousId: FORMIO_ANONYMOUS_ID || '',
-        anonymousUser: FORMIO_ANONYMOUS_USER || 'anonymous',
-        userResourceFormId: FORMIO_USER_RESOURCE_FORM_ID,
-        // TODO: potentially sensitive information, should be stored somewhere else?
-        jwtSecret: FORMIO_JWT_SECRET || '',
-    },
     keycloak: {
         url: KC_URL || '',
         clientId: KC_CLIENT || '',

@@ -5,12 +5,6 @@ app:
   analytics_api: "https://epic-engage-analytics-api-test.apps.gold.devops.gov.bc.ca/api"
   env: test
   node_env: production
-formio:
-  api_project_url: https://formio-e903c2-dev.apps.gold.devops.gov.bc.ca
-  form_id: ""
-  formio_jwt_secret: ""
-  user_resource_form_id: ""
-  anonymous_id: ""
 resources:
   cpu:
     limit: 100m

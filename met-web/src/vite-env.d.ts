@@ -12,12 +12,6 @@ interface ImportMetaEnv {
     readonly VITE_CENTRE_API_URL: string;
     readonly VITE_PENGUIN_URL: string;
     readonly VITE_PENGUIN_ENABLED: string;
-    readonly VITE_API_PROJECT_URL: string;
-    readonly VITE_FORM_ID: string;
-    readonly VITE_FORMIO_JWT_SECRET: string;
-    readonly VITE_USER_RESOURCE_FORM_ID: string;
-    readonly VITE_FORMIO_ANONYMOUS_USER: string;
-    readonly VITE_ANONYMOUS_ID: string;
     readonly VITE_DEFAULT_TENANT: string;
     readonly VITE_IS_SINGLE_TENANT_ENVIRONMENT: string;
     readonly VITE_ENGAGEMENT_PROJECT_TYPES: string;
