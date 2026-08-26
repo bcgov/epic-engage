@@ -127,6 +127,7 @@ objects:
     name: ${APP}
   data:
     EMAIL_PROVIDER: ${EMAIL_PROVIDER}
+    CONNECT_TIMEOUT: ${CONNECT_TIMEOUT}
 - apiVersion: v1
   kind: ConfigMap
   metadata:
@@ -200,4 +201,7 @@ parameters:
     value: GC_NOTIFY
   - name: CHES_EMAIL_FROM_ID
     description: "CHES From email id"
-    value: modernengagement@gov.bc.ca         
+    value: modernengagement@gov.bc.ca
+  - name: CONNECT_TIMEOUT
+    description: "Seconds to wait on each outbound CHES call (token, then send). Two run back to back, so 2x must stay under the 60s gunicorn worker timeout. Blank or invalid falls back to 15."
+    value: '15'

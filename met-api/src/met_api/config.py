@@ -30,6 +30,20 @@ from flask import g
 load_dotenv(find_dotenv())
 
 
+def _positive_int_from_env(name: str, default: int) -> int:
+    """Read a positive int from the environment, falling back to default.
+
+    Falls back when the variable is unset, empty, non-numeric or non-positive,
+    so a blank or mistyped value degrades to a safe timeout instead of raising
+    at import time and preventing the app from starting.
+    """
+    try:
+        value = int(os.getenv(name, ''))
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
 def get_named_config(config_name: str = 'development'):
     """Return the configuration object based on the name.
 
@@ -230,6 +244,14 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     # Timezone in BC
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
+
+    # Timeout, in seconds, on outbound HTTP calls (notify-api, Keycloak, CDOGS, S3).
+    # Sized for the slowest upstream: CDOGS document generation, and notify-api,
+    # whose own CHES chain can take up to 30s. Deliberately above that 30s so a
+    # real upstream error surfaces here rather than us timing out first, and well
+    # under the 60s gunicorn worker timeout so the request fails cleanly instead
+    # of the worker being killed mid-request.
+    CONNECT_TIMEOUT = _positive_int_from_env('CONNECT_TIMEOUT', 35)
 
     # Rate limiting (Flask-Limiter) for public endpoints
     RATELIMIT_ENABLED = os.getenv('RATELIMIT_ENABLED', 'True').lower() == 'true'

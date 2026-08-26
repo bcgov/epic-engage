@@ -46,7 +46,8 @@ def send_email(subject, email, html_body, args, template_id, reference=None):
                              headers={
                                  'Content-Type': 'application/json',
                                  'Authorization': f'Bearer {service_account_token}'},
-                             data=json.dumps(payload))
+                             data=json.dumps(payload),
+                             timeout=current_app.config.get('CONNECT_TIMEOUT', 60))
     response.raise_for_status()
 
 

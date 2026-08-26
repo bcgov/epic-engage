@@ -23,6 +23,26 @@ import requests
 from .email_base_service import EmailBaseService
 
 
+# Seconds to wait on each CHES call. The token call and the send call run back to
+# back, so the worst case is 2x this and must stay under the 60s gunicorn worker
+# timeout, otherwise the worker is killed before the timeout can fail cleanly.
+DEFAULT_CONNECT_TIMEOUT = 15
+
+
+def _connect_timeout() -> int:
+    """Read CONNECT_TIMEOUT from the environment, falling back to the default.
+
+    Falls back when the variable is unset, empty, non-numeric or non-positive, so
+    a blank or mistyped value degrades to a safe timeout rather than raising and
+    failing the send outright.
+    """
+    try:
+        value = int(os.getenv('CONNECT_TIMEOUT', ''))
+    except (TypeError, ValueError):
+        return DEFAULT_CONNECT_TIMEOUT
+    return value if value > 0 else DEFAULT_CONNECT_TIMEOUT
+
+
 class EmailChesNotify(EmailBaseService):  # pylint: disable=too-few-public-methods
     """Implementation from Ches Email Notify."""
 
@@ -32,6 +52,7 @@ class EmailChesNotify(EmailBaseService):  # pylint: disable=too-few-public-metho
         ches_client_id = os.getenv('CHES_SSO_CLIENT_ID')
         ches_client_secret = os.getenv('CHES_SSO_CLIENT_SECRET')
         ches_email_endpoint = os.getenv('CHES_POST_EMAIL_ENDPOINT')
+        timeout = _connect_timeout()
         ches_payload = {
             'bodyType': email_payload.get('bodyType'),
             'body': email_payload.get('body'),
@@ -45,13 +66,15 @@ class EmailChesNotify(EmailBaseService):  # pylint: disable=too-few-public-metho
         try:
             ches_token_response = requests.post(ches_token_url,
                                                 data=token_request_data,
-                                                headers=token_request_headers)
+                                                headers=token_request_headers,
+                                                timeout=timeout)
             ches_api_token = ches_token_response.json().get('access_token')
             email_request_headers = \
                 {'Content-Type': 'application/json', 'Authorization': f'Bearer {ches_api_token}'}
             email_response = requests.post(ches_email_endpoint,
                                            headers=email_request_headers,
-                                           data=json.dumps(ches_payload))
+                                           data=json.dumps(ches_payload),
+                                           timeout=timeout)
             print(email_response)
         except Exception as e:  # noqa: B902
             print(e)  # log and continue
