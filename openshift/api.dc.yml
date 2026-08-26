@@ -223,6 +223,7 @@ objects:
     RATELIMIT_EMAIL_SENDING: ${RATELIMIT_EMAIL_SENDING}
     RATELIMIT_PUBLIC_WRITE: ${RATELIMIT_PUBLIC_WRITE}
     RATELIMIT_PUBLIC_READ: ${RATELIMIT_PUBLIC_READ}
+    CONNECT_TIMEOUT: ${CONNECT_TIMEOUT}
 - kind: Secret
   apiVersion: v1
   type: Opaque
@@ -376,3 +377,7 @@ parameters:
     description: "Per-IP limit for public read endpoints"
     required: false
     value: '60 per minute'
+  - name: CONNECT_TIMEOUT
+    description: "Seconds to wait on outbound HTTP calls (notify-api, Keycloak, CDOGS, S3). Sized above notify-api's 30s worst case and under the 60s gunicorn worker timeout. Blank or invalid falls back to 35."
+    required: false
+    value: '35'

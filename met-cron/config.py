@@ -27,6 +27,21 @@ from dotenv import find_dotenv, load_dotenv
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
 
+
+def _positive_int_from_env(name: str, default: int) -> int:
+    """Read a positive int from the environment, falling back to default.
+
+    Falls back when the variable is unset, empty, non-numeric or non-positive, so
+    a blank or mistyped value degrades to a safe timeout instead of raising at
+    import time and preventing the jobs from starting.
+    """
+    try:
+        value = int(os.getenv(name, ''))
+    except (TypeError, ValueError):
+        return default
+    return value if value > 0 else default
+
+
 CONFIGURATION = {
     'development': 'config.DevConfig',
     'testing': 'config.TestConfig',
@@ -154,6 +169,13 @@ class _Config():  # pylint: disable=too-few-public-methods
     ENGAGEMENT_CLOSEOUT_EMAIL_SUBJECT = \
         os.getenv('ENGAGEMENT_CLOSEOUT_EMAIL_SUBJECT', '{engagement_name} - What we heard')
     NOTIFICATIONS_EMAIL_ENDPOINT = os.getenv('NOTIFICATIONS_EMAIL_ENDPOINT')
+
+    # Timeout, in seconds, on outbound HTTP calls made by the met-api code these
+    # jobs reuse (notify-api). Jobs have no worker timeout to bound them, so
+    # without this the mailer jobs would fall back to met-api's 60s default and a
+    # stalled notify-api would stretch a run by that much per recipient. Sized
+    # above notify-api's 30s worst case so a real upstream error surfaces here.
+    CONNECT_TIMEOUT = _positive_int_from_env('CONNECT_TIMEOUT', 35)
 
     # Environment from which email is sent
     EMAIL_ENVIRONMENT = os.getenv('EMAIL_ENVIRONMENT', '')
