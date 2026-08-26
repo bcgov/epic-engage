@@ -138,9 +138,6 @@ run_publish: ## Run the publish task in local
 run_purge: ## Run the publish task in local
 	. venv/bin/activate && $(PYTHON) invoke_jobs.py PURGE
 
-db: ## Update the local database
-	. venv/bin/activate && FLASK_APP=manage.py flask db upgrade
-
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
