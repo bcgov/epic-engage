@@ -23,12 +23,6 @@ objects:
         timeoutSeconds: 600
         maxUnavailable: 25%
         maxSurge: 25%
-        pre:
-          execNewPod:
-            command:
-            - /met-cron/pre-hook-update-db.sh
-            containerName: ${NAME}
-          failurePolicy: Abort
     triggers:
     - type: ImageChange
       imageChangeParams:
