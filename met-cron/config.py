@@ -142,8 +142,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     # front end endpoints
     SITE_URL = os.getenv('SITE_URL')
     # needed for close out emails for met api
-    ENGAGEMENT_DASHBOARD_PATH = os.getenv('ENGAGEMENT_DASHBOARD_PATH', '/engagements/{engagement_id}/comments/public')
-    ENGAGEMENT_DASHBOARD_PATH_SLUG = os.getenv('ENGAGEMENT_DASHBOARD_PATH_SLUG', '/{slug}/comments/public')
+    ENGAGEMENT_DASHBOARD_PATH = os.getenv(
+        'ENGAGEMENT_DASHBOARD_PATH', '/engagements/{engagement_id}/dashboard/public?tab=comments')
+    ENGAGEMENT_DASHBOARD_PATH_SLUG = os.getenv(
+        'ENGAGEMENT_DASHBOARD_PATH_SLUG', '/{slug}/dashboard/public?tab=comments')
     # needed for publish emails for met api
     ENGAGEMENT_VIEW_PATH = os.getenv('ENGAGEMENT_VIEW_PATH', '/engagements/{engagement_id}/view')
     ENGAGEMENT_VIEW_PATH_SLUG = os.getenv('ENGAGEMENT_VIEW_PATH_SLUG', '/{slug}')
