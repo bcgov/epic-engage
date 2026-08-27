@@ -10,6 +10,9 @@ on:
     branches:
       - main    
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
@@ -36,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -101,7 +104,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -114,12 +117,14 @@ jobs:
 
       # Set codecov branch name with prefix if pull request
       - name: Sets Codecov branch name
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          echo "CODECOV_BRANCH=PR_${{github.head_ref}}" >> $GITHUB_ENV
+          echo "CODECOV_BRANCH=PR_${HEAD_REF}" >> "$GITHUB_ENV"
         if: github.event_name == 'pull_request'
         
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         with:
           flags: metapi
           name: codecov-met-api

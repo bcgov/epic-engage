@@ -10,6 +10,9 @@ on:
     branches:
       - main    
 
+permissions:
+  contents: read
+
 defaults:
   run:
     shell: bash
@@ -36,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
@@ -59,7 +62,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -74,12 +77,14 @@ jobs:
 
       # Set codecov branch name with prefix if pull request
       - name: Sets Codecov branch name
+        env:
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          echo "CODECOV_BRANCH=PR_${{github.head_ref}}" >> $GITHUB_ENV
+          echo "CODECOV_BRANCH=PR_${HEAD_REF}" >> "$GITHUB_ENV"
         if: github.event_name == 'pull_request'
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         with:
           flags: metweb
           name: codecov-met-web
@@ -99,7 +104,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
       - name: Install dependencies
