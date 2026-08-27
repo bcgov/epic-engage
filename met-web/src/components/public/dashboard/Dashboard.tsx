@@ -1,6 +1,6 @@
 import { useContext, useState } from 'react';
 import { Box } from '@mui/material';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { When } from 'react-if';
 import { SurveyResultsCharts } from './SurveyResultsCharts';
 import { CommentsTab } from './comments/CommentsTab';
@@ -14,10 +14,12 @@ import { Palette } from 'styles/Theme';
 
 const Dashboard = () => {
     const { slug } = useParams();
+    const [searchParams] = useSearchParams();
     const { engagement, isEngagementLoading, dashboardType, originSurvey } = useContext(DashboardContext);
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
-    const [activeTab, setActiveTab] = useState(RESULTS_TAB);
-    const [hasViewedComments, setHasViewedComments] = useState(false);
+    const initialTab = searchParams.get('tab') === COMMENTS_TAB ? COMMENTS_TAB : RESULTS_TAB;
+    const [activeTab, setActiveTab] = useState(initialTab);
+    const [hasViewedComments, setHasViewedComments] = useState(initialTab === COMMENTS_TAB);
     const basePath = slug ? `/${slug}` : `/engagements/${engagement?.id}/view`;
     const reportLabel = dashboardType === DashboardType.INTERNAL ? 'Internal Report' : 'Public Report';
 

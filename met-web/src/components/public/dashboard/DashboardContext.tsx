@@ -1,6 +1,6 @@
 import React, { createContext, useEffect, useState } from 'react';
 import { SubmissionStatus } from 'constants/engagementStatus';
-import { useAppDispatch, useAppSelector } from 'hooks';
+import { useAppDispatch } from 'hooks';
 import { Engagement, createDefaultEngagement } from 'models/engagement';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getEngagement } from 'services/engagementService';
@@ -45,7 +45,6 @@ export const DashboardContextProvider = ({ children }: DashboardContextProviderP
     } = useParams<EngagementParams>();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
-    const roles = useAppSelector((state) => state.user.roles);
 
     const [engagementId, setEngagementId] = useState<number | null>(
         engagementIdParam ? Number(engagementIdParam) : null,
@@ -63,17 +62,6 @@ export const DashboardContextProvider = ({ children }: DashboardContextProviderP
 
         if (neverOpened) {
             throw new Error('Engagement has not yet been opened');
-        }
-
-        const isClosed = engagementToValidate?.submission_status === SubmissionStatus.Closed;
-        const canAccessDashboard = !roles.includes('access_dashboard');
-
-        /* check to ensure that users without the role access_dashboard can access the dashboard only after 
-        the engagement is closed*/
-        if (!isClosed && canAccessDashboard) {
-            throw new Error(
-                'The report will only be available to view after the engagement period is over and the engagement is closed.',
-            );
         }
     };
 

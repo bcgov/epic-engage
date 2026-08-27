@@ -24,10 +24,10 @@ jest.mock('components/public/dashboard/comments/CommentsTab', () => ({
 // DashboardHeaderCard reads auth state and roles from the store to decide whether to offer the
 // internal export, so Dashboard cannot render without one. The default store state is signed out
 // with no roles, which is what this test wants: the export button stays hidden either way.
-const renderDashboard = (originSurveyValue: Survey | null = null) =>
+const renderDashboard = (originSurveyValue: Survey | null = null, route = '/') =>
     render(
         <Provider store={store}>
-            <MemoryRouter>
+            <MemoryRouter initialEntries={[route]}>
                 <DashboardContext.Provider
                     value={{
                         engagement: openEngagement,
@@ -87,5 +87,13 @@ describe('Dashboard', () => {
         // so its scroll position/state survives switching back and forth.
         expect(screen.getByTestId('comments-tab')).toBeInTheDocument();
         expect(screen.getByTestId('survey-results-charts')).toBeInTheDocument();
+    });
+
+    // The "Access Public Feedback" link in the submission response email carries ?tab=comments.
+    it('opens on the Comments tab when the tab query parameter asks for it', () => {
+        renderDashboard(null, '/engagements/1/dashboard/public?tab=comments');
+
+        expect(screen.getByTestId('comments-tab')).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: /comments/i })).toHaveAttribute('aria-selected', 'true');
     });
 });
