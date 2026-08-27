@@ -5,6 +5,7 @@ import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import { PrimaryButton } from 'components/shared/common';
 import { Engagement } from 'models/engagement';
+import { USER_GROUP } from 'models/user';
 import { UserResponseDetailByMonth } from 'models/analytics/userResponseDetail';
 import { getAggregatorData } from 'services/analytics/aggregatorService';
 import { getMapData } from 'services/analytics/mapService';
@@ -50,10 +51,13 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
     const dispatch = useAppDispatch();
     const isAuthenticated = useAppSelector((state) => state.user.authentication.authenticated);
     const roles = useAppSelector((state) => state.user.roles);
+    const userDetail = useAppSelector((state) => state.user.userDetail);
     const canExport =
         dashboardType === DashboardType.INTERNAL &&
         isAuthenticated &&
         roles.includes(USER_ROLES.EXPORT_INTERNAL_COMMENT_SHEET);
+    // The internal export includes rejected comments, so only Superusers may download it.
+    const isSuperuser = Boolean(userDetail.groups?.includes('/ENGAGE/' + USER_GROUP.ADMIN.value));
     const surveyId = engagement.surveys?.[0]?.id;
     const [surveysCompleted, setSurveysCompleted] = useState<number | null>(null);
     const [isLocationLoading, setIsLocationLoading] = useState(true);
@@ -203,7 +207,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                 }
                                 onClick={(event: MouseEvent<HTMLElement>) => setExportAnchorEl(event.currentTarget)}
                                 loading={isExporting}
-                                disabled={!surveyId}
+                                disabled={!surveyId || !isSuperuser}
                                 aria-haspopup="true"
                                 aria-controls={exportAnchorEl ? 'dashboard-export-menu' : undefined}
                                 aria-expanded={Boolean(exportAnchorEl)}
