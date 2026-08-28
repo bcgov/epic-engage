@@ -1064,9 +1064,9 @@ def test_all_data_sheet_combines_quantitative_and_free_text(client, jwt, session
     sheet = _all_data_sheet(client, jwt, survey.id)
 
     # The quantitative sheet's 8 question columns, plus the survey's one free-text question.
-    assert sheet.max_column == 2 + 9
+    assert sheet.max_column == 3 + 9
     assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == [
-        'Respondent ID', 'Submissions',
+        'Respondent ID', 'Submissions', 'Comment ID',
         'What is your age?', 'How often?', 'Rate each method', 'Rate each method',
         'Rank these', 'Rank these', 'Which activities?', 'Which activities?', 'Anything else?',
     ]
@@ -1079,18 +1079,23 @@ def test_all_data_sheet_combines_quantitative_and_free_text(client, jwt, session
 def test_all_data_sheet_keeps_every_respondent(client, jwt, session):  # pylint:disable=unused-argument
     """Assert respondents who wrote no free text still get a row, unlike the qualitative sheet."""
     survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
-    for answers in ({'age': 'a1', 'notes': 'First'}, {'age': 'a1'}):
+    submissions = [
         factory_submission_model(survey.id, eng.id, factory_participant_model().id,
                                  {**TestSubmissionInfo.submission1.value, 'submission_json': answers})
+        for answers in ({'age': 'a1', 'notes': 'First'}, {'age': 'a1'})
+    ]
 
     sheet = _all_data_sheet(client, jwt, survey.id)
 
     assert sheet.max_row == DATA_START_ROW + 1
     assert [sheet.cell(row=r, column=1).value
             for r in (DATA_START_ROW, DATA_START_ROW + 1)] == ['R-0001-01', 'R-0002-01']
+    # The comment id is the submission id the review screens label the submission by.
+    assert [sheet.cell(row=r, column=3).value
+            for r in (DATA_START_ROW, DATA_START_ROW + 1)] == [s.id for s in submissions]
     # The second respondent is present with their quantitative answer but no comment.
-    assert sheet.cell(row=DATA_START_ROW + 1, column=3).value == '18-34'
-    assert sheet.cell(row=DATA_START_ROW + 1, column=11).value is None
+    assert sheet.cell(row=DATA_START_ROW + 1, column=4).value == '18-34'
+    assert sheet.cell(row=DATA_START_ROW + 1, column=12).value is None
 
 
 def _qualitative_sheet(client, jwt, survey_id):
@@ -1105,21 +1110,22 @@ def _qualitative_sheet(client, jwt, survey_id):
 def test_dashboard_qualitative_sheet_structure(client, jwt, session):  # pylint:disable=unused-argument
     """Assert two header rows holding only free-text questions, and pages that keep their number."""
     survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
-    factory_submission_model(survey.id, eng.id, factory_participant_model().id,
-                             {**TestSubmissionInfo.submission1.value,
-                              'submission_json': {'age': 'a1', 'notes': 'Some feedback'}})
+    submission = factory_submission_model(survey.id, eng.id, factory_participant_model().id,
+                                          {**TestSubmissionInfo.submission1.value,
+                                           'submission_json': {'age': 'a1', 'notes': 'Some feedback'}})
 
     sheet = _qualitative_sheet(client, jwt, survey.id)
 
     # Only the one free-text question earns a column; every quantitative one is left out.
-    assert sheet.max_column == 3
+    assert sheet.max_column == 4
     assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == [
-        'Respondent ID', 'Submissions', 'Anything else?',
+        'Respondent ID', 'Submissions', 'Comment ID', 'Anything else?',
     ]
+    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=3).value == submission.id
     # Page 1 holds no free text, so it is absent - but page 2 keeps its own number.
-    assert sheet.cell(row=PAGE_TITLE_ROW, column=3).value == 'Page 2 - Outreach'
-    assert sheet.cell(row=PAGE_TITLE_ROW, column=3).fill.fgColor.rgb[2:] == get_page_colours(1).banner
-    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=3).value == 'Some feedback'
+    assert sheet.cell(row=PAGE_TITLE_ROW, column=4).value == 'Page 2 - Outreach'
+    assert sheet.cell(row=PAGE_TITLE_ROW, column=4).fill.fgColor.rgb[2:] == get_page_colours(1).banner
+    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=4).value == 'Some feedback'
 
 
 def test_dashboard_qualitative_sheet_lists_only_commenters(client, jwt, session):  # pylint:disable=unused-argument
@@ -1137,7 +1143,7 @@ def test_dashboard_qualitative_sheet_lists_only_commenters(client, jwt, session)
     assert [sheet.cell(row=r, column=1).value
             for r in (COMMENT_DATA_START_ROW, COMMENT_DATA_START_ROW + 1)] == \
         ['R-0001-01', 'R-0003-01']
-    assert sheet.cell(row=COMMENT_DATA_START_ROW + 1, column=3).value == 'Third'
+    assert sheet.cell(row=COMMENT_DATA_START_ROW + 1, column=4).value == 'Third'
 
 
 def test_dashboard_qualitative_sheet_labels_follow_ups(client, jwt, session):  # pylint:disable=unused-argument
@@ -1152,13 +1158,14 @@ def test_dashboard_qualitative_sheet_labels_follow_ups(client, jwt, session):  #
     assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == [
         'Respondent ID',
         'Submissions',
+        'Comment ID',
         'Why is this important? (Air quality)',
         'Why is this important? (Wildlife)',
     ]
     # The untriggered follow-up was never shown, so its cell is blank on a drained band.
     band = get_page_colours(1).band_light
-    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=4).value is None
-    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=4).fill.fgColor.rgb[2:] == mute_colour(band)
+    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=5).value is None
+    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=5).fill.fgColor.rgb[2:] == mute_colour(band)
 
 
 def test_dashboard_sheet_tones_answers_by_value(client, jwt, session):  # pylint:disable=unused-argument
