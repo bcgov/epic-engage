@@ -804,3 +804,39 @@ div[disabled] {
     overflow-wrap: break-word;
     overflow-x: auto;
 }
+
+// Builder component action buttons (remove, copy, paste, edit JSON, move, edit)
+// Give every button its own opaque white
+// chip so the icon always sits on a known background.
+.formio .component-btn-group .component-settings-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ffffff;
+    border: 1px solid #b0b0b0;
+    border-radius: 4px;
+    color: #2d2d2d;
+    opacity: 1;
+
+    // Replaces formio's blue glow, which reads as a halo rather than an edge on dark backgrounds.
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+
+    i {
+        color: inherit;
+    }
+
+    &:hover {
+        background-color: #ededed;
+        border-color: #2d2d2d;
+    }
+}
+
+// Keep remove distinguishable from the rest now that it no longer has a red fill.
+.formio .component-btn-group .component-settings-button-remove {
+    color: #ce3e39;
+
+    &:hover {
+        background-color: #fbe9e9;
+        border-color: #ce3e39;
+    }
+}
