@@ -25,7 +25,8 @@ import pytest
 from met_api.utils.enums import ContentType, WidgetDocumentType
 from tests.utilities.factory_scenarios import TestJwtClaims, TestWidgetDocumentInfo, TestWidgetInfo
 from tests.utilities.factory_utils import (
-    factory_auth_header, factory_document_model, factory_engagement_model, factory_widget_model)
+    factory_auth_header, factory_document_model, factory_engagement_model, factory_membership_model,
+    factory_staff_user_model, factory_widget_model)
 
 
 fake = Faker()
@@ -38,7 +39,7 @@ def test_create_documents(client, jwt, session, document_info):  # pylint:disabl
     TestWidgetInfo.widget1['engagement_id'] = engagement.id
     widget = factory_widget_model(TestWidgetInfo.widget1)
 
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
 
     data = {
         **document_info,
@@ -60,7 +61,7 @@ def test_get_document(client, jwt, session):  # pylint:disable=unused-argument
     TestWidgetInfo.widget1['engagement_id'] = engagement.id
     widget = factory_widget_model(TestWidgetInfo.widget1)
 
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
 
     document = factory_document_model({
         **TestWidgetDocumentInfo.document1,
@@ -83,7 +84,7 @@ def test_assert_tree_structure_invalid(client, jwt, session):  # pylint:disable=
     TestWidgetInfo.widget1['engagement_id'] = engagement.id
     widget = factory_widget_model(TestWidgetInfo.widget1)
 
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
 
     file_doc = factory_document_model({
         **TestWidgetDocumentInfo.document2,
@@ -107,7 +108,7 @@ def test_assert_tree_structure(client, jwt, session):  # pylint:disable=unused-a
     TestWidgetInfo.widget1['engagement_id'] = engagement.id
     widget = factory_widget_model(TestWidgetInfo.widget1)
 
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
 
     folder = factory_document_model({
         **TestWidgetDocumentInfo.document1,
@@ -142,7 +143,7 @@ def test_patch_documents(client, jwt, session):  # pylint:disable=unused-argumen
     widget = factory_widget_model(TestWidgetInfo.widget1)
     TestWidgetDocumentInfo.document1['widget_id'] = widget.id
     document = factory_document_model(TestWidgetDocumentInfo.document1)
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
 
     document_edits = {
         'title': fake.word(),
@@ -171,7 +172,7 @@ def test_delete_documents(client, jwt, session):  # pylint:disable=unused-argume
     widget = factory_widget_model(TestWidgetInfo.widget1)
     TestWidgetDocumentInfo.document1['widget_id'] = widget.id
     document = factory_document_model(TestWidgetDocumentInfo.document1)
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
 
     rv = client.delete(f'/api/widgets/{widget.id}/documents/{document.id}',
                        headers=headers, content_type=ContentType.JSON.value)
@@ -370,3 +371,68 @@ def test_sort_top_level_mixed_documents(client, jwt, session):
     updated_order = [doc['id'] for doc in rv.json['children']]
     assert updated_order == desired_order
     assert rv.json['children'][0]['type'] == WidgetDocumentType.FILE.value
+
+
+def test_create_document_by_assigned_team_member(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a team member assigned to the engagement can add a document."""
+    user = factory_staff_user_model(TestJwtClaims.team_member_role.get('sub'))
+    engagement = factory_engagement_model()
+    factory_membership_model(user_id=user.id, engagement_id=engagement.id)
+    TestWidgetInfo.widget1['engagement_id'] = engagement.id
+    widget = factory_widget_model(TestWidgetInfo.widget1)
+
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.team_member_role)
+    data = {
+        **TestWidgetDocumentInfo.document1,
+        'widget_id': widget.id,
+    }
+
+    rv = client.post(
+        f'/api/widgets/{widget.id}/documents',
+        data=json.dumps(data),
+        headers=headers,
+        content_type=ContentType.JSON.value
+    )
+    assert rv.status_code == HTTPStatus.OK
+
+
+def test_create_document_by_unassigned_team_member(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a team member cannot add a document to an engagement they are not assigned to."""
+    factory_staff_user_model(TestJwtClaims.team_member_role.get('sub'))
+    engagement = factory_engagement_model()
+    TestWidgetInfo.widget1['engagement_id'] = engagement.id
+    widget = factory_widget_model(TestWidgetInfo.widget1)
+
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.team_member_role)
+    data = {
+        **TestWidgetDocumentInfo.document1,
+        'widget_id': widget.id,
+    }
+
+    rv = client.post(
+        f'/api/widgets/{widget.id}/documents',
+        data=json.dumps(data),
+        headers=headers,
+        content_type=ContentType.JSON.value
+    )
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+
+
+def test_delete_document_by_unassigned_team_member(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a team member cannot delete a document from an unassigned engagement."""
+    factory_staff_user_model(TestJwtClaims.team_member_role.get('sub'))
+    engagement = factory_engagement_model()
+    TestWidgetInfo.widget1['engagement_id'] = engagement.id
+    widget = factory_widget_model(TestWidgetInfo.widget1)
+    document = factory_document_model({
+        **TestWidgetDocumentInfo.document1,
+        'widget_id': widget.id,
+    })
+
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.team_member_role)
+    rv = client.delete(
+        f'/api/widgets/{widget.id}/documents/{document.id}',
+        headers=headers,
+        content_type=ContentType.JSON.value
+    )
+    assert rv.status_code == HTTPStatus.FORBIDDEN

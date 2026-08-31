@@ -19,6 +19,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
+from met_api.auth import jwt as _jwt
 from met_api.exceptions.business_exception import BusinessException
 from met_api.schemas.event_item import EventItemSchema
 from met_api.schemas.widget_events import WidgetEventsSchema
@@ -49,6 +50,7 @@ class WidgetEvents(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def post(widget_id):
         """Add new events to the widgets."""
         request_json = request.get_json()
@@ -66,6 +68,7 @@ class WidgetEventItems(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def post(widget_id, event_id):
         """Add new events to the widgets."""
         request_json = request.get_json()
@@ -83,6 +86,7 @@ class WidgetEvent(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def delete(widget_id, event_id):
         """Delete  an event ."""
         try:
@@ -100,6 +104,7 @@ class EventItems(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def patch(widget_id, event_id, item_id):
         """Update event item."""
         request_json = request.get_json()
@@ -117,6 +122,7 @@ class WidgetEventsSort(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
+    @_jwt.requires_auth
     def patch(widget_id):
         """Sort events for an event widget."""
         try:

@@ -16,6 +16,7 @@
 
 Test-Suite to ensure that the Widget Event API endpoint is working as expected.
 """
+from http import HTTPStatus
 import json
 
 from faker import Faker
@@ -23,7 +24,9 @@ from faker import Faker
 from met_api.constants.event_types import EventTypes
 from met_api.utils.enums import ContentType
 from tests.utilities.factory_scenarios import TestEventInfo, TestJwtClaims, TestWidgetInfo
-from tests.utilities.factory_utils import factory_auth_header, factory_engagement_model, factory_widget_model
+from tests.utilities.factory_utils import (
+    factory_auth_header, factory_engagement_model, factory_membership_model, factory_staff_user_model,
+    factory_widget_model)
 
 
 fake = Faker()
@@ -35,7 +38,7 @@ def test_create_events(client, jwt, session):  # pylint:disable=unused-argument
     TestWidgetInfo.widget1['engagement_id'] = engagement.id
     widget = factory_widget_model(TestWidgetInfo.widget1)
     event_info = TestEventInfo.event_meetup
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
 
     data = {
         **event_info,
@@ -62,7 +65,7 @@ def test_widget_events_sort(client, jwt, session):  # pylint:disable=unused-argu
     event_widget_info_1['engagement_id'] = engagement.id
     widget = factory_widget_model(TestWidgetInfo.widget1)
     event_info = TestEventInfo.event_openhouse
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
     data = {
         **event_info,
         'widget_id': widget.id,
@@ -76,7 +79,7 @@ def test_widget_events_sort(client, jwt, session):  # pylint:disable=unused-argu
     assert rv.status_code == 200
 
     event_info = TestEventInfo.event_virtual
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.no_role)
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
     data = {
         **event_info,
         'widget_id': widget.id,
@@ -137,3 +140,67 @@ def test_widget_events_sort(client, jwt, session):  # pylint:disable=unused-argu
 def _find_widget_events(widget_events, widget_event_type):
     _widget_event_type = next(x for x in widget_events if x.get('type') == widget_event_type.name)
     return _widget_event_type
+
+
+def test_create_event_by_assigned_team_member(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a team member assigned to the engagement can add an event."""
+    user = factory_staff_user_model(TestJwtClaims.team_member_role.get('sub'))
+    engagement = factory_engagement_model()
+    factory_membership_model(user_id=user.id, engagement_id=engagement.id)
+    TestWidgetInfo.widget1['engagement_id'] = engagement.id
+    widget = factory_widget_model(TestWidgetInfo.widget1)
+
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.team_member_role)
+    data = {
+        **TestEventInfo.event_meetup,
+        'widget_id': widget.id,
+    }
+
+    rv = client.post(
+        f'/api/widgets/{widget.id}/events',
+        data=json.dumps(data),
+        headers=headers,
+        content_type=ContentType.JSON.value
+    )
+    assert rv.status_code == HTTPStatus.OK
+
+
+def test_create_event_by_unassigned_team_member(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a team member cannot add an event to an engagement they are not assigned to."""
+    factory_staff_user_model(TestJwtClaims.team_member_role.get('sub'))
+    engagement = factory_engagement_model()
+    TestWidgetInfo.widget1['engagement_id'] = engagement.id
+    widget = factory_widget_model(TestWidgetInfo.widget1)
+
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.team_member_role)
+    data = {
+        **TestEventInfo.event_meetup,
+        'widget_id': widget.id,
+    }
+
+    rv = client.post(
+        f'/api/widgets/{widget.id}/events',
+        data=json.dumps(data),
+        headers=headers,
+        content_type=ContentType.JSON.value
+    )
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+
+
+def test_create_event_requires_authentication(client, session):  # pylint:disable=unused-argument
+    """Assert that an unauthenticated caller cannot add an event."""
+    engagement = factory_engagement_model()
+    TestWidgetInfo.widget1['engagement_id'] = engagement.id
+    widget = factory_widget_model(TestWidgetInfo.widget1)
+
+    data = {
+        **TestEventInfo.event_meetup,
+        'widget_id': widget.id,
+    }
+
+    rv = client.post(
+        f'/api/widgets/{widget.id}/events',
+        data=json.dumps(data),
+        content_type=ContentType.JSON.value
+    )
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
