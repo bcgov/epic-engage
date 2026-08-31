@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, IconButton, TextField, Typography } from '@mui/material';
 import { styled } from '@mui/system';
 import AddIcon from '@mui/icons-material/Add';
@@ -28,6 +28,11 @@ const AddDescriptionButton = styled('button')(() => ({
         outline: `2px solid ${Palette.primary.main}`,
         outlineOffset: '2px',
     },
+    '&:disabled': {
+        color: Palette.text.disabled,
+        cursor: 'default',
+        textDecoration: 'none',
+    },
 }));
 
 export interface DescriptionEditorProps {
@@ -35,14 +40,21 @@ export interface DescriptionEditorProps {
     description: string;
     onSave: (settingId: number, description: string) => void;
     readOnly?: boolean;
+    disabled?: boolean;
 }
 
 // Add/edit/save/cancel flow for a report setting's optional description. Saving here only
 // commits the draft into the panel's local state - it's persisted along with any other unsaved
 // changes when the panel's own Save button is clicked.
-export const DescriptionEditor = ({ settingId, description, onSave, readOnly }: DescriptionEditorProps) => {
+export const DescriptionEditor = ({ settingId, description, onSave, readOnly, disabled }: DescriptionEditorProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [draft, setDraft] = useState(description);
+
+    useEffect(() => {
+        if (disabled) {
+            setIsEditing(false);
+        }
+    }, [disabled]);
 
     const startEdit = () => {
         setDraft(description);
@@ -66,7 +78,7 @@ export const DescriptionEditor = ({ settingId, description, onSave, readOnly }: 
         ) : null;
     }
 
-    if (isEditing) {
+    if (isEditing && !disabled) {
         return (
             <Box sx={{ mt: 1 }}>
                 <TextField
@@ -108,6 +120,7 @@ export const DescriptionEditor = ({ settingId, description, onSave, readOnly }: 
                 <IconButton
                     size="small"
                     onClick={startEdit}
+                    disabled={disabled}
                     aria-label="Edit description"
                     sx={{ p: 0.25, flexShrink: 0 }}
                 >
@@ -118,7 +131,7 @@ export const DescriptionEditor = ({ settingId, description, onSave, readOnly }: 
     }
 
     return (
-        <AddDescriptionButton type="button" onClick={startEdit}>
+        <AddDescriptionButton type="button" onClick={startEdit} disabled={disabled}>
             <AddIcon sx={{ fontSize: 14 }} /> Add description
         </AddDescriptionButton>
     );

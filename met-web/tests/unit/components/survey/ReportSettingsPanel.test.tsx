@@ -71,9 +71,7 @@ describe('ReportSettingsPanel tests', () => {
         });
 
         expect(screen.getByTestId(`report-setting-toggle-${surveyReportSettingOne.id}`).children[0]).toBeChecked();
-        expect(
-            screen.getByTestId(`report-setting-toggle-${surveyReportSettingTwo.id}`).children[0],
-        ).not.toBeChecked();
+        expect(screen.getByTestId(`report-setting-toggle-${surveyReportSettingTwo.id}`).children[0]).not.toBeChecked();
     });
 
     test('Toggling and saving sends only the changed settings', async () => {
@@ -262,6 +260,84 @@ describe('ReportSettingsPanel tests', () => {
         expect(screen.getByTestId(`report-setting-toggle-${surveyReportSettingOne.id}`).children[0]).toBeDisabled();
         expect(screen.queryByTestId('survey/report/save-button')).not.toBeInTheDocument();
         expect(screen.queryByText('Add description')).not.toBeInTheDocument();
+    });
+
+    test('A question toggled off greys out its description controls until it is toggled back on', async () => {
+        fetchSurveyReportSettingsMock.mockReturnValue(
+            Promise.resolve([
+                surveyReportSettingOne,
+                { ...surveyReportSettingTwo, description: 'Context for question two' },
+            ]),
+        );
+
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} />);
+
+        await waitFor(() => {
+            expect(screen.getByText(surveyReportSettingTwo.question)).toBeVisible();
+        });
+
+        expect(screen.getByText('Context for question two')).toBeVisible();
+        const editButton = screen.getByLabelText('Edit description');
+        expect(editButton).toBeVisible();
+        expect(editButton).toBeDisabled();
+        expect(screen.getByRole('button', { name: /Add description/ })).toBeEnabled();
+
+        fireEvent.click(editButton);
+        expect(
+            screen.queryByTestId(`report-setting-description-input-${surveyReportSettingTwo.id}`),
+        ).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByTestId(`report-setting-toggle-${surveyReportSettingTwo.id}`).children[0]);
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Edit description')).toBeEnabled();
+        });
+    });
+
+    test('Everything inside a toggled-off question is hidden from the keyboard and screen readers', async () => {
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} />);
+
+        await waitFor(() => {
+            expect(screen.getByText(surveyReportSettingTwo.question)).toBeVisible();
+        });
+
+        const hiddenQuestion = screen.getByText(surveyReportSettingTwo.question);
+        expect(hiddenQuestion.closest('[inert]')).not.toBeNull();
+        expect(screen.getByTestId(`report-setting-toggle-${surveyReportSettingTwo.id}`).closest('[inert]')).toBeNull();
+        expect(screen.getByText(surveyReportSettingOne.question).closest('[inert]')).toBeNull();
+    });
+
+    test('Toggling a question off while editing its description drops the editor', async () => {
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} />);
+
+        await waitFor(() => {
+            expect(screen.getByText(surveyReportSettingOne.question)).toBeVisible();
+        });
+
+        fireEvent.click(screen.getAllByText('Add description')[0]);
+        const input = screen.getByTestId(`report-setting-description-input-${surveyReportSettingOne.id}`);
+        fireEvent.change(input, { target: { value: 'Draft that should not be savable' } });
+
+        fireEvent.click(screen.getByTestId(`report-setting-toggle-${surveyReportSettingOne.id}`).children[0]);
+
+        await waitFor(() => {
+            expect(
+                screen.queryByTestId(`report-setting-description-input-${surveyReportSettingOne.id}`),
+            ).not.toBeInTheDocument();
+        });
+        expect(
+            screen.queryByTestId(`report-setting-description-save-${surveyReportSettingOne.id}`),
+        ).not.toBeInTheDocument();
+        expect(screen.getAllByText('Cancel')).toHaveLength(1);
+        expect(screen.getAllByRole('button', { name: /Add description/ })[0]).toBeDisabled();
+
+        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+
+        await waitFor(() => {
+            expect(updateSurveyReportSettingsMock).toHaveBeenNthCalledWith(1, '1', [
+                { ...surveyReportSettingOne, display: false },
+            ]);
+        });
     });
 
     test('Paginates between survey pages with the previous/next footer', async () => {

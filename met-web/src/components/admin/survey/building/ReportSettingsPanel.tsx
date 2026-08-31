@@ -47,7 +47,14 @@ export interface ReportSettingsPanelHandle {
 
 const contentSx = { maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, pt: 2 } as const;
 
-const dimmedSx = (hidden: boolean) => ({ opacity: hidden ? 0.38 : 1, transition: 'opacity 0.2s' });
+const dimmedSx = (hidden: boolean) =>
+    ({
+        opacity: hidden ? 0.38 : 1,
+        pointerEvents: hidden ? 'none' : 'auto',
+        transition: 'opacity 0.2s',
+    } as const);
+
+const inertProps = (hidden: boolean) => (hidden ? ({ inert: '' } as { inert?: string }) : {});
 
 export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportSettingsPanelProps>(
     ({ surveyId, engagementId, formDefinition, conditionalLinks, onSaved, onCancel, readOnly = false }, ref) => {
@@ -254,7 +261,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
             return (
                 <Box key={followUpSetting.id} sx={{ mt: 2, pt: 2, borderTop: `2px dashed ${Palette.border.default}` }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                        <Box sx={{ flex: 1, minWidth: 0, ...dimmedSx(hidden) }}>
+                        <Box {...inertProps(hidden)} sx={{ flex: 1, minWidth: 0, ...dimmedSx(hidden) }}>
                             <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 1.5 }}>
                                 <Box
                                     sx={{
@@ -285,11 +292,12 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                                 description={descriptionMap[followUpSetting.id] ?? ''}
                                 onSave={handleDescriptionSave}
                                 readOnly={readOnly}
+                                disabled={hidden}
                             />
                         </Box>
                         {renderVisibilityToggle(followUpSetting)}
                     </Stack>
-                    <Box sx={{ mt: 1.5, ...dimmedSx(hidden) }}>
+                    <Box {...inertProps(hidden)} sx={{ mt: 1.5, ...dimmedSx(hidden) }}>
                         <Comments question={followUpSetting.question} responses={responses} bare />
                     </Box>
                 </Box>
@@ -317,7 +325,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                                         alignItems="flex-start"
                                         spacing={2}
                                     >
-                                        <Box sx={{ flex: 1, minWidth: 0, ...dimmedSx(hidden) }}>
+                                        <Box {...inertProps(hidden)} sx={{ flex: 1, minWidth: 0, ...dimmedSx(hidden) }}>
                                             <QuestionTypeLabel
                                                 label={
                                                     QUESTION_TYPE_LABELS[setting.question_type] ?? setting.question_type
@@ -333,11 +341,14 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                                                 description={descriptionMap[setting.id] ?? ''}
                                                 onSave={handleDescriptionSave}
                                                 readOnly={readOnly}
+                                                disabled={hidden}
                                             />
                                         </Box>
                                         {renderVisibilityToggle(setting)}
                                     </Stack>
-                                    <Box sx={dimmedSx(hidden)}>{renderChartBody(setting)}</Box>
+                                    <Box {...inertProps(hidden)} sx={dimmedSx(hidden)}>
+                                        {renderChartBody(setting)}
+                                    </Box>
                                     {followUps.map((followUpSetting) =>
                                         renderFollowUp(followUpSetting, setting.question_type),
                                     )}
