@@ -112,7 +112,7 @@ export const AddTeamMemberModal = () => {
             dispatch(
                 openNotification({
                     severity: 'success',
-                    text: `You have successfully added ${data.user?.username} as a Team Member on ${savedEngagement.name}.`,
+                    text: `You have successfully added ${data.user?.first_name} ${data.user?.last_name} as a Team Member on ${savedEngagement.name}.`,
                 }),
             );
         } catch (error) {
