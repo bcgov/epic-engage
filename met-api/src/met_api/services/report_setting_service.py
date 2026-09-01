@@ -57,12 +57,18 @@ class ReportSettingService:
 
     @classmethod
     def _extract_form_component(cls, survey_id, form_components, survey_question_keys):
-        """Loop through the form json to extract each form component."""
+        """Loop through the form json to extract each form component.
+
+        Every question type gets one setting per component, matrix (simplesurvey) included: its
+        rows are one question asked of several statements and the dashboard draws them as a
+        single chart, so they share one visibility toggle and one description - as a ranking's
+        statements already do.
+        """
         for component in form_components:
             component_type = component.get('type', None)
             has_valid_question_type = cls._validate_component_type(component_type)
             if has_valid_question_type:
-                cls._check_for_survey_type_component(survey_id, component, survey_question_keys)
+                cls._create_or_update_data(survey_id, component, survey_question_keys)
 
     @staticmethod
     def _validate_component_type(component_type):
@@ -76,20 +82,6 @@ class ReportSettingService:
             return True
 
         return False
-
-    @classmethod
-    def _check_for_survey_type_component(cls, survey_id, component, survey_question_keys):
-        # Check if the component type is SURVEY then loop through each question to extract the survey questions
-        if component['type'] == FormIoComponentType.SURVEY.value:
-            questions = component['questions']
-            if not questions:
-                return
-
-            for question in questions:
-                cls._create_or_update_data_for_survey_type(survey_id, component, question,
-                                                           survey_question_keys)
-        else:
-            cls._create_or_update_data(survey_id, component, survey_question_keys)
 
     @staticmethod
     def _create_or_update_data(survey_id, component, survey_question_keys) -> ReportSettingModel:
@@ -107,32 +99,6 @@ class ReportSettingService:
                                                 question_key=component['key'],
                                                 question_type=component['type'],
                                                 question=component['label'],
-                                                display=True
-                                                )
-
-        report_setting.save()
-
-    @staticmethod
-    def _create_or_update_data_for_survey_type(survey_id, component, question,
-                                               survey_question_keys) -> ReportSettingModel:
-        # For component type SURVEY the unique identifier is a combination of key and value. The key for each
-        # question will be same as its part of a single component within form json
-        report_setting = ReportSettingModel.find_by_question_key(survey_id,
-                                                                 component['key'] + '-' + question['value'])
-        survey_question_keys.append(component['key'] + '-' + question['value'])
-
-        # Update the record if its existing
-        if report_setting:
-            report_setting.question_id = component['id'] + '-' + question['value']
-            report_setting.question_key = component['key'] + '-' + question['value']
-            report_setting.question = component['label']
-        else:
-            # Create the record if its not existing
-            report_setting = ReportSettingModel(survey_id=survey_id,
-                                                question_id=component['id'] + '-' + question['value'],
-                                                question_key=component['key'] + '-' + question['value'],
-                                                question_type=component['type'],
-                                                question=question['label'],
                                                 display=True
                                                 )
 

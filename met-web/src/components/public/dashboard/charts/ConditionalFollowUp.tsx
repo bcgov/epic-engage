@@ -3,6 +3,7 @@ import { Box, Stack, Typography } from '@mui/material';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { MetIconText, PrimaryButton } from 'components/shared/common';
 import { CommentsDrawer } from './CommentsDrawer';
+import { QuestionDescription } from './QuestionDescription';
 import { Palette } from 'styles/Theme';
 
 export interface FollowUpSection {
@@ -12,6 +13,8 @@ export interface FollowUpSection {
     // The follow-up question's own label/prompt, e.g. "Please tell us more about your
     // connection to the project area."
     question: string;
+    // Staff's description of the follow-up question, shown under it.
+    description?: string;
     responses: string[];
 }
 
@@ -60,11 +63,15 @@ export const ConditionalFollowUp = ({
                     {conditionLabel}
                 </MetIconText>
             </Stack>
-            {/* A merged block has a different question per row - those are listed in the drawer. */}
+            {/* A merged block has a different question per row - those are listed in the drawer,
+            and so are the descriptions that go with them. */}
             {!isMerged && (
-                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: Palette.text.primary, mb: '10px' }}>
-                    {sections[0].question}
-                </Typography>
+                <Box sx={{ mb: '10px' }}>
+                    <Typography sx={{ fontSize: '13px', fontWeight: 600, color: Palette.text.primary }}>
+                        {sections[0].question}
+                    </Typography>
+                    <QuestionDescription description={sections[0].description} />
+                </Box>
             )}
             <Box
                 sx={{

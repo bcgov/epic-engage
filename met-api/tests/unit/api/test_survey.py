@@ -597,6 +597,73 @@ def test_get_survey_dashboard_excluded_question_has_no_conditional_link(
     assert rv.json.get('conditional_links') == {}
 
 
+def test_get_survey_dashboard_question_descriptions(client, session):  # pylint:disable=unused-argument
+    """Assert that the description staff wrote for a question reaches the dashboard."""
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info)
+    factory_survey_report_setting_model({
+        'survey_id': survey.id,
+        'question_id': 'question1',
+        'question_key': 'question1',
+        'question_type': 'simpleradios',
+        'question': 'How did you hear about us?',
+        'display': True,
+        'description': 'Asked of everyone who attended an open house.',
+    })
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('question_descriptions') == {
+        'question1': 'Asked of everyone who attended an open house.',
+    }
+
+
+def test_get_survey_dashboard_holds_back_an_excluded_question_description(
+        client, session):  # pylint:disable=unused-argument
+    """Assert that a question hidden from the public report keeps its description hidden too."""
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info)
+    factory_survey_report_setting_model({
+        'survey_id': survey.id,
+        'question_id': 'question1',
+        'question_key': 'question1',
+        'question_type': 'simpleradios',
+        'question': 'How did you hear about us?',
+        'display': False,
+        'description': 'Asked of everyone who attended an open house.',
+    })
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard', content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('question_descriptions') == {}
+
+
+def test_get_survey_dashboard_internal_keeps_an_excluded_question_description(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that the internal dashboard still describes a question hidden from the public report."""
+    survey, _ = factory_survey_and_eng_model(wizard_survey_info)
+    factory_survey_report_setting_model({
+        'survey_id': survey.id,
+        'question_id': 'question1',
+        'question_key': 'question1',
+        'question_type': 'simpleradios',
+        'question': 'How did you hear about us?',
+        'display': False,
+        'description': 'Asked of everyone who attended an open house.',
+    })
+    claims = copy.deepcopy(TestJwtClaims.staff_admin_role.value)
+    claims['realm_access']['roles'].append('view_all_survey_results')
+    headers = factory_auth_header(jwt=jwt, claims=claims)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard?dashboard_type=internal',
+                    headers=headers, content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('question_descriptions') == {
+        'question1': 'Asked of everyone who attended an open house.',
+    }
+
+
 def test_get_survey_dashboard_internal_keeps_excluded_conditional_link(
         client, jwt, session):  # pylint:disable=unused-argument
     """Assert that the internal dashboard still groups a follow-up hidden from the public report."""

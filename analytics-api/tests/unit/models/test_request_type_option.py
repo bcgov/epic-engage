@@ -285,3 +285,33 @@ def test_ranking_sends_no_scale_labels(session):  # pylint:disable=unused-argume
 
     assert result[0]['type'] == 'simpleranking'
     assert result[0]['scale_labels'] == []
+
+
+def test_hidden_matrix_takes_its_rows_with_it(session):  # pylint:disable=unused-argument
+    """Assert that excluding a matrix from the public report hides its sub-questions too.
+
+    A matrix carries one report setting, held against the parent component. Left behind, its rows
+    have no parent to roll up into and would be served as orphaned flat entries the dashboard can
+    only render as a warning.
+    """
+    survey = _survey(engagement_id=112)
+    factory_request_type_option_model(
+        survey.id, 'likert1', 'simplesurvey', 'Satisfaction', 'likert1', position=1, display=False)
+    factory_request_type_option_model(
+        survey.id, 'rowA', 'simplesurvey', 'Row A', 'likert1-1', position=2)
+    factory_request_type_option_model(
+        survey.id, 'rowB', 'simplesurvey', 'Row B', 'likert1-2', position=3)
+    factory_request_type_option_model(survey.id, 'radio1', 'simpleradios', 'Pick one', 'radio1', position=4)
+
+    for scale in ('agree', 'disagree'):
+        factory_available_response_option_model(survey.id, 'rowA', scale)
+        factory_available_response_option_model(survey.id, 'rowB', scale)
+    factory_available_response_option_model(survey.id, 'radio1', 'yes')
+    factory_response_type_option_model(survey.id, 'rowA', 'agree')
+    factory_response_type_option_model(survey.id, 'radio1', 'yes')
+
+    public_result = RequestTypeOptionModel.get_survey_result_with_type(112, False)
+    internal_result = RequestTypeOptionModel.get_survey_result_with_type(112, True)
+
+    assert [entry['key'] for entry in public_result] == ['radio1']
+    assert {entry['key'] for entry in internal_result} == {'likert1', 'radio1'}

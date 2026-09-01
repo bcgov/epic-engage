@@ -65,6 +65,22 @@ def _fetch_respondent_count_for_keys(analytics_survey_id, request_keys):
     return count or 0
 
 
+def _drop_hidden(questions):
+    """Drop the questions staff excluded from the public report, sub-questions included.
+
+    A matrix (simplesurvey/simpleranking) is excluded through the one report setting held
+    against the parent component, so its sub-question rows - which carry no setting of their
+    own - have to go with it. Left behind they have no parent to roll up into and would be
+    served as orphaned flat entries the dashboard can only render as a warning.
+    """
+    hidden_rids = {q.request_id for q in questions if q.display is False}
+    if not hidden_rids:
+        return questions
+    return [q for q in questions
+            if q.display is not False and
+            not any(q.request_id.startswith(hidden_rid + '-') for hidden_rid in hidden_rids)]
+
+
 def _build_matrix_entry(parent, all_questions, avail_by_key, count_map, analytics_survey_id):
     """Build a grouped matrix result entry for a simplesurvey or simpleranking parent row."""
     is_ranking = parent.type == FormIoComponentType.RANKING.value
@@ -230,16 +246,17 @@ class RequestTypeOption(BaseModel, RequestMixin):  # pylint: disable=too-few-pub
             RequestTypeOption.survey_id.in_(analytics_survey_id),  # pylint: disable=no-member
             RequestTypeOption.is_active == true(),
         ]
-        if not can_view_all_survey_results:
-            base_filter.append(or_(RequestTypeOption.display == true(), RequestTypeOption.display.is_(None)))
 
         all_questions = (
             db.session.query(RequestTypeOption.position, RequestTypeOption.label,
-                             RequestTypeOption.key, RequestTypeOption.type, RequestTypeOption.request_id)
+                             RequestTypeOption.key, RequestTypeOption.type, RequestTypeOption.request_id,
+                             RequestTypeOption.display)
             .filter(*base_filter)
             .order_by(RequestTypeOption.position)
             .all()
         )
+        if not can_view_all_survey_results:
+            all_questions = _drop_hidden(all_questions)
 
         if not all_questions:
             return None

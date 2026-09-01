@@ -354,6 +354,7 @@ def factory_survey_report_setting_model(report_setting_info: dict = TestReportSe
         question_type=report_setting_info.get('question_type'),
         question=report_setting_info.get('question'),
         display=report_setting_info.get('display'),
+        description=report_setting_info.get('description'),
     )
     setting.save()
     return setting

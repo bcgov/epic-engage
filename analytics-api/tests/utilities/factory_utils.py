@@ -48,7 +48,9 @@ def factory_engagement_model(eng_info: dict = TestEngagementInfo.engagement1):
         latitude=eng_info.get('latitude'),
         longitude=eng_info.get('longitude'),
         geojson=eng_info.get('geojson'),
-        marker_label=eng_info.get('marker_label')
+        marker_label=eng_info.get('marker_label'),
+        status_name=eng_info.get('status_name'),
+        send_report=eng_info.get('send_report')
     )
     db.session.add(engagement)
     db.session.commit()

@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Box, Skeleton, Stack } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -13,6 +13,7 @@ import {
 } from 'components/shared/common';
 import { DonutChart, LikertChart, RankOrderChart, Comments, CheckboxChart, ConditionalFollowUp } from './charts';
 import { QuestionTypeLabel } from './charts/QuestionTypeLabel';
+import { QuestionDescription } from './charts/QuestionDescription';
 import { TypedSurveyData, FlatResultItem, MatrixResultRow } from 'models/analytics/surveyResult';
 import { Engagement } from 'models/engagement';
 import { ErrorBox } from 'components/shared/analytics/ErrorBox';
@@ -21,6 +22,7 @@ import FormStepper from 'components/public/survey/submit/Stepper';
 import { useSurveyResultPages } from './hooks/useSurveyResultPages';
 import { useSurveyComments } from './hooks/useSurveyComments';
 import { ConditionalLink, conditionKey, isMembershipTrigger } from './surveyPages';
+import { UnavailableReason } from './reportAvailability';
 import { DashboardType } from 'constants/dashboardType';
 import { Palette } from 'styles/Theme';
 
@@ -108,6 +110,8 @@ export interface ResolvedFollowUp {
     link: ConditionalLink;
     // The follow-up question's own label, used as the comments drawer title.
     question: string;
+    // Staff's description of the follow-up question, from the report settings page.
+    description?: string;
     responses: string[];
 }
 
@@ -166,6 +170,8 @@ export interface QuestionChartProps {
     commentsByKey: Map<string, string[]>;
     followUps: ResolvedFollowUp[];
     dashboardType: string;
+    // Staff's description of the question, from the survey's report settings page.
+    description?: string;
     // Renders just the chart content, without the surrounding MetPaper card/title, for callers
     // that render their own. Follow-ups still render read-only regardless of this flag; pass
     // followUps={[]} and render your own nested UI if they need to be editable.
@@ -218,6 +224,7 @@ const renderFollowUps = (followUps: ResolvedFollowUp[], type: string, triggerLab
                 sections={group.map((followUp) => ({
                     rowLabel: isMerged ? followUp.link.row_label ?? undefined : undefined,
                     question: followUp.question,
+                    description: followUp.description,
                     responses: followUp.responses,
                 }))}
             />
@@ -229,6 +236,7 @@ export const QuestionChart = ({
     commentsByKey,
     followUps,
     dashboardType,
+    description,
     bare = false,
 }: QuestionChartProps) => {
     const { label, type, result, respondent_count: respondentCount, scale_labels: scaleLabels } = question;
@@ -254,6 +262,7 @@ export const QuestionChart = ({
                 <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
+                    <QuestionDescription description={description} />
                     {content}
                 </MetPaper>
             );
@@ -267,6 +276,7 @@ export const QuestionChart = ({
                     respondentCount={respondentCount}
                     data={data}
                     questionType={questionType}
+                    description={description}
                     bare={bare}
                 >
                     {renderFollowUps(followUps, type, label)}
@@ -290,6 +300,7 @@ export const QuestionChart = ({
                 <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
+                    <QuestionDescription description={description} />
                     {content}
                 </MetPaper>
             );
@@ -311,6 +322,7 @@ export const QuestionChart = ({
                 <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
+                    <QuestionDescription description={description} />
                     {content}
                 </MetPaper>
             );
@@ -319,7 +331,15 @@ export const QuestionChart = ({
         case COMPONENT_TYPE.TEXTAREA:
         case COMPONENT_TYPE.TEXTFIELD: {
             const responses = commentsByKey.get(question.key) ?? toFlatItems(result).map((r) => r.value);
-            return <Comments question={label} responses={responses} questionType={questionType} bare={bare} />;
+            return (
+                <Comments
+                    question={label}
+                    responses={responses}
+                    questionType={questionType}
+                    description={description}
+                    bare={bare}
+                />
+            );
         }
 
         default:
@@ -331,22 +351,36 @@ interface SurveyResultsChartsProps {
     engagement: Engagement;
     engagementIsLoading: boolean;
     dashboardType: string;
+    onUnavailable?: (reason: UnavailableReason | null) => void;
 }
 
-export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboardType }: SurveyResultsChartsProps) => {
+export const SurveyResultsCharts = ({
+    engagement,
+    engagementIsLoading,
+    dashboardType,
+    onUnavailable,
+}: SurveyResultsChartsProps) => {
     const [currentPage, setCurrentPage] = useState(0);
     const surveyId = engagement.surveys?.[0]?.id;
-    const { data, pages, conditionalLinks, isLoading, isError, refetch } = useSurveyResultPages(
-        Number(engagement.id),
-        surveyId ? Number(surveyId) : undefined,
-        dashboardType,
-    );
+    const {
+        data,
+        pages,
+        conditionalLinks,
+        questionDescriptions,
+        isLoading,
+        isError,
+        unavailableReason,
+        refetch,
+    } = useSurveyResultPages(Number(engagement.id), surveyId ? Number(surveyId) : undefined, dashboardType);
     const {
         data: commentsData,
+        questionDescriptions: commentsQuestionDescriptions,
         isLoading: commentsIsLoading,
         isError: commentsIsError,
         refetch: refetchComments,
     } = useSurveyComments(Number(engagement.id), surveyId ? Number(surveyId) : undefined, dashboardType);
+
+    const descriptionsByKey = { ...commentsQuestionDescriptions, ...questionDescriptions };
 
     // Free-text (simpletextarea/simpletextfield) questions are never synced to the analytics
     // dataset.Comments are instead sourced live from met-api, so they need to be merged into the
@@ -365,6 +399,7 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
             key: followUpKey,
             link,
             question: commentQuestionsByKey.get(followUpKey)?.label ?? link.follow_up_label ?? followUpKey,
+            description: descriptionsByKey[followUpKey],
             responses: commentsByKey.get(followUpKey) ?? [],
         };
         followUpsByTrigger.set(link.trigger_key, [...(followUpsByTrigger.get(link.trigger_key) ?? []), resolved]);
@@ -374,6 +409,16 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
     // comments would just add an unexplained warning card to every page it appears on.
     const hasStrandedFollowUps = (triggerKey: string) =>
         (followUpsByTrigger.get(triggerKey) ?? []).some((followUp) => followUp.responses.length > 0);
+
+    useEffect(() => {
+        onUnavailable?.(unavailableReason);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [unavailableReason]);
+
+    // The page renders the explanation in place of the whole dashboard.
+    if (unavailableReason) {
+        return null;
+    }
 
     if (isLoading || commentsIsLoading || engagementIsLoading) {
         return (
@@ -494,6 +539,7 @@ export const SurveyResultsCharts = ({ engagement, engagementIsLoading, dashboard
                             commentsByKey={commentsByKey}
                             followUps={followUpsByTrigger.get(item.key) ?? []}
                             dashboardType={dashboardType}
+                            description={descriptionsByKey[item.key]}
                         />
                     );
                 })

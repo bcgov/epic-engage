@@ -46,6 +46,8 @@ export interface DashboardSurveyForm {
     pages: DashboardSurveyPage[];
     // Keyed by the follow-up question's key.
     conditional_links?: Record<string, ConditionalLink>;
+    // The description staff wrote for a question on the survey's report settings page.
+    question_descriptions?: Record<string, string>;
 }
 
 export interface ResultPage {

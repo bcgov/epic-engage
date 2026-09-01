@@ -14,15 +14,33 @@ jest.mock('components/public/dashboard/charts', () => ({
     DonutChart: ({ total }: { total: number }) => <div data-testid="donut-chart">{total}</div>,
     LikertChart: () => <div data-testid="likert-chart" />,
     RankOrderChart: () => <div data-testid="rank-order-chart" />,
-    CheckboxChart: ({ question, children }: { question: string; children?: React.ReactNode }) => (
+    CheckboxChart: ({
+        question,
+        description,
+        children,
+    }: {
+        question: string;
+        description?: string;
+        children?: React.ReactNode;
+    }) => (
         <div data-testid="checkbox-chart">
             {question}
+            {description}
             {children}
         </div>
     ),
-    Comments: ({ question, responses }: { question: string; responses: string[] }) => (
+    Comments: ({
+        question,
+        responses,
+        description,
+    }: {
+        question: string;
+        responses: string[];
+        description?: string;
+    }) => (
         <div data-testid="comments">
             {question}: {responses.join(', ')}
+            {description}
         </div>
     ),
     ConditionalFollowUp: ({
@@ -31,13 +49,18 @@ jest.mock('components/public/dashboard/charts', () => ({
         countLabel,
     }: {
         conditionLabel: string;
-        sections: { rowLabel?: string; question: string }[];
+        sections: { rowLabel?: string; question: string; description?: string }[];
         countLabel: string;
     }) => (
         <div data-testid="conditional-follow-up">
             {conditionLabel} | {countLabel} |{' '}
             {sections
-                .map((section) => `${section.rowLabel ? `${section.rowLabel}: ` : ''}${section.question}`)
+                .map(
+                    (section) =>
+                        `${section.rowLabel ? `${section.rowLabel}: ` : ''}${section.question}${
+                            section.description ? ` (${section.description})` : ''
+                        }`,
+                )
                 .join(', ')}
         </div>
     ),
@@ -59,6 +82,7 @@ const baseHookResult = {
     data: null,
     pages: null,
     conditionalLinks: {},
+    questionDescriptions: {},
     isLoading: false,
     isError: false,
     refetch: jest.fn(),
@@ -557,5 +581,103 @@ describe('SurveyResultsCharts', () => {
 
         expect(screen.getByText('Page 2 Q')).toBeInTheDocument();
         expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
+    });
+
+    it('shows the description staff wrote for a question alongside its chart', () => {
+        setupHooks({
+            data: { data: [radioQuestion] },
+            questionDescriptions: { radio1: 'Asked of everyone who attended an open house.' },
+        });
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        expect(screen.getByText('Favourite colour?')).toBeInTheDocument();
+        expect(screen.getByTestId('question-description')).toHaveTextContent(
+            'Asked of everyone who attended an open house.',
+        );
+        expect(screen.getByTestId('donut-chart')).toBeInTheDocument();
+    });
+
+    it('shows question descriptions on the internal dashboard too', () => {
+        setupHooks({
+            data: { data: [radioQuestion] },
+            questionDescriptions: { radio1: 'Asked of everyone who attended an open house.' },
+        });
+
+        render(
+            <SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="internal" />,
+        );
+
+        expect(screen.getByTestId('question-description')).toHaveTextContent(
+            'Asked of everyone who attended an open house.',
+        );
+    });
+
+    it('renders no description for a question staff never wrote one for', () => {
+        setupHooks({ data: { data: [radioQuestion] }, questionDescriptions: { somethingElse: 'Not this one.' } });
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        expect(screen.queryByTestId('question-description')).not.toBeInTheDocument();
+    });
+
+    it('describes a free-text question from the comments hook when there are no chart results', () => {
+        const commentQuestion: TypedSurveyData = {
+            label: 'Anything else?',
+            position: 0,
+            key: 'text1',
+            type: 'simpletextarea',
+            result: [{ value: 'a comment', count: 1 }],
+        };
+        setupHooks(
+            {},
+            {
+                data: { data: [commentQuestion] },
+                questionDescriptions: { text1: 'Comments were reviewed before publishing.' },
+            },
+        );
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        expect(screen.getByTestId('comments')).toHaveTextContent('Comments were reviewed before publishing.');
+    });
+
+    it("carries a follow-up's description into its conditional block", () => {
+        const trigger: TypedSurveyData = {
+            label: 'How do you feel?',
+            position: 0,
+            key: 'radio1',
+            type: 'simpleradios',
+            result: [{ value: 'other', count: 2 }],
+        };
+        const followUpComment: TypedSurveyData = {
+            label: 'Please elaborate',
+            position: 1,
+            key: 'followup1',
+            type: 'simpletextarea',
+            result: [{ value: 'more detail', count: 1 }],
+        };
+        setupHooks(
+            {
+                data: { data: [trigger] },
+                conditionalLinks: {
+                    followup1: {
+                        trigger_key: 'radio1',
+                        row_key: null,
+                        row_label: null,
+                        trigger_values: ['other'],
+                        trigger_value_labels: ['Other'],
+                    },
+                },
+                questionDescriptions: { followup1: 'Only shown to people who picked Other.' },
+            },
+            { data: { data: [followUpComment] } },
+        );
+
+        render(<SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="public" />);
+
+        expect(screen.getByTestId('conditional-follow-up')).toHaveTextContent(
+            'Please elaborate (Only shown to people who picked Other.)',
+        );
     });
 });

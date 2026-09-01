@@ -17,7 +17,7 @@ Test suite to ensure that the Survey report settings service routines are workin
 """
 from met_api.services.report_setting_service import ReportSettingService
 from tests.utilities.factory_scenarios import TestSurveyInfo
-from tests.utilities.factory_utils import factory_survey_and_eng_model
+from tests.utilities.factory_utils import factory_survey_and_eng_model, factory_survey_report_setting_model
 
 
 def test_refresh_report_setting(session):  # pylint:disable=unused-argument
@@ -72,3 +72,42 @@ def test_refresh_report_setting_with_multiple_rankings(session):  # pylint:disab
 
     types = [s.get('question_type') for s in report_settings]
     assert all(t == 'simpleranking' for t in types)
+
+
+def test_refresh_report_setting_with_matrix(session):  # pylint:disable=unused-argument
+    """Assert a matrix component creates a single report setting row, as a ranking does.
+
+    Its rows are one question asked of several statements and the dashboard draws them as a
+    single chart, so they share one visibility toggle and one description.
+    """
+    survey, _ = factory_survey_and_eng_model(TestSurveyInfo.survey_with_matrix)
+    survey_data = {
+        'id': survey.id,
+        'form_json': survey.form_json,
+    }
+    ReportSettingService.refresh_report_setting(survey_data)
+
+    report_settings = ReportSettingService.get_report_setting(survey.id)
+    assert len(report_settings) == 1
+    assert report_settings[0].get('question_type') == 'simplesurvey'
+    assert report_settings[0].get('question_key') == 'simplesurvey'
+    assert report_settings[0].get('question_id') == 'matrix1'
+    assert report_settings[0].get('question') == 'How important are these to you?'
+
+
+def test_refresh_report_setting_drops_per_row_matrix_settings(session):  # pylint:disable=unused-argument
+    """Assert the per-row rows a matrix used to get are cleared out by a refresh."""
+    survey, _ = factory_survey_and_eng_model(TestSurveyInfo.survey_with_matrix)
+    factory_survey_report_setting_model({
+        'survey_id': survey.id,
+        'question_id': 'matrix1-airQuality',
+        'question_key': 'simplesurvey-airQuality',
+        'question_type': 'simplesurvey',
+        'question': 'Air quality',
+        'display': True,
+    })
+
+    ReportSettingService.refresh_report_setting({'id': survey.id, 'form_json': survey.form_json})
+
+    report_settings = ReportSettingService.get_report_setting(survey.id)
+    assert [setting.get('question_key') for setting in report_settings] == ['simplesurvey']

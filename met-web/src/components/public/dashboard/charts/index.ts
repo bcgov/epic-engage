@@ -14,5 +14,7 @@ export { Comments } from './Comments';
 
 export { ConditionalFollowUp } from './ConditionalFollowUp';
 
+export { QuestionDescription } from './QuestionDescription';
+
 export { CheckboxChart } from './CheckboxChart';
 export type { CheckboxChartItem } from './CheckboxChart';

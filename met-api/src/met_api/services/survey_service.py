@@ -110,6 +110,11 @@ class SurveyService:
         exposed via `pages[].questions`, and the row/value labels it resolves are already
         exposed through the analytics survey result (matrix row labels and option value labels
         both appear there today).
+
+        `question_descriptions` maps a question key to the description staff wrote for it on the
+        survey's report settings page, so the dashboard can show it under the question. It is
+        written for the report's readers, and a question hidden from the public report has its
+        description held back along with it.
         """
         survey_model = SurveyModel.get_for_dashboard(survey_id)
         if not survey_model:
@@ -125,10 +130,15 @@ class SurveyService:
                 pages.append({'title': page.get('title', ''), 'questions': keys})
 
         conditional_links = extract_conditional_links(form_json)
+        question_descriptions = ReportSetting.find_descriptions_by_question_key(survey_id)
         if not include_hidden:
             excluded_keys = ReportSetting.find_excluded_question_keys(survey_id)
             conditional_links = {
                 key: link for key, link in conditional_links.items() if key not in excluded_keys
+            }
+            question_descriptions = {
+                key: description for key, description in question_descriptions.items()
+                if key not in excluded_keys
             }
 
         return {
@@ -136,6 +146,7 @@ class SurveyService:
             'display': display,
             'pages': pages,
             'conditional_links': conditional_links,
+            'question_descriptions': question_descriptions,
         }
 
     @staticmethod
