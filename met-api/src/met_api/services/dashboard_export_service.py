@@ -82,14 +82,30 @@ DATA_START_ROW = 5
 
 RESPONDENT_COLUMN = 1
 SUBMISSION_COUNT_COLUMN = 2
-FIRST_QUESTION_COLUMN = 3
+COMMENT_ID_COLUMN = 3
 
-# The two columns identifying who answered, ahead of any question.
+# The columns identifying a submission, ahead of any question. Sheets carrying the free text
+# add the comment id - the submission id the comment review screens label a submission by - so
+# an answer in the export can be traced back to the submission it was reviewed under.
 RESPONDENT_COLUMNS = (RESPONDENT_COLUMN, SUBMISSION_COUNT_COLUMN)
+RESPONDENT_COLUMNS_WITH_COMMENT_ID = RESPONDENT_COLUMNS + (COMMENT_ID_COLUMN,)
 
 RESPONDENT_COLUMN_WIDTH = 12
 SUBMISSION_COUNT_COLUMN_WIDTH = 12
+COMMENT_ID_COLUMN_WIDTH = 12
 QUESTION_COLUMN_WIDTH = 22
+
+IDENTITY_COLUMN_HEADINGS = {
+    RESPONDENT_COLUMN: 'Respondent ID',
+    SUBMISSION_COUNT_COLUMN: 'Submissions',
+    COMMENT_ID_COLUMN: 'Comment ID',
+}
+
+IDENTITY_COLUMN_WIDTHS = {
+    RESPONDENT_COLUMN: RESPONDENT_COLUMN_WIDTH,
+    SUBMISSION_COUNT_COLUMN: SUBMISSION_COUNT_COLUMN_WIDTH,
+    COMMENT_ID_COLUMN: COMMENT_ID_COLUMN_WIDTH,
+}
 
 # The qualitative sheet drops the option and type rows.
 COMMENT_DATA_START_ROW = 3
@@ -117,6 +133,12 @@ AGGREGATE_COLUMNS = (
 
 # Indexes into AGGREGATE_COLUMNS holding a fraction rather than a plain number.
 AGGREGATE_PERCENTAGE_COLUMNS = (4, 9)
+
+
+def first_question_column(identity_columns: tuple) -> int:
+    """Return the column a sheet's questions start in: whatever follows its identity columns."""
+    return identity_columns[-1] + 1
+
 
 _CENTERED = Alignment(horizontal='center', vertical='center', wrap_text=True)
 _LEFT = Alignment(horizontal='left', vertical='center')
@@ -149,7 +171,7 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         for sheet in DASHBOARD_SHEETS:
             worksheet = workbook.create_sheet(title=sheet.tab_name)
             if sheet is QUANTITATIVE_NON_AGGREGATED:
-                cls._build_non_aggregated_sheet(worksheet, columns, respondents)
+                cls._build_non_aggregated_sheet(worksheet, columns, respondents, RESPONDENT_COLUMNS)
             elif sheet is QUANTITATIVE_AGGREGATED:
                 # Every submission is tallied, resubmissions included, so the totals agree with
                 # the row counts on the other sheets and with the dashboard's own charts.
@@ -161,9 +183,13 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
                 )
             elif sheet is ALL_DATA:
                 # Same shape as the non-aggregated sheet, with the free-text columns kept in.
-                cls._build_non_aggregated_sheet(worksheet, all_columns, respondents)
+                cls._build_non_aggregated_sheet(
+                    worksheet, all_columns, respondents, RESPONDENT_COLUMNS_WITH_COMMENT_ID
+                )
             elif sheet is QUALITATIVE_RESPONSES:
-                cls._build_qualitative_sheet(worksheet, comment_columns, respondents)
+                cls._build_qualitative_sheet(
+                    worksheet, comment_columns, respondents, RESPONDENT_COLUMNS_WITH_COMMENT_ID
+                )
 
         stream = BytesIO()
         workbook.save(stream)
@@ -171,22 +197,25 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         return stream, cls._build_file_name(survey)
 
     @classmethod
-    def _build_non_aggregated_sheet(cls, worksheet, columns: list, respondents: list):
+    def _build_non_aggregated_sheet(
+        cls, worksheet, columns: list, respondents: list, identity_columns: tuple
+    ):
         """Write the one-row-per-respondent sheet: four header rows, then a row per respondent."""
-        cls._write_respondent_header(worksheet)
-        cls._write_page_banners(worksheet, columns)
-        cls._write_question_headers(worksheet, columns)
-        cls._write_respondent_rows(worksheet, columns, respondents)
+        first_column = first_question_column(identity_columns)
+        cls._write_respondent_header(worksheet, identity_columns)
+        cls._write_page_banners(worksheet, columns, first_column)
+        cls._write_question_headers(worksheet, columns, first_column)
+        cls._write_respondent_rows(worksheet, columns, respondents, identity_columns)
 
-        cls._set_respondent_column_widths(worksheet)
+        cls._set_respondent_column_widths(worksheet, identity_columns)
         for offset, column in enumerate(columns):
-            letter = get_column_letter(FIRST_QUESTION_COLUMN + offset)
+            letter = get_column_letter(first_column + offset)
             worksheet.column_dimensions[letter].width = (
                 COMMENT_COLUMN_WIDTH if column.component_type in FREE_TEXT_TYPES
                 else QUESTION_COLUMN_WIDTH
             )
         # Keep the header and respondent id column in view while scrolling.
-        worksheet.freeze_panes = worksheet.cell(row=DATA_START_ROW, column=FIRST_QUESTION_COLUMN)
+        worksheet.freeze_panes = worksheet.cell(row=DATA_START_ROW, column=first_column)
 
     @classmethod
     def _build_aggregated_sheet(cls, worksheet, rows: list):
@@ -234,7 +263,9 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         worksheet.freeze_panes = worksheet.cell(row=AGGREGATE_HEADER_ROW + 1, column=1)
 
     @classmethod
-    def _build_qualitative_sheet(cls, worksheet, columns: list, respondents: list):
+    def _build_qualitative_sheet(
+        cls, worksheet, columns: list, respondents: list, identity_columns: tuple
+    ):
         """Write the free-text sheet: page banners, question titles, then a row per commenter.
 
         Pages holding no free-text question simply do not appear, but the page numbers of those
@@ -243,21 +274,24 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         if not columns:
             return
 
+        first_column = first_question_column(identity_columns)
         for row in (PAGE_TITLE_ROW, QUESTION_TITLE_ROW):
-            for column in RESPONDENT_COLUMNS:
+            for column in identity_columns:
                 cls._style_header_cell(
                     worksheet.cell(row=row, column=column),
                     fill=RESPONDENT_HEADER_COLOUR,
                     font_colour=RESPONDENT_HEADER_FONT_COLOUR,
                     bold=True,
                 )
-        worksheet.cell(row=QUESTION_TITLE_ROW, column=RESPONDENT_COLUMN, value='Respondent ID')
-        worksheet.cell(row=QUESTION_TITLE_ROW, column=SUBMISSION_COUNT_COLUMN, value='Submissions')
-        cls._set_respondent_column_widths(worksheet)
+        for column in identity_columns:
+            worksheet.cell(
+                row=QUESTION_TITLE_ROW, column=column, value=IDENTITY_COLUMN_HEADINGS[column]
+            )
+        cls._set_respondent_column_widths(worksheet, identity_columns)
 
-        cls._write_page_banners(worksheet, columns)
+        cls._write_page_banners(worksheet, columns, first_column)
         for offset, column in enumerate(columns):
-            index = FIRST_QUESTION_COLUMN + offset
+            index = first_column + offset
             cls._style_header_cell(
                 worksheet.cell(row=QUESTION_TITLE_ROW, column=index, value=column.question_label),
                 fill=get_page_colours(column.page_index).header,
@@ -269,20 +303,18 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         commenters = filter_respondents_with_comments(respondents, columns)
         for row_index, respondent in enumerate(commenters):
             row = COMMENT_DATA_START_ROW + row_index
-            cls._write_identity_cells(worksheet, row, respondent)
+            cls._write_identity_cells(worksheet, row, respondent, identity_columns)
             for offset, column in enumerate(columns):
                 answer = column.read_answer(respondent.submission.submission_json)
                 band = get_zebra_colour(column.page_index, row_index)
                 cls._style_data_cell(
-                    worksheet.cell(
-                        row=row, column=FIRST_QUESTION_COLUMN + offset, value=answer
-                    ),
+                    worksheet.cell(row=row, column=first_column + offset, value=answer),
                     fill=band if answer is not None else mute_colour(band),
                     font_colour=BODY_FONT_COLOUR if answer is not None else MUTED_FONT_COLOUR,
                 )
 
         worksheet.freeze_panes = worksheet.cell(
-            row=COMMENT_DATA_START_ROW, column=FIRST_QUESTION_COLUMN
+            row=COMMENT_DATA_START_ROW, column=first_column
         )
 
     @classmethod
@@ -330,34 +362,40 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
                 cell.number_format = PERCENTAGE_FORMAT
 
     @classmethod
-    def _write_respondent_header(cls, worksheet):
+    def _write_respondent_header(cls, worksheet, identity_columns: tuple):
         """Write the respondent columns' headers, kept neutral as they belong to no page."""
         for row in (PAGE_TITLE_ROW, QUESTION_TITLE_ROW, OPTION_LABEL_ROW):
-            for column in RESPONDENT_COLUMNS:
+            for column in identity_columns:
                 cls._style_header_cell(
                     worksheet.cell(row=row, column=column),
                     fill=RESPONDENT_HEADER_COLOUR,
                     font_colour=RESPONDENT_HEADER_FONT_COLOUR,
                     bold=True,
                 )
-        worksheet.cell(row=QUESTION_TITLE_ROW, column=RESPONDENT_COLUMN, value='Respondent ID')
-        worksheet.cell(row=QUESTION_TITLE_ROW, column=SUBMISSION_COUNT_COLUMN, value='Submissions')
-        # Only the id column names the type row; the count column just carries the band across.
-        for column, value in zip(RESPONDENT_COLUMNS, ('TYPE', None)):
+        for column in identity_columns:
+            worksheet.cell(
+                row=QUESTION_TITLE_ROW, column=column, value=IDENTITY_COLUMN_HEADINGS[column]
+            )
+        # Only the id column names the type row; the others just carry the band across.
+        for column in identity_columns:
             cls._style_header_cell(
-                worksheet.cell(row=QUESTION_TYPE_ROW, column=column, value=value),
+                worksheet.cell(
+                    row=QUESTION_TYPE_ROW,
+                    column=column,
+                    value='TYPE' if column == RESPONDENT_COLUMN else None,
+                ),
                 fill=RESPONDENT_TYPE_COLOUR,
                 font_colour=RESPONDENT_TYPE_FONT_COLOUR,
                 bold=True,
             )
 
     @classmethod
-    def _write_page_banners(cls, worksheet, columns: list):
+    def _write_page_banners(cls, worksheet, columns: list, first_column: int):
         """Write row 1: one merged, page-coloured banner spanning each page's columns."""
-        for page_index, start, end in cls._page_spans(columns):
+        for page_index, start, end in cls._page_spans(columns, first_column):
             colours = get_page_colours(page_index)
             title = f'Page {page_index + 1}'
-            page_title = columns[start - FIRST_QUESTION_COLUMN].page_title
+            page_title = columns[start - first_column].page_title
             if page_title:
                 title = f'{title} - {page_title}'
 
@@ -379,10 +417,10 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
                     )
 
     @classmethod
-    def _write_question_headers(cls, worksheet, columns: list):
+    def _write_question_headers(cls, worksheet, columns: list, first_column: int):
         """Write rows 2-4: question title, option label and question type per column."""
         for offset, column in enumerate(columns):
-            index = FIRST_QUESTION_COLUMN + offset
+            index = first_column + offset
             colours = get_page_colours(column.page_index)
 
             cls._style_header_cell(
@@ -410,34 +448,38 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
             )
 
     @classmethod
-    def _write_identity_cells(cls, worksheet, row: int, respondent):
-        """Write the respondent id and submission count, banded per email rather than per row.
+    def _write_identity_cells(cls, worksheet, row: int, respondent, identity_columns: tuple):
+        """Write the columns identifying a submission, banded per email rather than per row.
 
         Every submission from one email shares a band, so a group of them reads as a single
         block and a reviewer can see at a glance that they came from the same person.
         """
-        values = (respondent.respondent_id, respondent.submission_count)
-        for column, value in zip(RESPONDENT_COLUMNS, values):
+        values = {
+            RESPONDENT_COLUMN: respondent.respondent_id,
+            SUBMISSION_COUNT_COLUMN: respondent.submission_count,
+            COMMENT_ID_COLUMN: respondent.submission.id,
+        }
+        for column in identity_columns:
             cls._style_data_cell(
-                worksheet.cell(row=row, column=column, value=value),
+                worksheet.cell(row=row, column=column, value=values[column]),
                 fill=get_respondent_zebra_colour(respondent.group_index),
                 font_colour=RESPONDENT_FONT_COLOUR,
             )
 
     @classmethod
-    def _write_respondent_rows(cls, worksheet, columns: list, respondents: list):
+    def _write_respondent_rows(cls, worksheet, columns: list, respondents: list,
+                               identity_columns: tuple):
         """Write one row per submission, zebra striped in their page's two band colours."""
+        first_column = first_question_column(identity_columns)
         for row_index, respondent in enumerate(respondents):
             row = DATA_START_ROW + row_index
 
-            cls._write_identity_cells(worksheet, row, respondent)
+            cls._write_identity_cells(worksheet, row, respondent, identity_columns)
             for offset, column in enumerate(columns):
                 answer = column.read_answer(respondent.submission.submission_json)
                 band = get_zebra_colour(column.page_index, row_index)
                 cls._style_data_cell(
-                    worksheet.cell(
-                        row=row, column=FIRST_QUESTION_COLUMN + offset, value=answer
-                    ),
+                    worksheet.cell(row=row, column=first_column + offset, value=answer),
                     fill=band if answer is not None else mute_colour(band),
                     font_colour=cls._answer_font_colour(column, answer),
                 )
@@ -454,18 +496,18 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         return BODY_FONT_COLOUR
 
     @staticmethod
-    def _set_respondent_column_widths(worksheet):
-        """Size the two identity columns, shared by every sheet that lists respondents."""
-        widths = (RESPONDENT_COLUMN_WIDTH, SUBMISSION_COUNT_COLUMN_WIDTH)
-        for column, width in zip(RESPONDENT_COLUMNS, widths):
-            worksheet.column_dimensions[get_column_letter(column)].width = width
+    def _set_respondent_column_widths(worksheet, identity_columns: tuple):
+        """Size the identity columns, shared by every sheet that lists respondents."""
+        for column in identity_columns:
+            worksheet.column_dimensions[get_column_letter(column)].width = \
+                IDENTITY_COLUMN_WIDTHS[column]
 
     @staticmethod
-    def _page_spans(columns: list) -> list:
+    def _page_spans(columns: list, first_column: int) -> list:
         """Group consecutive columns by page into (page_index, first_column, last_column)."""
         spans = []
         for offset, column in enumerate(columns):
-            index = FIRST_QUESTION_COLUMN + offset
+            index = first_column + offset
             if spans and spans[-1][0] == column.page_index:
                 spans[-1][2] = index
             else:
