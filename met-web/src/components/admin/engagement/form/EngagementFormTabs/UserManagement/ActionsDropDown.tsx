@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import { useContext, useMemo, useState } from 'react';
 import { CircularProgress, MenuItem, Select } from '@mui/material';
 import { Palette } from 'styles/Theme';
 import { ENGAGEMENT_MEMBERSHIP_STATUS, EngagementTeamMember } from 'models/engagementTeamMember';
 import { reinstateMembership, revokeMembership } from 'services/membershipService';
 import { EngagementTabsContext } from '../EngagementTabsContext';
+import { EngagementFormContext } from '../../EngagementFormContext';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 
@@ -14,9 +15,13 @@ interface ActionDropDownItem {
     condition?: boolean;
 }
 export const ActionsDropDown = ({ membership }: { membership: EngagementTeamMember }) => {
-    const [loading, setLoading] = React.useState(false);
-    const { loadTeamMembers } = React.useContext(EngagementTabsContext);
+    const [loading, setLoading] = useState(false);
+    const { loadTeamMembers } = useContext(EngagementTabsContext);
+    const { savedEngagement } = useContext(EngagementFormContext);
     const dispatch = useAppDispatch();
+
+    const memberName = `${membership.user.first_name} ${membership.user.last_name}`;
+    const engagementName = membership.engagement?.name ?? savedEngagement.name;
 
     const handleRevoke = async () => {
         try {
@@ -26,7 +31,7 @@ export const ActionsDropDown = ({ membership }: { membership: EngagementTeamMemb
             setLoading(false);
             dispatch(
                 openNotification({
-                    text: `You have successfully revoked ${membership.user.first_name} ${membership.user.last_name} from ${membership.engagement?.name}`,
+                    text: `You have successfully revoked ${memberName} from ${engagementName}`,
                     severity: 'success',
                 }),
             );
@@ -44,7 +49,7 @@ export const ActionsDropDown = ({ membership }: { membership: EngagementTeamMemb
             setLoading(false);
             dispatch(
                 openNotification({
-                    text: `You have successfully reinstated ${membership.user.first_name} ${membership.user.last_name} on ${membership.engagement?.name}`,
+                    text: `You have successfully reinstated ${memberName} on ${engagementName}`,
                     severity: 'success',
                 }),
             );
