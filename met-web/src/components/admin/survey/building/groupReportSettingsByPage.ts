@@ -16,21 +16,11 @@ export interface ReportSettingsPage {
     [key: string]: unknown;
 }
 
-// A simplesurvey (Likert) component holds several sub-questions; each one is tracked as its
-// own report setting keyed by `${component.id}-${question.value}`, matching how the backend's
+// Every question is one report setting keyed by its component id, a simplesurvey (Likert) matrix
+// included: its rows share the one setting held against the component, matching how the backend's
 // ReportSettingService keys these rows (see report_setting_service.py).
-const questionKeysForComponents = (components: FormInfo[]): string[] => {
-    const keys: string[] = [];
-    components.forEach((component) => {
-        if (component.type === 'simplesurvey') {
-            const subQuestions = (component.questions as Array<{ value: string }>) ?? [];
-            subQuestions.forEach((subQuestion) => keys.push(`${component.id}-${subQuestion.value}`));
-        } else {
-            keys.push(component.id as string);
-        }
-    });
-    return keys;
-};
+const questionKeysForComponents = (components: FormInfo[]): string[] =>
+    components.map((component) => component.id as string);
 
 const orderSettingsForComponents = (components: FormInfo[], settings: SurveyReportSetting[]): SurveyReportSetting[] => {
     const orderedKeys = questionKeysForComponents(components);

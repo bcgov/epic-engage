@@ -11,9 +11,19 @@ import { openEngagement } from '../factory';
 
 const originSurvey = openEngagement.surveys[0];
 
+// The charts component owns the request that the API refuses, so it is what tells the page a
+// report is being withheld.
+let mockUnavailableReason: string | null = null;
+
 jest.mock('components/public/dashboard/SurveyResultsCharts', () => ({
     __esModule: true,
-    SurveyResultsCharts: () => <div data-testid="survey-results-charts" />,
+    SurveyResultsCharts: ({ onUnavailable }: { onUnavailable?: (reason: string | null) => void }) => {
+        React.useEffect(() => {
+            onUnavailable?.(mockUnavailableReason);
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, []);
+        return <div data-testid="survey-results-charts" />;
+    },
 }));
 
 jest.mock('components/public/dashboard/comments/CommentsTab', () => ({
@@ -43,6 +53,10 @@ const renderDashboard = (originSurveyValue: Survey | null = null, route = '/') =
     );
 
 describe('Dashboard', () => {
+    beforeEach(() => {
+        mockUnavailableReason = null;
+    });
+
     it('renders the breadcrumb with the engagement name and shows the Survey Results tab by default', () => {
         renderDashboard();
 
@@ -95,5 +109,32 @@ describe('Dashboard', () => {
 
         expect(screen.getByTestId('comments-tab')).toBeInTheDocument();
         expect(screen.getByRole('tab', { name: /comments/i })).toHaveAttribute('aria-selected', 'true');
+    });
+
+    it('explains a withheld report in place of the tabs instead of showing an empty one', () => {
+        mockUnavailableReason = 'send_report_off';
+
+        renderDashboard();
+
+        expect(screen.getByTestId('report-unavailable')).toBeInTheDocument();
+        expect(screen.queryByRole('tab', { name: /survey results/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('tab', { name: /comments/i })).not.toBeInTheDocument();
+    });
+
+    // Withholding a report covers its comments as much as its charts.
+    it('keeps the Comments tab out of a withheld report even when the URL asks for it', () => {
+        mockUnavailableReason = 'send_report_off';
+
+        renderDashboard(null, '/engagements/1/dashboard/public?tab=comments');
+
+        expect(screen.getByTestId('report-unavailable')).toBeInTheDocument();
+        expect(screen.queryByTestId('comments-tab')).not.toBeInTheDocument();
+    });
+
+    it('leaves the tabs alone for a report that is available', () => {
+        renderDashboard();
+
+        expect(screen.queryByTestId('report-unavailable')).not.toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: /survey results/i })).toBeInTheDocument();
     });
 });

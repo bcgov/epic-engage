@@ -3,6 +3,7 @@ import { Box } from '@mui/material';
 import QuestionAnswerIcon from '@mui/icons-material/QuestionAnswer';
 import { MetPaper, MetHeader4, MetIconText, PrimaryButton } from 'components/shared/common';
 import { QuestionTypeLabel } from './QuestionTypeLabel';
+import { QuestionDescription } from './QuestionDescription';
 import { CommentsDrawer } from './CommentsDrawer';
 import { Palette } from 'styles/Theme';
 
@@ -10,12 +11,15 @@ interface CommentsProps {
     question: string;
     responses: string[];
     questionType?: string;
+    // Staff's description of the question, shown under it. Only rendered with the card - a
+    // `bare` caller renders its own.
+    description?: string;
     // Renders just the comment-count box and drawer trigger, without the surrounding MetPaper
     // card/title, for callers that render their own.
     bare?: boolean;
 }
 
-export const Comments = ({ question, responses, questionType, bare = false }: CommentsProps) => {
+export const Comments = ({ question, responses, questionType, description, bare = false }: CommentsProps) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
     const countBox = (
@@ -59,6 +63,7 @@ export const Comments = ({ question, responses, questionType, bare = false }: Co
                 <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4, mb: '12px' }}>{question}</MetHeader4>
+                    <QuestionDescription description={description} />
                     <MetIconText sx={{ fontSize: '12px', color: Palette.text.secondary, mb: '18px' }}>
                         {responses.length} comments
                     </MetIconText>

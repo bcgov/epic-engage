@@ -51,6 +51,20 @@ class ReportSetting(BaseModel):  # pylint: disable=too-few-public-methods
         return {row.question_key for row in rows}
 
     @classmethod
+    def find_descriptions_by_question_key(cls, survey_id) -> dict:
+        """Return the descriptions staff wrote for this survey's questions, keyed by question key.
+
+        Only questions actually given a description are returned - the dashboard renders nothing
+        for the rest.
+        """
+        rows = db.session.query(ReportSetting.question_key, ReportSetting.description) \
+            .filter(ReportSetting.survey_id == survey_id,
+                    ReportSetting.description.isnot(None),
+                    ReportSetting.description != '') \
+            .all()
+        return {row.question_key: row.description for row in rows}
+
+    @classmethod
     def find_by_question_key(cls, survey_id, question_key):
         """Return report setting by survey id."""
         report_settings = db.session.query(ReportSetting) \

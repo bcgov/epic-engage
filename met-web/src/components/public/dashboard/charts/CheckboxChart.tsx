@@ -3,6 +3,7 @@ import { Box, Typography } from '@mui/material';
 import { MetPaper, MetHeader4, MetDescription } from 'components/shared/common';
 import { Palette } from 'styles/Theme';
 import { QuestionTypeLabel } from './QuestionTypeLabel';
+import { QuestionDescription } from './QuestionDescription';
 
 export interface CheckboxChartItem {
     label: string;
@@ -15,6 +16,9 @@ interface CheckboxChartProps {
     respondentCount?: number;
     data: CheckboxChartItem[];
     questionType?: string;
+    // Staff's description of the question, shown under it. Only rendered with the card - a
+    // `bare` caller renders its own.
+    description?: string;
     // Renders just the chart content, without the surrounding MetPaper card/title, for callers
     // that render their own.
     bare?: boolean;
@@ -40,6 +44,7 @@ export const CheckboxChart = ({
     respondentCount,
     data,
     questionType,
+    description,
     bare = false,
     children,
 }: CheckboxChartProps) => {
@@ -124,6 +129,7 @@ export const CheckboxChart = ({
         <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
             {questionType && <QuestionTypeLabel label={questionType} />}
             <MetHeader4 sx={{ lineHeight: 1.4 }}>{question}</MetHeader4>
+            <QuestionDescription description={description} />
             {content}
         </MetPaper>
     );

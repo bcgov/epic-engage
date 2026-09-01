@@ -3,6 +3,7 @@ import { Box, Drawer, IconButton, Stack, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { MetHeader4, MetDescription } from 'components/shared/common';
 import { QuestionTypeLabel } from './QuestionTypeLabel';
+import { QuestionDescription } from './QuestionDescription';
 import { Palette } from 'styles/Theme';
 
 const DRAWER_HEIGHT = '100vh';
@@ -14,6 +15,8 @@ const SCROLL_SPY_OFFSET = 20;
 export interface CommentsDrawerSection {
     rowLabel?: string;
     question: string;
+    // Staff's description of the question, shown under it.
+    description?: string;
     responses: string[];
 }
 
@@ -212,6 +215,7 @@ export const CommentsDrawer = ({ open, onClose, question, responses, questionTyp
                             {section.question}
                         </MetDescription>
                     )}
+                    <QuestionDescription description={section.description} />
                 </Box>
                 {renderResponses(section.responses)}
             </Box>

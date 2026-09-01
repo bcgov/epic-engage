@@ -8,6 +8,8 @@ import { Breadcrumb, BreadcrumbItem } from './Breadcrumb';
 import { DashboardHeaderCard } from './DashboardHeaderCard';
 import { DashboardTabBar, RESULTS_TAB, COMMENTS_TAB } from './DashboardTabBar';
 import { DashboardContext } from './DashboardContext';
+import { ReportUnavailable } from './ReportUnavailable';
+import { UnavailableReason } from './reportAvailability';
 import { DashboardType } from 'constants/dashboardType';
 import { useAppSelector } from 'hooks';
 import { Palette } from 'styles/Theme';
@@ -20,6 +22,7 @@ const Dashboard = () => {
     const initialTab = searchParams.get('tab') === COMMENTS_TAB ? COMMENTS_TAB : RESULTS_TAB;
     const [activeTab, setActiveTab] = useState(initialTab);
     const [hasViewedComments, setHasViewedComments] = useState(initialTab === COMMENTS_TAB);
+    const [unavailableReason, setUnavailableReason] = useState<UnavailableReason | null>(null);
     const basePath = slug ? `/${slug}` : `/engagements/${engagement?.id}/view`;
     const reportLabel = dashboardType === DashboardType.INTERNAL ? 'Internal Report' : 'Public Report';
 
@@ -49,7 +52,10 @@ const Dashboard = () => {
         <Box sx={{ pt: 3 }}>
             <Breadcrumb items={breadcrumbItems} />
             <DashboardHeaderCard engagement={engagement} engagementIsLoading={isEngagementLoading} />
-            <DashboardTabBar activeTab={activeTab} onChange={handleTabChange} />
+            {unavailableReason && <ReportUnavailable reason={unavailableReason} />}
+            <When condition={!unavailableReason}>
+                <DashboardTabBar activeTab={activeTab} onChange={handleTabChange} />
+            </When>
             <Box sx={{ backgroundColor: Palette.background.default }}>
                 <Box
                     sx={{
@@ -63,9 +69,10 @@ const Dashboard = () => {
                         engagement={engagement}
                         engagementIsLoading={isEngagementLoading}
                         dashboardType={dashboardType}
+                        onUnavailable={setUnavailableReason}
                     />
                 </Box>
-                <When condition={activeTab === COMMENTS_TAB || hasViewedComments}>
+                <When condition={!unavailableReason && (activeTab === COMMENTS_TAB || hasViewedComments)}>
                     <Box
                         sx={{
                             display: activeTab === COMMENTS_TAB ? 'block' : 'none',

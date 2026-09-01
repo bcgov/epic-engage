@@ -139,6 +139,28 @@ class TestSurveyInfo(dict, Enum):
         'is_hidden': False,
         'is_template': False
     }
+    survey_with_matrix = {
+        'name': fake.name(),
+        'created_date': datetime.now().strftime('%Y-%m-%d'),
+        'updated_date': datetime.now().strftime('%Y-%m-%d'),
+        'created_by': '123',
+        'updated_by': '123',
+        'form_json': {
+            'display': 'form',
+            'components': [{
+                'id': 'matrix1',
+                'key': 'simplesurvey',
+                'type': 'simplesurvey',
+                'label': 'How important are these to you?',
+                'questions': [
+                    {'value': 'airQuality', 'label': 'Air quality'},
+                    {'value': 'wildlife', 'label': 'Wildlife'}
+                ]
+            }]
+        },
+        'is_hidden': False,
+        'is_template': False
+    }
     survey_with_multiple_rankings = {
         'name': fake.name(),
         'created_date': datetime.now().strftime('%Y-%m-%d'),

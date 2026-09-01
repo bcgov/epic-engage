@@ -21,6 +21,13 @@ const wizardForm: DashboardSurveyForm = {
     display: 'wizard',
     pages: [{ title: 'Page 1', questions: ['q1'] }],
     conditional_links: { followup1: { trigger_key: 'q1', row_key: null, row_label: null, trigger_values: ['other'], trigger_value_labels: ['Other'] } },
+    question_descriptions: { q1: 'Asked of everyone who attended an open house.' },
+};
+
+const refusal = (body: unknown) => {
+    const error = new AxiosError('Forbidden');
+    error.response = { status: 403, data: body } as AxiosError['response'];
+    return error;
 };
 
 describe('useSurveyResultPages', () => {
@@ -51,6 +58,8 @@ describe('useSurveyResultPages', () => {
             { title: 'Page 1', questions: resultData.data, keys: ['q1'] },
         ]);
         expect(result.current.conditionalLinks).toEqual(wizardForm.conditional_links);
+        expect(result.current.questionDescriptions).toEqual(wizardForm.question_descriptions);
+        expect(result.current.unavailableReason).toBeNull();
     });
 
     it('skips fetching the survey form when surveyId is undefined', async () => {
@@ -62,10 +71,37 @@ describe('useSurveyResultPages', () => {
 
         expect(mockGetSurveyForDashboard).not.toHaveBeenCalled();
         expect(result.current.conditionalLinks).toEqual({});
+        expect(result.current.questionDescriptions).toEqual({});
         // non-wizard fallback (no form) => pages stay null
         expect(result.current.pages).toBeNull();
     });
 
+    it('reports why the API withheld the report', async () => {
+        mockGetSurveyResultData.mockRejectedValue(refusal({ reason: 'send_report_off' }));
+        mockGetSurveyForDashboard.mockResolvedValue(undefined);
+
+        const { result } = renderHook(() => useSurveyResultPages(1, 1, 'public'));
+
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        expect(result.current.unavailableReason).toBe('send_report_off');
+        // A withheld report is not a broken one - nothing to retry, nothing to apologise for.
+        expect(result.current.isError).toBe(false);
+        expect(result.current.data).toBeNull();
+    });
+
+    it('still counts the report as withheld when the reason is one it does not recognise', async () => {
+        mockGetSurveyResultData.mockRejectedValue(refusal({ reason: 'some_future_rule' }));
+        mockGetSurveyForDashboard.mockResolvedValue(undefined);
+
+        const { result } = renderHook(() => useSurveyResultPages(1, 1, 'public'));
+
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+        expect(result.current.unavailableReason).toBe('unknown');
+    });
+
+    // An engagement whose survey nobody has answered yet, as opposed to one being withheld.
     it('treats a 404 on the result data as "no data" rather than an error', async () => {
         const notFound = new AxiosError('Not Found');
         notFound.response = { status: 404 } as AxiosError['response'];
@@ -78,6 +114,7 @@ describe('useSurveyResultPages', () => {
 
         expect(result.current.isError).toBe(false);
         expect(result.current.data).toBeNull();
+        expect(result.current.unavailableReason).toBeNull();
     });
 
     it('surfaces a non-404 failure as an error', async () => {
@@ -89,6 +126,7 @@ describe('useSurveyResultPages', () => {
         await waitFor(() => expect(result.current.isLoading).toBe(false));
 
         expect(result.current.isError).toBe(true);
+        expect(result.current.unavailableReason).toBeNull();
     });
 
     it('refetch re-runs the fetch', async () => {

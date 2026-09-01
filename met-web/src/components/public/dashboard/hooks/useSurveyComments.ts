@@ -10,6 +10,7 @@ interface UseSurveyCommentsResult {
     data: TypedSurveyResultData | null;
     pages: ResultPage[] | null;
     conditionalLinks: Record<string, ConditionalLink>;
+    questionDescriptions: Record<string, string>;
     isLoading: boolean;
     isError: boolean;
     refetch: () => void;
@@ -74,8 +75,9 @@ export const useSurveyComments = (
 
     const pages = useMemo(() => (data?.data?.length ? buildResultPages(form, data.data) : null), [data, form]);
     const conditionalLinks = useMemo(() => form?.conditional_links ?? {}, [form]);
+    const questionDescriptions = useMemo(() => form?.question_descriptions ?? {}, [form]);
 
-    return { data, pages, conditionalLinks, isLoading, isError, refetch: fetchData };
+    return { data, pages, conditionalLinks, questionDescriptions, isLoading, isError, refetch: fetchData };
 };
 
 export default useSurveyComments;
