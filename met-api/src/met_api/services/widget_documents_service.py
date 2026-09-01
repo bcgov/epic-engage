@@ -5,13 +5,31 @@ from anytree import AnyNode
 from anytree.exporter import DictExporter
 from anytree.search import find_by_attr
 
+from met_api.constants.membership_type import MembershipType
 from met_api.exceptions.business_exception import BusinessException
+from met_api.models.widget import Widget as WidgetModel
 from met_api.models.widget_documents import WidgetDocuments as WidgetDocumentsModel
+from met_api.services import authorization
 from met_api.utils.enums import WidgetDocumentType
+from met_api.utils.roles import Role
 
 
 class WidgetDocumentService:
     """Widget Documents management service."""
+
+    @staticmethod
+    def _check_authorization(widget_id):
+        """Ensure the user can edit the engagement that owns this widget."""
+        widget = WidgetModel.get_widget_by_id(widget_id)
+        if not widget:
+            raise BusinessException(
+                error='Widget not found',
+                status_code=HTTPStatus.NOT_FOUND)
+        one_of_roles = (
+            MembershipType.TEAM_MEMBER.name,
+            Role.EDIT_ENGAGEMENT.value
+        )
+        authorization.check_auth(one_of_roles=one_of_roles, engagement_id=widget.engagement_id)
 
     @staticmethod
     def get_documents_by_widget_id(widget_id):
@@ -68,6 +86,7 @@ class WidgetDocumentService:
     @staticmethod
     def create_document(widget_id, doc_details):
         """Create documents for the widget."""
+        WidgetDocumentService._check_authorization(widget_id)
         if parent_id := doc_details.get('parent_document_id', None):
             WidgetDocumentService._validate_parent_type(parent_id)
 
@@ -113,6 +132,7 @@ class WidgetDocumentService:
     @staticmethod
     def edit_document(widget_id, document_id, data: dict):
         """Update document from a document widget."""
+        WidgetDocumentService._check_authorization(widget_id)
         document = WidgetDocumentsModel.find_by_id(document_id)
         if not document:
             raise BusinessException(
@@ -128,6 +148,7 @@ class WidgetDocumentService:
     @staticmethod
     def delete_document(widget_id, document_id):
         """Remove document from a document widget."""
+        WidgetDocumentService._check_authorization(widget_id)
         delete_document = WidgetDocumentsModel.remove_widget_document(widget_id, document_id)
         if not delete_document:
             raise BusinessException(
@@ -138,6 +159,7 @@ class WidgetDocumentService:
     @staticmethod
     def sort_documents(widget_id, documents: list, user_id=None):
         """Sort widgets."""
+        WidgetDocumentService._check_authorization(widget_id)
         WidgetDocumentService._validate_document_ids(widget_id, documents)
 
         document_sort_mappings = [{

@@ -2,14 +2,32 @@
 from http import HTTPStatus
 from typing import List
 
+from met_api.constants.membership_type import MembershipType
 from met_api.exceptions.business_exception import BusinessException
 from met_api.models.event_item import EventItem as EventItemsModel
+from met_api.models.widget import Widget as WidgetModel
 from met_api.models.widget_events import WidgetEvents as WidgetEventsModel
+from met_api.services import authorization
 from met_api.utils.datetime import to_utc
+from met_api.utils.roles import Role
 
 
 class WidgetEventsService:
     """Widget Event management service."""
+
+    @staticmethod
+    def _check_authorization(widget_id):
+        """Ensure the user can edit the engagement that owns this widget."""
+        widget = WidgetModel.get_widget_by_id(widget_id)
+        if not widget:
+            raise BusinessException(
+                error='Widget not found',
+                status_code=HTTPStatus.NOT_FOUND)
+        one_of_roles = (
+            MembershipType.TEAM_MEMBER.name,
+            Role.EDIT_ENGAGEMENT.value
+        )
+        authorization.check_auth(one_of_roles=one_of_roles, engagement_id=widget.engagement_id)
 
     @staticmethod
     def get_event_by_widget_id(widget_id):
@@ -20,6 +38,7 @@ class WidgetEventsService:
     @staticmethod
     def create_event(widget_id, event_details: dict):
         """Create events for the widget."""
+        WidgetEventsService._check_authorization(widget_id)
         event = WidgetEventsService._create_event_model(widget_id, event_details)
         event_items = event_details.get('items', [])
         if event_items:
@@ -30,6 +49,7 @@ class WidgetEventsService:
     @staticmethod
     def create_event_items(widget_id, event_id, event_item_details):
         """Create events for the widget."""
+        WidgetEventsService._check_authorization(widget_id)
         event: WidgetEventsModel = WidgetEventsModel.find_by_id(event_id)
         if event.widget_id != widget_id:
             raise BusinessException(
@@ -86,6 +106,7 @@ class WidgetEventsService:
     @staticmethod
     def update_event_item(widget_id, event_id, item_id, request_json):
         """Update event Items."""
+        WidgetEventsService._check_authorization(widget_id)
         event: WidgetEventsModel = WidgetEventsModel.find_by_id(event_id)
         if event.widget_id != widget_id:
             raise BusinessException(
@@ -110,6 +131,7 @@ class WidgetEventsService:
     @staticmethod
     def delete_event(event_id, widget_id) -> None:
         """Delete an event."""
+        WidgetEventsService._check_authorization(widget_id)
         event: WidgetEventsModel = WidgetEventsModel.find_by_id(event_id)
         if event.widget_id != widget_id:
             raise BusinessException(
@@ -143,5 +165,6 @@ class WidgetEventsService:
 
     def save_widget_events_bulk(self, widget_id, widget_events: list, user_id):
         """Save widget events."""
+        self._check_authorization(widget_id)
         self.update_widget_events_sorting(widget_id, widget_events, user_id)
         return widget_events
