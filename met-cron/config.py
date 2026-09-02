@@ -159,7 +159,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     EMAIL_ENVIRONMENT = os.getenv('EMAIL_ENVIRONMENT', '')
 
     # config for comment_redact_service
-    N_DAYS = os.getenv('N_DAYS', 14)
+    # Days after an engagement's end date before rejected comments are erased.
+    # 14 days is the agreed retention window; see docs/comment-redaction-waiting-period.md
+    # before changing it in any environment. int() because timedelta rejects strings,
+    # and anything coming from the environment or a ConfigMap arrives as one.
+    N_DAYS = int(os.getenv('N_DAYS') or 14)
     REDACTION_TEXT = os.getenv('REDACTION_TEXT', '[Comment Redacted]')
 
     # config for email queue
