@@ -25,6 +25,7 @@ configMapData:
   ENGAGEMENT_CLOSING_SOON_EMAIL_TEMPLATE_ID: 30344886-ea33-4ca2-83e1-e5ebe9c3457d
   IS_SINGLE_TENANT_ENVIRONMENT: 'true'
   NOTIFICATIONS_EMAIL_ENDPOINT: 'https://epic-engage-notify-api-test.apps.gold.devops.gov.bc.ca/api/v1/notifications/email'
+  N_DAYS: '14'
   OFFSET_DAYS: '2'
   PUBLISH_ENGAGEMENT_EMAIL_TEMPLATE_ID: 7bf2ffcd-d69e-4c3f-9aa0-e8e89b491e92
   SITE_URL: 'https://test.engage.eao.gov.bc.ca'

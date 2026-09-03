@@ -23,7 +23,7 @@ configMapData:
   IS_SINGLE_TENANT_ENVIRONMENT: 'true'
   OFFSET_DAYS: '2'
   ENGAGEMENT_CLOSING_SOON_EMAIL_TEMPLATE_ID: 30344886-ea33-4ca2-83e1-e5ebe9c3457d
-  N_DAYS: '1'
+  N_DAYS: '14'
   CLOSED_ENGAGEMENT_REJECTED_EMAIL_TEMPLATE_ID: e942dea1-094e-4021-9aac-21a0ac1f240d
   PUBLISH_ENGAGEMENT_EMAIL_TEMPLATE_ID: 7bf2ffcd-d69e-4c3f-9aa0-e8e89b491e92
   NOTIFICATIONS_EMAIL_ENDPOINT: 'https://epic-engage-notify-api-dev.apps.gold.devops.gov.bc.ca/api/v1/notifications/email'
