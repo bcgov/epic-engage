@@ -55,7 +55,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
     const canExport =
         dashboardType === DashboardType.INTERNAL &&
         isAuthenticated &&
-        roles.includes(USER_ROLES.EXPORT_INTERNAL_COMMENT_SHEET);
+        roles.includes(USER_ROLES.VIEW_ALL_SURVEY_RESULTS);
     // The internal export includes rejected comments, so only Superusers may download it.
     const isSuperuser = Boolean(userDetail.groups?.includes('/ENGAGE/' + USER_GROUP.ADMIN.value));
     const surveyId = engagement.surveys?.[0]?.id;
