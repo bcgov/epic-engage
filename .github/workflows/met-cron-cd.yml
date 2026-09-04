@@ -62,8 +62,10 @@ jobs:
           docker login ${{ env.OPENSHIFT_IMAGE_REGISTRY }} -u ${{ env.OPENSHIFT_SA_NAME}} --password-stdin
 
       - name: Build image
+        # Built from the repo root: met-cron depends on met-api, a sibling in this repo.
+        working-directory: .
         run: |
-          docker build . --file Dockerfile --tag image
+          docker build . --file met-cron/Dockerfile --tag image
 
       - name: Push image
         run: |

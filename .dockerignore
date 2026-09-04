@@ -1,0 +1,16 @@
+# Root build context (currently used by met-cron, which needs met-api as a sibling).
+# Without these excludes the context is >2GB.
+**/node_modules
+**/venv
+**/.venv
+**/.lockenv
+**/__pycache__
+**/*.pyc
+**/htmlcov
+**/coverage.xml
+**/.pytest_cache
+**/.tox
+.git
+met-web/build
+met-web/coverage
+**/*.sql
