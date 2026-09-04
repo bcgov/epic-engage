@@ -108,13 +108,14 @@ TAG_NAME=dev
 cd: build update-env tag
 endif
 
+# Built from the repo root: met-cron depends on met-api, a sibling in this repo.
 build: ## Build the docker container
-	docker build . -t $(DOCKER_NAME) \
+	docker build $(CURRENT_ABS_DIR)/.. -f $(CURRENT_ABS_DIR)/Dockerfile -t $(DOCKER_NAME) \
 		--build-arg VCS_REF=$(shell git rev-parse --short HEAD) \
 		--build-arg BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ") \
 
 build-nc: ## Build the docker container without caching
-	docker build --no-cache -t $(DOCKER_NAME) .
+	docker build --no-cache $(CURRENT_ABS_DIR)/.. -f $(CURRENT_ABS_DIR)/Dockerfile -t $(DOCKER_NAME)
 
 REGISTRY_IMAGE=$(OPENSHIFT_DOCKER_REGISTRY)/$(OPENSHIFT_REPOSITORY)-tools/$(DOCKER_NAME)
 push: #build ## Push the docker container to the registry & tag latest
