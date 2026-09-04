@@ -14,7 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN pip install .
+# --no-deps: requirements.txt is the single source of truth for versions.
+# Without it, setup.py re-resolves requirements/prod.txt and can silently
+# replace the pins installed above.
+RUN pip install --no-deps .
 
 USER 1001
 
