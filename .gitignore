@@ -139,3 +139,6 @@ met-api/.DS_Store
 
 # VSCode Chrome extension user data
 .vscode/chrome
+# met-api: throwaway venv used by `make build-req`
+.lockenv/
+requirements.txt.tmp

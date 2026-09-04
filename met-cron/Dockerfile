@@ -47,14 +47,21 @@ RUN mkdir $HOME && chmod 755 $HOME
 WORKDIR $HOME
 
 # Install the requirements
-COPY ./requirements.txt .
-COPY ./requirements/ ./requirements/
-COPY . .
+# Build context is the REPO ROOT (not met-cron/), because met-cron depends on
+# met-api, which lives in this repo. requirements/repo-libraries.txt installs it
+# from ../met-api, so met-api must be present before pip runs.
+COPY met-cron/requirements.txt .
+COPY met-cron/requirements/ ./requirements/
+COPY met-api/ /met-api/
+COPY met-cron/ .
 
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install .
+# --no-deps: requirements.txt is the single source of truth for versions.
+# Without it, setup.py re-resolves requirements/prod.txt and can silently
+# replace the pins installed above.
+RUN pip install --no-deps .
 
 # Set Python path
 ENV PYTHONPATH=/met-cron/src

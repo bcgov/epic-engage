@@ -17,6 +17,7 @@ license: ## Verify source code license headers.
 #################################################################################
 
 PYTHON := python3.12
+LOCK_VENV := $(CURRENT_ABS_DIR)/.lockenv
 
 setup: clean install install-dev ## Setup the project
 
@@ -42,14 +43,23 @@ clean-test: ## clean test files
 	rm -f .coverage
 	rm -fr htmlcov/
 
-build-req: clean ## Upgrade requirements
-	test -f venv/bin/activate ||  $(PYTHON) -m venv $(CURRENT_ABS_DIR)/venv ;\
-	. venv/bin/activate ;\
-	$(PYTHON) -m pip install --upgrade pip ;\
-	$(PYTHON) -m pip install -Ur requirements/prod.txt ;\
-	$(PYTHON) -m pip freeze | sort > requirements.txt ;\
-	cat requirements/repo-libraries.txt >> requirements.txt ;\
-	$(PYTHON) -m pip install -Ur requirements/repo-libraries.txt
+# UPGRADE COMMAND, not a refresh: re-resolves requirements/prod.txt from scratch and
+# takes the newest matching versions. requirements.txt is overwritten, never read.
+# Runs in a throwaway venv; only writes if pip check and the import smoke test pass.
+upgrade-req: ## Re-resolve requirements/prod.txt to latest versions and rewrite requirements.txt
+	rm -rf $(LOCK_VENV) && \
+	$(PYTHON) -m venv $(LOCK_VENV) && \
+	$(LOCK_VENV)/bin/python -m pip install --upgrade pip && \
+	$(LOCK_VENV)/bin/python -m pip install -Ur requirements/prod.txt && \
+	$(LOCK_VENV)/bin/python -m pip install -Ur requirements/repo-libraries.txt && \
+	$(LOCK_VENV)/bin/python -m pip freeze \
+	    --exclude pip --exclude setuptools --exclude wheel --exclude-editable \
+	    | sort > requirements.txt.tmp && \
+	cat requirements/repo-libraries.txt >> requirements.txt.tmp && \
+	$(LOCK_VENV)/bin/python -m pip check && \
+	PYTHONPATH=$(CURRENT_ABS_DIR)/src $(LOCK_VENV)/bin/python -c "import met_api" && \
+	mv requirements.txt.tmp requirements.txt && \
+	rm -rf $(LOCK_VENV)
 
 install: clean ## Install python virtual environment
 	test -f venv/bin/activate || $(PYTHON) -m venv venv ;\
@@ -59,7 +69,7 @@ install: clean ## Install python virtual environment
 
 install-dev: ## Install local application
 	. venv/bin/activate ; \
-	pip install -Ur requirements/dev.txt; \
+	pip install -r requirements/dev.txt; \
 	pip install -e .
 
 #################################################################################
