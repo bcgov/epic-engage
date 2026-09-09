@@ -1,6 +1,7 @@
 import dayjs, { Dayjs } from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import tz from 'dayjs/plugin/timezone';
+import { TIMEZONES } from 'constants/timezones';
 dayjs.extend(utc);
 dayjs.extend(tz);
 
@@ -10,7 +11,7 @@ const formatToUTCTimeZone = (date: string, fmt: string) => dayjs(date).utc().for
 
 export const formatDate = (date: Dayjs | string, formatString = 'YYYY-MM-DD') => {
     if (date) {
-        return formatToPacificTimeZone(date.toString(), formatString, 'US/Pacific');
+        return formatToPacificTimeZone(date.toString(), formatString, TIMEZONES.CANADA_PACIFIC);
     } else {
         return '';
     }

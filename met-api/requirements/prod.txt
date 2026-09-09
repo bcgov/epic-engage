@@ -31,5 +31,5 @@ aws-requests-auth
 anytree
 geopandas
 awesome-slugify==1.6.5
-pytz
+pytz>=2026.3
 openpyxl

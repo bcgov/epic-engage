@@ -63,7 +63,7 @@ pyogrio==0.12.1
 pyproj==3.7.2
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
-pytz==2025.2
+pytz==2026.3.post1
 referencing==0.37.0
 requests==2.32.5
 rpds-py==0.30.0
@@ -76,6 +76,6 @@ thrift==0.22.0
 tomli==2.3.0
 tornado==6.5.4
 typing_extensions==4.15.0
-tzdata==2025.3
+tzdata==2026.3
 urllib3==2.6.2
 zimports==0.6.3

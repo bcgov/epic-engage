@@ -18,10 +18,13 @@ from flask import current_app
 import pytz
 
 
+BC_TIMEZONE = 'America/Vancouver'
+
+
 def local_datetime():
-    """Get the local (Pacific Timezone) datetime."""
+    """Get the local (BC Pacific Timezone) datetime."""
     utcmoment = datetime.utcnow().replace(tzinfo=pytz.utc)
-    now = utcmoment.astimezone(pytz.timezone('US/Pacific'))
+    now = utcmoment.astimezone(pytz.timezone(BC_TIMEZONE))
     return now
 
 

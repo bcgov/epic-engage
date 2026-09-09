@@ -3,6 +3,6 @@ dagit==1.7.15
 dagster-docker==0.23.15
 packaging==21.3
 python-dotenv==0.21.0
-pytz==2022.5
+pytz==2026.3.post1
 -e git+https://github.com/bcgov/epic-engage.git#egg=met-api&subdirectory=met-api
 -e git+https://github.com/bcgov/epic-engage.git#egg=analytics-api&subdirectory=analytics-api

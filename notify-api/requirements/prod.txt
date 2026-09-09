@@ -13,3 +13,4 @@ python-dotenv
 requests
 notifications-python-client
 Jinja2
+pytz>=2026.3

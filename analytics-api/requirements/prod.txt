@@ -33,3 +33,5 @@ aws-requests-auth
 requests
 anytree
 geopandas
+pytz>=2026.3
+tzdata>=2026.3
