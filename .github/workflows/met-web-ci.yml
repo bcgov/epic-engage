@@ -75,14 +75,6 @@ jobs:
         run: |
           npm test -- --coverage
 
-      # Set codecov branch name with prefix if pull request
-      - name: Sets Codecov branch name
-        env:
-          HEAD_REF: ${{ github.head_ref }}
-        run: |
-          echo "CODECOV_BRANCH=PR_${HEAD_REF}" >> "$GITHUB_ENV"
-        if: github.event_name == 'pull_request'
-
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v6
         with:
@@ -90,7 +82,6 @@ jobs:
           name: codecov-met-web
           fail_ci_if_error: false    
           verbose: true
-          override_branch: ${{env.CODECOV_BRANCH}}
           token: ${{ secrets.CODECOV_TOKEN }}
 
   build-check:
