@@ -21,13 +21,16 @@ const EmailPreviewModal = ({ open, header, renderEmail, handleClose }: EmailModa
                     ...modalStyle,
                     display: 'flex',
                     overflowY: 'hidden',
+                    pt: 4,
+                    pb: 4,
+                    px: 3,
                 }}
             >
                 <Grid
                     item
-                    xs
                     sx={{
                         width: '100%',
+                        flex: '1 1 auto',
                         minHeight: 0,
                         overflowY: 'auto',
                         overflowX: 'hidden',
@@ -35,7 +38,7 @@ const EmailPreviewModal = ({ open, header, renderEmail, handleClose }: EmailModa
                 >
                     {renderEmail}
                 </Grid>
-                <Grid item sx={{ flexShrink: 0, pt: 2 }}>
+                <Grid item sx={{ flexShrink: 0, pt: 4 }}>
                     <PrimaryButton onClick={() => handleClose()}>Close Preview</PrimaryButton>
                 </Grid>
             </Grid>
