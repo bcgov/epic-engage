@@ -19,6 +19,7 @@ import { downloadFile } from 'utils';
 import { formatToUTC } from 'utils/helpers/dateHelper';
 import { DashboardContext } from './DashboardContext';
 import { LiveActivityChart } from './LiveActivityChart';
+import { ResultsAsOfWatermark } from './ResultsAsOfWatermark';
 import { Palette } from 'styles/Theme';
 
 interface DashboardHeaderCardProps {
@@ -65,6 +66,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
     const [activity, setActivity] = useState<UserResponseDetailByMonth[]>([]);
     const [isActivityOpen, setIsActivityOpen] = useState(false);
     const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null);
+    const [dataAsOf, setDataAsOf] = useState<Date | null>(null);
     const [isExporting, setIsExporting] = useState(false);
 
     const handleExportCsv = async () => {
@@ -93,17 +95,18 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
         if (!Number(engagement.id)) {
             return;
         }
-        getAggregatorData({ engagement_id: Number(engagement.id), count_for: 'survey_completed' })
+        const completed = getAggregatorData({ engagement_id: Number(engagement.id), count_for: 'survey_completed' })
             .then((data) => setSurveysCompleted(data.value))
             .catch(() => setSurveysCompleted(null));
         setIsLocationLoading(true);
-        getMapData(Number(engagement.id))
+        const location = getMapData(Number(engagement.id))
             .then((data) => setProjectLocation(data.marker_label ?? null))
             .catch(() => setProjectLocation(null))
             .finally(() => setIsLocationLoading(false));
-        getUserResponseDetailByMonth(Number(engagement.id), '', '')
+        const responses = getUserResponseDetailByMonth(Number(engagement.id), '', '')
             .then((data) => setActivity(Array.isArray(data) ? data : []))
             .catch(() => setActivity([]));
+        Promise.allSettled([completed, location, responses]).then(() => setDataAsOf(new Date()));
     }, [engagement.id]);
 
     const peakMonth = activity.reduce<UserResponseDetailByMonth | null>(
@@ -193,6 +196,11 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                             </Box>
                         )}
                     </Box>
+                    <ResultsAsOfWatermark
+                        submissionStatus={engagement.submission_status}
+                        dashboardType={dashboardType}
+                        dataAsOf={dataAsOf}
+                    />
                     {canExport && (
                         <>
                             <PrimaryButton

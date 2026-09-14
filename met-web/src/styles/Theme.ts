@@ -108,6 +108,12 @@ export const Palette = {
             bg: tokens.supportSurfaceColorDanger,
             border: tokens.supportBorderColorDanger,
         },
+        asOf: {
+            bg: tokens.supportSurfaceColorWarning,
+            border: tokens.dataVizYellowLight,
+            label: tokens.supportTypographyColorWarning,
+            value: tokens.supportTypographyColorWarningEmphasis,
+        },
     },
     icons: {
         surveyReady: tokens.iconsColorSuccess,
