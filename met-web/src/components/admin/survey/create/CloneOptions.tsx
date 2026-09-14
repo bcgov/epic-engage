@@ -3,12 +3,12 @@ import { Grid, TextField, Stack, Autocomplete, Typography } from '@mui/material'
 import { CreateSurveyContext } from './CreateSurveyContext';
 import { useNavigate } from 'react-router-dom';
 import { cloneSurvey } from 'services/surveyService';
-import { getEngagements } from 'services/engagementService';
+import { getEngagementLookups } from 'services/engagementService';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { MetLabel, PrimaryButton, SecondaryButton } from 'components/shared/common';
-import { Survey } from 'models/survey';
-import { Engagement } from 'models/engagement';
+import { SurveyLookup } from 'models/survey';
+import { EngagementLookup } from 'models/engagement';
 import { Disclaimer } from './Disclaimer';
 import { Palette } from 'styles/Theme';
 
@@ -17,13 +17,9 @@ export type EngagementParams = {
 };
 
 interface CloneOptions {
-    availableSurveys: Survey[] | null;
+    availableSurveys: SurveyLookup[] | null;
     loadingSurveys: boolean;
 }
-
-const PAGE = 1;
-
-const PAGE_SIZE = 2000;
 
 const SORT_ORDER = 'asc';
 
@@ -32,8 +28,8 @@ const CloneOptions = ({ availableSurveys, loadingSurveys }: CloneOptions) => {
     const dispatch = useAppDispatch();
     const searchParams = new URLSearchParams(location.search);
     const engagementId = searchParams.get('engagementId');
-    const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
-    const [selectedEngagement, setSelectedEngagement] = useState<Engagement | null>(null);
+    const [selectedSurvey, setSelectedSurvey] = useState<SurveyLookup | null>(null);
+    const [selectedEngagement, setSelectedEngagement] = useState<EngagementLookup | null>(null);
     const [loadingEngagements, setLoadingEngagements] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const {
@@ -72,14 +68,10 @@ const CloneOptions = ({ availableSurveys, loadingSurveys }: CloneOptions) => {
         return '';
     };
 
-    const handleFetchEngagements = async (page: number, size: number, sort_order: 'asc' | 'desc' | undefined) => {
+    const handleFetchEngagements = async (sort_order: 'asc' | 'desc' | undefined) => {
         try {
-            const fetchedEngagements = await getEngagements({
-                page: page,
-                size: size,
-                sort_order: sort_order,
-            });
-            setAvailableEngagements(fetchedEngagements.items.filter((engagement) => engagement.surveys.length !== 0));
+            const fetchedEngagements = await getEngagementLookups({ sort_order });
+            setAvailableEngagements(fetchedEngagements);
             setLoadingEngagements(false);
         } catch (error) {
             dispatch(
@@ -90,7 +82,7 @@ const CloneOptions = ({ availableSurveys, loadingSurveys }: CloneOptions) => {
 
     useEffect(() => {
         if (!availableEngagements) {
-            handleFetchEngagements(PAGE, PAGE_SIZE, SORT_ORDER);
+            handleFetchEngagements(SORT_ORDER);
         } else {
             setLoadingEngagements(false);
         }
@@ -157,8 +149,8 @@ const CloneOptions = ({ availableSurveys, loadingSurveys }: CloneOptions) => {
                         />
                     )}
                     size="small"
-                    getOptionLabel={(engagement: Engagement) => engagement.name}
-                    onChange={(_e: React.SyntheticEvent<Element, Event>, engagement: Engagement | null) => {
+                    getOptionLabel={(engagement: EngagementLookup) => engagement.name}
+                    onChange={(_e: React.SyntheticEvent<Element, Event>, engagement: EngagementLookup | null) => {
                         setSelectedEngagement(engagement);
                         if (engagement !== null) setSelectedSurvey(engagement.surveys[0]);
                     }}
@@ -182,9 +174,9 @@ const CloneOptions = ({ availableSurveys, loadingSurveys }: CloneOptions) => {
                         />
                     )}
                     size="small"
-                    getOptionLabel={(survey: Survey) => survey.name}
+                    getOptionLabel={(survey: SurveyLookup) => survey.name}
                     value={selectedSurvey}
-                    onChange={(_e: React.SyntheticEvent<Element, Event>, survey: Survey | null) =>
+                    onChange={(_e: React.SyntheticEvent<Element, Event>, survey: SurveyLookup | null) =>
                         setSelectedSurvey(survey)
                     }
                     disabled={loadingSurveys}

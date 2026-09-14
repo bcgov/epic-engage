@@ -1,6 +1,12 @@
 import { FormBuilderData } from 'components/shared/form/FormBuilder/types';
 import { ConditionalLink } from 'components/public/dashboard/surveyPages';
-import { createDefaultEngagement, Engagement } from './engagement';
+import { createDefaultEngagement, Engagement, Status } from './engagement';
+import { SubmissionStatus } from 'constants/engagementStatus';
+
+export interface SurveyLookup {
+    id: number;
+    name: string;
+}
 
 export interface Survey {
     id: number;
@@ -20,6 +26,19 @@ export interface Survey {
     // state the engagement is in.
     conditional_links?: Record<string, ConditionalLink>;
 }
+
+export interface SurveyListItemEngagement {
+    id: number;
+    name: string;
+    published_date: string | null;
+    engagement_status: Status;
+    submission_status: SubmissionStatus;
+}
+
+// What GET /surveys/ actually returns for an ordinary list.
+export type SurveyListItem = Omit<Survey, 'form_json' | 'engagement'> & {
+    engagement?: SurveyListItemEngagement;
+};
 
 export interface SurveyCommentData {
     total: number;

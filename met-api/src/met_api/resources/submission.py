@@ -153,7 +153,12 @@ class SurveySubmissions(Resource):
                     survey_id,
                     pagination_options,
                     args.get('search_text', '', str),
-                    advanced_search_filters
+                    advanced_search_filters,
+                    include_comments=args.get(
+                        'include_comments',
+                        default=False,
+                        type=lambda v: v.lower() == 'true'
+                    ),
             )
             return submission_page, HTTPStatus.OK
         except ValueError as err:

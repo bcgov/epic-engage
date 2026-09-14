@@ -6,11 +6,11 @@ import { linkSurvey } from 'services/surveyService';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { MetLabel, PrimaryButton, SecondaryButton } from 'components/shared/common';
-import { Survey } from 'models/survey';
+import { SurveyLookup } from 'models/survey';
 import { Disclaimer } from './Disclaimer';
 
 interface LinkOptions {
-    availableSurveys: Survey[] | null;
+    availableSurveys: SurveyLookup[] | null;
     loadingSurveys: boolean;
 }
 
@@ -18,7 +18,7 @@ const LinkOptions = ({ availableSurveys, loadingSurveys }: LinkOptions) => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
 
-    const [selectedSurvey, setSelectedSurvey] = useState<Survey | null>(null);
+    const [selectedSurvey, setSelectedSurvey] = useState<SurveyLookup | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
     const { engagementToLink, isDisclaimerChecked, setDisclaimerError } = useContext(CreateSurveyContext);
@@ -77,8 +77,8 @@ const LinkOptions = ({ availableSurveys, loadingSurveys }: LinkOptions) => {
                             fullWidth
                         />
                     )}
-                    getOptionLabel={(survey: Survey) => survey.name}
-                    onChange={(_e: React.SyntheticEvent<Element, Event>, survey: Survey | null) =>
+                    getOptionLabel={(survey: SurveyLookup) => survey.name}
+                    onChange={(_e: React.SyntheticEvent<Element, Event>, survey: SurveyLookup | null) =>
                         setSelectedSurvey(survey)
                     }
                     disabled={loadingSurveys}

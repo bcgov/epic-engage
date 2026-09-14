@@ -3,7 +3,7 @@ import { PageInfo, PaginationOptions } from 'components/shared/common/Table/type
 import { CommentStatus } from 'constants/commentStatus';
 import { useAppDispatch } from 'hooks';
 import { Survey, createDefaultSurvey } from 'models/survey';
-import { SurveySubmission } from 'models/surveySubmission';
+import { SubmissionListItem } from 'models/surveySubmission';
 import { useParams, useLocation } from 'react-router-dom';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { getSubmissionPage } from 'services/submissionService';
@@ -38,9 +38,9 @@ export interface CommentListingContextState {
     searchText: string;
     setSearchText: (value: string) => void;
     survey: Survey;
-    submissions: SurveySubmission[];
-    paginationOptions: PaginationOptions<SurveySubmission>;
-    setPagination: (value: PaginationOptions<SurveySubmission>) => void;
+    submissions: SubmissionListItem[];
+    paginationOptions: PaginationOptions<SubmissionListItem>;
+    setPagination: (value: PaginationOptions<SubmissionListItem>) => void;
     pageInfo: PageInfo;
     setPageInfo: (value: PageInfo) => void;
     loading: boolean;
@@ -105,8 +105,8 @@ export const CommentListingContextProvider = ({ children }: CommentListingContex
     });
     const [searchText, setSearchText] = useState('');
     const [survey, setSurvey] = useState<Survey>(createDefaultSurvey());
-    const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
-    const [paginationOptions, setPagination] = useState<PaginationOptions<SurveySubmission>>({
+    const [submissions, setSubmissions] = useState<SubmissionListItem[]>([]);
+    const [paginationOptions, setPagination] = useState<PaginationOptions<SubmissionListItem>>({
         page: Number(pageFromURL) || 1,
         size: Number(sizeFromURL) || 10,
         sort_key: 'comment_status_id',

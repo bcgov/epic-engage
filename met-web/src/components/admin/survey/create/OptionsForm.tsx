@@ -10,7 +10,7 @@ import { CreateSurveyContext } from './CreateSurveyContext';
 import { OptionsFormSkeleton } from './OptionsFormSkeleton';
 import { When } from 'react-if';
 import { Disclaimer } from './Disclaimer';
-import { Survey } from 'models/survey';
+import { SurveyLookup } from 'models/survey';
 import { fetchSurveys } from 'services/surveyService';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
@@ -20,8 +20,8 @@ const OptionsForm = () => {
     const navigate = useNavigate();
     const { engagementToLink, loading } = useContext(CreateSurveyContext);
     const [value, setValue] = useState('');
-    const [availableLinkSurveys, setAvailableLinkSurveys] = useState<Survey[] | null>(null);
-    const [availableCloneSurveys, setAvailableCloneSurveys] = useState<Survey[] | null>(null);
+    const [availableLinkSurveys, setAvailableLinkSurveys] = useState<SurveyLookup[] | null>(null);
+    const [availableCloneSurveys, setAvailableCloneSurveys] = useState<SurveyLookup[] | null>(null);
     const [loadingSurveys, setLoadingSurveys] = useState<boolean>(true);
 
     const handleFetchSurveys = async () => {

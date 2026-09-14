@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from 'hooks';
 import { SubmissionStatus, EngagementStatus } from 'constants/engagementStatus';
 import { Palette } from 'styles/Theme';
-import { Survey } from 'models/survey';
+import { SurveyListItem } from 'models/survey';
 import { DeleteSurveyModal } from './DeleteSurveyModal';
 
 interface ActionDropDownItem {
@@ -18,7 +18,7 @@ export const ActionsDropDown = ({
     survey,
     onSurveyDeleted,
 }: {
-    survey: Survey;
+    survey: SurveyListItem;
     onSurveyDeleted: (surveyId: number) => void;
 }) => {
     const navigate = useNavigate();

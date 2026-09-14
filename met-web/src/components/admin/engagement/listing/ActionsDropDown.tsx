@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { USER_ROLES } from 'services/userService/constants';
 import { CircularProgress, MenuItem, Select } from '@mui/material';
-import { Engagement } from 'models/engagement';
+import { EngagementListItem } from 'models/engagement';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from 'hooks';
 import { EngagementStatus } from 'constants/engagementStatus';
@@ -22,7 +22,7 @@ export const ActionsDropDown = ({
     engagement,
     onEngagementDeleted,
 }: {
-    engagement: Engagement;
+    engagement: EngagementListItem;
     onEngagementDeleted: (id: number) => void;
 }) => {
     const navigate = useNavigate();

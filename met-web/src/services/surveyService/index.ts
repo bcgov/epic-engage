@@ -1,9 +1,10 @@
 import http from 'apiManager/httpRequestHandler';
-import { Survey } from 'models/survey';
+import { Survey, SurveyListItem, SurveyLookup } from 'models/survey';
 import { DashboardSurveyForm } from 'components/public/dashboard/surveyPages';
 import Endpoints from 'apiManager/endpoints';
 import { replaceAllInURL, replaceUrl } from 'utils/helpers';
 import { Page } from 'services/type';
+import { fetchAllPages } from 'services/pagination';
 import { DashboardType } from 'constants/dashboardType';
 
 interface FetchSurveyParams {
@@ -13,10 +14,16 @@ interface FetchSurveyParams {
     reduce_data?: boolean;
     include_form_json?: boolean;
 }
-export const fetchSurveys = async (params: FetchSurveyParams = {}): Promise<Survey[]> => {
-    const responseData = await http.GetRequest<Page<Survey>>(Endpoints.Survey.GET_LIST, { ...params });
-    return responseData.data?.items ?? [];
-};
+/** Every match. These selectors filter in the browser, so a first page would hide the rest. */
+export const fetchSurveys = async (params: FetchSurveyParams = {}): Promise<SurveyLookup[]> =>
+    fetchAllPages<SurveyLookup>(async (page, size) => {
+        const responseData = await http.GetRequest<Page<SurveyLookup>>(Endpoints.Survey.GET_LIST, {
+            ...params,
+            page,
+            size,
+        });
+        return responseData.data ?? { items: [], total: 0 };
+    });
 
 interface GetSurveysParams {
     page?: number;
@@ -35,8 +42,8 @@ interface GetSurveysParams {
     published_date_from?: string;
     published_date_to?: string;
 }
-export const getSurveysPage = async (params: GetSurveysParams = {}): Promise<Page<Survey>> => {
-    const response = await http.GetRequest<Page<Survey>>(Endpoints.Survey.GET_LIST, params);
+export const getSurveysPage = async (params: GetSurveysParams = {}): Promise<Page<SurveyListItem>> => {
+    const response = await http.GetRequest<Page<SurveyListItem>>(Endpoints.Survey.GET_LIST, params);
     if (response.data) {
         return response.data;
     }

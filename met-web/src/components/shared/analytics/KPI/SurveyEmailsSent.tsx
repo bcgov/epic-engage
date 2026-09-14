@@ -4,7 +4,7 @@ import { Box, Grid, CircularProgress, useMediaQuery, Theme } from '@mui/material
 import { DASHBOARD } from '../constants';
 import { getAggregatorData } from 'services/analytics/aggregatorService';
 import { AggregatorData } from 'models/analytics/aggregator';
-import { Engagement } from 'models/engagement';
+import { EngagementListItem } from 'models/engagement';
 import { RadialBarChart, PolarAngleAxis, RadialBar } from 'recharts';
 import { MetLabel, MetPaper } from 'components/shared/common';
 import { ErrorBox } from '../ErrorBox';
@@ -13,7 +13,7 @@ import axios, { AxiosError } from 'axios';
 import { HTTP_STATUS_CODES } from 'constants/httpResponseCodes';
 
 interface SurveyEmailsSentProps {
-    engagement: Engagement;
+    engagement: EngagementListItem;
     engagementIsLoading: boolean;
 }
 

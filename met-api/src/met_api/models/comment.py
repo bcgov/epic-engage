@@ -10,14 +10,16 @@ from operator import or_
 from sqlalchemy import and_, asc, case, desc, func
 from sqlalchemy.dialects.postgresql import aggregate_order_by
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import defer, load_only, selectinload
 from sqlalchemy.sql.expression import true
 from sqlalchemy.sql.schema import ForeignKey
 
 from met_api.constants.comment_status import Status as CommentStatus
 from met_api.constants.engagement_status import Status as EngagementStatus
+from met_api.constants.user import SYSTEM_REVIEWER
 from met_api.models.engagement import Engagement
 from met_api.models.engagement_settings import EngagementSettingsModel
-from met_api.models.pagination_options import PaginationOptions
+from met_api.models.pagination_options import PaginationOptions, paginate
 from met_api.models.report_setting import ReportSetting
 from met_api.models.submission import Submission
 from met_api.models.survey import Survey
@@ -184,16 +186,35 @@ class Comment(BaseModel):
         survey_id,
         pagination_options: PaginationOptions,
         search_text='',
-        advanced_search_filters=None
+        advanced_search_filters=None,
+        include_comments=False,
     ):
         """Get submissions by survey id paginated."""
         null_value = None
         query = db.session.query(Submission)\
             .filter(and_(Submission.survey_id == survey_id,
-                         or_(Submission.reviewed_by != 'System', Submission.reviewed_by == null_value)))
+                         or_(Submission.reviewed_by != SYSTEM_REVIEWER, Submission.reviewed_by == null_value)))
+
+        # submission_json is never part of a list response, whichever shape is served.
+        if include_comments:
+            query = query.options(
+                defer(Submission.submission_json),
+                selectinload(Submission.comments),
+            )
+        else:
+            query = query.options(load_only(
+                Submission.id,
+                Submission.survey_id,
+                Submission.engagement_id,
+                Submission.created_date,
+                Submission.reviewed_by,
+                Submission.review_date,
+                Submission.comment_status_id,
+                Submission.is_resubmission,
+            ))
 
         if search_text:
-            # Remove all non-digit characters from search text
+            # An EXISTS predicate, so searching comment text does not load the comments.
             query = query.filter(Submission.comments.any(Comment.text.ilike('%' + search_text + '%')))
 
         if advanced_search_filters:
@@ -229,9 +250,7 @@ class Comment(BaseModel):
             items = query.all()
             return items, len(items)
 
-        page = db.paginate(query, page=pagination_options.page, per_page=pagination_options.size)
-
-        return page.items, page.total
+        return paginate(query, pagination_options)
 
     @staticmethod
     def __create_new_comment_entity(comment: CommentSchema):

@@ -42,6 +42,27 @@ class SubmissionSchema(Schema):
     staff_note = fields.List(fields.Nested(StaffNoteSchema))
 
 
+class SubmissionListSchema(Schema):
+    """Schema for a submission in a list.
+
+    Comments and staff notes stay on the detail response.
+    """
+
+    class Meta:  # pylint: disable=too-few-public-methods
+        """Exclude unknown fields in the deserialized output."""
+
+        unknown = EXCLUDE
+
+    id = fields.Int(data_key='id')
+    survey_id = fields.Int(data_key='survey_id')
+    engagement_id = fields.Int(data_key='engagement_id')
+    created_date = fields.Str(data_key='created_date')
+    reviewed_by = fields.Str(data_key='reviewed_by')
+    review_date = fields.Str(data_key='review_date')
+    comment_status_id = fields.Int(data_key='comment_status_id')
+    is_resubmission = fields.Bool(data_key='is_resubmission')
+
+
 class PublicSubmissionSchema(Schema):
     """Schema for a public submission."""
 

@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from 'hooks';
 import { USER_ROLES } from 'services/userService/constants';
 import { SubmissionStatus } from 'constants/engagementStatus';
-import { Survey } from 'models/survey';
+import { SurveyListItem } from 'models/survey';
 import { SecondaryButton } from 'components/shared/common';
 import { Palette } from 'styles/Theme';
 
-export const ReportButtons = ({ survey }: { survey: Survey }) => {
+export const ReportButtons = ({ survey }: { survey: SurveyListItem }) => {
     const navigate = useNavigate();
     const { roles, assignedEngagements } = useAppSelector((state) => state.user);
     const engagement = survey.engagement;

@@ -1,6 +1,13 @@
-import { Survey, SurveySubmissionData } from './survey';
+import { Survey, SurveyLookup, SurveySubmissionData } from './survey';
 import { EngagementStatusBlock } from './engagementStatusBlock';
 import { SubmissionStatus } from 'constants/engagementStatus';
+
+// What the selectors need of an engagement: enough to label an option and reach its survey.
+export interface EngagementLookup {
+    id: number;
+    name: string;
+    surveys: SurveyLookup[];
+}
 
 export interface Engagement {
     id: number;
@@ -27,6 +34,15 @@ export interface Engagement {
     visibility: number;
     engagement_visibility: Visibility;
 }
+
+// What GET /engagements/ actually returns. An Omit of Engagement so a field added there
+// has to be considered here.
+export type EngagementListItem = Omit<
+    Engagement,
+    'content' | 'rich_content' | 'rich_description' | 'status_block' | 'surveys'
+> & {
+    surveys: SurveyLookup[];
+};
 
 export interface Status {
     id: number;

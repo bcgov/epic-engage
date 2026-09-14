@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
 import { filterQueryParams, replaceUrl } from 'utils/helpers';
-import { PublicSubmission, SurveySubmission } from 'models/surveySubmission';
+import { PublicSubmission, SubmissionListItem, SurveySubmission } from 'models/surveySubmission';
 import { Comment } from 'models/comment';
 import { Page } from 'services/type';
 import { CommentStatus } from 'constants/commentStatus';
@@ -41,15 +41,16 @@ interface GetSubmissionsParams {
         reviewer?: string;
         reviewed_date_from?: string;
         reviewed_date_to?: string;
+        include_comments?: boolean;
     };
 }
 export const getSubmissionPage = async ({
     survey_id,
     queryParams = {},
-}: GetSubmissionsParams): Promise<Page<SurveySubmission>> => {
+}: GetSubmissionsParams): Promise<Page<SubmissionListItem>> => {
     const url = replaceUrl(Endpoints.SurveySubmission.GET_LIST, 'survey_id', String(survey_id));
     const filteredQueryParams = filterQueryParams(queryParams);
-    const response = await http.GetRequest<Page<SurveySubmission>>(url, filteredQueryParams);
+    const response = await http.GetRequest<Page<SubmissionListItem>>(url, filteredQueryParams);
     if (response.data) {
         return response.data;
     }

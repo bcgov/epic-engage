@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Grid from '@mui/material/Grid';
 import { MetBody, MetLabel } from 'components/shared/common';
 import { Accordion, AccordionDetails, AccordionSummary, useMediaQuery, Theme } from '@mui/material';
-import { Engagement } from 'models/engagement';
+import { EngagementListItem } from 'models/engagement';
 import { When } from 'react-if';
 import SurveyEmailsSent from 'components/shared/analytics/KPI/SurveyEmailsSent';
 import SurveysCompleted from 'components/shared/analytics/KPI/SurveysCompleted';
@@ -18,7 +18,7 @@ const EngagementsAccordion = ({
     borderColor,
     disabled,
 }: {
-    engagements: Engagement[];
+    engagements: EngagementListItem[];
     bgColor: string;
     borderColor: string;
     disabled?: boolean;

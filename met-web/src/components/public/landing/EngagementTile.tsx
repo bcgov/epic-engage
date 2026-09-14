@@ -3,7 +3,7 @@ import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
-import { Engagement } from 'models/engagement';
+import { Engagement, EngagementListItem } from 'models/engagement';
 import { Box, Stack } from '@mui/material';
 import { MetBody, MetHeader4, MetLabel, MetParagraph, PrimaryButton, SecondaryButton } from 'components/shared/common';
 import { getEngagement } from 'services/engagementService';
@@ -17,11 +17,11 @@ import { getBaseUrl } from 'utils/helpers';
 import { Palette } from 'styles/Theme';
 
 interface EngagementTileProps {
-    passedEngagement?: Engagement;
+    passedEngagement?: EngagementListItem;
     engagementId: number;
 }
 const EngagementTile = ({ passedEngagement, engagementId }: EngagementTileProps) => {
-    const [loadedEngagement, setLoadedEngagement] = useState<Engagement | null>(passedEngagement || null);
+    const [loadedEngagement, setLoadedEngagement] = useState<EngagementListItem | null>(passedEngagement || null);
     const [isLoadingEngagement, setIsLoadingEngagement] = useState(true);
     const [slug, setSlug] = useState('');
     const dateFormat = 'MMM DD, YYYY';

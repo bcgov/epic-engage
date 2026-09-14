@@ -10,6 +10,7 @@ from typing import List, Optional
 
 from sqlalchemy import and_, asc, case, desc, or_
 from sqlalchemy.dialects.postgresql import JSON
+from sqlalchemy.orm import load_only, selectinload
 from sqlalchemy.sql.schema import ForeignKey
 
 from met_api.constants.engagement_status import EngagementDisplayStatus, Status
@@ -18,7 +19,7 @@ from met_api.constants.user import SYSTEM_USER
 from met_api.models.engagement_metadata import EngagementMetadataModel
 from met_api.models.engagement_scope_options import EngagementScopeOptions
 from met_api.models.membership import Membership as MembershipModel
-from met_api.models.pagination_options import PaginationOptions
+from met_api.models.pagination_options import PaginationOptions, paginate
 from met_api.models.staff_user import StaffUser
 from met_api.schemas.engagement import EngagementSchema
 from met_api.utils.datetime import local_datetime
@@ -60,12 +61,42 @@ class Engagement(BaseModel):
             search_options=None,
     ):
         """Get engagements paginated."""
+        # Imported here: met_api.models.survey imports this module.
+        from met_api.models.survey import Survey  # pylint: disable=import-outside-toplevel,cyclic-import
+
+        pagination_options = pagination_options.bounded()
+
         query = db.session.query(Engagement).join(EngagementStatus).join(EngagementVisibility)
+
+        # No list renders the long-form content, which is the bulk of an engagement row.
+        # The surveys are eager because reading them lazily is a query per engagement.
+        query = query.options(
+            load_only(
+                Engagement.id,
+                Engagement.name,
+                Engagement.description,
+                Engagement.start_date,
+                Engagement.end_date,
+                Engagement.status_id,
+                Engagement.created_by,
+                Engagement.created_date,
+                Engagement.updated_by,
+                Engagement.updated_date,
+                Engagement.published_date,
+                Engagement.scheduled_date,
+                Engagement.banner_filename,
+                Engagement.tenant_id,
+                Engagement.visibility,
+            ),
+            selectinload(Engagement.surveys).load_only(Survey.id, Survey.name),
+        )
 
         query = cls._add_tenant_filter(query)
 
         if search_options:
             query = cls._filter_by_search_text(query, search_options)
+
+            query = cls._filter_by_has_surveys(query, search_options)
 
             query = cls._filter_by_created_date(query, search_options)
 
@@ -89,18 +120,13 @@ class Engagement(BaseModel):
 
         sort = cls._get_sort_order(pagination_options)
 
+        # Secondary sort keeps rows with equal sort values stable across pages.
         if isinstance(sort, tuple):
-            query = query.order_by(*sort)
+            query = query.order_by(*sort, Engagement.id.asc())
         else:
-            query = query.order_by(sort)
+            query = query.order_by(sort, Engagement.id.asc())
 
-        no_pagination_options = not pagination_options.page or not pagination_options.size
-        if no_pagination_options:
-            items = query.all()
-            return items, len(items)
-
-        page = db.paginate(query, page=pagination_options.page, per_page=pagination_options.size, error_out=False)
-        return page.items, page.total
+        return paginate(query, pagination_options)
 
     @classmethod
     def update_engagement(cls, engagement: EngagementSchema) -> Engagement:
@@ -318,6 +344,17 @@ class Engagement(BaseModel):
                 query = query.filter(Engagement.visibility == Visibility.Public)
             else:
                 query = query.filter(Engagement.visibility == Visibility.AuthToken)
+        return query
+
+    @staticmethod
+    def _filter_by_has_surveys(query, search_options):
+        """Keep only engagements that have at least one survey.
+
+        An EXISTS predicate rather than a join, so an engagement with several surveys is
+        not returned more than once and the total stays accurate.
+        """
+        if search_options.get('has_surveys'):
+            query = query.filter(Engagement.surveys.any())
         return query
 
     @staticmethod

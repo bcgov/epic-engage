@@ -3,15 +3,15 @@ import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { createDefaultPageInfo, PageInfo, PaginationOptions } from 'components/shared/common/Table/types';
 import { getEngagements } from 'services/engagementService';
-import { Engagement } from 'models/engagement';
+import { Engagement, EngagementListItem } from 'models/engagement';
 import { EngagementDisplayStatus } from 'constants/engagementStatus';
 
 export interface DashboardContextProps {
     isLoading: boolean;
     pageInfo: PageInfo;
-    openEngagements: Engagement[];
-    upcomingEngagements: Engagement[];
-    closedEngagements: Engagement[];
+    openEngagements: EngagementListItem[];
+    upcomingEngagements: EngagementListItem[];
+    closedEngagements: EngagementListItem[];
     paginationOptions: PaginationOptions<Engagement>;
     setPaginationOptions: React.Dispatch<React.SetStateAction<PaginationOptions<Engagement>>>;
 }
@@ -33,9 +33,9 @@ export const DashboardContext = createContext<DashboardContextProps>({
 
 export const DashboardContextProvider = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
     const dispatch = useAppDispatch();
-    const [openEngagements, setOpenEngagements] = useState<Engagement[]>([]);
-    const [upcomingEngagements, setUpcomingEngagements] = useState<Engagement[]>([]);
-    const [closedEngagements, setClosedEngagements] = useState<Engagement[]>([]);
+    const [openEngagements, setOpenEngagements] = useState<EngagementListItem[]>([]);
+    const [upcomingEngagements, setUpcomingEngagements] = useState<EngagementListItem[]>([]);
+    const [closedEngagements, setClosedEngagements] = useState<EngagementListItem[]>([]);
     const [pageInfo, setPageInfo] = useState<PageInfo>(createDefaultPageInfo());
     const [isLoading, setIsLoading] = useState(true);
 

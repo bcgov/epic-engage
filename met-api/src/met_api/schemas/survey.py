@@ -5,8 +5,7 @@ Manages the survey
 
 from marshmallow import EXCLUDE, Schema, fields
 
-from met_api.constants.comment_status import Status
-from met_api.schemas.utils import count_comments_by_status
+from met_api.schemas.utils import get_submission_counts
 from .engagement import EngagementSchema
 
 
@@ -32,14 +31,9 @@ class SurveySchema(Schema):
     comments_meta_data = fields.Method('get_comments_meta_data')
     tenant_id = fields.Str(data_key='tenant_id')
 
+    # Set by callers serializing a list, so the whole page shares one grouped count query.
+    submission_counts = None
+
     def get_comments_meta_data(self, obj):
         """Get the meta data of the comments made in the survey."""
-        return {
-            'total': len(obj.submissions),
-            'pending': count_comments_by_status(obj.submissions, Status.Pending.value),
-            'approved': count_comments_by_status(obj.submissions, Status.Approved.value),
-            'rejected': count_comments_by_status(obj.submissions, Status.Rejected.value),
-            'needs_further_review': count_comments_by_status(
-                obj.submissions,
-                Status.Needs_further_review.value)
-        }
+        return get_submission_counts(obj.id, self.submission_counts)

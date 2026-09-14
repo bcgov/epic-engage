@@ -10,11 +10,12 @@ from typing import Optional
 
 from sqlalchemy import ForeignKey, and_, asc, desc, func, or_
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import contains_eager, defer, load_only
 
 from met_api.constants.engagement_status import Status
 from met_api.models.engagement import Engagement
 from met_api.models.engagement_status import EngagementStatus
-from met_api.models.pagination_options import PaginationOptions
+from met_api.models.pagination_options import PaginationOptions, paginate
 from met_api.models.survey_search_options import SurveySearchOptions
 from met_api.schemas.survey import SurveySchema
 from met_api.utils.datetime import local_datetime
@@ -88,9 +89,31 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
 
     @classmethod
     def get_surveys_paginated(cls, pagination_options: PaginationOptions,
-                              survey_search_options: SurveySearchOptions):
+                              survey_search_options: SurveySearchOptions,
+                              reduce_data: bool = False,
+                              include_form_json: bool = False):
         """Get surveys paginated."""
+        pagination_options = pagination_options.bounded()
+
         query = db.session.query(Survey).join(Engagement, isouter=True).join(EngagementStatus, isouter=True)
+
+        # form_json is the bulk of a survey row, so only the caller that asks for it pays.
+        if reduce_data:
+            query = query.options(load_only(Survey.id, Survey.name))
+        elif not include_form_json:
+            # The engagement is already joined; left lazy it is a query per survey.
+            query = query.options(
+                defer(Survey.form_json),
+                contains_eager(Survey.engagement).load_only(
+                    Engagement.id,
+                    Engagement.name,
+                    Engagement.published_date,
+                    Engagement.status_id,
+                    Engagement.start_date,
+                    Engagement.end_date,
+                ),
+            )
+
         query = cls._add_tenant_filter(query)
 
         query = cls.filter_by_search_options(survey_search_options, query)
@@ -107,16 +130,10 @@ class Survey(BaseModel):  # pylint: disable=too-few-public-methods
         col = _sort_columns.get(pagination_options.sort_key, Survey.name)
         sort = asc(col) if pagination_options.sort_order == 'asc' else desc(col)
 
-        query = query.order_by(sort)
+        # Secondary sort keeps rows with equal sort values stable across pages.
+        query = query.order_by(sort, Survey.id.asc())
 
-        no_pagination_options = not pagination_options.page or not pagination_options.size
-        if no_pagination_options:
-            items = query.all()
-            return items, len(items)
-
-        page = db.paginate(query, page=pagination_options.page, per_page=pagination_options.size, error_out=False)
-
-        return page.items, page.total
+        return paginate(query, pagination_options)
 
     @classmethod
     def filter_by_search_options(cls, survey_search_options: SurveySearchOptions, query):

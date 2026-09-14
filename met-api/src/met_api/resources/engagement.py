@@ -117,6 +117,11 @@ class Engagements(Resource):
                     default=False,
                     type=lambda v: v.lower() == 'true'
                 ),
+                'has_surveys': args.get(
+                    'has_surveys',
+                    default=False,
+                    type=lambda v: v.lower() == 'true'
+                ),
             }
 
             engagement_records = EngagementService() \
@@ -126,6 +131,11 @@ class Engagements(Resource):
                 search_options,
                 include_banner_url=args.get(
                     'include_banner_url',
+                    default=False,
+                    type=lambda v: v.lower() == 'true'
+                ),
+                lookup_only=args.get(
+                    'lookup_only',
                     default=False,
                     type=lambda v: v.lower() == 'true'
                 ),

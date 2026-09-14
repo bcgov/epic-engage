@@ -9,7 +9,7 @@ import { Collapse, Link as MuiLink, Box, Stack as MuiStack } from '@mui/material
 import TextField from '@mui/material/TextField';
 import SearchIcon from '@mui/icons-material/Search';
 import Stack from '@mui/material/Stack';
-import { SurveySubmission } from 'models/surveySubmission';
+import { SubmissionListItem } from 'models/surveySubmission';
 import { COMMENTS_STATUS, CommentStatus } from 'constants/commentStatus';
 import { AdvancedSearch } from './AdvancedSearch';
 import { CommentListingContext } from './CommentListingContext';
@@ -43,7 +43,7 @@ const Submissions = () => {
         });
     };
 
-    const headCells: HeadCell<SurveySubmission>[] = [
+    const headCells: HeadCell<SubmissionListItem>[] = [
         {
             key: 'id',
             nestedSortKey: 'submission.id',
@@ -199,7 +199,7 @@ const Submissions = () => {
                 <MetTable
                     headCells={headCells}
                     rows={submissions}
-                    handleChangePagination={(pagination: PaginationOptions<SurveySubmission>) =>
+                    handleChangePagination={(pagination: PaginationOptions<SubmissionListItem>) =>
                         setPagination(pagination)
                     }
                     paginationOptions={paginationOptions}

@@ -1,14 +1,14 @@
 import React from 'react';
 import { Modal, Paper, Grid, Stack } from '@mui/material';
 import { deleteSurvey } from 'services/surveyService';
-import { Survey } from 'models/survey';
+import { SurveyListItem } from 'models/survey';
 import { PrimaryButton, SecondaryButton } from 'components/shared/common';
 
 interface DeleteSurveyModalProps {
     open: boolean;
     onClose: () => void;
     onDelete: () => void;
-    survey: Survey;
+    survey: SurveyListItem;
 }
 
 export const DeleteSurveyModal: React.FC<DeleteSurveyModalProps> = ({ open, onClose, onDelete, survey }) => {

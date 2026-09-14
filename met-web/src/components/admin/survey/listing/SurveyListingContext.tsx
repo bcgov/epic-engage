@@ -1,7 +1,7 @@
 import React, { createContext, useEffect, useState } from 'react';
 import { PageInfo, PaginationOptions, createDefaultPageInfo } from 'components/shared/common/Table/types';
 import { useAppDispatch } from 'hooks';
-import { Survey } from 'models/survey';
+import { SurveyListItem } from 'models/survey';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { getSurveysPage } from 'services/surveyService';
 import { useLocation } from 'react-router-dom';
@@ -43,13 +43,13 @@ export interface SurveyListingContextState {
     setSearchFilter: (value: { key: string; value: string }) => void;
     searchText: string;
     setSearchText: (value: string) => void;
-    paginationOptions: PaginationOptions<Survey>;
-    setPaginationOptions: (value: PaginationOptions<Survey>) => void;
+    paginationOptions: PaginationOptions<SurveyListItem>;
+    setPaginationOptions: (value: PaginationOptions<SurveyListItem>) => void;
     pageInfo: PageInfo;
     setPageInfo: (value: PageInfo) => void;
     tableLoading: boolean;
-    setSurveys: React.Dispatch<React.SetStateAction<Survey[]>>;
-    surveys: Survey[];
+    setSurveys: React.Dispatch<React.SetStateAction<SurveyListItem[]>>;
+    surveys: SurveyListItem[];
     initialSearchFilters: AdvancedSearchFilters;
 }
 
@@ -104,8 +104,8 @@ export const SurveyListingContextProvider = ({ children }: SurveyListingContextP
     const pageFromURL = searchParams.get('page');
     const sizeFromURL = searchParams.get('size');
     const [searchText, setSearchText] = useState('');
-    const [surveys, setSurveys] = useState<Survey[]>([]);
-    const [paginationOptions, setPaginationOptions] = useState<PaginationOptions<Survey>>({
+    const [surveys, setSurveys] = useState<SurveyListItem[]>([]);
+    const [paginationOptions, setPaginationOptions] = useState<PaginationOptions<SurveyListItem>>({
         page: Number(pageFromURL) || 1,
         size: Number(sizeFromURL) || 10,
         sort_key: 'created_date',

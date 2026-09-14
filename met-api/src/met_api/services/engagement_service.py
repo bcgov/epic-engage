@@ -31,6 +31,22 @@ from met_api.utils.template import Template
 from met_api.utils.token_info import TokenInfo
 
 
+# What the tables and tiles render. No long-form content, and surveys only as the id and
+# name the "go to comments" links need.
+ENGAGEMENT_LIST_FIELDS = (
+    'id', 'name', 'description', 'start_date', 'end_date', 'status_id',
+    'created_by', 'created_date', 'updated_by', 'updated_date',
+    'published_date', 'scheduled_date', 'banner_filename',
+    'engagement_status', 'submission_status', 'submissions_meta_data',
+    'tenant_id', 'visibility', 'engagement_visibility',
+    'surveys.id', 'surveys.name',
+)
+
+# A selector labels an option and acts on the survey behind it. No counts, so no count
+# query.
+ENGAGEMENT_LOOKUP_FIELDS = ('id', 'name', 'surveys.id', 'surveys.name')
+
+
 class EngagementService:
     """Engagement management service."""
 
@@ -69,6 +85,7 @@ class EngagementService:
             pagination_options: PaginationOptions,
             search_options=None,
             include_banner_url=False,
+            lookup_only=False,
     ):
         """Get engagements paginated."""
         user_roles = TokenInfo.get_user_roles()
@@ -80,7 +97,15 @@ class EngagementService:
             scope_options,
             search_options,
         )
-        engagements_schema = EngagementSchema(many=True)
+
+        if lookup_only:
+            engagements_schema = EngagementSchema(many=True, only=ENGAGEMENT_LOOKUP_FIELDS)
+        else:
+            engagements_schema = EngagementSchema(many=True, only=ENGAGEMENT_LIST_FIELDS)
+            engagements_schema.submission_counts = SubmissionModel.get_counts_by_survey_ids(
+                [engagement.surveys[0].id for engagement in items if engagement.surveys]
+            )
+
         engagements = engagements_schema.dump(items)
 
         if include_banner_url:
@@ -92,7 +117,7 @@ class EngagementService:
 
     def _attach_banner_url(self, engagements: list):
         for engagement in engagements:
-            engagement['banner_url'] = self.object_storage.get_url(engagement['banner_filename'])
+            engagement['banner_url'] = self.object_storage.get_url(engagement.get('banner_filename'))
         return engagements
 
     @staticmethod

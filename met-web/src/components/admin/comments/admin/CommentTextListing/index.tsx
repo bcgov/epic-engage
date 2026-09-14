@@ -18,7 +18,7 @@ import { CommentStatusChip } from '../CommentStatusChip';
 import { CommentStatus } from 'constants/commentStatus';
 import { If, Then, Else, When } from 'react-if';
 import { getSubmissionPage } from 'services/submissionService';
-import { SurveySubmission } from 'models/surveySubmission';
+import { SubmissionListItem } from 'models/surveySubmission';
 import { formatDate, formatToUTC } from 'utils/helpers/dateHelper';
 import { USER_ROLES } from 'services/userService/constants';
 import { USER_GROUP } from 'models/user';
@@ -50,7 +50,7 @@ const CommentTextListing = () => {
         value: '',
     });
     const [searchText, setSearchText] = useState('');
-    const [paginationOptions, setPagination] = useState<PaginationOptions<SurveySubmission>>({
+    const [paginationOptions, setPagination] = useState<PaginationOptions<SubmissionListItem>>({
         page: Number(pageFromURL) || 1,
         size: Number(sizeFromURL) || 10,
         sort_key: 'id',
@@ -132,7 +132,7 @@ const CommentTextListing = () => {
         width: '100%',
     };
 
-    const [submissions, setSubmissions] = useState<SurveySubmission[]>([]);
+    const [submissions, setSubmissions] = useState<SubmissionListItem[]>([]);
     const loadSubmissions = async () => {
         try {
             setTableLoading(true);
@@ -142,6 +142,8 @@ const CommentTextListing = () => {
                 sort_key: nested_sort_key || sort_key,
                 sort_order,
                 search_text: searchFilter.value,
+                // This table renders the comments themselves; the review table does not.
+                include_comments: true,
             };
             const response = await getSubmissionPage({
                 survey_id: Number(surveyId),
@@ -173,7 +175,7 @@ const CommentTextListing = () => {
         });
     };
 
-    const headCells: HeadCell<SurveySubmission>[] = [
+    const headCells: HeadCell<SubmissionListItem>[] = [
         {
             key: 'id',
             numeric: true,
@@ -201,7 +203,7 @@ const CommentTextListing = () => {
             disablePadding: false,
             label: 'Content',
             allowSort: false,
-            renderCell: (row: SurveySubmission) => (
+            renderCell: (row: SubmissionListItem) => (
                 <Grid container rowSpacing={2} sx={{ pt: 1.5 }}>
                     {row.comments?.map((comment, index) => {
                         return (
@@ -258,7 +260,7 @@ const CommentTextListing = () => {
             allowSort: true,
             align: 'right',
             customStyle: badgeStyle,
-            renderCell: (row: SurveySubmission) => (
+            renderCell: (row: SubmissionListItem) => (
                 <Grid container>
                     <Grid
                         container
@@ -408,7 +410,7 @@ const CommentTextListing = () => {
                     hideHeader={true}
                     headCells={headCells}
                     rows={submissions}
-                    handleChangePagination={(pagination: PaginationOptions<SurveySubmission>) =>
+                    handleChangePagination={(pagination: PaginationOptions<SubmissionListItem>) =>
                         setPagination(pagination)
                     }
                     commentTable

@@ -21,8 +21,6 @@ from typing import Tuple
 
 from jsonschema import Draft7Validator, RefResolver, SchemaError, draft7_format_checker
 
-from met_api.constants.user import SYSTEM_REVIEWER
-
 
 BASE_URI = 'https://met.gov.bc.ca/.well_known/schemas'
 
@@ -119,16 +117,27 @@ def serialize(errors):
     return error_message
 
 
-def count_comments_by_status(submissions, status):
-    """Count the comments by their status.
+ZERO_SUBMISSION_COUNTS = {
+    'total': 0,
+    'pending': 0,
+    'approved': 0,
+    'rejected': 0,
+    'needs_further_review': 0,
+}
 
-    :param submissions: List of submissions
-    :param status: Status of the comments
-    :return: Number of comments with the provided status
+
+def get_submission_counts(survey_id, batched_counts=None):
+    """Return the submission counts for a survey.
+
+    A list caller pre-loads `batched_counts` for its whole page, so the page costs one
+    grouped query; a lone object falls back to querying for itself.
     """
-    return len([
-        submission
-        for submission in submissions
-        if (submission.comment_status_id == status and
-            submission.reviewed_by != SYSTEM_REVIEWER)
-    ])
+    if survey_id is None:
+        return dict(ZERO_SUBMISSION_COUNTS)
+
+    if batched_counts is None:
+        # Imported here: met_api.models.submission imports the schemas package.
+        from met_api.models.submission import Submission  # pylint: disable=import-outside-toplevel
+        batched_counts = Submission.get_counts_by_survey_ids([survey_id])
+
+    return batched_counts.get(survey_id, dict(ZERO_SUBMISSION_COUNTS))

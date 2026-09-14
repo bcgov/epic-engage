@@ -10,7 +10,7 @@ import {
     getUserResponseDetailByWeek,
 } from 'services/analytics/userResponseDetailService';
 import { UserResponseDetailByMonth } from 'models/analytics/userResponseDetail';
-import { Engagement } from 'models/engagement';
+import { EngagementListItem } from 'models/engagement';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { Dayjs } from 'dayjs';
@@ -20,7 +20,7 @@ import axios, { AxiosError } from 'axios';
 import { HTTP_STATUS_CODES } from 'constants/httpResponseCodes';
 
 interface SubmissionTrendProps {
-    engagement: Engagement;
+    engagement: EngagementListItem;
     engagementIsLoading: boolean;
 }
 

@@ -6,7 +6,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Collapse from '@mui/material/Collapse';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { MetPageGridContainer, MetTooltip, PrimaryButton, SecondaryButton } from 'components/shared/common';
-import { Engagement } from 'models/engagement';
+import { EngagementListItem } from 'models/engagement';
 import { useAppDispatch, useAppSelector } from 'hooks';
 import { createDefaultPageInfo, HeadCell, PageInfo, PaginationOptions } from 'components/shared/common/Table/types';
 import { formatDate } from 'utils/helpers/dateHelper';
@@ -44,8 +44,8 @@ const EngagementListing = () => {
         value: '',
     });
     const [searchText, setSearchText] = useState('');
-    const [engagements, setEngagements] = useState<Engagement[]>([]);
-    const [paginationOptions, setPaginationOptions] = useState<PaginationOptions<Engagement>>({
+    const [engagements, setEngagements] = useState<EngagementListItem[]>([]);
+    const [paginationOptions, setPaginationOptions] = useState<PaginationOptions<EngagementListItem>>({
         page: Number(pageFromURL) || 1,
         size: Number(sizeFromURL) || 10,
         sort_key: 'status_id',
@@ -122,7 +122,7 @@ const EngagementListing = () => {
         }
     };
 
-    const submissionHasBeenOpened = (engagement: Engagement) => {
+    const submissionHasBeenOpened = (engagement: EngagementListItem) => {
         return [SubmissionStatus.Open, SubmissionStatus.Closed].includes(engagement.submission_status);
     };
 
@@ -137,14 +137,14 @@ const EngagementListing = () => {
         setEngagements((prev) => prev.filter((e) => e.id !== engagementId));
     };
 
-    const headCells: HeadCell<Engagement>[] = [
+    const headCells: HeadCell<EngagementListItem>[] = [
         {
             key: 'name',
             numeric: false,
             disablePadding: true,
             label: 'Engagement Name',
             allowSort: true,
-            renderCell: (row: Engagement) => (
+            renderCell: (row: EngagementListItem) => (
                 <MuiLink component={Link} to={`/engagements/${Number(row.id)}/view`}>
                     {row.name}
                 </MuiLink>
@@ -157,7 +157,7 @@ const EngagementListing = () => {
             disablePadding: true,
             label: 'Date Created',
             allowSort: true,
-            renderCell: (row: Engagement) => formatDate(row.created_date),
+            renderCell: (row: EngagementListItem) => formatDate(row.created_date),
         },
         {
             key: 'published_date',
@@ -165,7 +165,7 @@ const EngagementListing = () => {
             disablePadding: true,
             label: 'Date Published',
             allowSort: true,
-            renderCell: (row: Engagement) => {
+            renderCell: (row: EngagementListItem) => {
                 if (row.published_date === 'None' || !row.published_date) {
                     return '';
                 }
@@ -178,7 +178,7 @@ const EngagementListing = () => {
             disablePadding: false,
             label: 'Status',
             allowSort: true,
-            renderCell: (row: Engagement) => {
+            renderCell: (row: EngagementListItem) => {
                 const acceptable_status = [
                     SubmissionStatus[SubmissionStatus.Open],
                     SubmissionStatus[SubmissionStatus.Closed],
@@ -206,7 +206,7 @@ const EngagementListing = () => {
             hideSorticon: true,
             allowSort: false,
             icon: <CommentIcon />,
-            renderCell: (row: Engagement) => {
+            renderCell: (row: EngagementListItem) => {
                 return <></>;
             },
         },
@@ -224,7 +224,7 @@ const EngagementListing = () => {
                 </ApprovedIcon>
             ),
             allowSort: false,
-            renderCell: (row: Engagement) => {
+            renderCell: (row: EngagementListItem) => {
                 if (!submissionHasBeenOpened(row)) {
                     return <></>;
                 }
@@ -265,7 +265,7 @@ const EngagementListing = () => {
                 </NFRIcon>
             ),
             allowSort: false,
-            renderCell: (row: Engagement) => {
+            renderCell: (row: EngagementListItem) => {
                 if (
                     !submissionHasBeenOpened(row) ||
                     (!canViewPrivateEngagements && !assignedEngagements.includes(Number(row.id))) ||
@@ -309,7 +309,7 @@ const EngagementListing = () => {
                 </RejectedIcon>
             ),
             allowSort: false,
-            renderCell: (row: Engagement) => {
+            renderCell: (row: EngagementListItem) => {
                 if (
                     !submissionHasBeenOpened(row) ||
                     (!canViewPrivateEngagements && !assignedEngagements.includes(Number(row.id))) ||
@@ -353,7 +353,7 @@ const EngagementListing = () => {
                 </NewIcon>
             ),
             allowSort: false,
-            renderCell: (row: Engagement) => {
+            renderCell: (row: EngagementListItem) => {
                 if (
                     !submissionHasBeenOpened(row) ||
                     (!canViewPrivateEngagements && !assignedEngagements.includes(Number(row.id))) ||
@@ -388,7 +388,7 @@ const EngagementListing = () => {
             disablePadding: false,
             label: 'Reports',
             allowSort: false,
-            renderCell: (row: Engagement) => {
+            renderCell: (row: EngagementListItem) => {
                 const canAccessDashboard =
                     roles.includes(USER_ROLES.ACCESS_DASHBOARD) || assignedEngagements.includes(row.id);
                 const canViewPublicReport = submissionHasBeenOpened(row) && canAccessDashboard;
@@ -446,7 +446,7 @@ const EngagementListing = () => {
             disablePadding: false,
             label: 'Actions',
             allowSort: false,
-            renderCell: (row: Engagement) => {
+            renderCell: (row: EngagementListItem) => {
                 return <ActionsDropDown engagement={row} onEngagementDeleted={handleEngagementDeleted} />;
             },
             customStyle: {
@@ -555,7 +555,7 @@ const EngagementListing = () => {
                 <MetTable
                     headCells={headCells}
                     rows={engagements}
-                    handleChangePagination={(paginationOptions: PaginationOptions<Engagement>) =>
+                    handleChangePagination={(paginationOptions: PaginationOptions<EngagementListItem>) =>
                         setPaginationOptions(paginationOptions)
                     }
                     paginationOptions={paginationOptions}

@@ -11,6 +11,7 @@ from met_api.models import Survey as SurveyModel
 from met_api.models.db import session_scope
 from met_api.models.pagination_options import PaginationOptions
 from met_api.models.report_setting import ReportSetting
+from met_api.models.submission import Submission as SubmissionModel
 from met_api.models.survey_search_options import SurveySearchOptions
 from met_api.schemas.engagement import EngagementSchema
 from met_api.schemas.survey import SurveySchema
@@ -23,6 +24,16 @@ from met_api.utils.roles import Role
 from met_api.utils.survey_conditional_logic import extract_conditional_links
 from met_api.utils.token_info import TokenInfo
 from ..exceptions.business_exception import BusinessException
+
+
+# What the listing renders. No form_json, and the engagement only as the fields the table
+# labels and links with.
+SURVEY_LIST_FIELDS = (
+    'id', 'name', 'created_by', 'created_date', 'updated_by', 'updated_date',
+    'engagement_id', 'is_hidden', 'is_template', 'tenant_id', 'comments_meta_data',
+    'engagement.id', 'engagement.name', 'engagement.published_date',
+    'engagement.engagement_status', 'engagement.submission_status',
+)
 
 
 class SurveyService:
@@ -173,14 +184,21 @@ class SurveyService:
         items, total = SurveyModel.get_surveys_paginated(
             pagination_options,
             search_options,
+            reduce_data=reduce_data,
+            include_form_json=include_from_json,
         )
 
         if reduce_data:
             surveys_schema = SurveySchema(many=True, only=('id', 'name'))
         elif not include_from_json:
-            surveys_schema = SurveySchema(many=True, exclude=('form_json',))
+            surveys_schema = SurveySchema(many=True, only=SURVEY_LIST_FIELDS)
         else:
             surveys_schema = SurveySchema(many=True)
+
+        if not reduce_data:
+            surveys_schema.submission_counts = SubmissionModel.get_counts_by_survey_ids(
+                [survey.id for survey in items]
+            )
 
         return {
             'items': surveys_schema.dump(items),

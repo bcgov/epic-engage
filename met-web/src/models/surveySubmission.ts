@@ -20,6 +20,20 @@ export interface SurveySubmission {
     engagement_id: number;
 }
 
+// What GET /submissions/survey/<id> actually returns. Comments are optional because only
+// the comment-text screen asks for them, with include_comments.
+export interface SubmissionListItem {
+    id: number;
+    survey_id: number;
+    engagement_id: number;
+    created_date: string;
+    reviewed_by: string;
+    review_date: string;
+    comment_status_id: number;
+    is_resubmission?: boolean;
+    comments?: Comment[];
+}
+
 export interface PublicSubmission {
     id: number;
     engagement_id: number;

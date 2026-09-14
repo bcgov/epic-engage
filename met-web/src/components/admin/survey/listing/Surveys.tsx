@@ -3,7 +3,7 @@ import MetTable from 'components/shared/common/Table';
 import Grid from '@mui/material/Grid';
 import { Link, useNavigate } from 'react-router-dom';
 import { MetPageGridContainer, MetTooltip, PrimaryButton, SecondaryButton } from 'components/shared/common';
-import { Survey } from 'models/survey';
+import { SurveyListItem } from 'models/survey';
 import { HeadCell, PaginationOptions } from 'components/shared/common/Table/types';
 import { formatDate } from 'utils/helpers/dateHelper';
 import { Collapse, Link as MuiLink, Theme, useMediaQuery } from '@mui/material';
@@ -54,7 +54,7 @@ const Surveys = () => {
 
     const canViewAllCommentStatus = roles.includes(USER_ROLES.SHOW_ALL_COMMENT_STATUS);
 
-    const submissionHasBeenOpened = (survey: Survey) => {
+    const submissionHasBeenOpened = (survey: SurveyListItem) => {
         return (
             !!survey.engagement &&
             [SubmissionStatus.Open, SubmissionStatus.Closed].includes(survey.engagement.submission_status)
@@ -68,7 +68,7 @@ const Surveys = () => {
         });
     };
 
-    const headCells: HeadCell<Survey>[] = [
+    const headCells: HeadCell<SurveyListItem>[] = [
         {
             key: 'name',
             nestedSortKey: 'survey.name',
@@ -76,7 +76,7 @@ const Surveys = () => {
             disablePadding: true,
             label: 'Survey Name',
             allowSort: true,
-            renderCell: (row: Survey) => (
+            renderCell: (row: SurveyListItem) => (
                 <MuiLink component={Link} to={`/surveys/${Number(row.id)}/submit`}>
                     {row.name}
                 </MuiLink>
@@ -89,7 +89,7 @@ const Surveys = () => {
             disablePadding: false,
             label: 'Date Created',
             allowSort: true,
-            renderCell: (row: Survey) => formatDate(row.created_date),
+            renderCell: (row: SurveyListItem) => formatDate(row.created_date),
         },
         {
             key: 'engagement',
@@ -98,7 +98,7 @@ const Surveys = () => {
             disablePadding: false,
             label: 'Date Published',
             allowSort: true,
-            renderCell: (row: Survey) => formatDate(row.engagement?.published_date ?? ''),
+            renderCell: (row: SurveyListItem) => formatDate(row.engagement?.published_date ?? ''),
         },
         {
             key: 'engagement',
@@ -107,7 +107,7 @@ const Surveys = () => {
             disablePadding: false,
             label: 'Status',
             allowSort: true,
-            renderCell: (row: Survey) => {
+            renderCell: (row: SurveyListItem) => {
                 if (row.is_hidden) {
                     return (
                         <MetTooltip
@@ -189,7 +189,7 @@ const Surveys = () => {
             label: 'Engagement Name',
             customStyle: { padding: 2, width: '10%' },
             allowSort: true,
-            renderCell: (row: Survey) => {
+            renderCell: (row: SurveyListItem) => {
                 if (!row.engagement) {
                     return <></>;
                 }
@@ -215,7 +215,7 @@ const Surveys = () => {
                 </ApprovedIcon>
             ),
             allowSort: false,
-            renderCell: (row: Survey) => {
+            renderCell: (row: SurveyListItem) => {
                 if (!submissionHasBeenOpened(row)) {
                     return <></>;
                 }
@@ -254,7 +254,7 @@ const Surveys = () => {
                 </NFRIcon>
             ),
             allowSort: false,
-            renderCell: (row: Survey) => {
+            renderCell: (row: SurveyListItem) => {
                 if (
                     !submissionHasBeenOpened(row) ||
                     (!canViewPrivateEngagements && !assignedEngagements.includes(Number(row.engagement_id))) ||
@@ -297,7 +297,7 @@ const Surveys = () => {
                 </RejectedIcon>
             ),
             allowSort: false,
-            renderCell: (row: Survey) => {
+            renderCell: (row: SurveyListItem) => {
                 if (
                     !submissionHasBeenOpened(row) ||
                     (!canViewPrivateEngagements && !assignedEngagements.includes(Number(row.engagement_id))) ||
@@ -340,7 +340,7 @@ const Surveys = () => {
                 </NewIcon>
             ),
             allowSort: false,
-            renderCell: (row: Survey) => {
+            renderCell: (row: SurveyListItem) => {
                 if (
                     !submissionHasBeenOpened(row) ||
                     (!canViewPrivateEngagements && !assignedEngagements.includes(Number(row.engagement_id))) ||
@@ -374,7 +374,7 @@ const Surveys = () => {
             disablePadding: false,
             label: 'Reports',
             allowSort: false,
-            renderCell: (row: Survey) => {
+            renderCell: (row: SurveyListItem) => {
                 return <ReportButtons survey={row} />;
             },
             customStyle: {
@@ -458,7 +458,7 @@ const Surveys = () => {
                 <MetTable
                     headCells={headCells}
                     rows={surveys}
-                    handleChangePagination={(paginationOptions: PaginationOptions<Survey>) =>
+                    handleChangePagination={(paginationOptions: PaginationOptions<SurveyListItem>) =>
                         setPaginationOptions(paginationOptions)
                     }
                     paginationOptions={paginationOptions}

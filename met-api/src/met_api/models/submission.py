@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, and_, case, func, or_
 from sqlalchemy.dialects import postgresql
 
 from met_api.constants.comment_status import Status
@@ -45,6 +45,51 @@ class Submission(BaseModel):  # pylint: disable=too-few-public-methods
     def get_by_survey_id(cls, survey_id) -> List[SubmissionSchema]:
         """Get submissions by survey id."""
         return db.session.query(Submission).filter_by(survey_id=survey_id).all()
+
+    @classmethod
+    def get_counts_by_survey_ids(cls, survey_ids) -> dict:
+        """Aggregate submission counts per survey without loading the submissions.
+
+        Preserves the semantics of the in-Python counting this replaces:
+        totals include system-reviewed submissions, while the status counts exclude the
+        system reviewer and keep rows with no reviewer. A bare `!= SYSTEM_REVIEWER`
+        would drop the null-reviewer rows in SQL, so the null is spelled out.
+        """
+        if not survey_ids:
+            return {}
+
+        not_system_reviewer = or_(
+            Submission.reviewed_by.is_(None),
+            Submission.reviewed_by != SYSTEM_REVIEWER,
+        )
+
+        def _status_count(status):
+            return func.count(
+                case((and_(Submission.comment_status_id == status, not_system_reviewer), 1))
+            )
+
+        rows = db.session.query(
+            Submission.survey_id,
+            func.count(Submission.id),
+            _status_count(Status.Pending.value),
+            _status_count(Status.Approved.value),
+            _status_count(Status.Rejected.value),
+            _status_count(Status.Needs_further_review.value),
+        )\
+            .filter(Submission.survey_id.in_(survey_ids))\
+            .group_by(Submission.survey_id)\
+            .all()
+
+        return {
+            survey_id: {
+                'total': total,
+                'pending': pending,
+                'approved': approved,
+                'rejected': rejected,
+                'needs_further_review': needs_further_review,
+            }
+            for survey_id, total, pending, approved, rejected, needs_further_review in rows
+        }
 
     @classmethod
     def create(cls, submission: SubmissionSchema, session=None) -> Submission:

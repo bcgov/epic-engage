@@ -7,11 +7,10 @@ from datetime import datetime
 
 from marshmallow import EXCLUDE, Schema, ValidationError, fields, validate, validates_schema
 
-from met_api.constants.comment_status import Status as CommentStatus
 from met_api.constants.engagement_status import Status, SubmissionStatus
 from met_api.schemas.engagement_status_block import EngagementStatusBlockSchema
 from met_api.schemas.engagement_survey import EngagementSurveySchema
-from met_api.schemas.utils import count_comments_by_status
+from met_api.schemas.utils import get_submission_counts
 from met_api.utils.datetime import local_datetime
 from .engagement_status import EngagementStatusSchema
 from .engagement_visibility import EngagementVisibilitySchema
@@ -51,26 +50,17 @@ class EngagementSchema(Schema):
     visibility = fields.Int(data_key='visibility')
     engagement_visibility = fields.Nested(EngagementVisibilitySchema)
 
+    # Set by callers serializing a list, so the whole page shares one grouped count query.
+    submission_counts = None
+
     def get_submissions_meta_data(self, obj):
-        """Get the meta data of the submissions made in the survey."""
+        """Get the meta data of the submissions made in the survey.
+
+        An engagement reports on its first survey; one without surveys reports zeroes.
+        """
         if not obj or len(obj.surveys) == 0:
-            return {
-                'total': 0,
-                'pending': 0,
-                'approved': 0,
-                'rejected': 0,
-                'needs_further_review': 0
-            }
-        submissions = obj.surveys[0].submissions
-        return {
-            'total': len(submissions),
-            'pending': count_comments_by_status(submissions, CommentStatus.Pending.value),
-            'approved': count_comments_by_status(submissions, CommentStatus.Approved.value),
-            'rejected': count_comments_by_status(submissions, CommentStatus.Rejected.value),
-            'needs_further_review': count_comments_by_status(
-                submissions,
-                CommentStatus.Needs_further_review.value)
-        }
+            return get_submission_counts(None)
+        return get_submission_counts(obj.surveys[0].id, self.submission_counts)
 
     def get_submission_status(self, obj):
         """Get the submission status of the engagement."""

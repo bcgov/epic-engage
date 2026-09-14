@@ -1,14 +1,14 @@
 import React from 'react';
 import { Modal, Paper, Grid, Stack } from '@mui/material';
 import { PrimaryButton, SecondaryButton } from 'components/shared/common';
-import { Engagement } from 'models/engagement';
+import { EngagementListItem } from 'models/engagement';
 import { deleteEngagement } from 'services/engagementService';
 
 interface DeleteEngagementModalProps {
     open: boolean;
     onClose: () => void;
     onDelete: () => void;
-    engagement: Engagement;
+    engagement: EngagementListItem;
 }
 
 export const DeleteEngagementModal: React.FC<DeleteEngagementModalProps> = ({

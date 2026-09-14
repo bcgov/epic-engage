@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { Engagement } from 'models/engagement';
+import { Engagement, EngagementListItem } from 'models/engagement';
 import { getEngagements } from 'services/engagementService';
 import { PAGE_SIZE } from './constants';
 
@@ -10,7 +10,7 @@ interface SearchFilters {
 }
 
 export interface LandingContextProps {
-    engagements: Engagement[];
+    engagements: EngagementListItem[];
     loadingEngagements: boolean;
     searchFilters: SearchFilters;
     setSearchFilters: React.Dispatch<React.SetStateAction<SearchFilters>>;
@@ -39,7 +39,7 @@ export const LandingContext = createContext<LandingContextProps>({
 });
 
 export const LandingContextProvider = ({ children }: { children: JSX.Element | JSX.Element[] }) => {
-    const [engagements, setEngagements] = useState<Engagement[]>([]);
+    const [engagements, setEngagements] = useState<EngagementListItem[]>([]);
     const [totalEngagements, setTotalEngagements] = useState(0);
     const [loadingEngagements, setLoadingEngagements] = useState(true);
     const [searchFilters, setSearchFilters] = useState<SearchFilters>(initialSearchFilters);

@@ -27,14 +27,14 @@ import { UserDetailsContext } from './UserDetailsContext';
 import { useForm, FormProvider, SubmitHandler, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { getEngagements } from 'services/engagementService';
+import { getAllEngagements } from 'services/engagementService';
 import { addUserToGroup } from 'services/userService/api';
 import { addTeamMemberToEngagement } from 'services/membershipService';
 import { When } from 'react-if';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch } from 'hooks';
 import { debounce } from 'lodash';
-import { Engagement } from 'models/engagement';
+import { EngagementListItem } from 'models/engagement';
 import axios, { AxiosError } from 'axios';
 import { Palette } from 'styles/Theme';
 import ControlledRadioGroup from 'components/shared/common/ControlledInputComponents/ControlledRadioGroup';
@@ -59,7 +59,7 @@ export const AddToEngagementModal = () => {
 
     const dispatch = useAppDispatch();
     const [isAssigningRole, setIsAssigningRole] = useState(false);
-    const [engagements, setEngagements] = useState<Engagement[]>([]);
+    const [engagements, setEngagements] = useState<EngagementListItem[]>([]);
     const [engagementsLoading, setEngagementsLoading] = useState(false);
     const [backendError, setBackendError] = useState('');
 
@@ -100,11 +100,12 @@ export const AddToEngagementModal = () => {
         }
         try {
             setEngagementsLoading(true);
-            const response = await getEngagements({
+            // Every match: a page cap would hide the rest with no way to reach them.
+            const engagementMatches = await getAllEngagements({
                 search_text: searchText,
                 has_team_access: true,
             });
-            setEngagements(response.items);
+            setEngagements(engagementMatches);
             setEngagementsLoading(false);
         } catch (error) {
             dispatch(
@@ -296,7 +297,7 @@ export const AddToEngagementModal = () => {
                                                             }}
                                                         />
                                                     )}
-                                                    getOptionLabel={(engagement: Engagement) => engagement.name}
+                                                    getOptionLabel={(engagement: EngagementListItem) => engagement.name}
                                                     loading={engagementsLoading}
                                                 />
                                             )}

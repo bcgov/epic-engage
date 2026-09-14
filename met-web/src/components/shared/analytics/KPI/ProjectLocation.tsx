@@ -3,7 +3,7 @@ import Stack from '@mui/material/Stack';
 import { Box, Grid, CircularProgress, useMediaQuery, Theme } from '@mui/material';
 import { getMapData } from 'services/analytics/mapService';
 import { Map } from 'models/analytics/map';
-import { Engagement } from 'models/engagement';
+import { EngagementListItem } from 'models/engagement';
 import { MetLabel, MetPaper } from 'components/shared/common';
 import { ErrorBox } from '../ErrorBox';
 import MetMap from 'components/admin/MetMap';
@@ -12,7 +12,7 @@ import axios, { AxiosError } from 'axios';
 import { HTTP_STATUS_CODES } from 'constants/httpResponseCodes';
 
 interface SurveysCompletedProps {
-    engagement: Engagement;
+    engagement: EngagementListItem;
     engagementIsLoading: boolean;
     handleProjectMapData: (data: Map) => void;
 }

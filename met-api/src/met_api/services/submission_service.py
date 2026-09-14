@@ -25,7 +25,7 @@ from met_api.models.participant import Participant as ParticipantModel
 from met_api.models.staff_note import StaffNote
 from met_api.models.submission import Submission as SubmissionModel
 from met_api.models.submission_version import SubmissionVersion
-from met_api.schemas.submission import PublicSubmissionSchema, SubmissionSchema
+from met_api.schemas.submission import PublicSubmissionSchema, SubmissionListSchema, SubmissionSchema
 from met_api.services import authorization
 from met_api.services.comment_service import CommentService
 from met_api.services.email_verification_service import EmailVerificationService
@@ -315,9 +315,14 @@ class SubmissionService:
             survey_id,
             pagination_options: PaginationOptions,
             search_text: str,
-            advanced_search_filters: dict
+            advanced_search_filters: dict,
+            include_comments: bool = False,
     ):
-        """Get submissions by survey id paginated."""
+        """Get submissions by survey id paginated.
+
+        Comments come back only for the comment-text listing, which renders them; the
+        review table gets the compact rows.
+        """
         if not CommentService.can_view_unapproved_comments(survey_id):
             if 'status' in advanced_search_filters:
                 if advanced_search_filters['status'] in (Status.Rejected.value, Status.Pending.value):
@@ -332,10 +337,15 @@ class SubmissionService:
             pagination_options,
             search_text,
             advanced_search_filters if any(
-                advanced_search_filters.values()) else None
+                advanced_search_filters.values()) else None,
+            include_comments=include_comments,
         )
+        if include_comments:
+            submissions_schema = SubmissionSchema(many=True, exclude=['submission_json', 'staff_note'])
+        else:
+            submissions_schema = SubmissionListSchema(many=True)
         return {
-            'items': SubmissionSchema(many=True, exclude=['submission_json']).dump(items),
+            'items': submissions_schema.dump(items),
             'total': total
         }
 

@@ -1,20 +1,20 @@
 import React, { createContext, useEffect, useState } from 'react';
-import { Engagement } from 'models/engagement';
+import { Engagement, EngagementLookup } from 'models/engagement';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getEngagement } from 'services/engagementService';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
-import { Survey } from 'models/survey';
+import { SurveyLookup } from 'models/survey';
 
 interface CreateSurveyContextValues {
     surveyForm: SurveyForm;
     handleSurveyFormChange: (_form: SurveyForm) => void;
     engagementToLink: Engagement | null;
     loading: boolean;
-    availableSurveys: Survey[] | null;
-    setAvailableSurveys: (surveys: Survey[]) => void;
-    availableEngagements: Engagement[] | null;
-    setAvailableEngagements: (engagements: Engagement[]) => void;
+    availableSurveys: SurveyLookup[] | null;
+    setAvailableSurveys: (surveys: SurveyLookup[]) => void;
+    availableEngagements: EngagementLookup[] | null;
+    setAvailableEngagements: (engagements: EngagementLookup[]) => void;
     isDisclaimerChecked: boolean;
     setIsDisclaimerChecked: (checked: boolean) => void;
     disclaimerError: boolean;
@@ -32,11 +32,11 @@ export const CreateSurveyContext = createContext<CreateSurveyContextValues>({
     engagementToLink: null,
     loading: true,
     availableSurveys: null,
-    setAvailableSurveys: (_surveys: Survey[]) => {
+    setAvailableSurveys: (_surveys: SurveyLookup[]) => {
         //empty method
     },
     availableEngagements: null,
-    setAvailableEngagements: (_engagements: Engagement[]) => {
+    setAvailableEngagements: (_engagements: EngagementLookup[]) => {
         //empty method
     },
     isDisclaimerChecked: false,
@@ -60,8 +60,8 @@ export const CreateSurveyContextProvider = ({ children }: { children: JSX.Elemen
     const [surveyForm, setSurveyForm] = useState<SurveyForm>(initialSurveyForm);
     const [loading, setLoading] = useState(true);
     const [engagementToLink, setEngagementToLink] = useState<Engagement | null>(null);
-    const [availableSurveys, setAvailableSurveys] = useState<Survey[] | null>(null);
-    const [availableEngagements, setAvailableEngagements] = useState<Engagement[] | null>(null);
+    const [availableSurveys, setAvailableSurveys] = useState<SurveyLookup[] | null>(null);
+    const [availableEngagements, setAvailableEngagements] = useState<EngagementLookup[] | null>(null);
     const [isDisclaimerChecked, setIsDisclaimerChecked] = useState(false);
     const [disclaimerError, setDisclaimerError] = useState(false);
     const location = useLocation();

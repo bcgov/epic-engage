@@ -1,11 +1,12 @@
 import { setEngagements } from './engagementSlice';
 import http from 'apiManager/httpRequestHandler';
 import { AnyAction, Dispatch } from 'redux';
-import { Engagement } from 'models/engagement';
+import { Engagement, EngagementListItem, EngagementLookup } from 'models/engagement';
 import { PatchEngagementRequest, PostEngagementRequest, PutEngagementRequest } from './types';
 import Endpoints from 'apiManager/endpoints';
 import { replaceUrl } from 'utils/helpers';
 import { Page } from 'services/type';
+import { fetchAllPages } from 'services/pagination';
 
 export const fetchAll = async (dispatch: Dispatch<AnyAction>): Promise<Engagement[]> => {
     const responseData = await http.GetRequest<Engagement[]>(Endpoints.Engagement.GET_LIST);
@@ -32,9 +33,11 @@ interface GetEngagementsParams {
     client_name?: string;
     application_number?: string;
     has_team_access?: boolean;
+    has_surveys?: boolean;
+    lookup_only?: boolean;
 }
-export const getEngagements = async (params: GetEngagementsParams = {}): Promise<Page<Engagement>> => {
-    const responseData = await http.GetRequest<Page<Engagement>>(Endpoints.Engagement.GET_LIST, params);
+export const getEngagements = async (params: GetEngagementsParams = {}): Promise<Page<EngagementListItem>> => {
+    const responseData = await http.GetRequest<Page<EngagementListItem>>(Endpoints.Engagement.GET_LIST, params);
     return (
         responseData.data ?? {
             items: [],
@@ -83,3 +86,31 @@ export const deleteEngagement = async (engagementId: number): Promise<void> => {
     const url = replaceUrl(Endpoints.Engagement.DELETE, 'engagement_id', String(engagementId));
     await http.DeleteRequest<void>(url);
 };
+
+/** Every engagement that has a survey. The API does the filtering, not the browser. */
+export const getEngagementLookups = async (
+    params: Omit<GetEngagementsParams, 'page' | 'size'> = {},
+): Promise<EngagementLookup[]> =>
+    fetchAllPages<EngagementLookup>(async (page, size) => {
+        const responseData = await http.GetRequest<Page<EngagementLookup>>(Endpoints.Engagement.GET_LIST, {
+            ...params,
+            has_surveys: true,
+            lookup_only: true,
+            page,
+            size,
+        });
+        return responseData.data ?? { items: [], total: 0 };
+    });
+
+/** Every match, for the search-driven selector - not just the first page of them. */
+export const getAllEngagements = async (
+    params: Omit<GetEngagementsParams, 'page' | 'size'> = {},
+): Promise<EngagementListItem[]> =>
+    fetchAllPages<EngagementListItem>(async (page, size) => {
+        const responseData = await http.GetRequest<Page<EngagementListItem>>(Endpoints.Engagement.GET_LIST, {
+            ...params,
+            page,
+            size,
+        });
+        return responseData.data ?? { items: [], total: 0 };
+    });

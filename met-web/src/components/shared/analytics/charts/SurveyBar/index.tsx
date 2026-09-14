@@ -7,7 +7,7 @@ import { SurveyBarData } from 'components/public/dashboard/types';
 import { BarBlock } from './BarBlock';
 import { TreemapBlock } from './TreemapBlock';
 import { getSurveyResultData } from 'services/analytics/surveyResult';
-import { Engagement } from 'models/engagement';
+import { EngagementListItem } from 'models/engagement';
 import { SurveyResultData, defaultData } from 'models/analytics/surveyResult';
 import { ErrorBox } from '../../ErrorBox';
 import { NoData } from '../../NoData';
@@ -19,7 +19,7 @@ import { HTTP_STATUS_CODES } from 'constants/httpResponseCodes';
 const HEIGHT = 400;
 
 interface SurveyQuestionProps {
-    engagement: Engagement;
+    engagement: EngagementListItem;
     engagementIsLoading: boolean;
     readComments?: () => void;
     dashboardType: string;
