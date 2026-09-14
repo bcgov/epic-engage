@@ -92,6 +92,9 @@ export const supportSurfaceColorInfo = '#fef1d8';
 // to meet contrast against white.
 export const supportIconColorWarning = '#b54708';
 
+export const supportTypographyColorWarning = '#7a4f00';
+export const supportTypographyColorWarningEmphasis = '#4a3200';
+
 /* -------------------------------------------------------------------------- */
 /* Data visualisation                                                          */
 /*                                                                             */
