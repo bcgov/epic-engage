@@ -43,6 +43,7 @@ export const Palette = {
         main: tokens.supportBorderColorSuccess,
         light: tokens.supportSurfaceColorSuccess,
         emphasis: tokens.iconsColorSuccess,
+        surface: tokens.supportSurfaceColorSuccessSubtle,
     },
     error: {
         main: tokens.supportBorderColorDanger,
@@ -201,6 +202,22 @@ export const Palette = {
     },
 };
 
+/**
+ * Success banner colours - B.C. Design System success alert.
+ *
+ * Applied to both the `filled` (app notification snackbar) and `standard` (survey autosave
+ * snackbar) variants so the two match. MUI's `filled` variant hardcodes white text and a white
+ * icon, so colour and icon colour are both overridden or the text disappears on the light surface.
+ */
+const successAlert = {
+    backgroundColor: tokens.supportSurfaceColorSuccessSubtle,
+    color: tokens.typographyColorPrimary,
+    border: `1px solid ${tokens.iconsColorSuccess}`,
+    '& .MuiAlert-icon, & .MuiAlert-action': {
+        color: tokens.iconsColorSuccess,
+    },
+};
+
 export const BaseTheme = createTheme({
     palette: {
         primary: {
@@ -249,6 +266,12 @@ export const BaseTheme = createTheme({
         borderRadius: parseInt(tokens.layoutBorderRadiusMedium, 10),
     },
     components: {
+        MuiAlert: {
+            styleOverrides: {
+                filledSuccess: successAlert,
+                standardSuccess: successAlert,
+            },
+        },
         MuiButton: {
             styleOverrides: {
                 root: {

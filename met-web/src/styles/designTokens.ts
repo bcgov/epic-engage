@@ -5,8 +5,7 @@
  * they can be tuned without waiting on an upstream release. Names match the upstream token names,
  * so anything here can be diffed against the published set.
  *
- * Adding a colour? Put it here, not in a component. The grep guard in
- * `docs/bc-design-system-followups.md` assumes no hex literals live in components.
+ * Adding a colour? Put it here, not in a component - no hex literals belong in components.
  *
  * The matching SCSS values are in `_tokens.scss` - change both together.
  */
@@ -75,6 +74,9 @@ export const surfaceShadowSmall =
 export const supportBorderColorSuccess = '#839537';
 export const supportSurfaceColorSuccess = '#eef5dc';
 export const iconsColorSuccess = '#42814a';
+// Success banner/alert surface. Lighter than `supportSurfaceColorSuccess`, which stays on the
+// approved-comment chips and the "open" dashboard tile.
+export const supportSurfaceColorSuccessSubtle = '#f6fff8';
 
 // --- Warning / pending ------------------------------------------------------
 export const supportBorderColorWarning = '#f8bb47';
