@@ -26,7 +26,11 @@ test('render notification', async () => {
     );
 });
 
-test('success notification uses the B.C. Design System success banner colours', () => {
+test.each([
+    ['success', tokens.supportSurfaceColorSuccessSubtle, tokens.iconsColorSuccess],
+    ['warning', tokens.supportSurfaceColorWarning, tokens.supportBorderColorWarning],
+    ['error', tokens.supportSurfaceColorDanger, tokens.supportBorderColorDanger],
+] as const)('%s notification uses the B.C. Design System banner colours', (severity, surface, border) => {
     setupEnv();
     render(
         <ProviderShell>
@@ -35,11 +39,11 @@ test('success notification uses the B.C. Design System success banner colours', 
     );
 
     act(() => {
-        store.dispatch(openNotification({ severity: 'success', text: 'Saved' }));
+        store.dispatch(openNotification({ severity, text: 'Message' }));
     });
 
     const style = window.getComputedStyle(screen.getByTestId('alert-notification'));
-    expect(style.backgroundColor).toBe(hexToRgb(tokens.supportSurfaceColorSuccessSubtle));
+    expect(style.backgroundColor).toBe(hexToRgb(surface));
     expect(style.color).toBe(hexToRgb(tokens.typographyColorPrimary));
-    expect(style.border).toBe(`1px solid ${tokens.iconsColorSuccess}`);
+    expect(style.border).toBe(`1px solid ${border}`);
 });
