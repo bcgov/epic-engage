@@ -100,6 +100,9 @@ describe('Engagement form Settings tab tests', () => {
         expect(screen.getByRole("heading", { level: 4, name: "Engagement Information" })).toBeInTheDocument();
         expect(screen.getByRole("heading", { level: 4, name: "Engagement Access & Visibility" })).toBeInTheDocument();
         expect(screen.getByRole("heading", { level: 4, name: "Send Report" })).toBeInTheDocument();
+        expect(screen.getByText(/Toggle this off if you do not want a public report to be generated/i)).toBeInTheDocument();
+        expect(screen.queryByText(/Toggle this option off if you do not want an email/i)).not.toBeInTheDocument();
+        expect(screen.getByRole("checkbox", { name: "Send report" })).toBeInTheDocument();
 
         const radioButtonPublic = screen.getByRole("radio", { name: /Public Engagement/i })
         expect(radioButtonPublic).toBeInTheDocument();

@@ -25,8 +25,8 @@ const SendReport = () => {
             </Grid>
             <Grid item xs={12}>
                 <MetDescription>
-                    Toggle this option off if you do not want an email with a link to the report to be automatically
-                    sent at the end of the engagement period.
+                    Toggle this off if you do not want a public report to be generated. No public report will be
+                    generated, and no email with a link to the report will be sent at the end of the engagement period.
                 </MetDescription>
             </Grid>
             <Grid item xs={12}>
