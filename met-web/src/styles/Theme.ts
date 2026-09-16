@@ -203,20 +203,37 @@ export const Palette = {
 };
 
 /**
- * Success banner colours - B.C. Design System success alert.
+ * Banner colours - B.C. Design System alerts: light surface, darker border, primary text.
  *
  * Applied to both the `filled` (app notification snackbar) and `standard` (survey autosave
  * snackbar) variants so the two match. MUI's `filled` variant hardcodes white text and a white
  * icon, so colour and icon colour are both overridden or the text disappears on the light surface.
  */
-const successAlert = {
-    backgroundColor: tokens.supportSurfaceColorSuccessSubtle,
+const alertStyle = (surface: string, border: string, icon: string) => ({
+    backgroundColor: surface,
     color: tokens.typographyColorPrimary,
-    border: `1px solid ${tokens.iconsColorSuccess}`,
+    border: `1px solid ${border}`,
     '& .MuiAlert-icon, & .MuiAlert-action': {
-        color: tokens.iconsColorSuccess,
+        color: icon,
     },
-};
+});
+
+const successAlert = alertStyle(
+    tokens.supportSurfaceColorSuccessSubtle,
+    tokens.iconsColorSuccess,
+    tokens.iconsColorSuccess,
+);
+// The amber border is too light for the icon on the light surface, so the icon uses the darker amber.
+const warningAlert = alertStyle(
+    tokens.supportSurfaceColorWarning,
+    tokens.supportBorderColorWarning,
+    tokens.supportIconColorWarning,
+);
+const errorAlert = alertStyle(
+    tokens.supportSurfaceColorDanger,
+    tokens.supportBorderColorDanger,
+    tokens.supportBorderColorDanger,
+);
 
 export const BaseTheme = createTheme({
     palette: {
@@ -270,6 +287,10 @@ export const BaseTheme = createTheme({
             styleOverrides: {
                 filledSuccess: successAlert,
                 standardSuccess: successAlert,
+                filledWarning: warningAlert,
+                standardWarning: warningAlert,
+                filledError: errorAlert,
+                standardError: errorAlert,
             },
         },
         MuiButton: {
