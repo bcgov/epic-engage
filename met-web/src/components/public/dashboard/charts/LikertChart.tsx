@@ -2,11 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
 import { MET_Header_Font_Family } from 'styles/constants';
-
-// Scale colors: [negative, neutral, somewhat, positive, strongly positive]
-const COLORS = Palette.chart.likert;
-// Label text colour per scale point, paired with COLORS above
-const LABEL_COLORS = Palette.chart.likertLabel;
+import { LikertScalePoint } from 'models/analytics/surveyResult';
+import { resolveLikertScale, ResolvedSegment } from './likertScale';
 
 const LABEL_W = 220;
 const N_COL_W = 70;
@@ -17,6 +14,9 @@ const PAD_TOP = 30;
 const PAD_L = 12;
 const PAD_R = 12;
 const CORNER_R = 3;
+// "Not sure" sits outside the scale: its own column between the bars and COUNT.
+const NS_W = 52;
+const NS_GAP = 14;
 const HEADER_GAP = 6;
 const LABEL_FONT_SIZE = 12;
 const LABEL_LINE_H = 14;
@@ -28,12 +28,11 @@ const LABEL_MAX_LINES = 4;
 
 const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
 
-const NEUTRAL_INDEX = 1;
-
 export interface LikertRow {
     label: string;
     pcts: number[];
     n: number;
+    not_sure_pct?: number | null;
 }
 
 interface TooltipState {
@@ -137,9 +136,13 @@ interface LikertChartProps {
     scaleLabels?: string[];
     // Overrides the axis header, which otherwise names the two ends of the scale above.
     axisLabels?: [string, string];
+    // Each scale point's classification, in the same order as scaleLabels. Absent or unclassified: legacy scale.
+    scale?: LikertScalePoint[];
+    // Show the separate Not sure column.
+    hasNotSure?: boolean;
 }
 
-export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabels }: LikertChartProps) => {
+export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabels, scale, hasNotSure = false }: LikertChartProps) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
@@ -160,9 +163,15 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
     const labels = Array.from({ length: scaleLength }, (_, i) => scaleLabels[i] ?? `Scale point ${i + 1}`);
     const [axisStart, axisEnd] = axisLabels ?? [labels[0] ?? 'Negative', labels[labels.length - 1] ?? 'Positive'];
 
+    const { diverging, segments } = resolveLikertScale(labels, scale);
+    const segmentAt = (i: number): ResolvedSegment =>
+        segments[i] ?? { label: labels[i], fill: Palette.chart.fallback.swatch, text: Palette.chart.fallback.label, polarity: 'positive' };
+
     const totalW = width || 700;
     const barLeft = LABEL_W + PAD_L + 16;
-    const barRight = totalW - PAD_R - N_COL_W - BAR_GAP;
+    const countX = totalW - PAD_R - N_COL_W;
+    const nsLeft = countX - BAR_GAP - NS_W;
+    const barRight = hasNotSure ? nsLeft - NS_GAP : countX - BAR_GAP;
     const barColW = barRight - barLeft;
 
     // Grow rows to fit however many lines their label wraps to
@@ -178,10 +187,15 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
     }, [data]);
     const svgH = rows.reduce((sum, r) => sum + r.h, PAD_TOP + 8);
 
-    const leftOfAxis = (pcts: number[]) => (pcts[NEUTRAL_INDEX] ?? 0) / 2
-        + pcts.slice(0, NEUTRAL_INDEX).reduce((sum, pct) => sum + pct, 0);
-    const rightOfAxis = (pcts: number[]) => (pcts[NEUTRAL_INDEX] ?? 0) / 2
-        + pcts.slice(NEUTRAL_INDEX + 1).reduce((sum, pct) => sum + pct, 0);
+    // Everything negative, plus half of neutral, sits left of the centre axis.
+    const sideOf = (pcts: number[], side: 'negative' | 'positive') =>
+        pcts.reduce((sum, pct, i) => {
+            const { polarity } = segmentAt(i);
+            if (polarity === 'neutral') return sum + pct / 2;
+            return polarity === side ? sum + pct : sum;
+        }, 0);
+    const leftOfAxis = (pcts: number[]) => (diverging ? sideOf(pcts, 'negative') : 0);
+    const rightOfAxis = (pcts: number[]) => (diverging ? sideOf(pcts, 'positive') : pcts.reduce((s, p) => s + p, 0));
 
     const leftExtent = data.reduce((widest, d) => Math.max(widest, leftOfAxis(d.pcts)), 0);
     const rightExtent = data.reduce((widest, d) => Math.max(widest, rightOfAxis(d.pcts)), 0);
@@ -201,12 +215,27 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                 height: 13,
                                 borderRadius: '3px',
                                 flexShrink: 0,
-                                background: COLORS[i] ?? Palette.chart.fallback.swatch,
+                                background: segmentAt(i).fill,
                             }}
                         />
                         <Typography sx={{ fontSize: 12, color: Palette.text.secondary }}>{lbl}</Typography>
                     </Box>
                 ))}
+                {hasNotSure && (
+                    <Box data-testid="likert-legend-not-sure" sx={{ display: 'flex', alignItems: 'center', gap: 0.75, ml: 1.5 }}>
+                        <Box
+                            sx={{
+                                width: 13,
+                                height: 13,
+                                borderRadius: '3px',
+                                flexShrink: 0,
+                                background: Palette.chart.likertNotSure.fill,
+                                border: `1px solid ${Palette.chart.likertNotSure.border}`,
+                            }}
+                        />
+                        <Typography sx={{ fontSize: 12, color: Palette.text.secondary }}>Not sure</Typography>
+                    </Box>
+                )}
             </Box>
 
             {/* SVG chart */}
@@ -223,18 +252,27 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                         <text x={PAD_L} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
                             RESPONSE
                         </text>
-                        <text x={cx - HEADER_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="end">
-                            {`← ${axisStart.toUpperCase()}`}
-                        </text>
-                        <text x={cx} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} textAnchor="middle">
-                            |
-                        </text>
-                        <text x={cx + HEADER_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="start">
-                            {`${axisEnd.toUpperCase()} →`}
-                        </text>
-                        <text x={barRight + BAR_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
+                        {diverging && (
+                            <>
+                                <text x={cx - HEADER_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="end">
+                                    {`← ${axisStart.toUpperCase()}`}
+                                </text>
+                                <text x={cx} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} textAnchor="middle">
+                                    |
+                                </text>
+                                <text x={cx + HEADER_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="start">
+                                    {`${axisEnd.toUpperCase()} →`}
+                                </text>
+                            </>
+                        )}
+                        <text x={countX} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
                             COUNT
                         </text>
+                        {hasNotSure && (
+                            <text x={nsLeft + NS_W / 2} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="middle">
+                                NOT SURE
+                            </text>
+                        )}
                         <line x1={PAD_L} y1={PAD_TOP - 4} x2={totalW - PAD_R} y2={PAD_TOP - 4} stroke={Palette.border.default} strokeWidth={1} />
 
                         {rows.map(({ row, lines, y: y0, h: rowH }, i) => {
@@ -286,12 +324,13 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                         {segs.map((s) => {
                                             if (s.w < 0.5) return null;
                                             const path = segmentPath(s);
-                                            const labelColor = LABEL_COLORS[s.ci] ?? Palette.chart.fallback.label;
+                                            const { fill, text: labelColor } = segmentAt(s.ci);
                                             return (
                                                 <g key={s.ci}>
                                                     <path
+                                                        data-testid="likert-segment"
                                                         d={path}
-                                                        fill={COLORS[s.ci] ?? Palette.chart.fallback.swatch}
+                                                        fill={fill}
                                                         style={{ cursor: 'default', transition: 'opacity 0.15s' }}
                                                         onMouseMove={(e) =>
                                                             setTooltip({
@@ -321,16 +360,52 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                     </g>
 
                                     {/* Centre axis dashed line */}
-                                    <line
-                                        x1={cx} y1={barY - 1}
-                                        x2={cx} y2={barY + BAR_H + 1}
-                                        stroke={Palette.text.disabled}
-                                        strokeWidth={1.5}
-                                        strokeDasharray="3,2"
-                                    />
+                                    {diverging && (
+                                        <line
+                                            data-testid="likert-axis"
+                                            x1={cx} y1={barY - 1}
+                                            x2={cx} y2={barY + BAR_H + 1}
+                                            stroke={Palette.text.disabled}
+                                            strokeWidth={1.5}
+                                            strokeDasharray="3,2"
+                                        />
+                                    )}
+
+                                    {/* Not sure badge */}
+                                    {hasNotSure && (
+                                        <g
+                                            data-testid="likert-not-sure"
+                                            onMouseMove={(e) =>
+                                                setTooltip({ x: e.clientX, y: e.clientY, text: `Not sure: ${row.not_sure_pct ?? 0}%` })
+                                            }
+                                            onMouseLeave={() => setTooltip(null)}
+                                        >
+                                            <rect
+                                                x={nsLeft}
+                                                y={barY}
+                                                width={NS_W}
+                                                height={BAR_H}
+                                                rx={CORNER_R}
+                                                fill={Palette.chart.likertNotSure.fill}
+                                                stroke={Palette.chart.likertNotSure.border}
+                                                strokeWidth={1}
+                                            />
+                                            <text
+                                                x={nsLeft + NS_W / 2}
+                                                y={barY + BAR_H / 2 + 4}
+                                                fontSize={10}
+                                                fontWeight={700}
+                                                fill={Palette.chart.likertNotSure.label}
+                                                textAnchor="middle"
+                                                style={{ pointerEvents: 'none' }}
+                                            >
+                                                {`${row.not_sure_pct ?? 0}%`}
+                                            </text>
+                                        </g>
+                                    )}
 
                                     {/* N count */}
-                                    <text x={barRight + BAR_GAP} y={barY + BAR_H / 2 + 4} fontSize={11} fill={Palette.text.secondary}>
+                                    <text x={countX} y={barY + BAR_H / 2 + 4} fontSize={11} fill={Palette.text.secondary}>
                                         {row.n.toLocaleString()}
                                     </text>
 

@@ -17,17 +17,22 @@ from .request_mixin import RequestMixin
 
 _MATRIX_TYPES = frozenset([FormIoComponentType.SURVEY.value, FormIoComponentType.RANKING.value])
 
+# Classification keys met-formio stores, in rank order. `notSure` sits outside the scale.
+_LIKERT_RANK = ('neg3', 'neg2', 'neg1', 'neutral', 'pos1', 'pos2', 'pos3')
+_NOT_SURE = 'notSure'
+
 
 def _fetch_available_by_key(analytics_survey_id):
-    """Fetch available responses grouped by request_key, preserving fomrio insertion order."""
-    rows = (db.session.query(AvailableResponseOptionModel.request_key, AvailableResponseOptionModel.value)
+    """Fetch (label, classification) pairs grouped by request_key, preserving formio insertion order."""
+    rows = (db.session.query(AvailableResponseOptionModel.request_key, AvailableResponseOptionModel.value,
+                             AvailableResponseOptionModel.classification)
             .filter(AvailableResponseOptionModel.survey_id.in_(analytics_survey_id),  # pylint: disable=no-member
                     AvailableResponseOptionModel.is_active == true())
             .order_by(AvailableResponseOptionModel.id)
             .all())
     result = defaultdict(list)
     for aro in rows:
-        result[aro.request_key].append(aro.value)
+        result[aro.request_key].append((aro.value, aro.classification))
     return result
 
 
@@ -81,6 +86,62 @@ def _drop_hidden(questions):
             not any(q.request_id.startswith(hidden_rid + '-') for hidden_rid in hidden_rids)]
 
 
+def _pct(count, total):
+    return round(count * 100 / total) if total > 0 else 0
+
+
+def _order_likert_scale(points):
+    """Rank a Likert scale's (label, classification) points and split off Not sure.
+
+    Returns (scale, not_sure). A missing, unknown or duplicate classification falls back to
+    legacy: stored order, no Not sure.
+    """
+    known = set(_LIKERT_RANK) | {_NOT_SURE}
+    classifications = [classification for _, classification in points]
+    has_duplicate = len(classifications) != len(set(classifications))
+    if has_duplicate or any(classification not in known for classification in classifications):
+        return list(points), None
+    not_sure = next((p for p in points if p[1] == _NOT_SURE), None)
+    scale = sorted((p for p in points if p[1] != _NOT_SURE), key=lambda p: _LIKERT_RANK.index(p[1]))
+    return scale, not_sure
+
+
+def _build_matrix_row(child, points, is_ranking, count_map):
+    """Build one matrix row (pcts/n[/not_sure_pct]), plus the ordered scale it was built against."""
+    if is_ranking:
+        ordered, not_sure = sorted(points, key=lambda p: int(p[0]) if p[0].isdigit() else 0), None
+    else:
+        ordered, not_sure = _order_likert_scale(points)
+    counts = [count_map.get((child.key, label), 0) for label, _ in ordered]
+    not_sure_count = count_map.get((child.key, not_sure[0]), 0) if not_sure else 0
+    # One denominator: Not sure answers count toward n, so a row's pcts and not_sure_pct sum to ~100.
+    total = sum(counts) + not_sure_count
+    row = {'label': child.label, 'pcts': [_pct(c, total) for c in counts], 'n': total}
+    if not is_ranking:
+        row['not_sure_pct'] = _pct(not_sure_count, total) if not_sure else None
+    return row, ordered, not_sure
+
+
+def _build_matrix_rows(children, avail_by_key, count_map, is_ranking):
+    """Build every matrix row for a parent's children, plus the scale the first Likert row settled on."""
+    matrix_rows = []
+    scale = []
+    has_not_sure = False
+    for child in children:
+        points = avail_by_key.get(child.key, [])
+        if not points:
+            continue
+        row, ordered, not_sure = _build_matrix_row(child, points, is_ranking, count_map)
+        if not is_ranking:
+            if not scale:
+                scale = ordered
+            # Any row's Not sure turns the column on: without it that row's pcts would fall short of
+            # 100 with nothing on the chart to account for the difference.
+            has_not_sure = has_not_sure or not_sure is not None
+        matrix_rows.append(row)
+    return matrix_rows, scale, has_not_sure
+
+
 def _build_matrix_entry(parent, all_questions, avail_by_key, count_map, analytics_survey_id):
     """Build a grouped matrix result entry for a simplesurvey or simpleranking parent row."""
     is_ranking = parent.type == FormIoComponentType.RANKING.value
@@ -88,31 +149,21 @@ def _build_matrix_entry(parent, all_questions, avail_by_key, count_map, analytic
         [c for c in all_questions if c.request_id.startswith(parent.request_id + '-')],
         key=lambda c: c.position,
     )
-    matrix_rows = []
-    scale_labels = []
-    for child in children:
-        scale_values = list(avail_by_key.get(child.key, []))
-        if not scale_values:
-            continue
-        if is_ranking:
-            scale_values.sort(key=lambda v: int(v) if v.isdigit() else 0)
-        elif not scale_labels:
-            scale_labels = scale_values
-        counts = [count_map.get((child.key, v), 0) for v in scale_values]
-        total = sum(counts)
-        pcts = [round(c * 100 / total) if total > 0 else 0 for c in counts]
-        matrix_rows.append({'label': child.label, 'pcts': pcts, 'n': total})
+    matrix_rows, scale, has_not_sure = _build_matrix_rows(children, avail_by_key, count_map, is_ranking)
     if not matrix_rows:
         return None
     respondent_count = _fetch_respondent_count_for_keys(analytics_survey_id, [c.key for c in children])
     return {'position': parent.position, 'question': parent.label, 'key': parent.key,
             'type': parent.type, 'respondent_count': respondent_count,
-            'scale_labels': scale_labels, 'result': matrix_rows}
+            'scale_labels': [label for label, _ in scale],
+            'scale': [{'label': label, 'classification': classification} for label, classification in scale],
+            'has_not_sure': has_not_sure,
+            'result': matrix_rows}
 
 
 def _build_flat_entry(q, avail_by_key, count_map, respondent_by_key):
     """Build a flat value/count result entry for a non-matrix or orphaned matrix question."""
-    scale_values = avail_by_key.get(q.key)
+    scale_values = [label for label, _ in avail_by_key.get(q.key, [])]
     if scale_values:
         result = [{'value': v, 'count': count_map.get((q.key, v), 0)} for v in scale_values]
     else:

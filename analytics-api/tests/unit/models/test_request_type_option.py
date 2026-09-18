@@ -315,3 +315,171 @@ def test_hidden_matrix_takes_its_rows_with_it(session):  # pylint:disable=unused
 
     assert [entry['key'] for entry in public_result] == ['radio1']
     assert {entry['key'] for entry in internal_result} == {'likert1', 'radio1'}
+
+
+def test_available_response_option_stores_classification(session):  # pylint:disable=unused-argument
+    """Assert that a Likert value keeps the classification the survey author gave it."""
+    survey = _survey(engagement_id=120)
+
+    option = factory_available_response_option_model(survey.id, 'rowA', 'Disagree', classification='neg2')
+    legacy = factory_available_response_option_model(survey.id, 'rowA', 'Agree')
+
+    assert option.classification == 'neg2'
+    assert legacy.classification is None
+
+
+def _likert(survey, points, rows=('rowA',)):
+    """Create a Likert parent with one sub-question per row, each offering the given (label, classification) points."""
+    factory_request_type_option_model(survey.id, 'likert1', 'simplesurvey', 'Agreement', 'likert1', position=1)
+    for i, row in enumerate(rows, start=1):
+        factory_request_type_option_model(
+            survey.id, row, 'simplesurvey', f'Row {i}', f'likert1-{i}', position=i + 1)
+        for label, classification in points:
+            factory_available_response_option_model(survey.id, row, label, classification=classification)
+
+
+def _answer(survey, row, label, times):
+    for participant in range(times):
+        factory_response_type_option_model(survey.id, row, label, participant_id=participant)
+
+
+def test_classified_likert_is_ordered_by_classification(session):  # pylint:disable=unused-argument
+    """Assert that scale points come back in rank order, whatever order the author listed them in."""
+    survey = _survey(engagement_id=121)
+    _likert(survey, [('Agree', 'pos1'), ('Disagree', 'neg2'), ('Strongly agree', 'pos2'),
+                          ('Neutral', 'neutral'), ('Somewhat disagree', 'neg1')])
+    _answer(survey, 'rowA', 'Disagree', 1)
+    _answer(survey, 'rowA', 'Strongly agree', 3)
+
+    entry = RequestTypeOptionModel.get_survey_result_with_type(121, True)[0]
+
+    assert entry['scale'] == [
+        {'label': 'Disagree', 'classification': 'neg2'},
+        {'label': 'Somewhat disagree', 'classification': 'neg1'},
+        {'label': 'Neutral', 'classification': 'neutral'},
+        {'label': 'Agree', 'classification': 'pos1'},
+        {'label': 'Strongly agree', 'classification': 'pos2'},
+    ]
+    assert entry['scale_labels'] == ['Disagree', 'Somewhat disagree', 'Neutral', 'Agree', 'Strongly agree']
+    assert entry['has_not_sure'] is False
+    assert entry['result'] == [{'label': 'Row 1', 'pcts': [25, 0, 0, 0, 75], 'n': 4, 'not_sure_pct': None}]
+
+
+def test_not_sure_is_split_out_and_shares_the_denominator(session):  # pylint:disable=unused-argument
+    """Assert that Not sure leaves the scale, and its percentage and the scale's share one total."""
+    survey = _survey(engagement_id=122)
+    _likert(survey, [('Disagree', 'neg1'), ('Not sure', 'notSure'), ('Neutral', 'neutral'),
+                          ('Agree', 'pos1')])
+    _answer(survey, 'rowA', 'Disagree', 3)
+    _answer(survey, 'rowA', 'Not sure', 2)
+    _answer(survey, 'rowA', 'Agree', 5)
+
+    entry = RequestTypeOptionModel.get_survey_result_with_type(122, True)[0]
+
+    assert [p['label'] for p in entry['scale']] == ['Disagree', 'Neutral', 'Agree']
+    assert entry['has_not_sure'] is True
+    row = entry['result'][0]
+    assert row == {'label': 'Row 1', 'pcts': [30, 0, 50], 'n': 10, 'not_sure_pct': 20}
+    assert sum(row['pcts']) + row['not_sure_pct'] == 100
+
+
+def test_legacy_likert_keeps_stored_order(session):  # pylint:disable=unused-argument
+    """Assert that a Likert with no classifications is served exactly as before."""
+    survey = _survey(engagement_id=123)
+    _likert(survey, [('Not effective', None), ('Neutral', None), ('Somewhat effective', None),
+                          ('Effective', None), ('Very effective', None)])
+    _answer(survey, 'rowA', 'Effective', 2)
+
+    entry = RequestTypeOptionModel.get_survey_result_with_type(123, True)[0]
+
+    assert entry['scale_labels'] == ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective']
+    assert [p['classification'] for p in entry['scale']] == [None] * 5
+    assert entry['has_not_sure'] is False
+    assert entry['result'] == [{'label': 'Row 1', 'pcts': [0, 0, 0, 100, 0], 'n': 2, 'not_sure_pct': None}]
+
+
+def test_partly_classified_likert_is_treated_as_legacy(session):  # pylint:disable=unused-argument
+    """Assert that one missing or unknown classification drops the whole scale back to stored order."""
+    survey = _survey(engagement_id=124)
+    _likert(survey, [('Agree', 'pos1'), ('Disagree', None), ('Unsure', 'maybe')])
+
+    entry = RequestTypeOptionModel.get_survey_result_with_type(124, True)[0]
+
+    assert entry['scale_labels'] == ['Agree', 'Disagree', 'Unsure']
+    assert entry['has_not_sure'] is False
+
+
+def test_ranking_entry_is_unaffected_by_classification(session):  # pylint:disable=unused-argument
+    """Assert that ranking rows carry no Not sure field and an empty scale."""
+    survey = _survey(engagement_id=125)
+    factory_request_type_option_model(survey.id, 'rank1', 'simpleranking', 'Rank these', 'rank1', position=1)
+    factory_request_type_option_model(survey.id, 'optA', 'simpleranking', 'Option A', 'rank1-1', position=2)
+    factory_available_response_option_model(survey.id, 'optA', '2')
+    factory_available_response_option_model(survey.id, 'optA', '1')
+    factory_response_type_option_model(survey.id, 'optA', '1', participant_id=1)
+
+    entry = RequestTypeOptionModel.get_survey_result_with_type(125, True)[0]
+
+    assert entry['scale'] == []
+    assert entry['has_not_sure'] is False
+    assert entry['result'] == [{'label': 'Option A', 'pcts': [100, 0], 'n': 1}]
+
+
+def test_duplicate_classification_is_treated_as_legacy(session):  # pylint:disable=unused-argument
+    """Assert that a repeated classification drops the whole scale back to stored order.
+
+    Builder validation blocks this going forward, but a second `notSure` (or a second `pos1`)
+    would otherwise be silently dropped from counts and `n`, and two rows would render with
+    the same colour.
+    """
+    survey = _survey(engagement_id=127)
+    _likert(survey, [('Agree', 'pos1'), ('Strongly agree', 'pos1'), ('Not sure', 'notSure'),
+                          ('Also not sure', 'notSure')])
+    _answer(survey, 'rowA', 'Agree', 1)
+    _answer(survey, 'rowA', 'Strongly agree', 2)
+    _answer(survey, 'rowA', 'Not sure', 3)
+    _answer(survey, 'rowA', 'Also not sure', 4)
+
+    entry = RequestTypeOptionModel.get_survey_result_with_type(127, True)[0]
+
+    assert entry['scale_labels'] == ['Agree', 'Strongly agree', 'Not sure', 'Also not sure']
+    assert [p['classification'] for p in entry['scale']] == ['pos1', 'pos1', 'notSure', 'notSure']
+    assert entry['has_not_sure'] is False
+    row = entry['result'][0]
+    assert row['n'] == 10
+    assert row['not_sure_pct'] is None
+    assert row['pcts'] == [10, 20, 30, 40]
+
+
+def test_schema_serialises_scale_fields(session):  # pylint:disable=unused-argument
+    """Assert that the response schema passes the new scale fields through to the dashboard."""
+    from analytics_api.schemas.survey_result import SurveyResultSchema  # pylint:disable=import-outside-toplevel
+    survey = _survey(engagement_id=126)
+    _likert(survey, [('Disagree', 'neg1'), ('Not sure', 'notSure'), ('Agree', 'pos1')])
+    _answer(survey, 'rowA', 'Not sure', 1)
+
+    dumped = SurveyResultSchema(many=True).dump(RequestTypeOptionModel.get_survey_result_with_type(126, True))[0]
+
+    assert dumped['scale'] == [{'label': 'Disagree', 'classification': 'neg1'},
+                               {'label': 'Agree', 'classification': 'pos1'}]
+    assert dumped['has_not_sure'] is True
+    assert dumped['result'][0]['not_sure_pct'] == 100
+
+
+def test_not_sure_on_a_later_row_still_shows_the_column(session):  # pylint:disable=unused-argument
+    """Assert that a Not sure on any row turns the column on, so no row's pcts silently fall short."""
+    survey = _survey(engagement_id=127)
+    factory_request_type_option_model(survey.id, 'likert1', 'simplesurvey', 'Agreement', 'likert1', position=1)
+    factory_request_type_option_model(survey.id, 'rowA', 'simplesurvey', 'Row 1', 'likert1-1', position=2)
+    factory_request_type_option_model(survey.id, 'rowB', 'simplesurvey', 'Row 2', 'likert1-2', position=3)
+    for label, classification in (('Disagree', 'neg1'), ('Agree', 'pos1')):
+        factory_available_response_option_model(survey.id, 'rowA', label, classification=classification)
+    for label, classification in (('Disagree', 'neg1'), ('Agree', 'pos1'), ('Not sure', 'notSure')):
+        factory_available_response_option_model(survey.id, 'rowB', label, classification=classification)
+    _answer(survey, 'rowA', 'Agree', 2)
+    _answer(survey, 'rowB', 'Not sure', 1)
+
+    entry = RequestTypeOptionModel.get_survey_result_with_type(127, True)[0]
+
+    assert entry['has_not_sure'] is True
+    assert entry['result'][1]['not_sure_pct'] == 100

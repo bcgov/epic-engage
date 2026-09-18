@@ -16,4 +16,6 @@ class SurveyResultSchema(Schema):
     type = fields.Str()
     respondent_count = fields.Int()
     scale_labels = fields.List(fields.Str())
+    scale = fields.List(fields.Dict())
+    has_not_sure = fields.Bool()
     result = fields.List(fields.Dict(data_key='response'))
