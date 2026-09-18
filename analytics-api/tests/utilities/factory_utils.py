@@ -126,7 +126,8 @@ def factory_request_type_option_model(
     return option
 
 
-def factory_available_response_option_model(survey_id, request_key, value, request_id=None, is_active=True):
+def factory_available_response_option_model(survey_id, request_key, value, request_id=None, is_active=True,
+                                            classification=None):
     """Produce an available response option (possible answer choice) model."""
     option = AvailableResponseOptionModel(
         survey_id=survey_id,
@@ -134,6 +135,7 @@ def factory_available_response_option_model(survey_id, request_key, value, reque
         value=value,
         request_id=request_id,
         is_active=is_active,
+        classification=classification,
     )
     db.session.add(option)
     db.session.commit()

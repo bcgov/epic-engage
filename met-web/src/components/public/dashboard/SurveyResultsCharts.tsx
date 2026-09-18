@@ -239,7 +239,15 @@ export const QuestionChart = ({
     description,
     bare = false,
 }: QuestionChartProps) => {
-    const { label, type, result, respondent_count: respondentCount, scale_labels: scaleLabels } = question;
+    const {
+        label,
+        type,
+        result,
+        respondent_count: respondentCount,
+        scale_labels: scaleLabels,
+        scale,
+        has_not_sure: hasNotSure,
+    } = question;
     const questionType = dashboardType === DashboardType.INTERNAL ? TYPE_LABELS[type] : undefined;
 
     switch (type) {
@@ -289,7 +297,7 @@ export const QuestionChart = ({
             const content = (
                 <>
                     <RespondentCount count={respondentCount} />
-                    <LikertChart data={rows} scaleLabels={scaleLabels} />
+                    <LikertChart data={rows} scaleLabels={scaleLabels} scale={scale} hasNotSure={hasNotSure} />
                     {renderFollowUps(followUps, type, label)}
                 </>
             );

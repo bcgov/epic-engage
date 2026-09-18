@@ -9,10 +9,19 @@ export interface FlatResultItem {
     count: number;
 }
 
+// A Likert value's place on its scale, in rank order. Set by the survey author in the builder.
+export type LikertClassification = 'neg3' | 'neg2' | 'neg1' | 'neutral' | 'pos1' | 'pos2' | 'pos3';
+
+export interface LikertScalePoint {
+    label: string;
+    classification: LikertClassification | 'notSure' | null;
+}
+
 export interface MatrixResultRow {
     label: string;
     pcts: number[];
     n: number;
+    not_sure_pct?: number | null;
 }
 
 export interface TypedSurveyData {
@@ -22,6 +31,8 @@ export interface TypedSurveyData {
     type: string;
     respondent_count?: number;
     scale_labels?: string[];
+    scale?: LikertScalePoint[];
+    has_not_sure?: boolean;
     result: FlatResultItem[] | MatrixResultRow[];
 }
 

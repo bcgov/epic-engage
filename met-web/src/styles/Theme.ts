@@ -2,6 +2,7 @@ import { createTheme } from '@mui/material';
 import * as tokens from './designTokens';
 import { CommentStatus } from 'constants/commentStatus';
 import { MET_Header_Font_Family, MET_Font_Weight, MET_Header_Font_Weight } from './constants';
+import type { LikertClassification } from 'models/analytics/surveyResult';
 
 /**
  * Every colour in the app resolves from B.C. Design System tokens.
@@ -168,7 +169,6 @@ export const Palette = {
             tokens.typographyColorPrimary,
             tokens.typographyColorPrimaryInvert,
         ],
-        // Likert scale, ordered negative -> strongly positive.
         likert: [
             tokens.dataVizRed,
             tokens.dataVizNeutral,
@@ -183,6 +183,20 @@ export const Palette = {
             tokens.typographyColorPrimary,
             tokens.typographyColorPrimaryInvert,
         ],
+        likertClassification: {
+            neg3: { fill: tokens.dataVizYellow, label: tokens.typographyColorPrimary },
+            neg2: { fill: tokens.dataVizGold60, label: tokens.typographyColorPrimary },
+            neg1: { fill: tokens.dataVizGold10, label: tokens.typographyColorPrimary },
+            neutral: { fill: tokens.dataVizGray40, label: tokens.typographyColorPrimary },
+            pos1: { fill: tokens.dataVizBlue40, label: tokens.typographyColorPrimary },
+            pos2: { fill: tokens.dataVizBlue80, label: tokens.typographyColorPrimaryInvert },
+            pos3: { fill: tokens.dataVizBlue100, label: tokens.typographyColorPrimaryInvert },
+        } as Record<LikertClassification, { fill: string; label: string }>,
+        likertNotSure: {
+            fill: tokens.dataVizNotSureFill,
+            border: tokens.dataVizNotSureBorder,
+            label: tokens.typographyColorPrimary,
+        },
         // Used when a data point falls outside a fixed-length scale.
         fallback: {
             swatch: tokens.dataVizNeutral,

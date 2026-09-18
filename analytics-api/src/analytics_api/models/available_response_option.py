@@ -3,6 +3,7 @@
 Manages the Available Options for a option type questions on a survey
 """
 from .base_model import BaseModel
+from .db import db
 from .response_mixin import ResponseMixin
 
 
@@ -10,3 +11,5 @@ class AvailableResponseOption(BaseModel, ResponseMixin):  # pylint: disable=too-
     """Definition of the Available Response Options entity."""
 
     __tablename__ = 'available_response_option'
+
+    classification = db.Column(db.Text())

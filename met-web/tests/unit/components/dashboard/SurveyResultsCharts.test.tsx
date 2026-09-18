@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { SurveyResultsCharts } from 'components/public/dashboard/SurveyResultsCharts';
+import { SurveyResultsCharts, QuestionChart } from 'components/public/dashboard/SurveyResultsCharts';
 import * as useSurveyResultPagesModule from 'components/public/dashboard/hooks/useSurveyResultPages';
 import * as useSurveyCommentsModule from 'components/public/dashboard/hooks/useSurveyComments';
 import { openEngagement } from '../factory';
@@ -10,9 +10,14 @@ import { TypedSurveyData } from 'models/analytics/surveyResult';
 jest.mock('components/public/dashboard/hooks/useSurveyResultPages');
 jest.mock('components/public/dashboard/hooks/useSurveyComments');
 
+const mockLikertProps: unknown[] = [];
+
 jest.mock('components/public/dashboard/charts', () => ({
     DonutChart: ({ total }: { total: number }) => <div data-testid="donut-chart">{total}</div>,
-    LikertChart: () => <div data-testid="likert-chart" />,
+    LikertChart: (props: unknown) => {
+        mockLikertProps.push(props);
+        return <div data-testid="likert-chart" />;
+    },
     RankOrderChart: () => <div data-testid="rank-order-chart" />,
     CheckboxChart: ({
         question,
@@ -679,5 +684,39 @@ describe('SurveyResultsCharts', () => {
         expect(screen.getByTestId('conditional-follow-up')).toHaveTextContent(
             'Please elaborate (Only shown to people who picked Other.)',
         );
+    });
+
+    it('passes the Likert scale classifications and Not sure flag to the chart', () => {
+        mockLikertProps.length = 0;
+        const scale = [
+            { label: 'Disagree', classification: 'neg1' as const },
+            { label: 'Agree', classification: 'pos1' as const },
+        ];
+        const question: TypedSurveyData = {
+            label: 'Agreement',
+            position: 0,
+            key: 'likert1',
+            type: 'simplesurvey',
+            scale_labels: ['Disagree', 'Agree'],
+            scale,
+            has_not_sure: true,
+            result: [{ label: 'Row', pcts: [40, 40], not_sure_pct: 20, n: 5 }],
+        };
+
+        render(
+            <QuestionChart
+                question={question}
+                commentsByKey={new Map()}
+                followUps={[]}
+                dashboardType="public"
+            />,
+        );
+
+        expect(mockLikertProps[0]).toMatchObject({
+            scaleLabels: ['Disagree', 'Agree'],
+            scale,
+            hasNotSure: true,
+            data: [{ label: 'Row', pcts: [40, 40], not_sure_pct: 20, n: 5 }],
+        });
     });
 });

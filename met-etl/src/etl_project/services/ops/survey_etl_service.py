@@ -353,6 +353,7 @@ def _do_etl_available_response_data(session, component, survey_id, values, reque
                                                 request_key=request_key,
                                                 value=value['label'],
                                                 request_id=component['id'],
+                                                classification=value.get('classification'),
                                                 is_active=True,
                                                 runcycle_id=survey_new_runcycleid)
 
