@@ -184,14 +184,42 @@ export const Palette = {
             tokens.typographyColorPrimaryInvert,
         ],
         likertClassification: {
-            neg3: { fill: tokens.dataVizYellow, label: tokens.typographyColorPrimary },
-            neg2: { fill: tokens.dataVizGold60, label: tokens.typographyColorPrimary },
-            neg1: { fill: tokens.dataVizGold10, label: tokens.typographyColorPrimary },
-            neutral: { fill: tokens.dataVizGray40, label: tokens.typographyColorPrimary },
-            pos1: { fill: tokens.dataVizBlue40, label: tokens.typographyColorPrimary },
-            pos2: { fill: tokens.dataVizBlue80, label: tokens.typographyColorPrimaryInvert },
-            pos3: { fill: tokens.dataVizBlue100, label: tokens.typographyColorPrimaryInvert },
-        } as Record<LikertClassification, { fill: string; label: string }>,
+            neg3: {
+                fill: tokens.dataVizYellow,
+                border: tokens.dataVizYellowBorder,
+                label: tokens.typographyColorPrimary,
+            },
+            neg2: {
+                fill: tokens.dataVizGold60,
+                border: tokens.dataVizGold60Border,
+                label: tokens.typographyColorPrimary,
+            },
+            neg1: {
+                fill: tokens.dataVizGold10,
+                border: tokens.dataVizGold10Border,
+                label: tokens.typographyColorPrimary,
+            },
+            neutral: {
+                fill: tokens.dataVizGray40,
+                border: tokens.dataVizGray40Border,
+                label: tokens.typographyColorPrimary,
+            },
+            pos1: {
+                fill: tokens.dataVizBlue40,
+                border: tokens.dataVizBlue40Border,
+                label: tokens.typographyColorPrimary,
+            },
+            pos2: {
+                fill: tokens.dataVizBlue80,
+                border: tokens.dataVizBlue80Border,
+                label: tokens.typographyColorPrimaryInvert,
+            },
+            pos3: {
+                fill: tokens.dataVizBlue100,
+                border: tokens.dataVizBlue100Border,
+                label: tokens.typographyColorPrimaryInvert,
+            },
+        } as Record<LikertClassification, { fill: string; border: string; label: string }>,
         likertNotSure: {
             fill: tokens.dataVizNotSureFill,
             border: tokens.dataVizNotSureBorder,

@@ -165,7 +165,13 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
 
     const { diverging, segments } = resolveLikertScale(labels, scale);
     const segmentAt = (i: number): ResolvedSegment =>
-        segments[i] ?? { label: labels[i], fill: Palette.chart.fallback.swatch, text: Palette.chart.fallback.label, polarity: 'positive' };
+        segments[i] ?? {
+            label: labels[i],
+            fill: Palette.chart.fallback.swatch,
+            border: Palette.chart.fallback.swatch,
+            text: Palette.chart.fallback.label,
+            polarity: 'positive',
+        };
 
     const totalW = width || 700;
     const barLeft = LABEL_W + PAD_L + 16;
@@ -216,6 +222,7 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                 borderRadius: '3px',
                                 flexShrink: 0,
                                 background: segmentAt(i).fill,
+                                border: `1px solid ${segmentAt(i).border}`,
                             }}
                         />
                         <Typography sx={{ fontSize: 12, color: Palette.text.secondary }}>{lbl}</Typography>
@@ -324,13 +331,15 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                         {segs.map((s) => {
                                             if (s.w < 0.5) return null;
                                             const path = segmentPath(s);
-                                            const { fill, text: labelColor } = segmentAt(s.ci);
+                                            const { fill, border, text: labelColor } = segmentAt(s.ci);
                                             return (
                                                 <g key={s.ci}>
                                                     <path
                                                         data-testid="likert-segment"
                                                         d={path}
                                                         fill={fill}
+                                                        stroke={border}
+                                                        strokeWidth={1}
                                                         style={{ cursor: 'default', transition: 'opacity 0.15s' }}
                                                         onMouseMove={(e) =>
                                                             setTooltip({

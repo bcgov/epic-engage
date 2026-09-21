@@ -6,6 +6,9 @@ export type Polarity = 'negative' | 'neutral' | 'positive';
 export interface ResolvedSegment {
     label: string;
     fill: string;
+    // Outline drawn around the segment. Only the classification palette defines borders; the plain
+    // stacked-bar fallback repeats its fill here so it keeps its existing borderless look.
+    border: string;
     text: string;
     polarity: Polarity;
 }
@@ -27,6 +30,7 @@ const polarityOf = (c: LikertClassification): Polarity => {
 const fromClassification = (label: string, c: LikertClassification): ResolvedSegment => ({
     label,
     fill: Palette.chart.likertClassification[c].fill,
+    border: Palette.chart.likertClassification[c].border,
     text: Palette.chart.likertClassification[c].label,
     polarity: polarityOf(c),
 });
@@ -55,11 +59,15 @@ export function resolveLikertScale(labels: string[], scale?: LikertScalePoint[])
     }
     return {
         diverging: false,
-        segments: labels.map((label, i) => ({
-            label,
-            fill: Palette.chart.likert[i] ?? Palette.chart.fallback.swatch,
-            text: Palette.chart.likertLabel[i] ?? Palette.chart.fallback.label,
-            polarity: 'positive',
-        })),
+        segments: labels.map((label, i) => {
+            const fill = Palette.chart.likert[i] ?? Palette.chart.fallback.swatch;
+            return {
+                label,
+                fill,
+                border: fill,
+                text: Palette.chart.likertLabel[i] ?? Palette.chart.fallback.label,
+                polarity: 'positive',
+            };
+        }),
     };
 }

@@ -53,6 +53,26 @@ describe('LikertChart', () => {
             (p.getAttribute('fill') ?? '').toUpperCase(),
         );
 
+    const strokes = (container: HTMLElement) =>
+        Array.from(container.querySelectorAll('[data-testid="likert-segment"]')).map((p) =>
+            (p.getAttribute('stroke') ?? '').toUpperCase(),
+        );
+
+    it('outlines each classified segment with its border colour', () => {
+        const scale = [
+            { label: 'a', classification: 'neg2' as const },
+            { label: 'b', classification: 'neg1' as const },
+            { label: 'c', classification: 'neutral' as const },
+            { label: 'd', classification: 'pos1' as const },
+            { label: 'e', classification: 'pos2' as const },
+        ];
+        const { container } = render(
+            <LikertChart data={[{ label: 'Row', pcts, n: 10 }]} scaleLabels={scale.map((s) => s.label)} scale={scale} />,
+        );
+
+        expect(strokes(container)).toEqual(['#F8B230', '#F9D576', '#ABA6A0', '#469BF6', '#25507E']);
+    });
+
     it('colours a classified scale by classification', () => {
         const scale = [
             { label: 'Strongly disagree', classification: 'neg2' as const },
