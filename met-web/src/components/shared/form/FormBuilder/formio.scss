@@ -405,6 +405,16 @@ i.fa.fa-question-circle.text-muted {
 select option:hover {
     box-shadow: 0 0 10px 100px #000 inset;
 }
+select.form-control {
+    padding-right: 2.25rem;
+    background-image: url('bootstrap-icons/icons/chevron-down.svg');
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+}
+.control-label--hidden.field-required::after {
+    content: none;
+}
 .modal-dialog {
     margin: 8.75rem auto !important;
 }
