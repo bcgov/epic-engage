@@ -115,7 +115,7 @@ describe('LikertChart', () => {
 
         const axisX = Number((container.querySelector('line[stroke-dasharray]') as SVGLineElement).getAttribute('x1'));
         const [, start, width] =
-            /^M([\d.]+),0 h(-?[\d.]+)/.exec(
+            /^M([\d.]+),[\d.]+ h(-?[\d.]+)/.exec(
                 container.querySelectorAll('svg path')[1].getAttribute('d') ?? '',
             ) ?? [];
         // Half the neutral band falls either side of the axis, so a row leans by its overhang.
@@ -177,9 +177,9 @@ describe('LikertChart', () => {
         const colWidth = Number(clip.getAttribute('width'));
         const colRight = colLeft + colWidth;
 
-        // Each segment path starts `M<x>,0 h<width>`, so start + width is its right edge.
+        // Each segment path starts `M<x>,<y> h<width>`, so start + width is its right edge.
         const edges = Array.from(container.querySelectorAll('svg path')).map((path) => {
-            const [, x, w] = /^M([\d.]+),0 h(-?[\d.]+)/.exec(path.getAttribute('d') ?? '') ?? [];
+            const [, x, w] = /^M([\d.]+),[\d.]+ h(-?[\d.]+)/.exec(path.getAttribute('d') ?? '') ?? [];
             return { start: Number(x), end: Number(x) + Number(w) };
         });
         expect(edges.length).toBe(lopsided.length * 5);
