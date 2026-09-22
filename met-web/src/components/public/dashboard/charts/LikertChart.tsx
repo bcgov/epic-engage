@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
 import { MET_Header_Font_Family } from 'styles/constants';
@@ -46,26 +46,29 @@ interface SegmentDef {
     w: number;
     pct: number;
     ci: number;
-    isFirst: boolean;
-    isLast: boolean;
+    roundLeft: boolean;
+    roundRight: boolean;
 }
 
-// SVG path helpers for segments with single-side rounded corners
-function pathRoundedLeft(x: number, y: number, w: number, h: number, r: number): string {
-    return `M${x + r},${y} h${w - r} v${h} h${-(w - r)} a${r},${r} 0 0 1 -${r},-${r} v${-(h - 2 * r)} a${r},${r} 0 0 1 ${r},-${r} z`;
-}
-function pathRoundedRight(x: number, y: number, w: number, h: number, r: number): string {
-    return `M${x},${y} h${w - r} a${r},${r} 0 0 1 ${r},${r} v${h - 2 * r} a${r},${r} 0 0 1 -${r},${r} h${-(w - r)} z`;
-}
-function pathRect(x: number, y: number, w: number, h: number): string {
-    return `M${x},${y} h${w} v${h} h${-w} z`;
-}
+// A visible segment needs at least one pixel to contain its border.
+const MIN_SEGMENT_W = 1;
+const SEGMENT_STROKE = 1;
 
-function segmentPath(s: SegmentDef): string {
-    const { x, w, isFirst, isLast } = s;
-    if (isFirst) return pathRoundedLeft(x, 0, w, BAR_H, CORNER_R);
-    if (isLast) return pathRoundedRight(x, 0, w, BAR_H, CORNER_R);
-    return pathRect(x, 0, w, BAR_H);
+// Segment outline, rounded only on the sides that end the visible bar.
+function segmentPath({ x, w, roundLeft, roundRight }: SegmentDef): string {
+    // Inset by half the stroke so the whole border sits inside the segment, like a CSS border,
+    // and no edge is lost to the bar column's clip.
+    const inset = SEGMENT_STROKE / 2;
+    const sw = Math.max(w - SEGMENT_STROKE, 0);
+    const sh = BAR_H - SEGMENT_STROKE;
+    const r = Math.max(0, Math.min(CORNER_R - inset, sw / 2));
+    const rl = roundLeft ? r : 0;
+    const rr = roundRight ? r : 0;
+    const arc = (rad: number, dx: number, dy: number) => (rad ? `a${rad},${rad} 0 0 1 ${dx},${dy} ` : '');
+    return (
+        `M${x + inset + rl},${inset} h${sw - rl - rr} ${arc(rr, rr, rr)}v${sh - 2 * rr} ${arc(rr, -rr, rr)}` +
+        `h${-(sw - rl - rr)} ${arc(rl, -rl, -rl)}v${-(sh - 2 * rl)} ${arc(rl, rl, -rl)}z`
+    );
 }
 
 // measure label lines off-screen with a canvas.
@@ -142,9 +145,16 @@ interface LikertChartProps {
     hasNotSure?: boolean;
 }
 
-export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabels, scale, hasNotSure = false }: LikertChartProps) => {
+export const LikertChart = ({
+    data,
+    scaleLabels = DEFAULT_SCALE_LABELS,
+    axisLabels,
+    scale,
+    hasNotSure = false,
+}: LikertChartProps) => {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(0);
+    const [pixelOffset, setPixelOffset] = useState({ x: 0, y: 0 });
     const [tooltip, setTooltip] = useState<TooltipState | null>(null);
     const clipId = useRef(`likert-clip-${Math.random().toString(36).slice(2)}`).current;
 
@@ -158,6 +168,16 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
         observer.observe(el);
         return () => observer.disconnect();
     }, []);
+
+    // Text above the chart and flex/grid columns can put the entire SVG between pixels.
+    // Align its origin as well as its internal geometry; otherwise even integer bar edges blur.
+    useLayoutEffect(() => {
+        const rect = wrapperRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        const x = Math.round(rect.left) - rect.left;
+        const y = Math.round(rect.top) - rect.top;
+        setPixelOffset((previous) => (previous.x === x && previous.y === y ? previous : { x, y }));
+    });
 
     const scaleLength = data.reduce((longest, d) => Math.max(longest, d.pcts.length), 0);
     const labels = Array.from({ length: scaleLength }, (_, i) => scaleLabels[i] ?? `Scale point ${i + 1}`);
@@ -173,7 +193,8 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
             polarity: 'positive',
         };
 
-    const totalW = width || 700;
+    // Keep SVG units at CSS pixel size even when ResizeObserver reports a fractional width.
+    const totalW = Math.round(width) || 700;
     const barLeft = LABEL_W + PAD_L + 16;
     const countX = totalW - PAD_R - N_COL_W;
     const nsLeft = countX - BAR_GAP - NS_W;
@@ -207,7 +228,8 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
     const rightExtent = data.reduce((widest, d) => Math.max(widest, rightOfAxis(d.pcts)), 0);
     const span = leftExtent + rightExtent || 100;
     const px = barColW / span;
-    const cx = barLeft + leftExtent * px;
+    const axisX = barLeft + leftExtent * px;
+    const cx = Math.round(axisX);
 
     return (
         <Box>
@@ -229,7 +251,10 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                     </Box>
                 ))}
                 {hasNotSure && (
-                    <Box data-testid="likert-legend-not-sure" sx={{ display: 'flex', alignItems: 'center', gap: 0.75, ml: 1.5 }}>
+                    <Box
+                        data-testid="likert-legend-not-sure"
+                        sx={{ display: 'flex', alignItems: 'center', gap: 0.75, ml: 1.5 }}
+                    >
                         <Box
                             sx={{
                                 width: 13,
@@ -248,7 +273,12 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
             {/* SVG chart */}
             <Box ref={wrapperRef} sx={{ width: '100%', overflowX: 'auto' }}>
                 {width > 0 && (
-                    <svg width={totalW} height={svgH} viewBox={`0 0 ${totalW} ${svgH}`}>
+                    <svg
+                        width={totalW}
+                        height={svgH}
+                        viewBox={`0 0 ${totalW} ${svgH}`}
+                        style={{ display: 'block', position: 'relative', left: pixelOffset.x, top: pixelOffset.y }}
+                    >
                         <defs>
                             <clipPath id={clipId}>
                                 <rect x={barLeft} y={0} width={barColW} height={svgH} />
@@ -256,50 +286,109 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                         </defs>
 
                         {/* Column headers */}
-                        <text x={PAD_L} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
+                        <text
+                            x={PAD_L}
+                            y={18}
+                            fontSize={10}
+                            fontWeight={600}
+                            fill={Palette.text.secondary}
+                            letterSpacing={0.5}
+                        >
                             RESPONSE
                         </text>
                         {diverging && (
                             <>
-                                <text x={cx - HEADER_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="end">
+                                <text
+                                    x={cx - HEADER_GAP}
+                                    y={18}
+                                    fontSize={10}
+                                    fontWeight={600}
+                                    fill={Palette.text.secondary}
+                                    letterSpacing={0.5}
+                                    textAnchor="end"
+                                >
                                     {`← ${axisStart.toUpperCase()}`}
                                 </text>
-                                <text x={cx} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} textAnchor="middle">
+                                <text
+                                    x={cx}
+                                    y={18}
+                                    fontSize={10}
+                                    fontWeight={600}
+                                    fill={Palette.text.secondary}
+                                    textAnchor="middle"
+                                >
                                     |
                                 </text>
-                                <text x={cx + HEADER_GAP} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="start">
+                                <text
+                                    x={cx + HEADER_GAP}
+                                    y={18}
+                                    fontSize={10}
+                                    fontWeight={600}
+                                    fill={Palette.text.secondary}
+                                    letterSpacing={0.5}
+                                    textAnchor="start"
+                                >
                                     {`${axisEnd.toUpperCase()} →`}
                                 </text>
                             </>
                         )}
-                        <text x={countX} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5}>
+                        <text
+                            x={countX}
+                            y={18}
+                            fontSize={10}
+                            fontWeight={600}
+                            fill={Palette.text.secondary}
+                            letterSpacing={0.5}
+                        >
                             COUNT
                         </text>
                         {hasNotSure && (
-                            <text x={nsLeft + NS_W / 2} y={18} fontSize={10} fontWeight={600} fill={Palette.text.secondary} letterSpacing={0.5} textAnchor="middle">
+                            <text
+                                x={nsLeft + NS_W / 2}
+                                y={18}
+                                fontSize={10}
+                                fontWeight={600}
+                                fill={Palette.text.secondary}
+                                letterSpacing={0.5}
+                                textAnchor="middle"
+                            >
                                 NOT SURE
                             </text>
                         )}
-                        <line x1={PAD_L} y1={PAD_TOP - 4} x2={totalW - PAD_R} y2={PAD_TOP - 4} stroke={Palette.border.default} strokeWidth={1} />
+                        <line
+                            x1={PAD_L}
+                            y1={PAD_TOP - 4}
+                            x2={totalW - PAD_R}
+                            y2={PAD_TOP - 4}
+                            stroke={Palette.border.default}
+                            strokeWidth={1}
+                        />
 
                         {rows.map(({ row, lines, y: y0, h: rowH }, i) => {
                             const barY = y0 + (rowH - BAR_H) / 2;
 
-                            const lastIndex = row.pcts.length - 1;
-                            let cursor = cx - leftOfAxis(row.pcts) * px;
-                            const segs: SegmentDef[] = row.pcts.map((pct, ci) => {
-                                const w = pct * px;
-                                const seg: SegmentDef = {
-                                    x: cursor,
-                                    w,
-                                    pct,
-                                    ci,
-                                    isFirst: ci === 0,
-                                    isLast: ci === lastIndex,
-                                };
-                                cursor += w;
-                                return seg;
-                            });
+                            // Snap shared boundaries, not individual widths: adjacent segments must meet,
+                            // and a 1px inset stroke must land on half-pixel coordinates to stay sharp.
+                            let cursor = axisX - leftOfAxis(row.pcts) * px;
+                            const segs: SegmentDef[] = row.pcts
+                                .map((pct, ci) => {
+                                    const x = Math.round(cursor);
+                                    cursor += pct * px;
+                                    return {
+                                        x,
+                                        w: Math.round(cursor) - x,
+                                        pct,
+                                        ci,
+                                        roundLeft: false,
+                                        roundRight: false,
+                                    };
+                                })
+                                .filter((s) => s.w >= MIN_SEGMENT_W);
+                            // Determine the ends after snapping: zero-width categories do not own corners.
+                            if (segs.length) {
+                                segs[0].roundLeft = true;
+                                segs[segs.length - 1].roundRight = true;
+                            }
 
                             const firstBaseline = y0 + (rowH - lines.length * LABEL_LINE_H) / 2 + LABEL_LINE_H - 3;
 
@@ -307,7 +396,14 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                 <g key={row.label}>
                                     {/* Alternating row background */}
                                     {i % 2 === 0 && (
-                                        <rect x={PAD_L} y={y0} width={totalW - PAD_L - PAD_R} height={rowH} fill={Palette.chart.surface.rowHover} rx={2} />
+                                        <rect
+                                            x={PAD_L}
+                                            y={y0}
+                                            width={totalW - PAD_L - PAD_R}
+                                            height={rowH}
+                                            fill={Palette.chart.surface.rowHover}
+                                            rx={2}
+                                        />
                                     )}
 
                                     {/* Row label */}
@@ -326,10 +422,24 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                         ))}
                                     </g>
 
+                                    {/* Keep the axis in the row gutters so it cannot obscure borders or corners. */}
+                                    {diverging && (
+                                        <g stroke={Palette.text.disabled} strokeWidth={1.5} strokeDasharray="3,2">
+                                            <line
+                                                data-testid="likert-axis"
+                                                strokeDasharray="3,2"
+                                                x1={cx}
+                                                y1={y0}
+                                                x2={cx}
+                                                y2={barY - CORNER_R}
+                                            />
+                                            <line x1={cx} y1={barY + BAR_H + CORNER_R} x2={cx} y2={y0 + rowH} />
+                                        </g>
+                                    )}
+
                                     {/* Bar segments */}
                                     <g clipPath={`url(#${clipId})`} transform={`translate(0, ${barY})`}>
                                         {segs.map((s) => {
-                                            if (s.w < 0.5) return null;
                                             const path = segmentPath(s);
                                             const { fill, border, text: labelColor } = segmentAt(s.ci);
                                             return (
@@ -339,7 +449,7 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                                         d={path}
                                                         fill={fill}
                                                         stroke={border}
-                                                        strokeWidth={1}
+                                                        strokeWidth={SEGMENT_STROKE}
                                                         style={{ cursor: 'default', transition: 'opacity 0.15s' }}
                                                         onMouseMove={(e) =>
                                                             setTooltip({
@@ -368,33 +478,25 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                         })}
                                     </g>
 
-                                    {/* Centre axis dashed line */}
-                                    {diverging && (
-                                        <line
-                                            data-testid="likert-axis"
-                                            x1={cx} y1={barY - 1}
-                                            x2={cx} y2={barY + BAR_H + 1}
-                                            stroke={Palette.text.disabled}
-                                            strokeWidth={1.5}
-                                            strokeDasharray="3,2"
-                                        />
-                                    )}
-
                                     {/* Not sure badge */}
                                     {hasNotSure && (
                                         <g
                                             data-testid="likert-not-sure"
                                             onMouseMove={(e) =>
-                                                setTooltip({ x: e.clientX, y: e.clientY, text: `Not sure: ${row.not_sure_pct ?? 0}%` })
+                                                setTooltip({
+                                                    x: e.clientX,
+                                                    y: e.clientY,
+                                                    text: `Not sure: ${row.not_sure_pct ?? 0}%`,
+                                                })
                                             }
                                             onMouseLeave={() => setTooltip(null)}
                                         >
                                             <rect
-                                                x={nsLeft}
-                                                y={barY}
-                                                width={NS_W}
-                                                height={BAR_H}
-                                                rx={CORNER_R}
+                                                x={nsLeft + SEGMENT_STROKE / 2}
+                                                y={barY + SEGMENT_STROKE / 2}
+                                                width={NS_W - SEGMENT_STROKE}
+                                                height={BAR_H - SEGMENT_STROKE}
+                                                rx={CORNER_R - SEGMENT_STROKE / 2}
                                                 fill={Palette.chart.likertNotSure.fill}
                                                 stroke={Palette.chart.likertNotSure.border}
                                                 strokeWidth={1}
@@ -414,14 +516,21 @@ export const LikertChart = ({ data, scaleLabels = DEFAULT_SCALE_LABELS, axisLabe
                                     )}
 
                                     {/* N count */}
-                                    <text x={countX} y={barY + BAR_H / 2 + 4} fontSize={11} fill={Palette.text.secondary}>
+                                    <text
+                                        x={countX}
+                                        y={barY + BAR_H / 2 + 4}
+                                        fontSize={11}
+                                        fill={Palette.text.secondary}
+                                    >
                                         {row.n.toLocaleString()}
                                     </text>
 
                                     {/* Row divider */}
                                     <line
-                                        x1={PAD_L} y1={y0 + rowH}
-                                        x2={totalW - PAD_R} y2={y0 + rowH}
+                                        x1={PAD_L}
+                                        y1={y0 + rowH}
+                                        x2={totalW - PAD_R}
+                                        y2={y0 + rowH}
                                         stroke={Palette.chart.surface.rowDivider}
                                         strokeWidth={1}
                                     />

@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { LikertChart } from 'components/public/dashboard/charts/LikertChart';
 
 // The chart only draws once it has measured its container.
@@ -73,6 +73,131 @@ describe('LikertChart', () => {
         expect(strokes(container)).toEqual(['#F8B230', '#F9D576', '#ABA6A0', '#469BF6', '#25507E']);
     });
 
+    const paths = (container: HTMLElement) =>
+        Array.from(container.querySelectorAll('[data-testid="likert-segment"]')).map((p) => p.getAttribute('d') ?? '');
+    // The outline runs clockwise, so right-side corners move down (dy > 0) and left-side ones move up.
+    const roundsRight = (d: string) => /a[\d.]+,[\d.]+ 0 0 1 -?[\d.]+,[\d.]+/.test(d);
+    const roundsLeft = (d: string) => /a[\d.]+,[\d.]+ 0 0 1 -?[\d.]+,-[\d.]+/.test(d);
+
+    it('rounds the ends of the drawn bar even when the end categories are 0%', () => {
+        const { container } = render(<LikertChart data={[{ label: 'Row', pcts: [0, 40, 20, 40, 0], n: 10 }]} />);
+
+        const [first, middle, last] = paths(container);
+        expect([roundsLeft(first), roundsRight(first)]).toEqual([true, false]);
+        expect([roundsLeft(middle), roundsRight(middle)]).toEqual([false, false]);
+        expect([roundsLeft(last), roundsRight(last)]).toEqual([false, true]);
+    });
+
+    it.each([
+        [100, 0, 0, 0, 0],
+        [0, 0, 100, 0, 0],
+        [0, 0, 0, 100, 0],
+        [0, 0, 0, 0, 100],
+    ])('rounds both ends of a bar with a single drawn segment (%j)', (...values) => {
+        const { container } = render(<LikertChart data={[{ label: 'Row', pcts: values, n: 10 }]} />);
+
+        const [only] = paths(container);
+        expect([roundsLeft(only), roundsRight(only)]).toEqual([true, true]);
+    });
+
+    it('keeps each segment border inside the bar so no edge is clipped', () => {
+        const { container } = render(<LikertChart data={[{ label: 'Row', pcts, n: 10 }]} />);
+
+        paths(container).forEach((d) => {
+            // Starts half a border below the top of the bar, not on it.
+            expect(d).toMatch(/^M[\d.]+,0\.5 /);
+            // Vertical runs total the bar height minus a full border.
+            const runs = Array.from(d.matchAll(/v(-?[\d.]+)/g)).map((m) => Number(m[1]));
+            const arcs = Array.from(d.matchAll(/a[\d.]+,[\d.]+ 0 0 1 -?[\d.]+,(-?[\d.]+)/g)).map((m) => Number(m[1]));
+            const down = [...runs, ...arcs].filter((n) => n > 0).reduce((a, b) => a + b, 0);
+            expect(down).toBeCloseTo(23, 5);
+        });
+    });
+
+    // Walk the outline to measure its actual bounds, including corners rather than just its first h run.
+    const bounds = (d: string) => {
+        let x = 0;
+        let y = 0;
+        const xs: number[] = [];
+        const ys: number[] = [];
+        for (const [, command, args] of d.matchAll(/([Mhvaz])([^Mhvaz]*)/g)) {
+            const values = args.trim().split(/[ ,]+/).map(Number);
+            if (command === 'M') [x, y] = values;
+            if (command === 'h') x += values[0];
+            if (command === 'v') y += values[0];
+            if (command === 'a') {
+                x += values[5];
+                y += values[6];
+            }
+            xs.push(x);
+            ys.push(y);
+        }
+        return { left: Math.min(...xs) - 0.5, right: Math.max(...xs) + 0.5,
+            top: Math.min(...ys) - 0.5, bottom: Math.max(...ys) + 0.5 };
+    };
+
+    it('keeps borders on pixels and adjacent segments touching after fractional resizes', () => {
+        let resize: ResizeObserverCallback;
+        const observer = jest.spyOn(global, 'ResizeObserver').mockImplementation((callback) => {
+            resize = callback;
+            return { observe: jest.fn(), unobserve: jest.fn(), disconnect: jest.fn() };
+        });
+        try {
+            const { container } = render(<LikertChart data={[{ label: 'Row', pcts: [17, 16, 33, 17, 17], n: 100 }]} />);
+            for (const width of [700, 763.375, 801.625]) {
+                act(() => resize([{ contentRect: { width } } as ResizeObserverEntry], {} as ResizeObserver));
+                const svg = container.querySelector('svg');
+                expect(Number(svg?.getAttribute('width'))).toBe(Math.round(width));
+                const edges = paths(container).map(bounds);
+                edges.forEach((edge, i) => {
+                    expect(Number.isInteger(edge.left)).toBe(true);
+                    expect(Number.isInteger(edge.right)).toBe(true);
+                    expect(edge.top).toBe(0);
+                    expect(edge.bottom).toBe(24);
+                    if (i > 0) expect(edge.left).toBe(edges[i - 1].right);
+                });
+                expect(edges[0].left).toBe(BAR_LEFT);
+                expect(edges[edges.length - 1].right).toBe(Math.round(width) - 102);
+            }
+        } finally {
+            observer.mockRestore();
+        }
+    });
+
+    it('aligns the SVG origin when the surrounding layout starts between pixels', () => {
+        const rect = jest.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+            left: 20.375, top: 111.4375,
+        } as DOMRect);
+        try {
+            const { container } = render(<LikertChart data={[{ label: 'Row', pcts, n: 10 }]} />);
+            expect(container.querySelector('svg')?.style.left).toBe('-0.375px');
+            expect(container.querySelector('svg')?.style.top).toBe('-0.4375px');
+        } finally {
+            rect.mockRestore();
+        }
+    });
+
+    it('assigns corners after subpixel end categories disappear', () => {
+        const { container } = render(<LikertChart data={[{ label: 'Row', pcts: [0.01, 40, 19.98, 40, 0.01], n: 10000 }]} />);
+        const [first, middle, last] = paths(container);
+        expect(paths(container)).toHaveLength(3);
+        expect([roundsLeft(first), roundsRight(first)]).toEqual([true, false]);
+        expect([roundsLeft(middle), roundsRight(middle)]).toEqual([false, false]);
+        expect([roundsLeft(last), roundsRight(last)]).toEqual([false, true]);
+    });
+
+    it('keeps the centre guide clear of a lone segment and its rounded corners', () => {
+        const { container } = render(<LikertChart data={[{ label: 'Row', pcts: [0, 0, 0, 100, 0], n: 10 }]} />);
+        const segment = container.querySelector('[data-testid="likert-segment"]');
+        const barY = Number(segment?.parentElement?.parentElement?.getAttribute('transform')?.match(/, ([\d.]+)/)?.[1]);
+        const axis = container.querySelector('[data-testid="likert-axis"]');
+        const guides = Array.from(axis?.parentElement?.querySelectorAll('line') ?? []);
+        expect(guides).toHaveLength(2);
+        for (const guide of guides) {
+            expect(Number(guide.getAttribute('y2')) < barY || Number(guide.getAttribute('y1')) > barY + 24).toBe(true);
+        }
+    });
+
     it('colours a classified scale by classification', () => {
         const scale = [
             { label: 'Strongly disagree', classification: 'neg2' as const },
@@ -106,9 +231,10 @@ describe('LikertChart', () => {
 
         const [neg, pos] = Array.from(container.querySelectorAll('[data-testid="likert-segment"]'));
         const axisX = Number(container.querySelector('[data-testid="likert-axis"]')?.getAttribute('x1'));
-        // The negative segment's path starts at its left edge; the positive one starts at the axis.
+        // The negative segment's path starts at its left edge; the positive one starts at the axis,
+        // inset by half its 1px border.
         const startX = (p: Element) => Number((p.getAttribute('d') ?? '').match(/^M([\d.]+)/)?.[1]);
-        expect(startX(pos)).toBeCloseTo(axisX, 0);
+        expect(startX(pos)).toBeCloseTo(axisX + 0.5, 5);
         expect(startX(neg)).toBeLessThan(axisX);
     });
 
@@ -147,6 +273,10 @@ describe('LikertChart', () => {
         expect(badges[0].textContent).toBe('20%');
         expect(badges[0].querySelector('rect')?.getAttribute('fill')?.toUpperCase()).toBe('#EFE7FA');
         expect(badges[0].querySelector('rect')?.getAttribute('stroke')?.toUpperCase()).toBe('#B9A6E0');
+        const badge = badges[0].querySelector('rect');
+        expect(Number(badge?.getAttribute('x')) % 1).toBe(0.5);
+        expect(Number(badge?.getAttribute('y')) % 1).toBe(0.5);
+        expect(Number(badge?.getAttribute('height'))).toBe(23);
         expect(getByText('NOT SURE')).toBeTruthy();
         expect(getByTestId('likert-legend-not-sure')).toBeTruthy();
     });
@@ -164,10 +294,9 @@ describe('LikertChart', () => {
         const badge = container.querySelector('[data-testid="likert-not-sure"] rect');
         const badgeLeft = Number(badge?.getAttribute('x'));
         const badgeRight = badgeLeft + Number(badge?.getAttribute('width'));
-        // Only the 100% segment is drawn; its path is `M{x+r},0 h{w-r} ...`, so its right edge is the two summed.
+        // Include the curved right end and its stroke when measuring the bar.
         const d = container.querySelector('[data-testid="likert-segment"]')?.getAttribute('d') ?? '';
-        const [, start, run] = d.match(/^M([\d.]+),[\d.]+ h([\d.]+)/) ?? [];
-        const barRight = Number(start) + Number(run);
+        const barRight = bounds(d).right;
         const countX = Number(Array.from(container.querySelectorAll('svg text')).find((t) => t.textContent === 'COUNT')?.getAttribute('x'));
         expect(badgeLeft).toBeGreaterThan(barRight);
         expect(badgeRight).toBeLessThan(countX);
