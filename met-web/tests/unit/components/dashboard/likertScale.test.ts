@@ -27,6 +27,24 @@ describe('resolveLikertScale', () => {
         expect(segments.map((s) => s.polarity)).toEqual(['negative', 'neutral', 'positive']);
     });
 
+    it('pairs every classification with its border colour', () => {
+        const order: LikertClassification[] = ['neg3', 'neg2', 'neg1', 'neutral', 'pos1', 'pos2', 'pos3'];
+        const { segments } = resolveLikertScale(
+            order,
+            order.map((classification) => ({ label: classification, classification })),
+        );
+
+        expect(segments.map((s) => s.border.toUpperCase())).toEqual([
+            '#C99003', '#F8B230', '#F9D576', '#ABA6A0', '#469BF6', '#25507E', '#011E3D',
+        ]);
+    });
+
+    it('leaves a plain stacked bar borderless by matching its fill', () => {
+        const { segments } = resolveLikertScale(['a', 'b', 'c', 'd']);
+
+        expect(segments.map((s) => s.border)).toEqual(segments.map((s) => s.fill));
+    });
+
     it('treats an unclassified 5-point scale as neg3, neutral, pos1, pos2, pos3', () => {
         const labels = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
         const { diverging, segments } = resolveLikertScale(

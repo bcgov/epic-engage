@@ -129,16 +129,24 @@ export const dataVizPurple = '#7b6fa0';
 // Used both as a mid-scale swatch and as the fallback when a series runs past the end of a scale.
 export const dataVizNeutral = '#c8c3be';
 
-// Likert classification scale (ENGAGE-296).
+// Likert classification scale (ENGAGE-296). Each fill is paired with a darker border (ENGAGE-306);
+// neg3 reuses dataVizYellow above as its fill.
 // Negative
+export const dataVizYellowBorder = '#c99003';
 export const dataVizGold60 = '#fbd389';
+export const dataVizGold60Border = '#f8b230';
 export const dataVizGold10 = '#fef8e8';
+export const dataVizGold10Border = '#f9d576';
 // Neutral
 export const dataVizGray40 = '#e0dedc';
+export const dataVizGray40Border = '#aba6a0';
 // Positive
 export const dataVizBlue40 = '#a8d0fb';
+export const dataVizBlue40Border = '#469bf6';
 export const dataVizBlue80 = '#3470b1';
+export const dataVizBlue80Border = '#25507e';
 export const dataVizBlue100 = '#013366';
+export const dataVizBlue100Border = '#011e3d';
 // Not sure
 export const dataVizNotSureFill = '#efe7fa';
 export const dataVizNotSureBorder = '#b9a6e0';
