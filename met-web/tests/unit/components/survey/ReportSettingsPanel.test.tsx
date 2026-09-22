@@ -367,4 +367,66 @@ describe('ReportSettingsPanel tests', () => {
         expect(screen.getByText('Page 2 of 2')).toBeVisible();
         expect(screen.getByText('Next').closest('button')).toBeDisabled();
     });
+
+    test('Previews an empty Likert matrix when the survey has no analytics data yet', async () => {
+        const likertSetting = {
+            id: 3,
+            survey_id: 1,
+            question_id: 'likert-1' as unknown as number,
+            question_key: 'simplesurvey',
+            question_type: 'simplesurvey',
+            question: 'Likert',
+            display: true,
+        };
+        fetchSurveyReportSettingsMock.mockReturnValue(Promise.resolve([likertSetting]));
+
+        const likertForm: FormBuilderData = {
+            display: 'wizard',
+            components: [
+                {
+                    id: 'page-1',
+                    title: 'Page 1',
+                    components: [
+                        {
+                            id: 'likert-1',
+                            key: 'simplesurvey',
+                            type: 'simplesurvey',
+                            label: 'Likert',
+                            questions: [{ label: 'pizza?', value: 'pizza' }],
+                            values: [
+                                { label: 'bad', value: 'bad', classification: 'neg1' },
+                                { label: 'meh', value: 'meh', classification: 'neutral' },
+                                { label: 'good', value: 'good', classification: 'pos1' },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        };
+
+        // LikertChart only draws its svg once it has a measured width, and the global
+        // ResizeObserver stub never reports one.
+        const originalResizeObserver = global.ResizeObserver;
+        global.ResizeObserver = class {
+            constructor(private callback: ResizeObserverCallback) {}
+            observe() {
+                this.callback([{ contentRect: { width: 800 } }] as unknown as ResizeObserverEntry[], this);
+            }
+            unobserve() {}
+            disconnect() {}
+        } as unknown as typeof ResizeObserver;
+
+        try {
+            render(<ReportSettingsPanel surveyId="1" formDefinition={likertForm} />);
+
+            await waitFor(() => {
+                expect(screen.getAllByText('pizza?').length).toBeGreaterThan(0);
+            });
+            expect(screen.getAllByText('bad').length).toBeGreaterThan(0);
+            expect(screen.getAllByText('good').length).toBeGreaterThan(0);
+            expect(screen.queryByText(/Results will appear here/i)).not.toBeInTheDocument();
+        } finally {
+            global.ResizeObserver = originalResizeObserver;
+        }
+    });
 });

@@ -23,6 +23,7 @@ import { DashboardType } from 'constants/dashboardType';
 import FormStepper from 'components/public/survey/submit/Stepper';
 import { SurveySwitch } from './AdditionalSettings';
 import { groupReportSettingsByPage } from './groupReportSettingsByPage';
+import { buildEmptyLikertQuestion } from './emptyLikertPreview';
 import { DescriptionEditor } from './DescriptionEditor';
 import { Palette } from 'styles/Theme';
 
@@ -226,13 +227,16 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
         );
 
         const renderChartBody = (setting: SurveyReportSetting) => {
-            const chartQuestion =
+            const loadedQuestion =
                 chartDataByKey.get(setting.question_key) ?? commentQuestionsByKey.get(setting.question_key);
 
+            if (!loadedQuestion && chartsLoading) {
+                return <Skeleton variant="rounded" height={100} sx={{ mt: 1 }} />;
+            }
+
+            const chartQuestion = loadedQuestion ?? buildEmptyLikertQuestion(formDefinition, setting);
+
             if (!chartQuestion) {
-                if (chartsLoading) {
-                    return <Skeleton variant="rounded" height={100} sx={{ mt: 1 }} />;
-                }
                 return (
                     <MetDescription sx={{ mt: 1, color: Palette.text.secondary, fontStyle: 'italic' }}>
                         Results will appear here once the survey receives submissions.
