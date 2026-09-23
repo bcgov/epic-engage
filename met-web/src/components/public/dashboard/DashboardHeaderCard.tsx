@@ -2,15 +2,19 @@ import { MouseEvent, useContext, useEffect, useState } from 'react';
 import { Box, Menu, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
+import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import { PrimaryButton } from 'components/shared/common';
 import { Engagement } from 'models/engagement';
 import { USER_GROUP } from 'models/user';
 import { UserResponseDetailByMonth } from 'models/analytics/userResponseDetail';
+import { TypedSurveyData, TypedSurveyResultData } from 'models/analytics/surveyResult';
 import { getAggregatorData } from 'services/analytics/aggregatorService';
 import { getMapData } from 'services/analytics/mapService';
+import { getSurveyResultData } from 'services/analytics/surveyResult';
 import { getUserResponseDetailByMonth } from 'services/analytics/userResponseDetailService';
 import { getDashboardDataSheet } from 'services/surveyService';
+import { fetchSurveyReportSettings } from 'services/surveyService/reportSettingsService';
 import { USER_ROLES } from 'services/userService/constants';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch, useAppSelector } from 'hooks';
@@ -20,6 +24,8 @@ import { formatToUTC } from 'utils/helpers/dateHelper';
 import { DashboardContext } from './DashboardContext';
 import { LiveActivityChart } from './LiveActivityChart';
 import { ResultsAsOfWatermark } from './ResultsAsOfWatermark';
+import { ChartsPngExport } from './ChartsPngExport';
+import { selectPublicCharts } from './exportCharts';
 import { Palette } from 'styles/Theme';
 
 interface DashboardHeaderCardProps {
@@ -53,12 +59,18 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
     const isAuthenticated = useAppSelector((state) => state.user.authentication.authenticated);
     const roles = useAppSelector((state) => state.user.roles);
     const userDetail = useAppSelector((state) => state.user.userDetail);
+    const assignedEngagements = useAppSelector((state) => state.user.assignedEngagements);
     const canExport =
         dashboardType === DashboardType.INTERNAL &&
         isAuthenticated &&
         roles.includes(USER_ROLES.VIEW_ALL_SURVEY_RESULTS);
     // The internal export includes rejected comments, so only Superusers may download it.
     const isSuperuser = Boolean(userDetail.groups?.includes('/ENGAGE/' + USER_GROUP.ADMIN.value));
+    // The chart images only ever hold charts shown on the public report, so the engagement's team may take them too.
+    const canExportCharts =
+        isSuperuser ||
+        (Boolean(userDetail.groups?.includes('/ENGAGE/' + USER_GROUP.TEAM_MEMBER.value)) &&
+            assignedEngagements.includes(Number(engagement.id)));
     const surveyId = engagement.surveys?.[0]?.id;
     const [surveysCompleted, setSurveysCompleted] = useState<number | null>(null);
     const [isLocationLoading, setIsLocationLoading] = useState(true);
@@ -68,6 +80,10 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
     const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null);
     const [dataAsOf, setDataAsOf] = useState<Date | null>(null);
     const [isExporting, setIsExporting] = useState(false);
+    const [chartsExport, setChartsExport] = useState<{
+        charts: TypedSurveyData[];
+        descriptions: Record<string, string>;
+    } | null>(null);
 
     const handleExportCsv = async () => {
         if (!surveyId) {
@@ -88,6 +104,56 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
             );
         } finally {
             setIsExporting(false);
+        }
+    };
+
+    const notifyChartsExportError = () =>
+        dispatch(
+            openNotification({
+                severity: 'error',
+                text: 'Error occurred while exporting charts. Please try again later.',
+            }),
+        );
+
+    const handleExportPng = async () => {
+        if (!surveyId) {
+            return;
+        }
+        setExportAnchorEl(null);
+        try {
+            setIsExporting(true);
+            // Internal results, so the export works before the engagement is published; filtered by
+            // the report settings so only charts shown on the public report are included.
+            const [results, settings] = await Promise.all([
+                getSurveyResultData(Number(engagement.id), DashboardType.INTERNAL),
+                fetchSurveyReportSettings(String(surveyId)),
+            ]);
+            const charts = selectPublicCharts((results as unknown as TypedSurveyResultData).data ?? [], settings);
+            if (!charts.length) {
+                dispatch(
+                    openNotification({
+                        severity: 'info',
+                        text: 'There are no charts shown in the public report to export.',
+                    }),
+                );
+                setIsExporting(false);
+                return;
+            }
+            const descriptions = Object.fromEntries(
+                settings.filter((s) => s.description).map((s) => [s.question_key, s.description as string]),
+            );
+            setChartsExport({ charts, descriptions });
+        } catch (error) {
+            notifyChartsExportError();
+            setIsExporting(false);
+        }
+    };
+
+    const handleChartsExportDone = (error?: unknown) => {
+        setChartsExport(null);
+        setIsExporting(false);
+        if (error) {
+            notifyChartsExportError();
         }
     };
 
@@ -201,7 +267,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                         dashboardType={dashboardType}
                         dataAsOf={dataAsOf}
                     />
-                    {canExport && (
+                    {canExport && canExportCharts && (
                         <>
                             <PrimaryButton
                                 startIcon={<FileDownloadOutlinedIcon />}
@@ -215,7 +281,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                 }
                                 onClick={(event: MouseEvent<HTMLElement>) => setExportAnchorEl(event.currentTarget)}
                                 loading={isExporting}
-                                disabled={!surveyId || !isSuperuser}
+                                disabled={!surveyId}
                                 aria-haspopup="true"
                                 aria-controls={exportAnchorEl ? 'dashboard-export-menu' : undefined}
                                 aria-expanded={Boolean(exportAnchorEl)}
@@ -232,21 +298,53 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                                 slotProps={{ paper: { sx: { minWidth: 260 } } }}
                             >
+                                {isSuperuser && (
+                                    <MenuItem
+                                        onClick={handleExportCsv}
+                                        sx={{ alignItems: 'center', gap: 1.25, py: 1.25, whiteSpace: 'normal' }}
+                                    >
+                                        <TableChartOutlinedIcon sx={{ fontSize: 18, color: Palette.primary.main }} />
+                                        <Box>
+                                            <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
+                                                Excel Data Export
+                                            </Typography>
+                                            <Typography
+                                                sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}
+                                            >
+                                                Raw and aggregated survey data across 4 sheets
+                                            </Typography>
+                                        </Box>
+                                    </MenuItem>
+                                )}
                                 <MenuItem
-                                    onClick={handleExportCsv}
-                                    sx={{ alignItems: 'center', gap: 1.25, py: 1.25, whiteSpace: 'normal' }}
+                                    onClick={handleExportPng}
+                                    sx={{
+                                        alignItems: 'center',
+                                        gap: 1.25,
+                                        py: 1.25,
+                                        whiteSpace: 'normal',
+                                        borderTop: isSuperuser ? `1px solid ${Palette.border.subtle}` : 'none',
+                                    }}
                                 >
-                                    <TableChartOutlinedIcon sx={{ fontSize: 18, color: Palette.primary.main }} />
+                                    <ImageOutlinedIcon sx={{ fontSize: 18, color: Palette.success.emphasis }} />
                                     <Box>
                                         <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
-                                            Excel Data Export
+                                            PNG / ZIP
                                         </Typography>
                                         <Typography sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}>
-                                            Raw and aggregated survey data across 4 sheets
+                                            Download charts as a ZIP bundle
                                         </Typography>
                                     </Box>
                                 </MenuItem>
                             </Menu>
+                            {chartsExport && (
+                                <ChartsPngExport
+                                    engagementName={engagement.name}
+                                    charts={chartsExport.charts}
+                                    descriptions={chartsExport.descriptions}
+                                    onDone={handleChartsExportDone}
+                                />
+                            )}
                         </>
                     )}
                 </Stack>
