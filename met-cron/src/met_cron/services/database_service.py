@@ -21,13 +21,6 @@ class DatabaseService:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def purge_event_logs():
-        """Purge dagster event logs. Keep only last 7 days."""
-
+        """Empty the dagster event log."""
         with db.engine.begin() as con:
-            con.execute(text("""
-                DELETE FROM dagster.event_logs
-                WHERE timestamp < current_timestamp - interval '7 days';
-            """))
-
-        with db.engine.connect().execution_options(isolation_level="AUTOCOMMIT") as con:
-            con.execute(text("VACUUM dagster.event_logs;"))
+            con.execute(text('TRUNCATE dagster.event_logs CASCADE;'))
