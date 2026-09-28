@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
+import { formatOrdinal } from './ordinal';
 
-// Colors indexed by rank position (0 = 1st place, 4 = 5th place)
-const RANK_COLORS = Palette.chart.rank;
-const RANK_TEXT_COLORS = Palette.chart.rankLabel;
-const RANK_LABELS = ['1st', '2nd', '3rd', '4th', '5th'];
+const FALLBACK_STYLE = {
+    fill: Palette.chart.fallback.swatch,
+    border: Palette.chart.fallback.swatch,
+    label: Palette.chart.fallback.label,
+};
+
+// Colours for a rank position (0 = 1st place). Ranks past the palette fall back to a borderless grey.
+const rankStyle = (rankIndex: number) => Palette.chart.rank[rankIndex] ?? FALLBACK_STYLE;
 
 export interface RankOrderItem {
     label: string;
@@ -37,58 +42,58 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
 
     const scores = data.map((d) => computeScore(d.ranks));
     // Lower weighted score = ranked more highly, so placement is the count of items that beat it.
-    const scored: ScoredItem[] = data.map((d, i) => ({
-        ...d,
-        score: scores[i],
-        placement: scores.filter((s, j) => s < scores[i] || (s === scores[i] && j < i)).length,
-    }));
+    const scored: ScoredItem[] = data
+        .map((d, i) => ({
+            ...d,
+            score: scores[i],
+            placement: scores.filter((s, j) => s < scores[i] || (s === scores[i] && j < i)).length,
+        }))
+        .sort((a, b) => a.placement - b.placement);
 
     const numRanks = data[0]?.ranks.length ?? 5;
-    const rankLabels = RANK_LABELS.slice(0, numRanks);
+    const rankLabels = Array.from({ length: numRanks }, (_, i) => formatOrdinal(i + 1));
 
     return (
         <Box>
             {/* Legend */}
             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1.25, mb: 2 }}>
                 <Typography sx={{ fontSize: 12, color: Palette.text.secondary, fontWeight: 600 }}>Ranked:</Typography>
-                {/* Reversed so legend reads 5th→1st left-to-right, matching the bar stack */}
-                {[...rankLabels].reverse().map((lbl, ri) => {
-                    const origIndex = numRanks - 1 - ri;
-                    return (
-                        <Box key={lbl} sx={{ display: 'flex', alignItems: 'center', gap: 0.625 }}>
-                            <Box
-                                sx={{
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: '2px',
-                                    flexShrink: 0,
-                                    background: RANK_COLORS[origIndex],
-                                }}
-                            />
-                            <Typography sx={{ fontSize: 12, color: Palette.text.secondary }}>{lbl}</Typography>
-                        </Box>
-                    );
-                })}
+                {rankLabels.map((lbl, rankIndex) => (
+                    <Box key={lbl} sx={{ display: 'flex', alignItems: 'center', gap: 0.625 }}>
+                        <Box
+                            sx={{
+                                width: 12,
+                                height: 12,
+                                boxSizing: 'border-box',
+                                borderRadius: '3px',
+                                flexShrink: 0,
+                                background: rankStyle(rankIndex).fill,
+                                border: `1px solid ${rankStyle(rankIndex).border}`,
+                            }}
+                        />
+                        <Typography sx={{ fontSize: 12, color: Palette.text.secondary }}>{lbl}</Typography>
+                    </Box>
+                ))}
             </Box>
 
             {/* Rows */}
             {scored.map((item, i) => {
-                // Stack renders lowest-ranked (rightmost index) first so 1st-rank anchors the right
-                const stackSegments = [...item.ranks]
-                    .map((pct, rankIndex) => ({ pct, rankIndex }))
-                    .reverse();
+                // 1st rank anchors the left, matching the legend. Segments under 1% aren't drawn, so the
+                // bar's rounded ends go on the first and last segments that are.
+                const segments = item.ranks.map((pct, rankIndex) => ({ pct, rankIndex })).filter(({ pct }) => pct >= 1);
 
                 return (
                     <Box
                         key={item.label}
                         sx={{
                             display: 'grid',
-                            gridTemplateColumns: '24px 1fr auto',
+                            gridTemplateColumns: '24px 1fr',
                             alignItems: 'center',
                             gap: 1.75,
                             px: 0.5,
                             py: 1.25,
-                            borderBottom: i < scored.length - 1 ? `1px solid ${Palette.chart.surface.rowDivider}` : 'none',
+                            borderBottom:
+                                i < scored.length - 1 ? `1px solid ${Palette.chart.surface.rowDivider}` : 'none',
                             '&:hover': { background: Palette.chart.surface.rowHover, borderRadius: '4px' },
                         }}
                     >
@@ -102,8 +107,10 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 flexShrink: 0,
-                                background: RANK_COLORS[item.placement] ?? Palette.chart.fallback.swatch,
-                                color: RANK_TEXT_COLORS[item.placement] ?? Palette.chart.fallback.label,
+                                boxSizing: 'border-box',
+                                background: rankStyle(item.placement).fill,
+                                border: `1px solid ${rankStyle(item.placement).border}`,
+                                color: rankStyle(item.placement).label,
                                 fontSize: 11,
                                 fontWeight: 700,
                             }}
@@ -111,28 +118,26 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                             {item.placement + 1}
                         </Box>
 
-                        {/* Label + stacked bar */}
+                        {/* Label + stacked bar + weighted score */}
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                             <Typography sx={{ fontSize: 13, color: Palette.text.primary, fontWeight: 500 }}>
                                 {item.label}
                             </Typography>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    height: 20,
-                                    borderRadius: '3px',
-                                    overflow: 'hidden',
-                                    width: '100%',
-                                }}
-                            >
-                                {stackSegments.map(({ pct, rankIndex }) => {
-                                    if (pct < 1) return null;
+                            <Box sx={{ display: 'flex', height: 20, width: '100%' }}>
+                                {segments.map(({ pct, rankIndex }, si) => {
+                                    const { fill, border, label } = rankStyle(rankIndex);
+                                    const left = si === 0 ? '3px' : 0;
+                                    const right = si === segments.length - 1 ? '3px' : 0;
                                     return (
                                         <Box
                                             key={rankIndex}
                                             sx={{
                                                 width: `${pct}%`,
+                                                minWidth: 0,
                                                 height: '100%',
+                                                boxSizing: 'border-box',
+                                                border: `1px solid ${border}`,
+                                                borderRadius: `${left} ${right} ${right} ${left}`,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -142,8 +147,8 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                                                 overflow: 'hidden',
                                                 cursor: 'default',
                                                 transition: 'opacity 0.15s',
-                                                background: RANK_COLORS[rankIndex] ?? Palette.chart.fallback.swatch,
-                                                color: RANK_TEXT_COLORS[rankIndex] ?? Palette.chart.fallback.label,
+                                                background: fill,
+                                                color: label,
                                                 '&:hover': { opacity: 0.82 },
                                             }}
                                             onMouseMove={(e) =>
@@ -160,18 +165,10 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                                     );
                                 })}
                             </Box>
-                        </Box>
-
-                        {/* Weighted score */}
-                        <Box sx={{ textAlign: 'right', minWidth: 80 }}>
-                            <Typography
-                                component="span"
-                                display="block"
-                                sx={{ fontSize: 20, fontWeight: 700, color: Palette.primary.main, lineHeight: 1.2 }}
-                            >
-                                {item.score.toFixed(2)}
-                            </Typography>
-                            <Typography component="span" display="block" sx={{ fontSize: 11, color: Palette.text.secondary }}>
+                            <Typography sx={{ fontSize: 12, color: Palette.text.secondary }}>
+                                <Box component="span" sx={{ fontWeight: 700, color: Palette.text.primary }}>
+                                    {item.score.toFixed(2)}
+                                </Box>{' '}
                                 avg. rank score
                             </Typography>
                         </Box>

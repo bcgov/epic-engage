@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DonutChart } from 'components/public/dashboard/charts/DonutChart';
 import { CheckboxChart } from 'components/public/dashboard/charts/CheckboxChart';
@@ -213,14 +213,14 @@ describe('RankOrderChart', () => {
         { label: 'Housing', ranks: [10, 10, 80] },
     ];
 
-    it('renders rows in survey order', () => {
+    it('renders rows in placement order', () => {
         render(<RankOrderChart data={data} />);
 
         const rendered = screen.getAllByText(/^(Parks|Transit|Housing)$/).map((el) => el.textContent);
-        expect(rendered).toEqual(['Parks', 'Transit', 'Housing']);
+        expect(rendered).toEqual(['Transit', 'Parks', 'Housing']);
     });
 
-    it('numbers each row by weighted-score placement, not render position', () => {
+    it('numbers each row by weighted-score placement', () => {
         render(<RankOrderChart data={data} />);
 
         // Placement medals appear alongside their labels: Parks 2nd, Transit 1st, Housing 3rd.
@@ -239,10 +239,37 @@ describe('RankOrderChart', () => {
         render(<RankOrderChart data={data} />);
 
         expect(screen.getByText('Ranked:')).toBeInTheDocument();
-        ['1st', '2nd', '3rd'].forEach((label) => {
-            expect(screen.getByText(label)).toBeInTheDocument();
-        });
-        expect(screen.queryByText('4th')).not.toBeInTheDocument();
+        const legend = screen.getAllByText(/^\d+(st|nd|rd|th)$/).map((el) => el.textContent);
+        expect(legend).toEqual(['1st', '2nd', '3rd']);
+    });
+
+    it('shows the avg rank score under each row', () => {
+        render(<RankOrderChart data={data} />);
+
+        // Transit: 70% 1st + 30% 2nd = 1.30
+        const transitRow = screen.getByText('Transit').parentElement as HTMLElement;
+        expect(within(transitRow).getByText('1.30')).toBeInTheDocument();
+        expect(within(transitRow).getByText(/avg\. rank score/)).toBeInTheDocument();
+    });
+
+    it('stacks bar segments from 1st rank on the left', () => {
+        render(<RankOrderChart data={[{ label: 'Parks', ranks: [40, 30, 20, 10] }]} />);
+
+        const segments = screen.getAllByText(/^\d+%$/);
+        expect(segments.map((el) => el.textContent)).toEqual(['40%', '30%', '20%', '10%']);
+
+        fireEvent.mouseMove(segments[0]);
+        expect(screen.getByText('Ranked 1st: 40%')).toBeInTheDocument();
+        fireEvent.mouseMove(segments[3]);
+        expect(screen.getByText('Ranked 4th: 10%')).toBeInTheDocument();
+    });
+
+    it('labels ranks past 5th as ordinals', () => {
+        render(<RankOrderChart data={[{ label: 'Parks', ranks: [10, 10, 10, 10, 10, 50] }]} />);
+
+        expect(screen.getByText('6th')).toBeInTheDocument();
+        fireEvent.mouseMove(screen.getByText('50%'));
+        expect(screen.getByText('Ranked 6th: 50%')).toBeInTheDocument();
     });
 });
 

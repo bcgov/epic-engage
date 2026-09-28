@@ -154,20 +154,23 @@ export const Palette = {
             tokens.typographyColorPrimary,
             tokens.typographyColorPrimary,
         ],
-        // Rank-order stacked bars, indexed by rank position (0 = 1st place).
+        // Rank-order stacked bars, indexed by rank position (0 = 1st place). Shares the Likert
+        // classification tokens: blues for the top ranks through golds to yellow for 6th.
         rank: [
-            tokens.dataVizBlueDark,
-            tokens.dataVizBlueMedium,
-            tokens.dataVizBlueLight,
-            tokens.dataVizYellowLight,
-            tokens.dataVizOrange,
-        ],
-        rankLabel: [
-            tokens.typographyColorPrimaryInvert,
-            tokens.typographyColorPrimaryInvert,
-            tokens.typographyColorPrimary,
-            tokens.typographyColorPrimary,
-            tokens.typographyColorPrimaryInvert,
+            {
+                fill: tokens.dataVizBlue100,
+                border: tokens.dataVizBlue100Border,
+                label: tokens.typographyColorPrimaryInvert,
+            },
+            {
+                fill: tokens.dataVizBlue80,
+                border: tokens.dataVizBlue80Border,
+                label: tokens.typographyColorPrimaryInvert,
+            },
+            { fill: tokens.dataVizBlue40, border: tokens.dataVizBlue40Border, label: tokens.typographyColorPrimary },
+            { fill: tokens.dataVizGold10, border: tokens.dataVizGold10Border, label: tokens.typographyColorPrimary },
+            { fill: tokens.dataVizGold60, border: tokens.dataVizGold60Border, label: tokens.typographyColorPrimary },
+            { fill: tokens.dataVizYellow, border: tokens.dataVizYellowBorder, label: tokens.typographyColorPrimary },
         ],
         likert: [
             tokens.dataVizRed,
