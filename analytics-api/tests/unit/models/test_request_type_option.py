@@ -18,10 +18,10 @@ Test suite covering the matrix-question (Likert/Ranking) grouping logic that
 powers the public/internal survey result dashboards.
 """
 from analytics_api.models.request_type_option import RequestTypeOption as RequestTypeOptionModel
-from tests.utilities.factory_utils import (
-    factory_available_response_option_model, factory_request_type_option_model,
-    factory_response_type_option_model, factory_survey_model)
 from tests.utilities.factory_scenarios import TestSurveyInfo
+from tests.utilities.factory_utils import (
+    factory_available_response_option_model, factory_request_type_option_model, factory_response_type_option_model,
+    factory_survey_model)
 
 
 def _survey(engagement_id):
@@ -347,7 +347,7 @@ def test_classified_likert_is_ordered_by_classification(session):  # pylint:disa
     """Assert that scale points come back in rank order, whatever order the author listed them in."""
     survey = _survey(engagement_id=121)
     _likert(survey, [('Agree', 'pos1'), ('Disagree', 'neg2'), ('Strongly agree', 'pos2'),
-                          ('Neutral', 'neutral'), ('Somewhat disagree', 'neg1')])
+                     ('Neutral', 'neutral'), ('Somewhat disagree', 'neg1')])
     _answer(survey, 'rowA', 'Disagree', 1)
     _answer(survey, 'rowA', 'Strongly agree', 3)
 
@@ -369,7 +369,7 @@ def test_not_sure_is_split_out_and_shares_the_denominator(session):  # pylint:di
     """Assert that Not sure leaves the scale, and its percentage and the scale's share one total."""
     survey = _survey(engagement_id=122)
     _likert(survey, [('Disagree', 'neg1'), ('Not sure', 'notSure'), ('Neutral', 'neutral'),
-                          ('Agree', 'pos1')])
+                     ('Agree', 'pos1')])
     _answer(survey, 'rowA', 'Disagree', 3)
     _answer(survey, 'rowA', 'Not sure', 2)
     _answer(survey, 'rowA', 'Agree', 5)
@@ -387,7 +387,7 @@ def test_legacy_likert_keeps_stored_order(session):  # pylint:disable=unused-arg
     """Assert that a Likert with no classifications is served exactly as before."""
     survey = _survey(engagement_id=123)
     _likert(survey, [('Not effective', None), ('Neutral', None), ('Somewhat effective', None),
-                          ('Effective', None), ('Very effective', None)])
+                     ('Effective', None), ('Very effective', None)])
     _answer(survey, 'rowA', 'Effective', 2)
 
     entry = RequestTypeOptionModel.get_survey_result_with_type(123, True)[0]
@@ -407,6 +407,21 @@ def test_partly_classified_likert_is_treated_as_legacy(session):  # pylint:disab
 
     assert entry['scale_labels'] == ['Agree', 'Disagree', 'Unsure']
     assert entry['has_not_sure'] is False
+
+
+def test_legacy_likert_still_splits_out_not_sure(session):  # pylint:disable=unused-argument
+    """Assert that Not sure leaves a legacy scale, so the dashboard can't rank it as most positive."""
+    survey = _survey(engagement_id=128)
+    _likert(survey, [('Not preferred', 'neg1'), ('Somewhat preferred', None), ('Preferred', 'pos1'),
+                     ('Most preferred', 'pos2'), ('Not sure', 'notSure')])
+    _answer(survey, 'rowA', 'Preferred', 3)
+    _answer(survey, 'rowA', 'Not sure', 1)
+
+    entry = RequestTypeOptionModel.get_survey_result_with_type(128, True)[0]
+
+    assert entry['scale_labels'] == ['Not preferred', 'Somewhat preferred', 'Preferred', 'Most preferred']
+    assert entry['has_not_sure'] is True
+    assert entry['result'] == [{'label': 'Row 1', 'pcts': [0, 0, 75, 0], 'n': 4, 'not_sure_pct': 25}]
 
 
 def test_ranking_entry_is_unaffected_by_classification(session):  # pylint:disable=unused-argument
@@ -434,7 +449,7 @@ def test_duplicate_classification_is_treated_as_legacy(session):  # pylint:disab
     """
     survey = _survey(engagement_id=127)
     _likert(survey, [('Agree', 'pos1'), ('Strongly agree', 'pos1'), ('Not sure', 'notSure'),
-                          ('Also not sure', 'notSure')])
+                     ('Also not sure', 'notSure')])
     _answer(survey, 'rowA', 'Agree', 1)
     _answer(survey, 'rowA', 'Strongly agree', 2)
     _answer(survey, 'rowA', 'Not sure', 3)

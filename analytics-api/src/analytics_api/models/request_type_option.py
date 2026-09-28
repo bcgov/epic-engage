@@ -94,16 +94,18 @@ def _order_likert_scale(points):
     """Rank a Likert scale's (label, classification) points and split off Not sure.
 
     Returns (scale, not_sure). A missing, unknown or duplicate classification falls back to
-    legacy: stored order, no Not sure.
+    legacy stored order. A single Not sure is split off even then: left in the scale, the
+    dashboard's positional guess puts it at the most positive end of the bar.
     """
     known = set(_LIKERT_RANK) | {_NOT_SURE}
     classifications = [classification for _, classification in points]
+    not_sures = [p for p in points if p[1] == _NOT_SURE]
+    not_sure = not_sures[0] if len(not_sures) == 1 else None
+    rest = [p for p in points if p != not_sure]
     has_duplicate = len(classifications) != len(set(classifications))
     if has_duplicate or any(classification not in known for classification in classifications):
-        return list(points), None
-    not_sure = next((p for p in points if p[1] == _NOT_SURE), None)
-    scale = sorted((p for p in points if p[1] != _NOT_SURE), key=lambda p: _LIKERT_RANK.index(p[1]))
-    return scale, not_sure
+        return rest, not_sure
+    return sorted(rest, key=lambda p: _LIKERT_RANK.index(p[1])), not_sure
 
 
 def _build_matrix_row(child, points, is_ranking, count_map):
