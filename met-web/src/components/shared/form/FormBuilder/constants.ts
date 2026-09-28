@@ -1,3 +1,5 @@
+import { dropNegativeBlockIndent } from './ckeditorPlugins';
+
 export const formioOptions = {
     noDefaultSubmitButton: true,
     builder: {
@@ -32,4 +34,11 @@ export const formioOptions = {
         },
     },
     iconset: 'fa',
+    editors: {
+        ckeditor: {
+            settings: {
+                extraPlugins: [dropNegativeBlockIndent],
+            },
+        },
+    },
 };
