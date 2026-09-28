@@ -194,7 +194,7 @@ export const LikertChart = ({
         };
 
     // Keep SVG units at CSS pixel size even when ResizeObserver reports a fractional width.
-    const totalW = Math.round(width) || 700;
+    const totalW = Math.floor(width - Math.max(pixelOffset.x, 0)) || 700;
     const barLeft = LABEL_W + PAD_L + 16;
     const countX = totalW - PAD_R - N_COL_W;
     const nsLeft = countX - BAR_GAP - NS_W;
@@ -271,7 +271,7 @@ export const LikertChart = ({
             </Box>
 
             {/* SVG chart */}
-            <Box ref={wrapperRef} sx={{ width: '100%', overflowX: 'auto' }}>
+            <Box ref={wrapperRef} sx={{ width: '100%', overflow: 'hidden' }}>
                 {width > 0 && (
                     <svg
                         width={totalW}

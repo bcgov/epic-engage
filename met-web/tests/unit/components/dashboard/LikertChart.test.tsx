@@ -147,7 +147,7 @@ describe('LikertChart', () => {
             for (const width of [700, 763.375, 801.625]) {
                 act(() => resize([{ contentRect: { width } } as ResizeObserverEntry], {} as ResizeObserver));
                 const svg = container.querySelector('svg');
-                expect(Number(svg?.getAttribute('width'))).toBe(Math.round(width));
+                expect(Number(svg?.getAttribute('width'))).toBe(Math.floor(width));
                 const edges = paths(container).map(bounds);
                 edges.forEach((edge, i) => {
                     expect(Number.isInteger(edge.left)).toBe(true);
@@ -157,7 +157,7 @@ describe('LikertChart', () => {
                     if (i > 0) expect(edge.left).toBe(edges[i - 1].right);
                 });
                 expect(edges[0].left).toBe(BAR_LEFT);
-                expect(edges[edges.length - 1].right).toBe(Math.round(width) - 102);
+                expect(edges[edges.length - 1].right).toBe(Math.floor(width) - 102);
             }
         } finally {
             observer.mockRestore();
@@ -174,6 +174,30 @@ describe('LikertChart', () => {
             expect(container.querySelector('svg')?.style.top).toBe('-0.4375px');
         } finally {
             rect.mockRestore();
+        }
+    });
+
+    it('never draws wider than its container, so no scrollbar appears', () => {
+        let resize: ResizeObserverCallback;
+        const observer = jest.spyOn(global, 'ResizeObserver').mockImplementation((callback) => {
+            resize = callback;
+            return { observe: jest.fn(), unobserve: jest.fn(), disconnect: jest.fn() };
+        });
+        // Origin snaps right by 0.375px.
+        const rect = jest.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+            left: 20.625, top: 111.5625,
+        } as DOMRect);
+        try {
+            const { container } = render(<LikertChart data={[{ label: 'Row', pcts, n: 10 }]} />);
+            for (const width of [700, 812.6, 812.8]) {
+                act(() => resize([{ contentRect: { width } } as ResizeObserverEntry], {} as ResizeObserver));
+                const svg = container.querySelector('svg') as SVGSVGElement;
+                expect(parseFloat(svg.style.left) + Number(svg.getAttribute('width'))).toBeLessThanOrEqual(width);
+                expect(svg.parentElement && getComputedStyle(svg.parentElement).overflowX).not.toBe('auto');
+            }
+        } finally {
+            rect.mockRestore();
+            observer.mockRestore();
         }
     });
 
