@@ -1,7 +1,7 @@
 import http from 'apiManager/httpRequestHandler';
 import Endpoints from 'apiManager/endpoints';
 import { replaceUrl } from 'utils/helpers';
-import { SurveyReportSetting } from 'models/surveyReportSetting';
+import { SurveyReportSetting, SurveyReportSettingUpdate } from 'models/surveyReportSetting';
 
 export const fetchSurveyReportSettings = async (surveyId: string): Promise<SurveyReportSetting[]> => {
     const url = replaceUrl(Endpoints.SurveyReportSetting.GET_LIST, 'survey_id', surveyId);
@@ -9,7 +9,7 @@ export const fetchSurveyReportSettings = async (surveyId: string): Promise<Surve
     return responseData.data ?? [];
 };
 
-export const updateSurveyReportSettings = async (surveyId: string, settingData: SurveyReportSetting[]) => {
+export const updateSurveyReportSettings = async (surveyId: string, settingData: SurveyReportSettingUpdate[]) => {
     const url = replaceUrl(Endpoints.SurveyReportSetting.UPDATE, 'survey_id', surveyId);
     const responseData = await http.PatchRequest<SurveyReportSetting[]>(url, settingData);
     return responseData.data ?? [];

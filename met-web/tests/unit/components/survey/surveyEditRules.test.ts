@@ -2,6 +2,7 @@ import { createDefaultEngagement } from 'models/engagement';
 import { EngagementStatus } from 'constants/engagementStatus';
 import {
     getSurveyEditRules,
+    isEngagementClosed,
     SURVEY_LOCKED_MESSAGE,
     ENGAGEMENT_SCHEDULED_MESSAGE,
     ENGAGEMENT_PUBLISHED_MESSAGE,
@@ -69,5 +70,24 @@ describe('Survey edit rules', () => {
 
     test('A scheduled engagement whose start date has passed locks the survey', () => {
         expect(getSurveyEditRules(engagement(EngagementStatus.Scheduled)).canEdit).toBe(false);
+    });
+});
+
+describe('isEngagementClosed', () => {
+    test('A survey with no engagement is not closed', () => {
+        expect(isEngagementClosed(null)).toBe(false);
+    });
+
+    test('An engagement is closed once its end date has passed', () => {
+        expect(isEngagementClosed(engagement(EngagementStatus.Published, { end_date: PAST }))).toBe(true);
+        expect(isEngagementClosed(engagement(EngagementStatus.Published))).toBe(false);
+    });
+
+    test('A Closed engagement is closed whatever its end date says', () => {
+        expect(isEngagementClosed(engagement(EngagementStatus.Closed))).toBe(true);
+    });
+
+    test('A scheduled engagement locked by its start date is not closed', () => {
+        expect(isEngagementClosed(engagement(EngagementStatus.Scheduled))).toBe(false);
     });
 });

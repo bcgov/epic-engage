@@ -1,4 +1,7 @@
-import { groupReportSettingsByPage } from 'components/admin/survey/building/groupReportSettingsByPage';
+import {
+    groupFreeTextSettingsByPage,
+    groupReportSettingsByPage,
+} from 'components/admin/survey/building/groupReportSettingsByPage';
 import { SurveyReportSetting } from 'models/surveyReportSetting';
 import { FormBuilderData } from 'components/shared/form/FormBuilder/types';
 import { ConditionalLink } from 'components/public/dashboard/surveyPages';
@@ -11,6 +14,7 @@ const baseSetting: SurveyReportSetting = {
     question_type: 'simpleradios',
     question: 'Pick one',
     display: true,
+    export_display: true,
 };
 
 const followUpSetting: SurveyReportSetting = {
@@ -21,6 +25,7 @@ const followUpSetting: SurveyReportSetting = {
     question_type: 'simpletextfield',
     question: 'Please specify',
     display: true,
+    export_display: true,
 };
 
 const formDefinition: FormBuilderData = {
@@ -91,6 +96,7 @@ describe('groupReportSettingsByPage', () => {
             question: 'How important are these?',
             display: true,
             description: 'Rated by everyone who answered the survey.',
+            export_display: true,
         };
 
         const pages = groupReportSettingsByPage(matrixForm, [matrixSetting]);
@@ -98,5 +104,52 @@ describe('groupReportSettingsByPage', () => {
         expect(pages[0].items).toHaveLength(1);
         expect(pages[0].items[0].setting.question_key).toBe('matrix1');
         expect(pages[0].items[0].setting.description).toBe('Rated by everyone who answered the survey.');
+    });
+});
+
+describe('groupFreeTextSettingsByPage', () => {
+    const textarea = (id: number, key: string): SurveyReportSetting => ({
+        ...baseSetting,
+        id,
+        question_id: id,
+        question_key: key,
+        question_type: 'simpletextarea',
+        question: `Comments ${key}`,
+    });
+
+    const wizard: FormBuilderData = {
+        display: 'wizard',
+        components: [
+            {
+                title: 'Choices',
+                components: [
+                    { id: '1', key: 'radio1' },
+                    { id: '2', key: 'other1' },
+                ],
+            },
+            { title: 'No text here', components: [{ id: '5', key: 'radio2' }] },
+            { title: 'Comments', components: [{ id: '3', key: 'text3' }] },
+        ],
+    };
+    const settings = [baseSetting, followUpSetting, { ...baseSetting, id: 5, question_id: 5 }, textarea(3, 'text3')];
+
+    test('keeps only free-text questions and drops pages without any', () => {
+        const pages = groupFreeTextSettingsByPage(wizard, settings);
+
+        expect(pages.map((page) => page.title)).toEqual(['Choices', 'Comments']);
+        expect(pages[0].items.map((item) => item.setting.question_key)).toEqual(['other1']);
+        expect(pages[1].items.map((item) => item.setting.question_key)).toEqual(['text3']);
+    });
+
+    test('lists a free-text follow-up on its own, naming its trigger', () => {
+        const pages = groupFreeTextSettingsByPage(wizard, settings, { other1: conditionalLink });
+
+        expect(pages[0].items).toHaveLength(1);
+        expect(pages[0].items[0].setting.question_key).toBe('other1');
+        expect(pages[0].items[0].trigger?.question_key).toBe('radio1');
+    });
+
+    test('returns no pages for a survey without free-text questions', () => {
+        expect(groupFreeTextSettingsByPage(formDefinition, [baseSetting])).toEqual([]);
     });
 });

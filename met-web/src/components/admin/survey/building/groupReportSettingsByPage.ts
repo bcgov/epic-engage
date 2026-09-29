@@ -85,3 +85,39 @@ export const groupReportSettingsByPage = (
         },
     ];
 };
+
+// Question types whose answers are free text - the only ones the public/proponent comment export
+// carries. Matches FormIoComponentType.TEXTAREA/TEXTFIELD in met-api.
+export const FREE_TEXT_QUESTION_TYPES = ['simpletextarea', 'simpletextfield'];
+
+// A free-text question and, when it's a conditional follow-up, the question that triggers it.
+export interface FreeTextPageItem {
+    setting: SurveyReportSetting;
+    trigger?: SurveyReportSetting;
+}
+
+export interface FreeTextPage {
+    title: string;
+    items: FreeTextPageItem[];
+    [key: string]: unknown;
+}
+
+// The report pages cut down to their free-text questions, in page order, with pages that have none
+// dropped. A free-text follow-up is listed on its own even when its trigger isn't free text
+// (e.g. a radio's "Other, please specify"), carrying that trigger so it can be named.
+export const groupFreeTextSettingsByPage = (
+    formDefinition: FormBuilderData | undefined,
+    settings: SurveyReportSetting[],
+    conditionalLinks: Record<string, ConditionalLink> = {},
+): FreeTextPage[] => {
+    const isFreeText = (setting: SurveyReportSetting) => FREE_TEXT_QUESTION_TYPES.includes(setting.question_type);
+    return groupReportSettingsByPage(formDefinition, settings, conditionalLinks)
+        .map((page) => ({
+            title: page.title,
+            items: page.items.flatMap(({ setting, followUps }) => [
+                ...(isFreeText(setting) ? [{ setting }] : []),
+                ...followUps.filter(isFreeText).map((followUp) => ({ setting: followUp, trigger: setting })),
+            ]),
+        }))
+        .filter((page) => page.items.length > 0);
+};

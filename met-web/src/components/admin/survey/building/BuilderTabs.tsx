@@ -6,6 +6,9 @@ export interface BuilderTab {
     value: string;
     label: string;
     icon: React.ReactNode;
+    disabled?: boolean;
+    // Tooltip explaining why a disabled tab can't be opened yet.
+    disabledTitle?: string;
 }
 
 const TabBarContainer = styled('div')({
@@ -58,6 +61,11 @@ const TabButton = styled('button')({
         outlineOffset: '2px',
         backgroundColor: 'transparent',
     },
+    '&.disabled, &.disabled:hover': {
+        color: Palette.text.disabled,
+        fontWeight: 400,
+        cursor: 'not-allowed',
+    },
 });
 
 export const tabIds = (value: string) => ({ tab: `${value}-tab`, panel: `${value}-panel` });
@@ -73,20 +81,31 @@ export const BuilderTabs = ({
 }) => {
     const buttonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
+    // Steps from `start` in `step` direction to the nearest tab that isn't disabled.
+    const nearestEnabled = (start: number, step: number) => {
+        for (let i = 0; i < tabs.length; i++) {
+            const candidate = (((start + step * i) % tabs.length) + tabs.length) % tabs.length;
+            if (!tabs[candidate].disabled) {
+                return candidate;
+            }
+        }
+        return start;
+    };
+
     const handleKeyDown = (event: React.KeyboardEvent, index: number) => {
         let nextIndex: number | null = null;
         switch (event.key) {
             case 'ArrowRight':
-                nextIndex = (index + 1) % tabs.length;
+                nextIndex = nearestEnabled(index + 1, 1);
                 break;
             case 'ArrowLeft':
-                nextIndex = (index - 1 + tabs.length) % tabs.length;
+                nextIndex = nearestEnabled(index - 1, -1);
                 break;
             case 'Home':
-                nextIndex = 0;
+                nextIndex = nearestEnabled(0, 1);
                 break;
             case 'End':
-                nextIndex = tabs.length - 1;
+                nextIndex = nearestEnabled(tabs.length - 1, -1);
                 break;
             default:
                 return;
@@ -110,9 +129,11 @@ export const BuilderTabs = ({
                         id={ids.tab}
                         aria-controls={ids.panel}
                         aria-selected={active}
+                        aria-disabled={tab.disabled || undefined}
+                        title={tab.disabled ? tab.disabledTitle : undefined}
                         tabIndex={active ? 0 : -1}
-                        className={active ? 'active' : ''}
-                        onClick={() => onChange(tab.value)}
+                        className={active ? 'active' : tab.disabled ? 'disabled' : ''}
+                        onClick={() => !tab.disabled && onChange(tab.value)}
                         onKeyDown={(event) => handleKeyDown(event, index)}
                     >
                         {tab.icon}

@@ -6,6 +6,7 @@ import BorderColorIcon from '@mui/icons-material/BorderColor';
 import CheckIcon from '@mui/icons-material/Check';
 import ListAltOutlinedIcon from '@mui/icons-material/ListAltOutlined';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
+import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { SurveyParams } from '../types';
 import { getSurvey, putSurvey } from 'services/surveyService';
@@ -24,12 +25,14 @@ import { AutoSaveSnackBar } from './AutoSaveSnackBar';
 import { AdditionalSettings, SurveySwitch } from './AdditionalSettings';
 import { BuilderTabs, tabIds } from './BuilderTabs';
 import { ReportSettingsPanel, ReportSettingsPanelHandle } from './ReportSettingsPanel';
-import { getSurveyEditRules, SURVEY_LOCKED_MESSAGE } from './surveyEditRules';
+import { ExportSettingsPanel } from './ExportSettingsPanel';
+import { getSurveyEditRules, isEngagementClosed, SURVEY_LOCKED_MESSAGE } from './surveyEditRules';
 import { debounce, throttle } from 'lodash';
 import { BaseTheme, Palette } from 'styles/Theme';
 
 const TAB_QUESTIONS = 'questions';
 const TAB_REPORT = 'report';
+const TAB_EXPORT = 'export';
 
 // Intervale before showing again that a locked survey can't be changed.
 const LOCKED_NOTICE_INTERVAL = 5000;
@@ -97,12 +100,25 @@ const SurveyFormBuilder = () => {
     const canEdit = editRules.canEdit;
 
     const [autoSaveNotificationOpen, setAutoSaveNotificationOpen] = useState(false);
-    const [tab, setTab] = useState(searchParams.get('tab') === TAB_REPORT ? TAB_REPORT : TAB_QUESTIONS);
+    // The export tab can't be opened directly until the report tab has been seen this visit, so a
+    // link to it lands on the report tab instead.
+    const [tab, setTab] = useState(
+        [TAB_REPORT, TAB_EXPORT].includes(searchParams.get('tab') ?? '') ? TAB_REPORT : TAB_QUESTIONS,
+    );
+    const [reportVisited, setReportVisited] = useState(false);
+    // Question the report tab should open on, when reached from the export tab's link.
+    const [reportFocusKey, setReportFocusKey] = useState<string>();
     const AUTO_SAVE_INTERVAL = 5000;
 
     useEffect(() => {
         loadSurvey();
     }, []);
+
+    useEffect(() => {
+        if (tab === TAB_REPORT) {
+            setReportVisited(true);
+        }
+    }, [tab]);
 
     useEffect(() => {
         if (editRules.message) {
@@ -343,15 +359,18 @@ const SurveyFormBuilder = () => {
     };
 
     const reportSettingsRef = useRef<ReportSettingsPanelHandle>(null);
+    const exportSettingsRef = useRef<ReportSettingsPanelHandle>(null);
 
     // Switching tabs should never discard unsaved work: leaving the questions tab saves the
-    // survey form, leaving the report tab flushes any pending visibility toggle changes. A locked
-    // survey has no unsaved work to flush, so both tabs stay browsable without a save attempt.
-    const handleTabChange = async (nextTab: string) => {
-        if (nextTab === tab) {
+    // survey form, leaving a settings tab flushes its pending changes - and a failed save keeps the
+    // admin where they are, edits intact. A locked survey has no unsaved work to flush, so every
+    // tab stays browsable without a save attempt.
+    const handleTabChange = async (nextTab: string, focusQuestionKey?: string) => {
+        if (nextTab === tab || (nextTab === TAB_EXPORT && !reportVisited)) {
             return;
         }
         if (!canEdit) {
+            setReportFocusKey(focusQuestionKey);
             setTab(nextTab);
             return;
         }
@@ -359,7 +378,11 @@ const SurveyFormBuilder = () => {
             await handleSaveForm(nextTab);
             return;
         }
-        await reportSettingsRef.current?.save();
+        const panel = tab === TAB_REPORT ? reportSettingsRef.current : exportSettingsRef.current;
+        if (panel && !(await panel.save())) {
+            return;
+        }
+        setReportFocusKey(focusQuestionKey);
         setTab(nextTab);
     };
 
@@ -439,6 +462,13 @@ const SurveyFormBuilder = () => {
                         value: TAB_REPORT,
                         label: 'Public report settings',
                         icon: <AssessmentOutlinedIcon />,
+                    },
+                    {
+                        value: TAB_EXPORT,
+                        label: 'Public/Proponent export settings',
+                        icon: <FileDownloadOutlinedIcon />,
+                        disabled: !reportVisited,
+                        disabledTitle: 'Review Public report settings first',
                     },
                 ]}
                 value={tab}
@@ -592,6 +622,24 @@ const SurveyFormBuilder = () => {
                         formDefinition={formDefinition}
                         conditionalLinks={savedSurvey?.conditional_links}
                         readOnly={!canEdit}
+                        focusQuestionKey={reportFocusKey}
+                        engagementClosed={isEngagementClosed(savedEngagement)}
+                        onNext={() => setTab(TAB_EXPORT)}
+                        onCancel={() => navigate('/surveys')}
+                    />
+                </Box>
+            )}
+            {tab === TAB_EXPORT && (
+                <Box role="tabpanel" id={tabIds(TAB_EXPORT).panel} aria-labelledby={tabIds(TAB_EXPORT).tab}>
+                    <ExportSettingsPanel
+                        ref={exportSettingsRef}
+                        surveyId={String(surveyId)}
+                        engagementId={savedSurvey?.engagement_id || undefined}
+                        formDefinition={formDefinition}
+                        conditionalLinks={savedSurvey?.conditional_links}
+                        readOnly={!canEdit}
+                        engagementClosed={isEngagementClosed(savedEngagement)}
+                        onGoToReport={(questionKey) => handleTabChange(TAB_REPORT, questionKey)}
                         onSaved={() => navigate('/surveys')}
                         onCancel={() => navigate('/surveys')}
                     />
