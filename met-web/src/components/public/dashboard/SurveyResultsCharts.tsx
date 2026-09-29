@@ -13,6 +13,7 @@ import {
 } from 'components/shared/common';
 import { DonutChart, LikertChart, RankOrderChart, Comments, CheckboxChart, ConditionalFollowUp } from './charts';
 import { QuestionTypeLabel } from './charts/QuestionTypeLabel';
+import { formatOrdinal } from './charts/ordinal';
 import { QuestionDescription } from './charts/QuestionDescription';
 import { TypedSurveyData, FlatResultItem, MatrixResultRow } from 'models/analytics/surveyResult';
 import { Engagement } from 'models/engagement';
@@ -71,16 +72,11 @@ export function flatToChartItems(items: FlatResultItem[], pctBase?: number) {
 
 const TitleGap = () => <Box sx={{ mb: '18px' }} />;
 
-const RespondentCount = ({ count, suffix }: { count?: number; suffix?: string }) => {
+const RespondentCount = ({ count }: { count?: number }) => {
     if (!count) {
-        return suffix ? <MetDescription sx={{ mb: '18px' }}>{suffix}</MetDescription> : <TitleGap />;
+        return <TitleGap />;
     }
-    return (
-        <MetDescription sx={{ mb: '18px' }}>
-            {count.toLocaleString()} respondents
-            {suffix ? ` · ${suffix}` : ''}
-        </MetDescription>
-    );
+    return <MetDescription sx={{ mb: '18px' }}>{count.toLocaleString()} respondents</MetDescription>;
 };
 
 // A matrix question (simplesurvey/simpleranking) whose analytics rows were synced by an
@@ -115,23 +111,12 @@ export interface ResolvedFollowUp {
     responses: string[];
 }
 
-const ORDINAL_SUFFIXES: Record<number, string> = { 1: 'st', 2: 'nd', 3: 'rd' };
-
-// Ranking trigger values are rank positions ('1', '2', ...) rather than option codes, so they
-// read better as ordinals ("1st or 2nd") than as the raw numbers the backend can't otherwise label.
-const formatOrdinal = (value: string): string => {
-    const n = Number(value);
-    if (!Number.isInteger(n)) {
-        return value;
-    }
-    const suffix = n % 100 >= 11 && n % 100 <= 13 ? 'th' : ORDINAL_SUFFIXES[n % 10] ?? 'th';
-    return `${n}${suffix}`;
-};
-
 // `anyRow` states the answer without naming any single row, for a block that merges several
 // row-specific follow-ups sharing one condition (see groupFollowUps).
 export const describeConditional = (link: ConditionalLink, triggerType?: string, anyRow = false): string => {
     const isRanking = triggerType === COMPONENT_TYPE.RANKING;
+    // Ranking trigger values are rank positions rather than option codes, so they read better
+    // as ordinals ("1st or 2nd") than as the raw numbers the backend can't otherwise label.
     const valuesPhrase = isRanking
         ? link.trigger_values.map(formatOrdinal).join(' or ')
         : link.trigger_value_labels.map((label) => `"${label}"`).join(' or ');
@@ -318,7 +303,7 @@ export const QuestionChart = ({
             const rows = toMatrixRows(result);
             const content = (
                 <>
-                    <RespondentCount count={respondentCount} suffix="1 = most important" />
+                    <RespondentCount count={respondentCount} />
                     <RankOrderChart data={rows.map((r) => ({ label: r.label, ranks: r.pcts }))} />
                     {renderFollowUps(followUps, type, label)}
                 </>
