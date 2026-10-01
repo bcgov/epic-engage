@@ -11,6 +11,7 @@ const FALLBACK_STYLE = {
 
 // Colours for a rank position (0 = 1st place). Ranks past the palette fall back to a borderless grey.
 const rankStyle = (rankIndex: number) => Palette.chart.rank[rankIndex] ?? FALLBACK_STYLE;
+const medalStyle = (rankIndex: number) => Palette.chart.rankMedal[rankIndex] ?? rankStyle(rankIndex);
 
 export interface RankOrderItem {
     label: string;
@@ -87,7 +88,7 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                         key={item.label}
                         sx={{
                             display: 'grid',
-                            gridTemplateColumns: '24px 1fr',
+                            gridTemplateColumns: '42px 1fr',
                             alignItems: 'center',
                             gap: 1.75,
                             px: 0.5,
@@ -100,18 +101,16 @@ export const RankOrderChart = ({ data }: RankOrderChartProps) => {
                         {/* Position medal */}
                         <Box
                             sx={{
-                                width: 24,
-                                height: 24,
+                                width: 42,
+                                height: 42,
                                 borderRadius: '50%',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 flexShrink: 0,
-                                boxSizing: 'border-box',
-                                background: rankStyle(item.placement).fill,
-                                border: `1px solid ${rankStyle(item.placement).border}`,
-                                color: rankStyle(item.placement).label,
-                                fontSize: 11,
+                                background: medalStyle(item.placement).fill,
+                                color: medalStyle(item.placement).label,
+                                fontSize: 16,
                                 fontWeight: 700,
                             }}
                         >
