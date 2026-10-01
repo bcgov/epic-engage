@@ -172,6 +172,14 @@ export const Palette = {
             { fill: tokens.dataVizGold60, border: tokens.dataVizGold60Border, label: tokens.typographyColorPrimary },
             { fill: tokens.dataVizYellow, border: tokens.dataVizYellowBorder, label: tokens.typographyColorPrimary },
         ],
+        // Rank position medals use the wireframe colours, not the bar palette. 6th+ falls back to `rank`.
+        rankMedal: [
+            { fill: tokens.dataVizBlueDark, label: tokens.typographyColorPrimaryInvert },
+            { fill: tokens.dataVizBlueMedium, label: tokens.typographyColorPrimaryInvert },
+            { fill: tokens.dataVizBlueLight, label: tokens.typographyColorPrimary },
+            { fill: tokens.dataVizYellowLight, label: tokens.typographyColorPrimary },
+            { fill: tokens.dataVizOrange, label: tokens.typographyColorPrimaryInvert },
+        ],
         likert: [
             tokens.dataVizRed,
             tokens.dataVizNeutral,
