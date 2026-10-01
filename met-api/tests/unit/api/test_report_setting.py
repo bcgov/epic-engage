@@ -84,3 +84,52 @@ def test_patch_report_setting_unauthorized(client, jwt, session):  # pylint:disa
     )
 
     assert rv.status_code == 403
+
+
+def test_get_report_setting_export_defaults(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a new setting is included in the comment export and inherits its description."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    survey, _ = factory_survey_and_eng_model(TestSurveyInfo.survey3)
+    factory_survey_report_setting_model({**TestReportSettingInfo.report_setting_1, 'survey_id': survey.id})
+
+    rv = client.get(
+        f'/api/surveys/{survey.id}/reportsettings',
+        headers=headers,
+        content_type=ContentType.JSON.value
+    )
+
+    assert rv.json[0]['export_display'] is True
+    assert rv.json[0]['export_description'] is None
+
+
+def test_patch_export_settings_leave_report_settings_alone(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that export and report fields can each be updated without touching the other."""
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    survey, _ = factory_survey_and_eng_model(TestSurveyInfo.survey3)
+    setting = factory_survey_report_setting_model({
+        **TestReportSettingInfo.report_setting_1,
+        'survey_id': survey.id,
+        'display': True,
+        'description': 'Report description',
+    })
+    url = f'/api/surveys/{survey.id}/reportsettings'
+
+    rv = client.patch(url, data=json.dumps([{'id': setting.id, 'export_display': False, 'export_description': ''}]),
+                      headers=headers, content_type=ContentType.JSON.value)
+    assert rv.status_code == 200
+
+    saved = client.get(url, headers=headers, content_type=ContentType.JSON.value).json[0]
+    assert saved['display'] is True
+    assert saved['description'] == 'Report description'
+    assert saved['export_display'] is False
+    assert saved['export_description'] == ''
+
+    rv = client.patch(url, data=json.dumps([{'id': setting.id, 'display': False, 'description': None}]),
+                      headers=headers, content_type=ContentType.JSON.value)
+    assert rv.status_code == 200
+
+    saved = client.get(url, headers=headers, content_type=ContentType.JSON.value).json[0]
+    assert saved['display'] is False
+    assert saved['description'] is None
+    assert saved['export_display'] is False
+    assert saved['export_description'] == ''

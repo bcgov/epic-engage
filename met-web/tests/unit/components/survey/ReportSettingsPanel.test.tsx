@@ -3,7 +3,7 @@ import { render, waitFor, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { setupEnv } from '../setEnvVars';
 import * as reportSettingsService from 'services/surveyService/reportSettingsService';
-import { ReportSettingsPanel } from 'components/admin/survey/building/ReportSettingsPanel';
+import { CLOSED_ENGAGEMENT_TOOLTIP, ReportSettingsPanel } from 'components/admin/survey/building/ReportSettingsPanel';
 import { FormBuilderData } from 'components/shared/form/FormBuilder/types';
 
 jest.mock('axios');
@@ -21,6 +21,7 @@ const surveyReportSettingOne = {
     question_type: 'simpleradios',
     question: 'question one',
     display: true,
+    export_display: true,
 };
 
 const surveyReportSettingTwo = {
@@ -31,6 +32,7 @@ const surveyReportSettingTwo = {
     question_type: 'simpletextfield',
     question: 'question two',
     display: false,
+    export_display: true,
 };
 
 const surveyReportSettings = [surveyReportSettingOne, surveyReportSettingTwo];
@@ -74,7 +76,7 @@ describe('ReportSettingsPanel tests', () => {
         expect(screen.getByTestId(`report-setting-toggle-${surveyReportSettingTwo.id}`).children[0]).not.toBeChecked();
     });
 
-    test('Toggling and saving sends only the changed settings', async () => {
+    test('Toggling and moving on sends only the changed report fields', async () => {
         render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} />);
 
         await waitFor(() => {
@@ -89,12 +91,12 @@ describe('ReportSettingsPanel tests', () => {
             expect(toggle).toBeChecked();
         });
 
-        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+        fireEvent.click(screen.getByTestId('survey/report/next-button'));
 
         await waitFor(() => {
             expect(updateSurveyReportSettingsMock).toHaveBeenNthCalledWith(1, '1', [
                 {
-                    ...surveyReportSettingTwo,
+                    id: surveyReportSettingTwo.id,
                     display: true,
                 },
             ]);
@@ -108,61 +110,61 @@ describe('ReportSettingsPanel tests', () => {
             expect(screen.getByText(surveyReportSettingOne.question)).toBeVisible();
         });
 
-        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+        fireEvent.click(screen.getByTestId('survey/report/next-button'));
 
         await waitFor(() => {
             expect(updateSurveyReportSettingsMock).not.toHaveBeenCalled();
         });
     });
 
-    test('Saving leaves the builder once the settings are persisted', async () => {
-        const onSaved = jest.fn();
-        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} onSaved={onSaved} />);
+    test('Next moves on to the export settings once the settings are persisted', async () => {
+        const onNext = jest.fn();
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} onNext={onNext} />);
 
         await waitFor(() => {
             expect(screen.getByText(surveyReportSettingTwo.question)).toBeVisible();
         });
 
         fireEvent.click(screen.getByTestId(`report-setting-toggle-${surveyReportSettingTwo.id}`).children[0]);
-        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+        fireEvent.click(screen.getByTestId('survey/report/next-button'));
 
         await waitFor(() => {
-            expect(onSaved).toHaveBeenCalledTimes(1);
+            expect(onNext).toHaveBeenCalledTimes(1);
         });
     });
 
-    test('Saving with nothing changed still leaves the builder', async () => {
-        const onSaved = jest.fn();
-        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} onSaved={onSaved} />);
+    test('Next with nothing changed still moves on', async () => {
+        const onNext = jest.fn();
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} onNext={onNext} />);
 
         await waitFor(() => {
             expect(screen.getByText(surveyReportSettingOne.question)).toBeVisible();
         });
 
-        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+        fireEvent.click(screen.getByTestId('survey/report/next-button'));
 
         await waitFor(() => {
-            expect(onSaved).toHaveBeenCalledTimes(1);
+            expect(onNext).toHaveBeenCalledTimes(1);
         });
         expect(updateSurveyReportSettingsMock).not.toHaveBeenCalled();
     });
 
-    test('A failed save keeps the admin on the page', async () => {
+    test('A failed save keeps the admin on the report settings', async () => {
         updateSurveyReportSettingsMock.mockImplementation(() => Promise.reject(new Error('save failed')));
-        const onSaved = jest.fn();
-        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} onSaved={onSaved} />);
+        const onNext = jest.fn();
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} onNext={onNext} />);
 
         await waitFor(() => {
             expect(screen.getByText(surveyReportSettingTwo.question)).toBeVisible();
         });
 
         fireEvent.click(screen.getByTestId(`report-setting-toggle-${surveyReportSettingTwo.id}`).children[0]);
-        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+        fireEvent.click(screen.getByTestId('survey/report/next-button'));
 
         await waitFor(() => {
             expect(updateSurveyReportSettingsMock).toHaveBeenCalledTimes(1);
         });
-        expect(onSaved).not.toHaveBeenCalled();
+        expect(onNext).not.toHaveBeenCalled();
     });
 
     test('Cancel leaves the builder without saving', async () => {
@@ -205,12 +207,12 @@ describe('ReportSettingsPanel tests', () => {
         fireEvent.change(input, { target: { value: 'Extra context for admins' } });
         fireEvent.click(screen.getByTestId(`report-setting-description-save-${surveyReportSettingOne.id}`));
 
-        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+        fireEvent.click(screen.getByTestId('survey/report/next-button'));
 
         await waitFor(() => {
             expect(updateSurveyReportSettingsMock).toHaveBeenNthCalledWith(1, '1', [
                 {
-                    ...surveyReportSettingOne,
+                    id: surveyReportSettingOne.id,
                     display: true,
                     description: 'Extra context for admins',
                 },
@@ -249,6 +251,25 @@ describe('ReportSettingsPanel tests', () => {
         expect(screen.getByText(/Other/)).toBeVisible();
     });
 
+    test('A closed engagement swaps each toggle for a locked statement of its visibility', async () => {
+        render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} readOnly engagementClosed />);
+
+        await waitFor(() => {
+            expect(screen.getByText(surveyReportSettingOne.question)).toBeVisible();
+        });
+
+        expect(screen.queryByTestId(`report-setting-toggle-${surveyReportSettingOne.id}`)).not.toBeInTheDocument();
+        expect(screen.getByTestId(`report-setting-locked-${surveyReportSettingOne.id}`)).toHaveTextContent(
+            'Shown in public report',
+        );
+        expect(screen.getByTestId(`report-setting-locked-${surveyReportSettingTwo.id}`)).toHaveTextContent(
+            'Hidden from public report',
+        );
+
+        fireEvent.mouseOver(screen.getAllByLabelText(CLOSED_ENGAGEMENT_TOOLTIP)[0]);
+        expect(await screen.findByRole('tooltip')).toHaveTextContent(CLOSED_ENGAGEMENT_TOOLTIP);
+    });
+
     test('Read-only mode shows the settings but offers no way to change them', async () => {
         render(<ReportSettingsPanel surveyId="1" formDefinition={formDefinition} readOnly />);
 
@@ -258,7 +279,9 @@ describe('ReportSettingsPanel tests', () => {
         });
 
         expect(screen.getByTestId(`report-setting-toggle-${surveyReportSettingOne.id}`).children[0]).toBeDisabled();
-        expect(screen.queryByTestId('survey/report/save-button')).not.toBeInTheDocument();
+
+        // Moving on to the export settings tab still works, it just has nothing to save.
+        expect(screen.getByTestId('survey/report/next-button')).toBeEnabled();
         expect(screen.queryByText('Add description')).not.toBeInTheDocument();
     });
 
@@ -331,11 +354,11 @@ describe('ReportSettingsPanel tests', () => {
         expect(screen.getAllByText('Cancel')).toHaveLength(1);
         expect(screen.getAllByRole('button', { name: /Add description/ })[0]).toBeDisabled();
 
-        fireEvent.click(screen.getByTestId('survey/report/save-button'));
+        fireEvent.click(screen.getByTestId('survey/report/next-button'));
 
         await waitFor(() => {
             expect(updateSurveyReportSettingsMock).toHaveBeenNthCalledWith(1, '1', [
-                { ...surveyReportSettingOne, display: false },
+                { id: surveyReportSettingOne.id, display: false },
             ]);
         });
     });
@@ -377,6 +400,7 @@ describe('ReportSettingsPanel tests', () => {
             question_type: 'simplesurvey',
             question: 'Likert',
             display: true,
+            export_display: true,
         };
         fetchSurveyReportSettingsMock.mockReturnValue(Promise.resolve([likertSetting]));
 

@@ -28,6 +28,12 @@ class ReportSetting(BaseModel):  # pylint: disable=too-few-public-methods
     description = db.Column(db.Text(), nullable=True,
                             comment='Optional admin-authored description shown alongside the question on the '
                                     'public report.')
+    export_display = db.Column(db.Boolean, nullable=False, default=True, server_default='true',
+                               comment='Flag to identify if the question is included in the public/proponent '
+                                       'comment export. Only takes effect while display is also true.')
+    export_description = db.Column(db.Text(), nullable=True,
+                                   comment='Description shown with the question in the public/proponent comment '
+                                           'export. NULL inherits description.')
 
     @classmethod
     def find_by_survey_id(cls, survey_id):

@@ -10,6 +10,7 @@ const setting: SurveyReportSetting = {
     question_type: 'simplesurvey',
     question: 'Likert',
     display: true,
+    export_display: true,
 };
 
 // Stored out of rank order on purpose: the backend sorts by classification, not by stored order.

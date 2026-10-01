@@ -31,6 +31,10 @@ const hasGoneLive = (engagement: Engagement) =>
 // Whether the submission window has ended.
 const hasClosed = (engagement: Engagement) => Boolean(engagement.end_date) && today() > asDate(engagement.end_date);
 
+// Whether the engagement is over - its submission window has ended, or it has been closed outright.
+export const isEngagementClosed = (engagement: Engagement | null | undefined): boolean =>
+    Boolean(engagement) && (engagement?.status_id === EngagementStatus.Closed || hasClosed(engagement as Engagement));
+
 /**
  * Rules for what an admin is allowed to do with a survey, based on the engagement it is attached to.
  * A survey with no engagement behind it can always be edited in full.

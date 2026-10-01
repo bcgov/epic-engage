@@ -2,12 +2,20 @@ import React, { forwardRef, useEffect, useImperativeHandle, useMemo, useState } 
 import { Box, Skeleton, Stack, Typography } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useAppDispatch } from 'hooks';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { fetchSurveyReportSettings, updateSurveyReportSettings } from 'services/surveyService/reportSettingsService';
-import { SurveyReportSetting } from 'models/surveyReportSetting';
+import { SurveyReportSetting, SurveyReportSettingUpdate } from 'models/surveyReportSetting';
 import { FormBuilderData } from 'components/shared/form/FormBuilder/types';
-import { MetDescription, MetIconText, MetPaper, PrimaryButton, SecondaryButton } from 'components/shared/common';
+import {
+    MetDescription,
+    MetIconText,
+    MetPaper,
+    MetTooltip,
+    PrimaryButton,
+    SecondaryButton,
+} from 'components/shared/common';
 import { QuestionTypeLabel } from 'components/public/dashboard/charts/QuestionTypeLabel';
 import { Comments } from 'components/public/dashboard/charts';
 import {
@@ -35,10 +43,28 @@ export interface ReportSettingsPanelProps {
     formDefinition: FormBuilderData;
     // Conditional follow-ups keyed to their trigger question, so they can be nested underneath
     conditionalLinks?: Record<string, ConditionalLink>;
-    onSaved?: () => void;
+    onNext?: () => void;
     onCancel?: () => void;
     readOnly?: boolean;
+    focusQuestionKey?: string;
+    engagementClosed?: boolean;
 }
+
+export const CLOSED_ENGAGEMENT_TOOLTIP = 'Public display settings cannot be changed on a closed engagement.';
+
+// Stands in for a visibility toggle once the engagement has closed.
+export const ClosedEngagementVisibility = ({ testId, text }: { testId: string; text: string }) => (
+    <Stack data-testid={testId} direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0, pt: '2px' }}>
+        <MetTooltip title={CLOSED_ENGAGEMENT_TOOLTIP} placement="top" arrow>
+            <LockOutlinedIcon
+                tabIndex={0}
+                aria-label={CLOSED_ENGAGEMENT_TOOLTIP}
+                sx={{ fontSize: 16, color: Palette.text.secondary }}
+            />
+        </MetTooltip>
+        <Typography sx={{ fontSize: '12px', color: Palette.text.secondary, whiteSpace: 'nowrap' }}>{text}</Typography>
+    </Stack>
+);
 
 // Exposes an imperative save() so the builder page can flush unsaved toggle
 // changes when the admin switches away to the Survey questions tab.
@@ -46,19 +72,48 @@ export interface ReportSettingsPanelHandle {
     save: () => Promise<boolean>;
 }
 
-const contentSx = { maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, pt: 2 } as const;
+export const contentSx = { maxWidth: 1100, mx: 'auto', px: { xs: 2, md: 3 }, pt: 2 } as const;
 
-const dimmedSx = (hidden: boolean) =>
+export const footerSx = {
+    position: 'sticky',
+    bottom: 0,
+    mt: 3,
+    py: 2,
+    px: { xs: 2, md: 3 },
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: 2,
+    backgroundColor: Palette.background.default,
+    borderTop: `1px solid ${Palette.border.default}`,
+    boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.06)',
+} as const;
+
+export const settingCardId = (settingId: number) => `report-setting-card-${settingId}`;
+
+export const dimmedSx = (hidden: boolean) =>
     ({
         opacity: hidden ? 0.38 : 1,
         pointerEvents: hidden ? 'none' : 'auto',
         transition: 'opacity 0.2s',
     } as const);
 
-const inertProps = (hidden: boolean) => (hidden ? ({ inert: '' } as { inert?: string }) : {});
+export const inertProps = (hidden: boolean) => (hidden ? ({ inert: '' } as { inert?: string }) : {});
 
 export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportSettingsPanelProps>(
-    ({ surveyId, engagementId, formDefinition, conditionalLinks, onSaved, onCancel, readOnly = false }, ref) => {
+    (
+        {
+            surveyId,
+            engagementId,
+            formDefinition,
+            conditionalLinks,
+            onNext,
+            onCancel,
+            readOnly = false,
+            focusQuestionKey,
+            engagementClosed = false,
+        },
+        ref,
+    ) => {
         const dispatch = useAppDispatch();
         const [settings, setSettings] = useState<SurveyReportSetting[]>([]);
         const [displayedMap, setDisplayedMap] = useState<Record<number, boolean>>({});
@@ -141,6 +196,30 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
         );
         const safePage = Math.min(currentPage, Math.max(pages.length - 1, 0));
 
+        const focusSetting = useMemo(
+            () => settings.find((setting) => setting.question_key === focusQuestionKey),
+            [settings, focusQuestionKey],
+        );
+        useEffect(() => {
+            if (!focusSetting) {
+                return;
+            }
+            const pageIndex = pages.findIndex((page) =>
+                page.items.some(
+                    ({ setting, followUps }) =>
+                        setting.id === focusSetting.id || followUps.some((followUp) => followUp.id === focusSetting.id),
+                ),
+            );
+            if (pageIndex >= 0) {
+                setCurrentPage(pageIndex);
+            }
+        }, [focusSetting, pages]);
+        useEffect(() => {
+            if (focusSetting && !loading) {
+                document.getElementById(settingCardId(focusSetting.id))?.scrollIntoView?.({ block: 'center' });
+            }
+        }, [focusSetting, loading, safePage]);
+
         const handleDescriptionSave = (settingId: number, description: string) => {
             setDescriptionMap((prev) => ({ ...prev, [settingId]: description }));
         };
@@ -150,7 +229,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                 return true;
             }
 
-            const changedSettings: SurveyReportSetting[] = [];
+            const changedSettings: SurveyReportSettingUpdate[] = [];
             settings.forEach((setting) => {
                 const displayChanged = displayedMap[setting.id] !== setting.display;
                 const nextDescription = descriptionMap[setting.id] ?? '';
@@ -160,7 +239,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                     return;
                 }
                 changedSettings.push({
-                    ...setting,
+                    id: setting.id,
                     display: displayedMap[setting.id],
                     ...(descriptionChanged ? { description: nextDescription || null } : {}),
                 });
@@ -174,7 +253,7 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                 setSaving(true);
                 await updateSurveyReportSettings(surveyId, changedSettings);
                 const changedById = new Map(changedSettings.map((setting) => [setting.id, setting]));
-                setSettings(settings.map((setting) => changedById.get(setting.id) ?? setting));
+                setSettings(settings.map((setting) => ({ ...setting, ...changedById.get(setting.id) })));
                 dispatch(openNotification({ severity: 'success', text: 'Report settings saved successfully.' }));
                 return true;
             } catch (error) {
@@ -185,9 +264,9 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
             }
         };
 
-        const handleSaveAndExit = async () => {
+        const handleNext = async () => {
             if (await handleSave()) {
-                onSaved?.();
+                onNext?.();
             }
         };
 
@@ -211,20 +290,26 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
             );
         }
 
-        const renderVisibilityToggle = (setting: SurveyReportSetting) => (
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, pt: '2px' }}>
-                <Typography sx={{ fontSize: '12px', color: Palette.text.secondary, whiteSpace: 'nowrap' }}>
-                    Show in public report
-                </Typography>
-                <SurveySwitch
-                    data-testid={`report-setting-toggle-${setting.id}`}
-                    checked={Boolean(displayedMap[setting.id])}
-                    disabled={readOnly}
-                    onChange={(event) => setDisplayedMap({ ...displayedMap, [setting.id]: event.target.checked })}
-                    inputProps={{ 'aria-label': `Show "${setting.question}" in public report` }}
+        const renderVisibilityToggle = (setting: SurveyReportSetting) =>
+            engagementClosed ? (
+                <ClosedEngagementVisibility
+                    testId={`report-setting-locked-${setting.id}`}
+                    text={displayedMap[setting.id] ? 'Shown in public report' : 'Hidden from public report'}
                 />
-            </Stack>
-        );
+            ) : (
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, pt: '2px' }}>
+                    <Typography sx={{ fontSize: '12px', color: Palette.text.secondary, whiteSpace: 'nowrap' }}>
+                        Show in public report
+                    </Typography>
+                    <SurveySwitch
+                        data-testid={`report-setting-toggle-${setting.id}`}
+                        checked={Boolean(displayedMap[setting.id])}
+                        disabled={readOnly}
+                        onChange={(event) => setDisplayedMap({ ...displayedMap, [setting.id]: event.target.checked })}
+                        inputProps={{ 'aria-label': `Show "${setting.question}" in public report` }}
+                    />
+                </Stack>
+            );
 
         const renderChartBody = (setting: SurveyReportSetting) => {
             const loadedQuestion =
@@ -263,7 +348,11 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
             const hidden = !displayedMap[followUpSetting.id];
 
             return (
-                <Box key={followUpSetting.id} sx={{ mt: 2, pt: 2, borderTop: `2px dashed ${Palette.border.default}` }}>
+                <Box
+                    key={followUpSetting.id}
+                    id={settingCardId(followUpSetting.id)}
+                    sx={{ mt: 2, pt: 2, borderTop: `2px dashed ${Palette.border.default}` }}
+                >
                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
                         <Box {...inertProps(hidden)} sx={{ flex: 1, minWidth: 0, ...dimmedSx(hidden) }}>
                             <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 1.5 }}>
@@ -322,7 +411,11 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                         {pages[safePage]?.items.map(({ setting, followUps }) => {
                             const hidden = !displayedMap[setting.id];
                             return (
-                                <MetPaper key={setting.id} sx={{ p: 3, ...(hidden && { borderStyle: 'dashed' }) }}>
+                                <MetPaper
+                                    key={setting.id}
+                                    id={settingCardId(setting.id)}
+                                    sx={{ p: 3, ...(hidden && { borderStyle: 'dashed' }) }}
+                                >
                                     <Stack
                                         direction="row"
                                         justifyContent="space-between"
@@ -391,33 +484,18 @@ export const ReportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ReportS
                         </Box>
                     )}
                 </Box>
-                <Box
-                    sx={{
-                        position: 'sticky',
-                        bottom: 0,
-                        mt: 3,
-                        py: 2,
-                        px: { xs: 2, md: 3 },
-                        display: 'flex',
-                        justifyContent: 'flex-end',
-                        gap: 2,
-                        backgroundColor: Palette.background.default,
-                        borderTop: `1px solid ${Palette.border.default}`,
-                        boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.06)',
-                    }}
-                >
+                <Box sx={footerSx}>
                     <SecondaryButton data-testid="survey/report/cancel-button" onClick={() => onCancel?.()}>
                         {readOnly ? 'Close' : 'Cancel'}
                     </SecondaryButton>
-                    {!readOnly && (
-                        <PrimaryButton
-                            data-testid="survey/report/save-button"
-                            onClick={handleSaveAndExit}
-                            loading={saving}
-                        >
-                            Save
-                        </PrimaryButton>
-                    )}
+                    <PrimaryButton
+                        data-testid="survey/report/next-button"
+                        endIcon={<ArrowForwardIcon />}
+                        onClick={handleNext}
+                        loading={saving}
+                    >
+                        Next: Public/Proponent export settings
+                    </PrimaryButton>
                 </Box>
             </>
         );

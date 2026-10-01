@@ -43,6 +43,7 @@ const setting = (question_key: string, display: boolean): SurveyReportSetting =>
     question_type: '',
     question: question_key,
     display,
+    export_display: true,
 });
 
 describe('selectPublicCharts', () => {

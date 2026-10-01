@@ -133,14 +133,13 @@ class ReportSettingService:
         authorization.check_auth(one_of_roles=one_of_roles, engagement_id=survey.engagement_id)
 
         # Only include keys the caller sent - bulk_update_mappings treats a present key with a
-        # None value as "set to NULL", so a display-only update mustn't also null the description.
+        # None value as "set to NULL", so e.g. a display-only update mustn't also null the description.
         report_settings_update_mapping = []
         for setting in new_report_settings:
             mapping = {'id': setting.get('id', None)}
-            if 'display' in setting:
-                mapping['display'] = setting.get('display')
-            if 'description' in setting:
-                mapping['description'] = setting.get('description')
+            for key in ('display', 'description', 'export_display', 'export_description'):
+                if key in setting:
+                    mapping[key] = setting.get(key)
             report_settings_update_mapping.append(mapping)
 
         updated_report_settings = ReportSettingModel.update_report_settings_bulk(report_settings_update_mapping)
