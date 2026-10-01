@@ -1,6 +1,8 @@
 dagster==1.7.15
 dagit==1.7.15
 dagster-docker==0.23.15
+SQLAlchemy==2.0.54
+SQLAlchemy-Continuum==1.7.0
 packaging==21.3
 python-dotenv==0.21.0
 pytz==2026.3.post1

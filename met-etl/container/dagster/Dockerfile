@@ -10,6 +10,7 @@ RUN pip install \
     dagster-graphql==1.7.15 \
     dagit==1.7.15 \
     dagster-postgres==${DAGSTER_VERSION} \
+    SQLAlchemy==2.0.54 \
     dagster-docker==${DAGSTER_VERSION}
 
 # Set $DAGSTER_HOME and copy dagster instance and workspace YAML there
