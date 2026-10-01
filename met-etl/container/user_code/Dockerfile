@@ -8,6 +8,7 @@ RUN \
     pip install \
         dagster==1.7.15 \
         dagster-postgres==${DAGSTER_VERSION} \
+        SQLAlchemy==2.0.54 \
         dagster-celery[flower,redis,kubernetes]==${DAGSTER_VERSION} \
         dagster-aws==${DAGSTER_VERSION} \
         dagster-k8s==${DAGSTER_VERSION} \
