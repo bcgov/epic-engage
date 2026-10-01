@@ -36,6 +36,7 @@ oc rollout restart deployment/met-web -n $2-$1
 oc rollout restart deployment/notify-api -n $2-$1
 oc rollout restart deployment/analytics-api -n $2-$1
 oc rollout restart deployment/met-cron -n $2-$1
+oc rollout restart deployment/dagster-dagster-user-deployments-etl -n $2-$1
 
 # Wait for critical services to be ready
 oc rollout status deployment/met-api -n $2-$1 -w
