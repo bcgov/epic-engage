@@ -719,4 +719,44 @@ describe('SurveyResultsCharts', () => {
             data: [{ label: 'Row', pcts: [40, 40], not_sure_pct: 20, n: 5 }],
         });
     });
+
+    it('puts a PNG download button on chart cards, not on free-text cards, when downloads are offered', () => {
+        const onDownloadChart = jest.fn();
+        const commentQuestion: TypedSurveyData = {
+            label: 'Anything else?',
+            position: 1,
+            key: 'text1',
+            type: 'simpletextarea',
+            result: [{ value: 'More parks', count: 1 }],
+        };
+        setupHooks(
+            { data: { data: [radioQuestion] }, questionDescriptions: { radio1: 'Pick one' } },
+            {
+                data: { data: [commentQuestion] },
+            },
+        );
+        render(
+            <SurveyResultsCharts
+                engagement={openEngagement}
+                engagementIsLoading={false}
+                dashboardType="internal"
+                onDownloadChart={onDownloadChart}
+            />,
+        );
+
+        const buttons = screen.getAllByRole('button', { name: 'Download chart as PNG' });
+        expect(buttons).toHaveLength(1);
+        expect(buttons[0]).toHaveTextContent('PNG');
+        fireEvent.click(buttons[0]);
+        expect(onDownloadChart).toHaveBeenCalledWith(radioQuestion, 'Pick one');
+    });
+
+    it('shows no PNG download button when downloads are not offered', () => {
+        setupHooks({ data: { data: [radioQuestion] } });
+        render(
+            <SurveyResultsCharts engagement={openEngagement} engagementIsLoading={false} dashboardType="internal" />,
+        );
+
+        expect(screen.queryByRole('button', { name: 'Download chart as PNG' })).not.toBeInTheDocument();
+    });
 });

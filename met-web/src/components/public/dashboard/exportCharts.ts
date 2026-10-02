@@ -1,6 +1,10 @@
 import { TypedSurveyData } from 'models/analytics/surveyResult';
 import { SurveyReportSetting } from 'models/surveyReportSetting';
+import { USER_GROUP } from 'models/user';
 import { COMPONENT_TYPE, TYPE_LABELS } from './SurveyResultsCharts';
+
+// Superusers may download any chart on its own and the Excel export, which both reach past the public report.
+export const isSuperuser = (groups?: string[]) => Boolean(groups?.includes('/ENGAGE/' + USER_GROUP.ADMIN.value));
 
 /**
  * The charts staff marked "Show in public report". The export is taken from the internal report,
@@ -32,6 +36,16 @@ export const chartFileNames = (engagementName: string, charts: TypedSurveyData[]
         countByType[chart.type] = (countByType[chart.type] ?? 0) + 1;
         return `${engagement}_${toFileSlug(TYPE_LABELS[chart.type])}_${countByType[chart.type]}.png`;
     });
+};
+
+// "<Engagement>_<QuestionLabel>.png" for a single chart. The label is capped so a long question doesn't
+// make an unwieldy name, and a label with no letters or digits falls back to the question type.
+const MAX_LABEL_SLUG = 60;
+export const chartFileName = (engagementName: string, chart: TypedSurveyData) => {
+    const engagement = toFileSlug(engagementName) || 'Engagement';
+    const label =
+        toFileSlug(chart.label).slice(0, MAX_LABEL_SLUG) || toFileSlug(TYPE_LABELS[chart.type] ?? '') || 'Chart';
+    return `${engagement}_${label}.png`;
 };
 
 export const chartZipName = (engagementName: string, date: string) =>

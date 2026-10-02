@@ -11,14 +11,23 @@ import { DashboardContext } from './DashboardContext';
 import { ReportUnavailable } from './ReportUnavailable';
 import { UnavailableReason } from './reportAvailability';
 import { DashboardType } from 'constants/dashboardType';
-import { useAppSelector } from 'hooks';
+import { TypedSurveyData } from 'models/analytics/surveyResult';
+import { openNotification } from 'services/notificationService/notificationSlice';
+import { useAppDispatch, useAppSelector } from 'hooks';
+import { ChartsPngExport } from './ChartsPngExport';
+import { chartFileName, isSuperuser } from './exportCharts';
 import { Palette } from 'styles/Theme';
 
 const Dashboard = () => {
     const { slug } = useParams();
     const [searchParams] = useSearchParams();
     const { engagement, isEngagementLoading, dashboardType, originSurvey } = useContext(DashboardContext);
+    const dispatch = useAppDispatch();
     const isLoggedIn = useAppSelector((state) => state.user.authentication.authenticated);
+    const userGroups = useAppSelector((state) => state.user.userDetail.groups);
+    // Superusers may take any chart from the internal report on its own, even one kept off the public report.
+    const canDownloadCharts = dashboardType === DashboardType.INTERNAL && isSuperuser(userGroups);
+    const [chartDownload, setChartDownload] = useState<{ chart: TypedSurveyData; description?: string } | null>(null);
     const initialTab = searchParams.get('tab') === COMMENTS_TAB ? COMMENTS_TAB : RESULTS_TAB;
     const [activeTab, setActiveTab] = useState(initialTab);
     const [hasViewedComments, setHasViewedComments] = useState(initialTab === COMMENTS_TAB);
@@ -48,6 +57,25 @@ const Dashboard = () => {
         }
     };
 
+    const handleDownloadChart = (chart: TypedSurveyData, description?: string) => {
+        // One capture at a time; a second click while one is being drawn is dropped.
+        if (!chartDownload) {
+            setChartDownload({ chart, description });
+        }
+    };
+
+    const handleChartDownloadDone = (error?: unknown) => {
+        setChartDownload(null);
+        if (error) {
+            dispatch(
+                openNotification({
+                    severity: 'error',
+                    text: 'Error occurred while exporting the chart. Please try again later.',
+                }),
+            );
+        }
+    };
+
     return (
         <Box sx={{ pt: 3 }}>
             <Breadcrumb items={breadcrumbItems} />
@@ -70,7 +98,21 @@ const Dashboard = () => {
                         engagementIsLoading={isEngagementLoading}
                         dashboardType={dashboardType}
                         onUnavailable={setUnavailableReason}
+                        onDownloadChart={canDownloadCharts ? handleDownloadChart : undefined}
                     />
+                    {chartDownload && (
+                        <ChartsPngExport
+                            engagementName={engagement.name}
+                            charts={[chartDownload.chart]}
+                            descriptions={
+                                chartDownload.description
+                                    ? { [chartDownload.chart.key]: chartDownload.description }
+                                    : {}
+                            }
+                            fileName={chartFileName(engagement.name, chartDownload.chart)}
+                            onDone={handleChartDownloadDone}
+                        />
+                    )}
                 </Box>
                 <When condition={!unavailableReason && (activeTab === COMMENTS_TAB || hasViewedComments)}>
                     <Box

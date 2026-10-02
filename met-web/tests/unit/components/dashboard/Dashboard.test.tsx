@@ -7,6 +7,7 @@ import { store } from 'redux/store';
 import Dashboard from 'components/public/dashboard/Dashboard';
 import { DashboardContext } from 'components/public/dashboard/DashboardContext';
 import { Survey } from 'models/survey';
+import { userDetails } from 'services/userService/userSlice';
 import { openEngagement } from '../factory';
 
 const originSurvey = openEngagement.surveys[0];
@@ -17,13 +18,40 @@ let mockUnavailableReason: string | null = null;
 
 jest.mock('components/public/dashboard/SurveyResultsCharts', () => ({
     __esModule: true,
-    SurveyResultsCharts: ({ onUnavailable }: { onUnavailable?: (reason: string | null) => void }) => {
+    SurveyResultsCharts: ({
+        onUnavailable,
+        onDownloadChart,
+    }: {
+        onUnavailable?: (reason: string | null) => void;
+        onDownloadChart?: (question: unknown, description?: string) => void;
+    }) => {
         React.useEffect(() => {
             onUnavailable?.(mockUnavailableReason);
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []);
-        return <div data-testid="survey-results-charts" />;
+        return (
+            <div data-testid="survey-results-charts">
+                {onDownloadChart && (
+                    <button
+                        onClick={() =>
+                            onDownloadChart({ key: 'q1', label: 'Favourite colour?', type: 'simpleradios' }, 'Pick one')
+                        }
+                    >
+                        PNG
+                    </button>
+                )}
+            </div>
+        );
     },
+}));
+
+jest.mock('components/public/dashboard/ChartsPngExport', () => ({
+    __esModule: true,
+    ChartsPngExport: ({ fileName, descriptions }: { fileName?: string; descriptions: Record<string, string> }) => (
+        <div data-testid="chart-png-export">
+            {fileName} {descriptions.q1}
+        </div>
+    ),
 }));
 
 jest.mock('components/public/dashboard/comments/CommentsTab', () => ({
@@ -34,7 +62,7 @@ jest.mock('components/public/dashboard/comments/CommentsTab', () => ({
 // DashboardHeaderCard reads auth state and roles from the store to decide whether to offer the
 // internal export, so Dashboard cannot render without one. The default store state is signed out
 // with no roles, which is what this test wants: the export button stays hidden either way.
-const renderDashboard = (originSurveyValue: Survey | null = null, route = '/') =>
+const renderDashboard = (originSurveyValue: Survey | null = null, route = '/', dashboardType = 'public') =>
     render(
         <Provider store={store}>
             <MemoryRouter initialEntries={[route]}>
@@ -42,7 +70,7 @@ const renderDashboard = (originSurveyValue: Survey | null = null, route = '/') =
                     value={{
                         engagement: openEngagement,
                         isEngagementLoading: false,
-                        dashboardType: 'public',
+                        dashboardType,
                         originSurvey: originSurveyValue,
                     }}
                 >
@@ -136,5 +164,55 @@ describe('Dashboard', () => {
 
         expect(screen.queryByTestId('report-unavailable')).not.toBeInTheDocument();
         expect(screen.getByRole('tab', { name: /survey results/i })).toBeInTheDocument();
+    });
+});
+
+describe('Dashboard single chart download', () => {
+    const signInAs = (group: string) =>
+        store.dispatch(userDetails({ sub: '', email_verified: true, preferred_username: '', groups: [group] }));
+
+    beforeEach(() => {
+        mockUnavailableReason = null;
+    });
+
+    afterEach(() => signInAs(''));
+
+    it('lets a Superuser download a single chart from the internal report as a named PNG', () => {
+        signInAs('/ENGAGE/EAO_IT_ADMIN');
+        renderDashboard(null, '/', 'internal');
+
+        fireEvent.click(screen.getByRole('button', { name: 'PNG' }));
+
+        expect(screen.getByTestId('chart-png-export')).toHaveTextContent(
+            `${openEngagement.name.replace(/[^A-Za-z0-9]/g, '')}_Favouritecolour.png Pick one`,
+        );
+    });
+
+    it.each(['EAO_IT_VIEWER', 'EAO_TEAM_MEMBER', 'EAO_REVIEWER', 'EAO_NO_ROLE', ''])(
+        'offers no single chart download to group %p',
+        (group) => {
+            signInAs(group && `/ENGAGE/${group}`);
+            renderDashboard(null, '/', 'internal');
+
+            expect(screen.queryByRole('button', { name: 'PNG' })).not.toBeInTheDocument();
+        },
+    );
+
+    // The group must match exactly; a lookalike path or bare name grants nothing.
+    it.each(['EAO_IT_ADMIN', '/OTHER/EAO_IT_ADMIN', '/ENGAGE/EAO_IT_ADMIN_X'])(
+        'offers no single chart download for near-miss group %p',
+        (group) => {
+            signInAs(group);
+            renderDashboard(null, '/', 'internal');
+
+            expect(screen.queryByRole('button', { name: 'PNG' })).not.toBeInTheDocument();
+        },
+    );
+
+    it('offers no single chart download on the public report, even to a Superuser', () => {
+        signInAs('/ENGAGE/EAO_IT_ADMIN');
+        renderDashboard(null, '/', 'public');
+
+        expect(screen.queryByRole('button', { name: 'PNG' })).not.toBeInTheDocument();
     });
 });

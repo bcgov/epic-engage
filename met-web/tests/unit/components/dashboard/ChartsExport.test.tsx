@@ -6,7 +6,12 @@ import { Provider } from 'react-redux';
 import { store } from 'redux/store';
 import { DashboardHeaderCard } from 'components/public/dashboard/DashboardHeaderCard';
 import { DashboardContext } from 'components/public/dashboard/DashboardContext';
-import { chartFileNames, chartZipName, selectPublicCharts } from 'components/public/dashboard/exportCharts';
+import {
+    chartFileName,
+    chartFileNames,
+    chartZipName,
+    selectPublicCharts,
+} from 'components/public/dashboard/exportCharts';
 import { TypedSurveyData } from 'models/analytics/surveyResult';
 import { SurveyReportSetting } from 'models/surveyReportSetting';
 import { USER_ROLES } from 'services/userService/constants';
@@ -74,6 +79,21 @@ describe('export file names', () => {
             'BigDeliciousRanch_Dropdown_1.png',
             'BigDeliciousRanch_LikertMatrix_2.png',
         ]);
+    });
+
+    it('names a single chart after the engagement and its question', () => {
+        const chart = { ...question('a', 'simpleradios'), label: 'What is your age?' };
+        expect(chartFileName('Big Delicious Ranch', chart)).toBe('BigDeliciousRanch_Whatisyourage.png');
+    });
+
+    it('caps a long question label in a single chart name', () => {
+        const chart = { ...question('a', 'simpleradios'), label: 'x'.repeat(200) };
+        expect(chartFileName('Ranch', chart)).toBe(`Ranch_${'x'.repeat(60)}.png`);
+    });
+
+    it('falls back to the question type when the label has no letters or digits', () => {
+        const chart = { ...question('a', 'simplesurvey'), label: '???' };
+        expect(chartFileName('Ranch', chart)).toBe('Ranch_LikertMatrix.png');
     });
 
     it('names the zip after the engagement and export date', () => {
