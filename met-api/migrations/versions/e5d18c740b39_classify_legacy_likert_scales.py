@@ -36,6 +36,8 @@ NOT_SURE = 'notSure'
 # before counting. A length that is not here is left alone rather than guessed at; six or more
 # ranked points cannot be expressed at all, since only pos1..pos3 exist.
 RANKED_SCALES = {
+    2: ['neg1', 'pos1'],
+    3: ['neg1', 'pos1', 'pos2'],
     4: ['neg1', 'pos1', 'pos2', 'pos3'],
     5: ['neg2', 'neg1', 'neutral', 'pos1', 'pos2'],
 }

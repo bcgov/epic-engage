@@ -85,7 +85,13 @@ def load_setting(context, new_setting, updated_setting, setting_new_runcycleid):
             analytics_survey_data= met_etl_db_session.query(EtlSurveyModel)\
             .filter(EtlSurveyModel.source_survey_id == setting.survey_id,
                     EtlSurveyModel.is_active == True).first()
-            
+
+            # a full replay passes every setting through here, including any for a survey not loaded to analytics
+            if not analytics_survey_data:
+                context.log.info('Skipping report setting %s: survey %s not found in analytics DB',
+                                 setting.id, setting.survey_id)
+                continue
+
             # update the display flag for the report setting question key and survey id fetched above
             met_etl_db_session.query(EtlRequestTypeOptionModel)\
             .filter(EtlRequestTypeOptionModel.key == setting.question_key,

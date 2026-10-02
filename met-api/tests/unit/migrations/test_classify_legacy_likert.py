@@ -60,6 +60,19 @@ def test_five_point_scale_keeps_its_neutral(migration):
     assert _classifications(updated) == [['neg2', 'neg1', 'neutral', 'pos1', 'pos2', 'notSure']]
 
 
+@pytest.mark.parametrize('labels, expected', [
+    (['Not preferred', 'Somewhat preferred', 'Preferred', 'Not sure'], ['neg1', 'pos1', 'pos2', 'notSure']),
+    (['Not preferred', 'Somewhat preferred', 'Preferred'], ['neg1', 'pos1', 'pos2']),
+    (['Publicly', 'Privately', 'Not sure'], ['neg1', 'pos1', 'notSure']),
+    (['Publicly', 'Privately'], ['neg1', 'pos1']),
+])
+def test_short_scales_have_no_neutral(migration, labels, expected):
+    """Two and three ranked points start at the one negative and climb the positive side."""
+    updated, changed = migration.classify_legacy_likert({'components': [_question(labels)]})
+    assert changed
+    assert _classifications(updated) == [expected]
+
+
 def test_authored_classifications_are_left_alone(migration):
     """A question an author ranked, neutral included, is never rewritten."""
     authored = ['neg1', 'neutral', 'pos1', 'pos2', 'notSure']
@@ -70,7 +83,8 @@ def test_authored_classifications_are_left_alone(migration):
 
 
 @pytest.mark.parametrize('labels', [
-    ['Publicly', 'Privately', 'Not sure'],
+    ['Only option'],
+    ['Only option', 'Not sure'],
     ['Not sure', 'Somewhat', 'Mostly', 'Fully', 'Completely'],
     ['a', 'b', 'c', 'd', 'e', 'f'],
 ])
@@ -87,6 +101,16 @@ def test_downgrade_clears_the_four_point_scale_it_wrote(migration):
     cleared, changed = migration.unclassify_legacy_likert(classified)
     assert changed
     assert _classifications(cleared) == [[None] * 5]
+
+
+def test_downgrade_clears_the_short_scales_it_wrote(migration):
+    """The downgrade recognises the two- and three-point rankings as its own work."""
+    form = {'components': [_question(['Publicly', 'Privately', 'Not sure']),
+                           _question(['Not preferred', 'Somewhat preferred', 'Preferred', 'Not sure'])]}
+    classified, _ = migration.classify_legacy_likert(form)
+    cleared, changed = migration.unclassify_legacy_likert(classified)
+    assert changed
+    assert _classifications(cleared) == [[None] * 3, [None] * 4]
 
 
 def test_downgrade_leaves_an_authored_neutral_four_point_scale(migration):
