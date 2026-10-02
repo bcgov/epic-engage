@@ -4,6 +4,7 @@ import { MetPaper, MetHeader4, MetDescription } from 'components/shared/common';
 import { Palette } from 'styles/Theme';
 import { QuestionTypeLabel } from './QuestionTypeLabel';
 import { QuestionDescription } from './QuestionDescription';
+import { ChartDownloadButton } from './ChartDownloadButton';
 
 export interface CheckboxChartItem {
     label: string;
@@ -24,6 +25,8 @@ interface CheckboxChartProps {
     bare?: boolean;
     // Rendered below the chart and inside the card - the conditional follow-ups hung off an option.
     children?: ReactNode;
+    // Shows a PNG download button on the card.
+    onDownloadPng?: () => void;
 }
 
 const HEADER_SX = {
@@ -47,6 +50,7 @@ export const CheckboxChart = ({
     description,
     bare = false,
     children,
+    onDownloadPng,
 }: CheckboxChartProps) => {
     const content = (
         <>
@@ -126,7 +130,8 @@ export const CheckboxChart = ({
     }
 
     return (
-        <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
+        <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}`, position: 'relative' }}>
+            {onDownloadPng && <ChartDownloadButton onClick={onDownloadPng} />}
             {questionType && <QuestionTypeLabel label={questionType} />}
             <MetHeader4 sx={{ lineHeight: 1.4 }}>{question}</MetHeader4>
             <QuestionDescription description={description} />

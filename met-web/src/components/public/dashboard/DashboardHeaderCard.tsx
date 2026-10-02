@@ -25,7 +25,7 @@ import { DashboardContext } from './DashboardContext';
 import { LiveActivityChart } from './LiveActivityChart';
 import { ResultsAsOfWatermark } from './ResultsAsOfWatermark';
 import { ChartsPngExport } from './ChartsPngExport';
-import { selectPublicCharts } from './exportCharts';
+import { isSuperuser as isSuperuserGroup, selectPublicCharts } from './exportCharts';
 import { Palette } from 'styles/Theme';
 
 interface DashboardHeaderCardProps {
@@ -65,7 +65,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
         isAuthenticated &&
         roles.includes(USER_ROLES.VIEW_ALL_SURVEY_RESULTS);
     // The internal export includes rejected comments, so only Superusers may download it.
-    const isSuperuser = Boolean(userDetail.groups?.includes('/ENGAGE/' + USER_GROUP.ADMIN.value));
+    const isSuperuser = isSuperuserGroup(userDetail.groups);
     // The chart images only ever hold charts shown on the public report, so the engagement's team may take them too.
     const canExportCharts =
         isSuperuser ||

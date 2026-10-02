@@ -13,6 +13,7 @@ import {
 } from 'components/shared/common';
 import { DonutChart, LikertChart, RankOrderChart, Comments, CheckboxChart, ConditionalFollowUp } from './charts';
 import { QuestionTypeLabel } from './charts/QuestionTypeLabel';
+import { ChartDownloadButton } from './charts/ChartDownloadButton';
 import { formatOrdinal } from './charts/ordinal';
 import { QuestionDescription } from './charts/QuestionDescription';
 import { TypedSurveyData, FlatResultItem, MatrixResultRow } from 'models/analytics/surveyResult';
@@ -161,6 +162,8 @@ export interface QuestionChartProps {
     // that render their own. Follow-ups still render read-only regardless of this flag; pass
     // followUps={[]} and render your own nested UI if they need to be editable.
     bare?: boolean;
+    // Shows a PNG download button on the card. Only charts take it; free-text cards ignore it.
+    onDownloadPng?: () => void;
 }
 
 // A matrix commonly has one "tell us why" follow-up per row, all shown on the same answer; the
@@ -223,6 +226,7 @@ export const QuestionChart = ({
     dashboardType,
     description,
     bare = false,
+    onDownloadPng,
 }: QuestionChartProps) => {
     const {
         label,
@@ -252,7 +256,8 @@ export const QuestionChart = ({
                 return content;
             }
             return (
-                <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
+                <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}`, position: 'relative' }}>
+                    {onDownloadPng && <ChartDownloadButton onClick={onDownloadPng} />}
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     <QuestionDescription description={description} />
@@ -271,6 +276,7 @@ export const QuestionChart = ({
                     questionType={questionType}
                     description={description}
                     bare={bare}
+                    onDownloadPng={onDownloadPng}
                 >
                     {renderFollowUps(followUps, type, label)}
                 </CheckboxChart>
@@ -290,7 +296,8 @@ export const QuestionChart = ({
                 return content;
             }
             return (
-                <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
+                <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}`, position: 'relative' }}>
+                    {onDownloadPng && <ChartDownloadButton onClick={onDownloadPng} />}
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     <QuestionDescription description={description} />
@@ -312,7 +319,8 @@ export const QuestionChart = ({
                 return content;
             }
             return (
-                <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}` }}>
+                <MetPaper sx={{ p: 3, border: `1px solid ${Palette.border.default}`, position: 'relative' }}>
+                    {onDownloadPng && <ChartDownloadButton onClick={onDownloadPng} />}
                     {questionType && <QuestionTypeLabel label={questionType} />}
                     <MetHeader4 sx={{ lineHeight: 1.4 }}>{label}</MetHeader4>
                     <QuestionDescription description={description} />
@@ -345,6 +353,8 @@ interface SurveyResultsChartsProps {
     engagementIsLoading: boolean;
     dashboardType: string;
     onUnavailable?: (reason: UnavailableReason | null) => void;
+    // Given only to viewers allowed to download single charts; each chart card then shows a PNG button.
+    onDownloadChart?: (question: TypedSurveyData, description?: string) => void;
 }
 
 export const SurveyResultsCharts = ({
@@ -352,6 +362,7 @@ export const SurveyResultsCharts = ({
     engagementIsLoading,
     dashboardType,
     onUnavailable,
+    onDownloadChart,
 }: SurveyResultsChartsProps) => {
     const [currentPage, setCurrentPage] = useState(0);
     const surveyId = engagement.surveys?.[0]?.id;
@@ -533,6 +544,9 @@ export const SurveyResultsCharts = ({
                             followUps={followUpsByTrigger.get(item.key) ?? []}
                             dashboardType={dashboardType}
                             description={descriptionsByKey[item.key]}
+                            onDownloadPng={
+                                onDownloadChart && (() => onDownloadChart(item, descriptionsByKey[item.key]))
+                            }
                         />
                     );
                 })
