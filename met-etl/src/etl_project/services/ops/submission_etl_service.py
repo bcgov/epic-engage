@@ -1,5 +1,5 @@
 from dagster import Out, Output, op
-from sqlalchemy import func
+from sqlalchemy import func, or_, text
 from datetime import datetime
 
 from analytics_api.models.etlruncycle import EtlRunCycle as EtlRunCycleModel
@@ -87,7 +87,7 @@ def extract_submission(context, submission_last_run_cycle_time, submission_new_r
     session.close()
 
 
-# load the sumissions created or updated after last run to the analytics database
+# load the submissions created or updated after last run to the analytics database
 @op(required_resource_keys={"met_db_session", "met_etl_db_session"}, out={"submission_new_runcycleid": Out()})
 def load_submission(context, new_submission, updated_submission, submission_new_runcycleid):
     all_submissions = new_submission + updated_submission
@@ -137,6 +137,99 @@ def load_submission(context, new_submission, updated_submission, submission_new_
     met_etl_session.close()
 
     yield Output(submission_new_runcycleid, "submission_new_runcycleid")
+
+
+LEGACY_LIKERT_SURVEYS_SQL = text("""
+    SELECT DISTINCT s.id, s.source_survey_id
+    FROM response_type_option r
+    JOIN survey s ON s.id = r.survey_id AND s.is_active
+    WHERE r.is_active
+      AND s.source_survey_id IS NOT NULL
+      AND EXISTS (
+          SELECT 1 FROM request_type_option q
+          WHERE q.survey_id = r.survey_id
+            AND q.is_active
+            AND q.type = 'simplesurvey'
+            AND left(q.key, length(r.request_key) + 1) = r.request_key || '-'
+      )
+    ORDER BY s.id
+""")
+
+
+# rebuild legacy likert responses from their submissions, once, when a migration queues a likert_reprocess run cycle.
+@op(required_resource_keys={"met_db_session", "met_etl_db_session"}, out={"submission_new_runcycleid": Out()})
+def reprocess_legacy_likert_responses(context, submission_new_runcycleid):
+    metsession = context.resources.met_db_session
+    met_etl_session = context.resources.met_etl_db_session
+
+    queued = met_etl_session.query(EtlRunCycleModel).filter(
+        EtlRunCycleModel.packagename == 'likert_reprocess',
+        EtlRunCycleModel.success == False).order_by(EtlRunCycleModel.id).first()
+
+    if queued:
+        for etl_survey_id, source_survey_id in met_etl_session.execute(LEGACY_LIKERT_SURVEYS_SQL).all():
+            met_survey = metsession.query(MetSurveyModel).filter(MetSurveyModel.id == source_survey_id).first()
+            if not met_survey:
+                # survey deleted from MET: nothing left to rebuild from
+                context.log.info('Likert reprocess: survey %s not found in MET DB. Skipping.', source_survey_id)
+                continue
+            etl_survey = met_etl_session.query(EtlSurveyModel).filter(EtlSurveyModel.id == etl_survey_id).first()
+            _reprocess_likert_responses(metsession, met_etl_session, context, met_survey, etl_survey,
+                                        submission_new_runcycleid)
+            met_etl_session.commit()
+
+        met_etl_session.query(EtlRunCycleModel).filter(
+            EtlRunCycleModel.packagename == 'likert_reprocess',
+            EtlRunCycleModel.success == False).update(
+            {'success': True, 'enddatetime': datetime.utcnow(),
+             'description': 'rebuilt likert responses saved under the parent question key'})
+        met_etl_session.commit()
+
+    metsession.close()
+
+    met_etl_session.close()
+
+    yield Output(submission_new_runcycleid, "submission_new_runcycleid")
+
+
+def _reprocess_likert_responses(metsession, met_etl_session, context, met_survey, etl_survey,
+                                submission_new_runcycleid):
+    form_type = met_survey.form_json.get('display', None)
+    if form_type == 'wizard':
+        form_questions = [c for page in met_survey.form_json.get('components') or []
+                          for c in page.get('components') or []]
+    else:
+        form_questions = met_survey.form_json.get('components') or []
+
+    likert_questions = [c for c in form_questions if c['type'].lower() == FormIoComponentType.SURVEY.value]
+    if not likert_questions:
+        return
+
+    for component in likert_questions:
+        retired = met_etl_session.query(EtlResponseTypeOptionModel).filter(
+            EtlResponseTypeOptionModel.survey_id == etl_survey.id,
+            EtlResponseTypeOptionModel.is_active == True,
+            or_(EtlResponseTypeOptionModel.request_key == component['key'],
+                EtlResponseTypeOptionModel.request_key.startswith(component['key'] + '-', autoescape=True))
+        ).update({'is_active': False}, synchronize_session=False)
+        context.log.info('Likert reprocess: survey %s question %s retired %s responses',
+                         met_survey.id, component['key'], retired)
+
+    submissions = metsession.query(MetSubmissionModel).filter(
+        MetSubmissionModel.survey_id == met_survey.id).order_by(MetSubmissionModel.id).all()
+
+    for submission in submissions:
+        user = metsession.query(MetParticipantModel).filter(
+            MetParticipantModel.id == submission.participant_id).first()
+        for component in likert_questions:
+            answer_key = submission.submission_json.get(component['key'])
+            if answer_key is None or answer_key == '':
+                continue
+            _save_survey(met_etl_session, context, answer_key, component, etl_survey, user, submission,
+                         submission_new_runcycleid)
+
+    context.log.info('Likert reprocess: survey %s rebuilt likert responses from %s submissions',
+                     met_survey.id, len(submissions))
 
 
 # load data to table response_type_textarea

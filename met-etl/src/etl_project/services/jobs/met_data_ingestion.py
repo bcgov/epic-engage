@@ -7,7 +7,7 @@ from ops.survey_etl_service import get_survey_last_run_cycle_time, extract_surve
 from ops.report_setting_etl_service import get_setting_last_run_cycle_time, extract_setting, load_setting, \
     setting_end_run_cycle
 from ops.submission_etl_service import get_submission_last_run_cycle_time, extract_submission, load_submission, \
-    load_user_response_details, submission_end_run_cycle
+    load_user_response_details, reprocess_legacy_likert_responses, submission_end_run_cycle
 from ops.email_verification_etl_service import get_email_ver_last_run_cycle_time, extract_email_ver, load_email_ver, \
     email_ver_end_run_cycle
 
@@ -80,8 +80,11 @@ def met_data_ingestion():
     submission_new_runcycleid_passed_to_load_response = load_submission(new_submission, updated_submission,
                                                                        submission_new_runcycleid_passed_to_load)
 
+    submission_new_runcycleid_passed_to_reprocess = reprocess_legacy_likert_responses(
+        submission_new_runcycleid_passed_to_load_response)
+
     submission_new_runcycleid_passed_to_end = load_user_response_details(new_submission, updated_submission,
-                                                                         submission_new_runcycleid_passed_to_load_response)
+                                                                         submission_new_runcycleid_passed_to_reprocess)
 
     flag_to_run_step_after_submission = submission_end_run_cycle(submission_new_runcycleid_passed_to_end)
 
