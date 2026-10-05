@@ -19,32 +19,45 @@ interface CropModalProps {
     saveText?: string;
 }
 
+// Widest the header banner is ever displayed; larger crops are scaled down to this.
+const MAX_OUTPUT_WIDTH = 1920;
+const JPEG_QUALITY = 0.9;
+
 const getCroppedImage = (image: HTMLImageElement, crop: PixelCrop): Promise<Blob | null> => {
     const canvas = document.createElement('canvas');
+    // crop is in on-screen pixels; convert to the source image's pixels so output isn't limited to the preview size
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
-    canvas.width = crop.width;
-    canvas.height = crop.height;
+    const sourceWidth = crop.width * scaleX;
+    const sourceHeight = crop.height * scaleY;
+    const outputScale = Math.min(1, MAX_OUTPUT_WIDTH / sourceWidth);
+    canvas.width = Math.round(sourceWidth * outputScale);
+    canvas.height = Math.round(sourceHeight * outputScale);
     const ctx = canvas.getContext('2d');
 
     if (!ctx) return Promise.resolve(null);
 
+    ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(
         image,
         crop.x * scaleX,
         crop.y * scaleY,
-        crop.width * scaleX,
-        crop.height * scaleY,
+        sourceWidth,
+        sourceHeight,
         0,
         0,
-        crop.width,
-        crop.height,
+        canvas.width,
+        canvas.height,
     );
 
     return new Promise((resolve) => {
-        canvas.toBlob((blob) => {
-            resolve(blob);
-        }, 'image/jpeg');
+        canvas.toBlob(
+            (blob) => {
+                resolve(blob);
+            },
+            'image/jpeg',
+            JPEG_QUALITY,
+        );
     });
 };
 
