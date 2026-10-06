@@ -14,6 +14,8 @@
 """API endpoints for managing an comment resource."""
 
 from http import HTTPStatus
+import unicodedata
+from urllib.parse import quote
 
 from flask import current_app, Response, request
 from flask_cors import cross_origin
@@ -22,6 +24,7 @@ from flask_restx import Namespace, Resource
 from met_api.auth import auth
 from met_api.models.pagination_options import PaginationOptions
 from met_api.services.comment_service import CommentService
+from met_api.services.proponent_export_service import ProponentExportService
 from met_api.utils.dashboard_visibility import include_hidden_questions
 from met_api.utils.roles import Role
 from met_api.utils.tenant_validator import require_role
@@ -111,28 +114,39 @@ class GeneratedStaffCommentsSheet(Resource):
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+def _attachment_disposition(file_name: str) -> str:
+    """Build a Content-Disposition header for a filename that may hold any character.
+
+    Response headers must be Latin-1, and engagement names often carry en dashes or curly
+    apostrophes, so the name goes in an RFC 5987 filename* with a plain ASCII filename as fallback.
+    """
+    ascii_name = unicodedata.normalize('NFKD', file_name).encode('ascii', 'ignore').decode('ascii')
+    ascii_name = ascii_name.replace('\\', '').replace('"', '')
+    return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(file_name, safe='')}"
+
+
 @cors_preflight('GET, OPTIONS')
 @API.route('/survey/<survey_id>/sheet/proponent')
 class GeneratedProponentCommentsSheet(Resource):
-    """Resource for managing multiple comments."""
+    """Resource for the Public/Proponent comment export."""
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
     @require_role([Role.EXPORT_PROPONENT_COMMENT_SHEET.value])
     def get(survey_id):
-        """Export comments."""
+        """Export the approved comments that are safe to share with the public and proponents."""
         try:
-
-            response = CommentService().export_comments_to_spread_sheet_proponent(survey_id)
-            response_headers = dict(response.headers)
+            stream, file_name = ProponentExportService().export_comments_to_spread_sheet(survey_id)
             headers = {
-                'content-type': response_headers.get('content-type'),
-                'content-disposition': response_headers.get('content-disposition'),
+                'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'content-disposition': _attachment_disposition(file_name),
             }
             return Response(
-                response=response.content,
-                status=response.status_code,
+                response=stream.getvalue(),
+                status=HTTPStatus.OK,
                 headers=headers
             )
+        except KeyError:
+            return 'Survey was not found', HTTPStatus.NOT_FOUND
         except ValueError as err:
             return str(err), HTTPStatus.INTERNAL_SERVER_ERROR

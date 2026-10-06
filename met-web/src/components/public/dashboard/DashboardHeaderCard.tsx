@@ -3,6 +3,7 @@ import { Box, Menu, MenuItem, Skeleton, Stack, Typography } from '@mui/material'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
+import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
 import { PrimaryButton } from 'components/shared/common';
 import { Engagement } from 'models/engagement';
@@ -13,6 +14,7 @@ import { getAggregatorData } from 'services/analytics/aggregatorService';
 import { getMapData } from 'services/analytics/mapService';
 import { getSurveyResultData } from 'services/analytics/surveyResult';
 import { getUserResponseDetailByMonth } from 'services/analytics/userResponseDetailService';
+import { getProponentCommentSheet } from 'services/commentService';
 import { getDashboardDataSheet } from 'services/surveyService';
 import { fetchSurveyReportSettings } from 'services/surveyService/reportSettingsService';
 import { USER_ROLES } from 'services/userService/constants';
@@ -66,7 +68,8 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
         roles.includes(USER_ROLES.VIEW_ALL_SURVEY_RESULTS);
     // The internal export includes rejected comments, so only Superusers may download it.
     const isSuperuser = isSuperuserGroup(userDetail.groups);
-    // The chart images only ever hold charts shown on the public report, so the engagement's team may take them too.
+    // The chart images and the Public/Proponent comment export only ever hold what is cleared for the public,
+    // so the engagement's team may take them too.
     const canExportCharts =
         isSuperuser ||
         (Boolean(userDetail.groups?.includes('/ENGAGE/' + USER_GROUP.TEAM_MEMBER.value)) &&
@@ -100,6 +103,28 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                 openNotification({
                     severity: 'error',
                     text: 'Error occurred while exporting dashboard data. Please try again later.',
+                }),
+            );
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
+    const handleExportProponentComments = async () => {
+        if (!surveyId) {
+            return;
+        }
+        setExportAnchorEl(null);
+        try {
+            setIsExporting(true);
+            const response = await getProponentCommentSheet({ survey_id: Number(surveyId) });
+            const timestamp = formatToUTC(Date(), 'YYYY-MM-DD');
+            downloadFile(response, `${engagement.name} - Public Proponent Export - ${timestamp}.xlsx`);
+        } catch (error) {
+            dispatch(
+                openNotification({
+                    severity: 'error',
+                    text: 'Error occurred while exporting comments. Please try again later.',
                 }),
             );
         } finally {
@@ -333,6 +358,26 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                         </Typography>
                                         <Typography sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}>
                                             Download charts as a ZIP bundle
+                                        </Typography>
+                                    </Box>
+                                </MenuItem>
+                                <MenuItem
+                                    onClick={handleExportProponentComments}
+                                    sx={{
+                                        alignItems: 'center',
+                                        gap: 1.25,
+                                        py: 1.25,
+                                        whiteSpace: 'normal',
+                                        borderTop: `1px solid ${Palette.border.subtle}`,
+                                    }}
+                                >
+                                    <PeopleOutlineIcon sx={{ fontSize: 18, color: Palette.secondary.main }} />
+                                    <Box>
+                                        <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
+                                            Public/Proponent Comment Export
+                                        </Typography>
+                                        <Typography sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}>
+                                            Comments safe to share with the public and Proponents
                                         </Typography>
                                     </Box>
                                 </MenuItem>

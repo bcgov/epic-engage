@@ -12,7 +12,6 @@ from met_api.models.submission import Submission as SubmissionModel
 from met_api.schemas.comment import CommentSchema
 from met_api.schemas.submission import SubmissionSchema
 from met_api.schemas.survey import SurveySchema
-from met_api.services import authorization
 from met_api.services.document_generation_service import DocumentGenerationService
 from met_api.utils.enums import GeneratedDocumentTypes, MembershipStatus
 from met_api.utils.form_components import flatten_components
@@ -259,25 +258,6 @@ class CommentService:
         return ', '.join(rejection_note)
 
     @classmethod
-    def export_comments_to_spread_sheet_proponent(cls, survey_id):
-        """Export comments to spread sheet."""
-        survey = SurveyModel.find_by_id(survey_id)
-        one_of_roles = (
-            MembershipType.TEAM_MEMBER.name,
-            Role.EXPORT_ALL_TO_CSV.value
-        )
-        authorization.check_auth(one_of_roles=one_of_roles, engagement_id=survey.engagement_id)
-        comments = Comment.get_public_viewable_comments_by_survey_id(survey_id)
-        formatted_comments = cls.format_comments(comments)
-        document_options = {
-            'document_type': GeneratedDocumentTypes.COMMENT_SHEET_PROPONENT.value,
-            'template_name': 'proponent_comments_sheet.xlsx',
-            'convert_to': 'xlsx',
-            'report_name': 'proponent_comments_sheet'
-        }
-        return DocumentGenerationService().generate_document(data=formatted_comments, options=document_options)
-
-    @classmethod
     def group_comments_by_submission_id(cls, comments):
         """Group the comments together, arranging them in the same order as the titles."""
         grouped_comments = []
@@ -325,60 +305,3 @@ class CommentService:
             group['commentText'] = sorted_comment_text
 
         return grouped_comments
-
-    @classmethod
-    def format_comments(cls, comments):
-        """Format comments."""
-        # Create a dictionary to store comments grouped by labels
-        comments_by_label = {}
-
-        # Create a list to store unique titles in order of appearance
-        unique_titles = []
-
-        # Iterate over the input data
-        for comment in comments:
-            # Get the submission_id, or an empty string if it's missing
-            submission_id = comment.get('submission_id', '')
-            label = comment['label']
-            text = comment.get('text', '')  # Get the text, or an empty string if it's missing
-
-            # If the label is not already in unique_titles, add it
-            if label not in unique_titles:
-                unique_titles.append(label)
-
-            # If label is not in comments_by_label, create an empty list for it
-            if label not in comments_by_label:
-                comments_by_label[label] = []
-
-            # Append the comment to the corresponding label in comments_by_label
-            comments_by_label[label].append({'text': text, 'submission_id': submission_id})
-
-        # Create a list of titles with label information in order of appearance
-        titles = [{'label': title, 'proponent_answers': 'Proponent Answer'} for title in unique_titles]
-
-        # Create a list of comments organized by label order
-        formatted_comments = []
-        row_id = 1
-
-        # Iterate over each row_id until there are no more comments
-        while any(comments_by_label.get(title['label']) for title in titles):
-            comment_row = {'row_id': row_id, 'commentText': []}
-
-            for title in titles:
-                label = title['label']
-                label_comments = comments_by_label.get(label, [{'text': '', 'submission_id': ''}])
-                # If there are comments for this label, pop the first one
-                if label_comments:
-                    comment_text = label_comments.pop(0)
-                else:
-                    # If there are no comments for this label, use a default empty text
-                    comment_text = {'text': '', 'submission_id': ''}
-
-                comment_row['commentText'].append(comment_text)
-
-            # Append the comment row to the list of comments
-            formatted_comments.append(comment_row)
-            row_id += 1
-
-        # Create the final output structure
-        return {'titles': titles, 'comments': formatted_comments}
