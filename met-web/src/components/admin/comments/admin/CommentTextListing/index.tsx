@@ -26,13 +26,11 @@ import { updateURLWithPagination } from 'components/shared/common/Table/utils';
 import CommentIcon from '@mui/icons-material/Comment';
 import CommentsDisabledIcon from '@mui/icons-material/CommentsDisabled';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { getStaffCommentSheet, getProponentCommentSheet } from 'services/commentService';
+import { getStaffCommentSheet } from 'services/commentService';
 import { downloadFile } from 'utils';
 import { getSurvey } from 'services/surveyService';
 import { Survey, createDefaultSurvey } from 'models/survey';
 import { PermissionsGate } from 'components/shared/permissionsGate';
-import { HTTP_STATUS_CODES } from 'constants/httpResponseCodes';
-import axios from 'axios';
 
 const CommentTextListing = () => {
     const { roles, userDetail, assignedEngagements } = useAppSelector((state) => state.user);
@@ -87,33 +85,6 @@ const CommentTextListing = () => {
                     text: 'Error occurred while exporting comments. Please try again later.',
                 }),
             );
-        }
-    };
-
-    const handleExportProponentComments = async () => {
-        try {
-            setIsExporting(true);
-            const response = await getProponentCommentSheet({ survey_id: survey.id });
-            downloadFile(response, `PUBLIC - ${survey.engagement?.name || ''} - ${formatToUTC(Date())}.xlsx`);
-            setIsExporting(false);
-            handleExportToCSVClose(); // Close the menu after export
-        } catch (error) {
-            setIsExporting(false);
-            if (axios.isAxiosError(error) && error.response?.status === HTTP_STATUS_CODES.FORBIDDEN) {
-                dispatch(
-                    openNotification({
-                        severity: 'error',
-                        text: 'You do not have permission to export this data.',
-                    }),
-                );
-            } else {
-                dispatch(
-                    openNotification({
-                        severity: 'error',
-                        text: 'Error occurred while exporting comments. Please try again later.',
-                    }),
-                );
-            }
         }
     };
 
@@ -366,7 +337,7 @@ const CommentTextListing = () => {
                         Return to Comments List
                     </PrimaryButton>
                     <PermissionsGate
-                        scopes={[USER_ROLES.EXPORT_INTERNAL_COMMENT_SHEET, USER_ROLES.EXPORT_PROPONENT_COMMENT_SHEET]}
+                        scopes={[USER_ROLES.EXPORT_INTERNAL_COMMENT_SHEET]}
                         errorProps={{ disabled: true }}
                     >
                         <SecondaryButton
@@ -394,9 +365,6 @@ const CommentTextListing = () => {
                         open={Boolean(anchorEl)}
                         onClose={handleExportToCSVClose}
                     >
-                        <MenuItem onClick={handleExportProponentComments} style={customStyle}>
-                            Public/Proponent
-                        </MenuItem>
                         <PermissionsGate scopes={[USER_ROLES.EXPORT_INTERNAL_COMMENT_SHEET]}>
                             <MenuItem onClick={handleExportStaffComments} style={customStyle}>
                                 Internal Only/Detailed

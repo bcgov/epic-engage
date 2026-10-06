@@ -121,6 +121,8 @@ describe('Comment listing tests', () => {
 
         // Check if the dropdown content is visible
         const dropdownContent = screen.getByText('Internal Only/Detailed');
+        // The Public/Proponent export moved to the internal report's Export menu.
+        expect(screen.queryByText('Public/Proponent')).not.toBeInTheDocument();
         await waitFor(() => {
             expect(dropdownContent).toBeInTheDocument();
         });

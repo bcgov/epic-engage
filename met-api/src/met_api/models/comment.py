@@ -332,21 +332,24 @@ class Comment(BaseModel):
         return SubmissionSchema(many=True, exclude=['submission_json']).dump(items)
 
     @classmethod
-    def get_public_viewable_comments_by_survey_id(cls, survey_id):
-        """Get comments that are viewable on the public report."""
+    def get_proponent_export_comments_by_survey_id(cls, survey_id) -> list:
+        """Get the approved comments the Public/Proponent export may carry, oldest first.
+
+        Only comments on questions shown in the public report and switched on for the export.
+        A question with no report setting has never been through the report settings, so nobody
+        has cleared it for sharing and its comments stay out.
+        """
+        null_value = None
         query = db.session.query(Comment)\
             .join(Submission, Submission.id == Comment.submission_id)\
-            .join(CommentStatusModel, Submission.comment_status_id == CommentStatusModel.id)\
-            .join(Survey, Survey.id == Submission.survey_id)\
             .join(ReportSetting, and_(Comment.survey_id == ReportSetting.survey_id,
                                       Comment.component_id == ReportSetting.question_key))\
             .filter(
                 and_(
                     Comment.survey_id == survey_id,
-                    CommentStatusModel.id == CommentStatus.Approved.value,
+                    Submission.comment_status_id == CommentStatus.Approved.value,
                     ReportSetting.display == true(),
-                    Submission.reviewed_by != 'System'
+                    ReportSetting.export_display == true(),
+                    or_(Submission.reviewed_by != SYSTEM_REVIEWER, Submission.reviewed_by == null_value)
                 ))
-        query = query.order_by(Comment.id.asc())
-        items = query.all()
-        return CommentSchema(many=True, only=['submission_id', 'label', 'text']).dump(items)
+        return query.order_by(Comment.id.asc()).all()

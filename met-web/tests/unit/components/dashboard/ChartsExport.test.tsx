@@ -14,7 +14,9 @@ import {
 } from 'components/public/dashboard/exportCharts';
 import { TypedSurveyData } from 'models/analytics/surveyResult';
 import { SurveyReportSetting } from 'models/surveyReportSetting';
+import * as commentService from 'services/commentService';
 import { USER_ROLES } from 'services/userService/constants';
+import * as utils from 'utils';
 import { assignedEngagements, userAuthentication, userDetails, userRoles } from 'services/userService/userSlice';
 import { openEngagement } from '../factory';
 
@@ -137,12 +139,32 @@ describe('Internal report export menu', () => {
         await openMenu();
         expect(screen.getByText('Excel Data Export')).toBeInTheDocument();
         expect(screen.getByText('Download charts as a ZIP bundle')).toBeInTheDocument();
+        expect(screen.getByText('Public/Proponent Comment Export')).toBeInTheDocument();
+        expect(screen.getByText('Comments safe to share with the public and Proponents')).toBeInTheDocument();
     });
 
     it('offers an assigned team member only the chart export', async () => {
         renderHeader('/ENGAGE/EAO_TEAM_MEMBER', [openEngagement.id]);
         await openMenu();
         expect(screen.queryByText('Excel Data Export')).not.toBeInTheDocument();
+        expect(screen.getByText('Public/Proponent Comment Export')).toBeInTheDocument();
+    });
+
+    it('downloads the Public/Proponent comment export for the engagement survey', async () => {
+        const getSheet = jest
+            .spyOn(commentService, 'getProponentCommentSheet')
+            .mockResolvedValue({ data: new Blob() } as never);
+        const download = jest.spyOn(utils, 'downloadFile').mockImplementation(() => undefined);
+        renderHeader('/ENGAGE/EAO_TEAM_MEMBER', [openEngagement.id]);
+        await openMenu();
+
+        fireEvent.click(screen.getByText('Public/Proponent Comment Export'));
+
+        await waitFor(() => expect(download).toHaveBeenCalled());
+        expect(getSheet).toHaveBeenCalledWith({ survey_id: openEngagement.surveys[0].id });
+        expect(download.mock.calls[0][1]).toMatch(
+            /^Open Engagement - Public Proponent Export - \d{4}-\d{2}-\d{2}\.xlsx$/,
+        );
     });
 
     it('offers a team member not assigned to the engagement no export', async () => {
