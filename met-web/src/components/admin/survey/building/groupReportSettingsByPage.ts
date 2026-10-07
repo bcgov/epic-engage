@@ -98,26 +98,32 @@ export interface FreeTextPageItem {
 
 export interface FreeTextPage {
     title: string;
+    // The page's number in the survey form, kept so the stepper and disclaimer can name real pages.
+    pageNumber: number;
     items: FreeTextPageItem[];
     [key: string]: unknown;
 }
 
-// The report pages cut down to their free-text questions, in page order, with pages that have none
-// dropped. A free-text follow-up is listed on its own even when its trigger isn't free text
-// (e.g. a radio's "Other, please specify"), carrying that trigger so it can be named.
+// The report pages cut down to their free-text questions, in page order. Pages with none are
+// returned separately as skippedPages. A free-text follow-up is listed on its own even when its
+// trigger isn't free text (e.g. a radio's "Other, please specify"), carrying that trigger so it can
+// be named.
 export const groupFreeTextSettingsByPage = (
     formDefinition: FormBuilderData | undefined,
     settings: SurveyReportSetting[],
     conditionalLinks: Record<string, ConditionalLink> = {},
-): FreeTextPage[] => {
+): { pages: FreeTextPage[]; skippedPages: FreeTextPage[] } => {
     const isFreeText = (setting: SurveyReportSetting) => FREE_TEXT_QUESTION_TYPES.includes(setting.question_type);
-    return groupReportSettingsByPage(formDefinition, settings, conditionalLinks)
-        .map((page) => ({
-            title: page.title,
-            items: page.items.flatMap(({ setting, followUps }) => [
-                ...(isFreeText(setting) ? [{ setting }] : []),
-                ...followUps.filter(isFreeText).map((followUp) => ({ setting: followUp, trigger: setting })),
-            ]),
-        }))
-        .filter((page) => page.items.length > 0);
+    const allPages = groupReportSettingsByPage(formDefinition, settings, conditionalLinks).map((page, index) => ({
+        title: page.title,
+        pageNumber: index + 1,
+        items: page.items.flatMap(({ setting, followUps }) => [
+            ...(isFreeText(setting) ? [{ setting }] : []),
+            ...followUps.filter(isFreeText).map((followUp) => ({ setting: followUp, trigger: setting })),
+        ]),
+    }));
+    return {
+        pages: allPages.filter((page) => page.items.length > 0),
+        skippedPages: allPages.filter((page) => page.items.length === 0),
+    };
 };

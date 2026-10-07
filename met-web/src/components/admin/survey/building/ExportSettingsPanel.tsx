@@ -23,7 +23,7 @@ import { useSurveyComments } from 'components/public/dashboard/hooks/useSurveyCo
 import { DashboardType } from 'constants/dashboardType';
 import FormStepper from 'components/public/survey/submit/Stepper';
 import { SurveySwitch } from './AdditionalSettings';
-import { groupFreeTextSettingsByPage } from './groupReportSettingsByPage';
+import { FreeTextPage, groupFreeTextSettingsByPage } from './groupReportSettingsByPage';
 import { DescriptionEditor } from './DescriptionEditor';
 import {
     ClosedEngagementVisibility,
@@ -35,7 +35,22 @@ import {
 } from './ReportSettingsPanel';
 import { Palette } from 'styles/Theme';
 
-export const FREE_TEXT_PAGES_DISCLAIMER = 'Only the pages with free-text questions are shown.';
+export const FREE_TEXT_PAGES_DISCLAIMER = 'Only pages with free-text questions are shown.';
+
+// e.g. "Only pages with free-text questions are shown. Pages 4 (Project Location) and 6 (Engagement
+// Plan) are skipped." An untitled page is named by its number alone.
+export const freeTextPagesDisclaimer = (skippedPages: FreeTextPage[]) => {
+    if (!skippedPages.length) {
+        return FREE_TEXT_PAGES_DISCLAIMER;
+    }
+    const names = skippedPages.map(({ pageNumber, title }) =>
+        title === `Page ${pageNumber}` ? String(pageNumber) : `${pageNumber} (${title})`,
+    );
+    const list = new Intl.ListFormat('en', { type: 'conjunction' }).format(names);
+    return skippedPages.length === 1
+        ? `${FREE_TEXT_PAGES_DISCLAIMER} Page ${list} is skipped.`
+        : `${FREE_TEXT_PAGES_DISCLAIMER} Pages ${list} are skipped.`;
+};
 export const HIDDEN_IN_REPORT_NOTICE =
     'Comments hidden in the public report are not included in this export. To include this comment, toggle it in the Public report settings first.';
 
@@ -130,7 +145,7 @@ export const ExportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ExportS
             [commentsData],
         );
 
-        const pages = useMemo(
+        const { pages, skippedPages } = useMemo(
             () => groupFreeTextSettingsByPage(formDefinition, settings, conditionalLinks),
             [formDefinition, settings, conditionalLinks],
         );
@@ -205,11 +220,13 @@ export const ExportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ExportS
 
         const renderCard = (setting: SurveyReportSetting, trigger?: SurveyReportSetting) => {
             const locked = !setting.display;
+            // Greyed out like the report tab's hidden cards whenever it's left out of the export.
+            const dimmed = locked || !exportDisplayMap[setting.id];
             const link = conditionalLinks[setting.question_key];
             const responses = commentsByKey.get(setting.question_key) ?? [];
 
             return (
-                <MetPaper key={setting.id} sx={{ p: 3, ...(locked && { borderStyle: 'dashed' }) }}>
+                <MetPaper key={setting.id} sx={{ p: 3, ...(dimmed && { borderStyle: 'dashed' }) }}>
                     {locked && (
                         <Stack
                             data-testid={`export-setting-locked-${setting.id}`}
@@ -241,7 +258,7 @@ export const ExportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ExportS
                         </Stack>
                     )}
                     <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
-                        <Box {...inertProps(locked)} sx={{ flex: 1, minWidth: 0, ...dimmedSx(locked) }}>
+                        <Box {...inertProps(dimmed)} sx={{ flex: 1, minWidth: 0, ...dimmedSx(dimmed) }}>
                             {trigger ? (
                                 <Stack direction="row" alignItems="center" gap={0.75} sx={{ mb: 1 }}>
                                     <Box
@@ -288,7 +305,7 @@ export const ExportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ExportS
                                 description={descriptionMap[setting.id] ?? ''}
                                 onSave={handleDescriptionSave}
                                 readOnly={readOnly}
-                                disabled={locked}
+                                disabled={dimmed}
                             />
                         </Box>
                         {engagementClosed ? (
@@ -319,7 +336,7 @@ export const ExportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ExportS
                             </Stack>
                         )}
                     </Stack>
-                    <Box {...inertProps(locked)} sx={{ mt: 1.5, ...dimmedSx(locked) }}>
+                    <Box {...inertProps(dimmed)} sx={{ mt: 1.5, ...dimmedSx(dimmed) }}>
                         {commentsLoading && engagementId ? (
                             <Skeleton variant="rounded" height={60} />
                         ) : (
@@ -335,23 +352,40 @@ export const ExportSettingsPanel = forwardRef<ReportSettingsPanelHandle, ExportS
                 <Box sx={contentSx}>
                     {pages.length ? (
                         <>
-                            {pages.length > 1 && (
-                                <FormStepper
-                                    currentPage={safePage}
-                                    pages={pages}
-                                    onStepClick={(index) => setCurrentPage(index)}
-                                />
-                            )}
-                            <Stack
-                                direction="row"
-                                alignItems="center"
-                                justifyContent="center"
-                                gap={0.75}
-                                sx={{ mb: 2, color: Palette.text.secondary }}
+                            <Box
+                                data-testid="export-page-stepper-section"
+                                sx={{
+                                    mb: 2,
+                                    border: `1px solid ${Palette.border.default}`,
+                                    borderRadius: '8px',
+                                }}
                             >
-                                <InfoOutlinedIcon sx={{ fontSize: 16 }} />
-                                <Typography sx={{ fontSize: '13px' }}>{FREE_TEXT_PAGES_DISCLAIMER}</Typography>
-                            </Stack>
+                                {pages.length > 1 && (
+                                    <Box sx={{ pt: 2, px: 2, overflowX: 'auto' }}>
+                                        <FormStepper
+                                            currentPage={safePage}
+                                            pages={pages}
+                                            onStepClick={(index) => setCurrentPage(index)}
+                                        />
+                                    </Box>
+                                )}
+                                <Stack
+                                    direction="row"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    gap={0.75}
+                                    sx={{
+                                        p: 1.5,
+                                        color: Palette.text.secondary,
+                                        ...(pages.length > 1 && { borderTop: `1px solid ${Palette.border.default}` }),
+                                    }}
+                                >
+                                    <InfoOutlinedIcon sx={{ fontSize: 16 }} />
+                                    <Typography sx={{ fontSize: '13px' }}>
+                                        {freeTextPagesDisclaimer(skippedPages)}
+                                    </Typography>
+                                </Stack>
+                            </Box>
                             <Stack spacing={2}>
                                 {pages[safePage].items.map(({ setting, trigger }) => renderCard(setting, trigger))}
                             </Stack>

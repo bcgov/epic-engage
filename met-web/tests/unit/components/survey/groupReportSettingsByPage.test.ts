@@ -133,16 +133,20 @@ describe('groupFreeTextSettingsByPage', () => {
     };
     const settings = [baseSetting, followUpSetting, { ...baseSetting, id: 5, question_id: 5 }, textarea(3, 'text3')];
 
-    test('keeps only free-text questions and drops pages without any', () => {
-        const pages = groupFreeTextSettingsByPage(wizard, settings);
+    test('keeps only free-text questions and skips pages without any, keeping real page numbers', () => {
+        const { pages, skippedPages } = groupFreeTextSettingsByPage(wizard, settings);
 
         expect(pages.map((page) => page.title)).toEqual(['Choices', 'Comments']);
+        expect(pages.map((page) => page.pageNumber)).toEqual([1, 3]);
+        expect(skippedPages.map(({ pageNumber, title }) => ({ pageNumber, title }))).toEqual([
+            { pageNumber: 2, title: 'No text here' },
+        ]);
         expect(pages[0].items.map((item) => item.setting.question_key)).toEqual(['other1']);
         expect(pages[1].items.map((item) => item.setting.question_key)).toEqual(['text3']);
     });
 
     test('lists a free-text follow-up on its own, naming its trigger', () => {
-        const pages = groupFreeTextSettingsByPage(wizard, settings, { other1: conditionalLink });
+        const { pages } = groupFreeTextSettingsByPage(wizard, settings, { other1: conditionalLink });
 
         expect(pages[0].items).toHaveLength(1);
         expect(pages[0].items[0].setting.question_key).toBe('other1');
@@ -150,6 +154,6 @@ describe('groupFreeTextSettingsByPage', () => {
     });
 
     test('returns no pages for a survey without free-text questions', () => {
-        expect(groupFreeTextSettingsByPage(formDefinition, [baseSetting])).toEqual([]);
+        expect(groupFreeTextSettingsByPage(formDefinition, [baseSetting]).pages).toEqual([]);
     });
 });
