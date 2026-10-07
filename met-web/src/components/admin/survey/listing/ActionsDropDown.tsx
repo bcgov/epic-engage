@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { USER_ROLES } from 'services/userService/constants';
+import { canViewInternalReport as hasInternalReportAccess } from 'services/userService/reportAccess';
 import { MenuItem, Select } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from 'hooks';
@@ -42,11 +43,7 @@ export const ActionsDropDown = ({
     };
 
     const canViewInternalReport = (): boolean => {
-        return (
-            submissionHasBeenOpened &&
-            roles.includes(USER_ROLES.VIEW_ALL_SURVEY_RESULTS) &&
-            (roles.includes(USER_ROLES.ACCESS_DASHBOARD) || assignedEngagements.includes(engagementId))
-        );
+        return canViewReport() && hasInternalReportAccess(roles, assignedEngagements, engagementId);
     };
 
     const canViewAllComments = (): boolean => {

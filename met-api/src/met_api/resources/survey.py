@@ -90,7 +90,7 @@ class SurveyDashboard(Resource):
         """Fetch a survey form for a published or closed engagement's dashboard."""
         try:
             survey_record = SurveyService().get_for_dashboard(
-                survey_id, include_hidden=include_hidden_questions())
+                survey_id, include_hidden=include_hidden_questions(survey_id))
             return survey_record, HTTPStatus.OK
         except KeyError:
             return 'Survey was not found', HTTPStatus.NOT_FOUND

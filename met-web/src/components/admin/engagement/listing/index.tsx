@@ -21,6 +21,7 @@ import { EngagementStatus, SubmissionStatus } from 'constants/engagementStatus';
 import { SearchOptions } from './AdvancedSearch/SearchTypes';
 import { PermissionsGate } from 'components/shared/permissionsGate';
 import { USER_ROLES } from 'services/userService/constants';
+import { canViewInternalReport } from 'services/userService/reportAccess';
 import CheckIcon from '@mui/icons-material/Check';
 import PriorityHighRoundedIcon from '@mui/icons-material/PriorityHighRounded';
 import { ApprovedIcon, NewIcon, NFRIcon, RejectedIcon } from './Icons';
@@ -392,10 +393,8 @@ const EngagementListing = () => {
                 const canAccessDashboard =
                     roles.includes(USER_ROLES.ACCESS_DASHBOARD) || assignedEngagements.includes(row.id);
                 const canViewPublicReport = submissionHasBeenOpened(row) && canAccessDashboard;
-                const canViewInternalReport =
-                    submissionHasBeenOpened(row) &&
-                    roles.includes(USER_ROLES.VIEW_ALL_SURVEY_RESULTS) &&
-                    canAccessDashboard;
+                const canViewInternal =
+                    canViewPublicReport && canViewInternalReport(roles, assignedEngagements, row.id);
 
                 return (
                     <Stack direction="row" spacing={1}>
@@ -428,7 +427,7 @@ const EngagementListing = () => {
                                     color: Palette.text.primary,
                                 },
                             }}
-                            disabled={!canViewInternalReport}
+                            disabled={!canViewInternal}
                             onClick={() => navigate(`/engagements/${row.id}/dashboard/internal`)}
                         >
                             Internal Report

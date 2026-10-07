@@ -15,7 +15,10 @@
 
 Test Utility for creating model factory.
 """
+import time
+
 from faker import Faker
+from flask import current_app
 
 from analytics_api import db
 from analytics_api.config import get_named_config
@@ -156,3 +159,17 @@ def factory_response_type_option_model(survey_id, request_key, value, request_id
     db.session.add(option)
     db.session.commit()
     return option
+
+
+def factory_auth_header(jwt, claims):
+    """Produce a bearer header holding a test token with the given claims."""
+    now = int(time.time())
+    token = jwt.create_jwt(claims={
+        'iss': current_app.config['JWT_OIDC_TEST_ISSUER'],
+        'aud': current_app.config['JWT_OIDC_TEST_AUDIENCE'],
+        'iat': now,
+        'nbf': now,
+        'exp': now + 3600,
+        **claims,
+    }, header={'alg': 'RS256', 'typ': 'JWT', 'kid': 'met-web'})
+    return {'Authorization': f'Bearer {token}'}

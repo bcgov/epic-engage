@@ -78,7 +78,7 @@ class SurveyCommentsGrouped(Resource):
         """Get free-text comments grouped by question."""
         try:
             records = CommentService().get_comments_grouped_by_question(
-                survey_id, include_hidden=include_hidden_questions())
+                survey_id, include_hidden=include_hidden_questions(survey_id))
             return records, HTTPStatus.OK
         except ValueError as err:
             current_app.logger.error('Error fetching grouped survey comments: %s', str(err))

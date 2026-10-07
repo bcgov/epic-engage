@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ReportUnavailable } from 'components/public/dashboard/ReportUnavailable';
-import { UNAVAILABLE_REASON } from 'components/public/dashboard/reportAvailability';
+import { UNAVAILABLE_REASON, toUnavailableReason } from 'components/public/dashboard/reportAvailability';
 
 const mockRoles: string[] = [];
 
@@ -52,6 +52,23 @@ describe('ReportUnavailable', () => {
         render(<ReportUnavailable reason={UNAVAILABLE_REASON.UNKNOWN} />);
 
         expect(screen.getByText(/This report isn't available/i)).toBeInTheDocument();
+        expect(screen.queryByText(/has not been made public/i)).not.toBeInTheDocument();
         expect(screen.queryByTestId('report-unavailable-staff-guidance')).not.toBeInTheDocument();
+    });
+
+    it('tells a Team Member they are not assigned to the engagement', () => {
+        mockRoles.push('access_dashboard');
+
+        render(<ReportUnavailable reason={UNAVAILABLE_REASON.NOT_ASSIGNED} />);
+
+        expect(screen.getByText(/You aren't assigned to this engagement/i)).toBeInTheDocument();
+        expect(screen.queryByText(/has not been made public/i)).not.toBeInTheDocument();
+        expect(screen.getByTestId('report-unavailable-staff-guidance')).toHaveTextContent(
+            'Ask a Superuser to add you to the engagement team to view its internal report.',
+        );
+    });
+
+    it('recognises the not-assigned refusal from the API', () => {
+        expect(toUnavailableReason({ reason: 'not_assigned' })).toBe(UNAVAILABLE_REASON.NOT_ASSIGNED);
     });
 });

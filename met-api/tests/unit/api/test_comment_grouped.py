@@ -21,8 +21,8 @@ import copy
 from met_api.utils.enums import ContentType
 from tests.utilities.factory_scenarios import TestJwtClaims, TestSubmissionInfo
 from tests.utilities.factory_utils import (
-    factory_auth_header, factory_comment_model, factory_engagement_setting_model, factory_participant_model,
-    factory_submission_model, factory_survey_and_eng_model,
+    factory_auth_header, factory_comment_model, factory_engagement_setting_model, factory_membership_model,
+    factory_participant_model, factory_staff_user_model, factory_submission_model, factory_survey_and_eng_model,
     factory_survey_report_setting_model)
 
 
@@ -179,6 +179,39 @@ def test_get_comments_grouped_internal_needs_the_role(client, session):  # pylin
 
     rv = client.get(f'/api/comments/survey/{survey.id}/grouped?dashboard_type=internal',
                     content_type=ContentType.JSON.value)
+
+    assert rv.status_code == 200
+    assert rv.json == []
+
+
+def test_get_comments_grouped_internal_for_an_assigned_team_member(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a Team Member assigned to the engagement sees its internal view without the global role."""
+    survey = _hidden_question_survey()
+    claims = TestJwtClaims.team_member_role.value
+    user = factory_staff_user_model(external_id=claims['sub'])
+    factory_membership_model(user_id=user.id, engagement_id=survey.engagement_id)
+    headers = factory_auth_header(jwt=jwt, claims=claims)
+
+    rv = client.get(f'/api/comments/survey/{survey.id}/grouped?dashboard_type=internal',
+                    headers=headers, content_type=ContentType.JSON.value)
+
+    assert rv.status_code == 200
+    assert [group['key'] for group in rv.json] == ['simpletextarea1']
+
+
+def test_get_comments_grouped_internal_not_for_an_unassigned_team_member(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a Team Member on some other engagement still gets the public view."""
+    survey = _hidden_question_survey()
+    _, other_eng = factory_survey_and_eng_model()
+    claims = TestJwtClaims.team_member_role.value
+    user = factory_staff_user_model(external_id=claims['sub'])
+    factory_membership_model(user_id=user.id, engagement_id=other_eng.id)
+    headers = factory_auth_header(jwt=jwt, claims=claims)
+
+    rv = client.get(f'/api/comments/survey/{survey.id}/grouped?dashboard_type=internal',
+                    headers=headers, content_type=ContentType.JSON.value)
 
     assert rv.status_code == 200
     assert rv.json == []

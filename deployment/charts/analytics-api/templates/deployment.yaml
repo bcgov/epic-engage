@@ -108,6 +108,8 @@ spec:
                   key: secret-access-key
             - name: CORS_ORIGIN
               value: {{ .Values.corsOrigin }}
+            - name: MET_API_URL
+              value: {{ .Values.metApiUrl }}
         envFrom:
             - configMapRef:
                 name: jwt-oidc
