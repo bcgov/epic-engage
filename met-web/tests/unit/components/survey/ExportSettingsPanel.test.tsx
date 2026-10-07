@@ -7,6 +7,7 @@ import {
     ExportSettingsPanel,
     FREE_TEXT_PAGES_DISCLAIMER,
     HIDDEN_IN_REPORT_NOTICE,
+    freeTextPagesDisclaimer,
 } from 'components/admin/survey/building/ExportSettingsPanel';
 import {
     CLOSED_ENGAGEMENT_TOOLTIP,
@@ -104,7 +105,10 @@ describe('ExportSettingsPanel tests', () => {
         renderPanel();
 
         await waitFor(() => expect(screen.getByText('Please specify')).toBeVisible());
-        expect(screen.getByText(FREE_TEXT_PAGES_DISCLAIMER)).toBeVisible();
+        const section = screen.getByTestId('export-page-stepper-section');
+        expect(within(section).getByText(`${FREE_TEXT_PAGES_DISCLAIMER} Page 2 (Choices) is skipped.`)).toBeVisible();
+        // Steps keep the form's page numbers: Demographics is 1, Final is 3.
+        expect(within(section).getByText('3')).toBeVisible();
         expect(screen.queryByText('Where do you live?')).not.toBeInTheDocument();
         expect(screen.getByText('Follow-up to: Where do you live?')).toBeVisible();
         expect(screen.getByText('Page 1 of 2')).toBeVisible();
@@ -118,7 +122,33 @@ describe('ExportSettingsPanel tests', () => {
         renderPanel({ formDefinition: singlePage('5') });
 
         await waitFor(() => expect(screen.getByText('Final thoughts')).toBeVisible());
-        expect(screen.getByText(FREE_TEXT_PAGES_DISCLAIMER)).toBeVisible();
+        expect(
+            within(screen.getByTestId('export-page-stepper-section')).getByText(FREE_TEXT_PAGES_DISCLAIMER),
+        ).toBeVisible();
+    });
+
+    test('The disclaimer names every skipped page', () => {
+        const skipped = (pageNumber: number, title: string) => ({ pageNumber, title, items: [] });
+
+        expect(freeTextPagesDisclaimer([])).toBe(FREE_TEXT_PAGES_DISCLAIMER);
+        expect(freeTextPagesDisclaimer([skipped(4, 'Project Location'), skipped(6, 'Engagement Plan')])).toBe(
+            `${FREE_TEXT_PAGES_DISCLAIMER} Pages 4 (Project Location) and 6 (Engagement Plan) are skipped.`,
+        );
+        expect(freeTextPagesDisclaimer([skipped(2, 'Page 2')])).toBe(
+            `${FREE_TEXT_PAGES_DISCLAIMER} Page 2 is skipped.`,
+        );
+    });
+
+    test('A card left out of the export is greyed out until toggled back on', async () => {
+        renderPanel();
+        await waitFor(() => expect(screen.getByText('Please specify')).toBeVisible());
+        const body = () => screen.getByText('Please specify').closest('[inert]');
+
+        expect(body()).toBeNull();
+        fireEvent.click(toggle(2));
+        expect(body()).not.toBeNull();
+        fireEvent.click(toggle(2));
+        expect(body()).toBeNull();
     });
 
     test('A question hidden in the public report is locked off, with a working link back', async () => {

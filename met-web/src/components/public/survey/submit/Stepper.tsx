@@ -52,7 +52,10 @@ function FormStepper({ currentPage, pages, onStepClick, ...rest }: ProgressBarPr
                     return (
                         <Step key={index} completed={clickable ? index < currentPage : undefined}>
                             {clickable ? (
-                                <StepButton onClick={() => onStepClick?.(index)} icon={index + 1}>
+                                <StepButton
+                                    onClick={() => onStepClick?.(index)}
+                                    icon={(page.pageNumber as number | undefined) ?? index + 1}
+                                >
                                     <StepLabel StepIconComponent={NumberStepIcon}>{label}</StepLabel>
                                 </StepButton>
                             ) : (
