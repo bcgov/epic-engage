@@ -73,6 +73,24 @@ spec:
                 configMapKeyRef:
                   name: met-api
                   key: EMAIL_SECRET_KEY
+            - name: IS_EAO_ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: met-api
+                  key: IS_EAO_ENVIRONMENT
+                  optional: true
+            # Only the keys the EPIC push reads; met-api loads the whole secret.
+            {{- range list "EPIC_URL" "EPIC_MILESTONE" "EPIC_KC_CLIENT_ID" "EPIC_KEYCLOAK_SERVICE_ACCOUNT_ID" "EPIC_KEYCLOAK_SERVICE_ACCOUNT_SECRET" "EPIC_JWT_OIDC_ISSUER" }}
+            - name: {{ . }}
+              valueFrom:
+                secretKeyRef:
+                  name: epic-keycloak-details
+                  key: {{ . }}
+                  optional: true
+            {{- end }}
+        envFrom:
+          - configMapRef:
+              name: {{ .Chart.Name }}
         ports:
           - containerPort: 8080
             protocol: TCP

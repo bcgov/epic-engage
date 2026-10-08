@@ -161,6 +161,17 @@ class _Config():  # pylint: disable=too-few-public-methods
     # This flag decides if additional tenant based checks has to be carried or not
     IS_SINGLE_TENANT_ENVIRONMENT = os.getenv('IS_SINGLE_TENANT_ENVIRONMENT', 'False').lower() == 'true'
 
+    # EAO EPIC configs, parsed as met-api does: its ProjectService reads them from this
+    # config and skips the EPIC push in the publish and close-out jobs when they are missing.
+    IS_EAO_ENVIRONMENT = os.getenv('IS_EAO_ENVIRONMENT', 'False').lower() == 'true'
+
+    EPIC_KEYCLOAK_SERVICE_ACCOUNT_ID = os.getenv('EPIC_KEYCLOAK_SERVICE_ACCOUNT_ID')
+    EPIC_KEYCLOAK_SERVICE_ACCOUNT_SECRET = os.getenv('EPIC_KEYCLOAK_SERVICE_ACCOUNT_SECRET')
+    EPIC_JWT_OIDC_ISSUER = os.getenv('EPIC_JWT_OIDC_ISSUER')
+    EPIC_URL = os.getenv('EPIC_URL')
+    EPIC_MILESTONE = os.getenv('EPIC_MILESTONE')
+    EPIC_KC_CLIENT_ID = os.getenv('EPIC_KC_CLIENT_ID')
+
     # Closing Soon Email Service
     ENGAGEMENT_CLOSING_SOON_EMAIL_TEMPLATE_ID = os.getenv('ENGAGEMENT_CLOSING_SOON_EMAIL_TEMPLATE_ID')
     ENGAGEMENT_CLOSING_SOON_EMAIL_SUBJECT = os.getenv('ENGAGEMENT_CLOSING_SOON_EMAIL_SUBJECT',
