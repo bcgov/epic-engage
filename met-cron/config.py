@@ -172,6 +172,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     EPIC_MILESTONE = os.getenv('EPIC_MILESTONE')
     EPIC_KC_CLIENT_ID = os.getenv('EPIC_KC_CLIENT_ID')
 
+    # DEMI push, same keys and defaults as met-api. EPIC_SYNC_TARGET is eagle, both or demi.
+    DEMI_API_URL = os.getenv('DEMI_API_URL', '').strip()
+    DEMI_API_KEY = os.getenv('DEMI_API_KEY', '').strip()
+    EPIC_SYNC_TARGET = os.getenv('EPIC_SYNC_TARGET', 'eagle').strip().lower()
+
     # Closing Soon Email Service
     ENGAGEMENT_CLOSING_SOON_EMAIL_TEMPLATE_ID = os.getenv('ENGAGEMENT_CLOSING_SOON_EMAIL_TEMPLATE_ID')
     ENGAGEMENT_CLOSING_SOON_EMAIL_SUBJECT = os.getenv('ENGAGEMENT_CLOSING_SOON_EMAIL_SUBJECT',

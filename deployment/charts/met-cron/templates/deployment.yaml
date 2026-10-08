@@ -79,6 +79,12 @@ spec:
                   name: met-api
                   key: IS_EAO_ENVIRONMENT
                   optional: true
+            - name: DEMI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: demi-api-details
+                  key: DEMI_API_KEY
+                  optional: true
             # Only the keys the EPIC push reads; met-api loads the whole secret.
             {{- range list "EPIC_URL" "EPIC_MILESTONE" "EPIC_KC_CLIENT_ID" "EPIC_KEYCLOAK_SERVICE_ACCOUNT_ID" "EPIC_KEYCLOAK_SERVICE_ACCOUNT_SECRET" "EPIC_JWT_OIDC_ISSUER" }}
             - name: {{ . }}

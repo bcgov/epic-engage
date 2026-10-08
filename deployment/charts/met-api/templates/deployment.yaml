@@ -119,6 +119,12 @@ spec:
               configMapKeyRef:
                 key: EMAIL_SECRET_KEY
                 name: met-api
+          - name: DEMI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                key: DEMI_API_KEY
+                name: demi-api-details
+                optional: true
         envFrom:
           - configMapRef:
               name: met-api
@@ -130,8 +136,6 @@ spec:
               name: engage-service-account
           - secretRef:
               name: met-cdogs-secret
-          - secretRef:
-              name: epic-keycloak-details
           - secretRef:
               name: epic-keycloak-details
         ports:

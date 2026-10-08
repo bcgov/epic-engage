@@ -60,6 +60,7 @@ def run(job_name):
     from met_cron.services.job_log_service import JobLogService
     from tasks.closing_soon_mailer import EngagementClosingSoonMailer
     from tasks.met_closeout import MetEngagementCloseout
+    from tasks.met_demi_backfill import MetDemiBackfill
     from tasks.met_publish import MetEngagementPublish
     from tasks.met_purge import MetPurge
     from tasks.met_comment_redact import MetCommentRedact
@@ -73,6 +74,8 @@ def run(job_name):
         'COMMENT_REDACT': MetCommentRedact.do_redact,
         'PUBLISH_EMAIL': SubscriptionMailer.do_email,
         'CLOSING_SOON_EMAIL': EngagementClosingSoonMailer.do_email,
+        # Manual only, no crontab entry: run_met_demi_backfill.sh
+        'ENGAGEMENT_DEMI_BACKFILL': MetDemiBackfill.do_backfill,
     }
 
     with application.app_context():

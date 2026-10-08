@@ -243,6 +243,12 @@ class _Config():  # pylint: disable=too-few-public-methods
     EPIC_MILESTONE = os.getenv('EPIC_MILESTONE')
     EPIC_KC_CLIENT_ID = os.getenv('EPIC_KC_CLIENT_ID')
 
+    # Where comment period pushes go: eagle, demi, or both (shadow mode during cutover).
+    # Stripped because a stray newline from a secret makes the key an invalid header value.
+    EPIC_SYNC_TARGET = os.getenv('EPIC_SYNC_TARGET', 'eagle').strip().lower()
+    DEMI_API_URL = os.getenv('DEMI_API_URL', '').strip()
+    DEMI_API_KEY = os.getenv('DEMI_API_KEY', '').strip()
+
     # Timezone in BC
     LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
 
