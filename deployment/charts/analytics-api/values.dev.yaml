@@ -5,6 +5,7 @@ image:
   tag: "dev"
 
 corsOrigin: 'https://epic-engage-web-dev.apps.gold.devops.gov.bc.ca/,https://epic-engage-web-dev.apps.gold.devops.gov.bc.ca,http://localhost:4300,https://dev.engage.eao.gov.bc.ca'
+metApiUrl: 'http://met-api:8080/api'
 resources:
   cpu:
     limit: 100m

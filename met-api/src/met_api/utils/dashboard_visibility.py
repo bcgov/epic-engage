@@ -15,14 +15,39 @@
 from flask import request
 
 from met_api.constants.dashboard_type import DashboardType
+from met_api.models.membership import Membership as MembershipModel
+from met_api.models.staff_user import StaffUser as StaffUserModel
+from met_api.models.survey import Survey as SurveyModel
+from met_api.utils.enums import MembershipStatus
 from met_api.utils.roles import Role
 from met_api.utils.token_info import TokenInfo
 
 
-def include_hidden_questions() -> bool:
+def include_hidden_questions(survey_id) -> bool:
     """Whether the current request should see questions staff excluded from the public report."""
     requested = request.args.get('dashboard_type', DashboardType.PUBLIC.value)
     if requested != DashboardType.INTERNAL.value:
         return False
 
-    return Role.VIEW_ALL_SURVEY_RESULTS.value in TokenInfo.get_user_roles()
+    if Role.VIEW_ALL_SURVEY_RESULTS.value in TokenInfo.get_user_roles():
+        return True
+
+    return _is_assigned_to_survey_engagement(survey_id)
+
+
+def _is_assigned_to_survey_engagement(survey_id) -> bool:
+    external_id = TokenInfo.get_id()
+    if not external_id:
+        return False
+
+    survey = SurveyModel.find_by_id(survey_id)
+    if not survey or not survey.engagement_id:
+        return False
+
+    user = StaffUserModel.get_user_by_external_id(external_id)
+    if not user:
+        return False
+
+    membership = MembershipModel.find_by_engagement_and_user_id(
+        survey.engagement_id, user.id, status=MembershipStatus.ACTIVE.value)
+    return membership is not None

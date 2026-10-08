@@ -706,6 +706,69 @@ def test_get_survey_dashboard_internal_view_needs_the_role(client, session):  # 
     assert rv.json.get('conditional_links') == {}
 
 
+def _survey_with_a_hidden_followup():
+    """Build a survey whose conditional follow-up is switched off in the public report."""
+    survey, eng = factory_survey_and_eng_model(wizard_survey_info_with_conditional)
+    factory_survey_report_setting_model({
+        'survey_id': survey.id,
+        'question_id': 'followup1',
+        'question_key': 'followup1',
+        'question_type': 'simpletextarea',
+        'question': 'Please specify',
+        'display': False,
+    })
+    return survey, eng
+
+
+def test_get_survey_dashboard_internal_for_an_assigned_team_member(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a Team Member assigned to the engagement gets the internal view without the global role."""
+    survey, eng = _survey_with_a_hidden_followup()
+    claims = TestJwtClaims.team_member_role.value
+    user = factory_staff_user_model(external_id=claims['sub'])
+    factory_membership_model(user_id=user.id, engagement_id=eng.id)
+    headers = factory_auth_header(jwt=jwt, claims=claims)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard?dashboard_type=internal',
+                    headers=headers, content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert list(rv.json.get('conditional_links')) == ['followup1']
+
+
+def test_get_survey_dashboard_internal_not_for_an_unassigned_team_member(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a Team Member assigned only elsewhere still gets the public view."""
+    survey, _ = _survey_with_a_hidden_followup()
+    _, other_eng = factory_survey_and_eng_model()
+    claims = TestJwtClaims.team_member_role.value
+    user = factory_staff_user_model(external_id=claims['sub'])
+    factory_membership_model(user_id=user.id, engagement_id=other_eng.id)
+    headers = factory_auth_header(jwt=jwt, claims=claims)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard?dashboard_type=internal',
+                    headers=headers, content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('conditional_links') == {}
+
+
+def test_get_survey_dashboard_internal_not_for_a_revoked_team_member(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a Team Member whose membership was revoked loses the internal view."""
+    survey, eng = _survey_with_a_hidden_followup()
+    claims = TestJwtClaims.team_member_role.value
+    user = factory_staff_user_model(external_id=claims['sub'])
+    factory_membership_model(user_id=user.id, engagement_id=eng.id, status=MembershipStatus.REVOKED.value)
+    headers = factory_auth_header(jwt=jwt, claims=claims)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard?dashboard_type=internal',
+                    headers=headers, content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json.get('conditional_links') == {}
+
+
 def test_get_survey_dashboard_displayed_question_keeps_its_conditional_link(
         client, session):  # pylint:disable=unused-argument
     """Assert that a report setting left switched on changes nothing."""

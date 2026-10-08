@@ -15,13 +15,12 @@
 
 from http import HTTPStatus
 
-from flask import jsonify
+from flask import current_app, jsonify
 from flask_cors import cross_origin
 from flask_restx import Namespace, Resource
 
 from analytics_api.auth import jwt as _jwt
 from analytics_api.utils import engagement_access_validator
-from analytics_api.utils.roles import Role
 from analytics_api.services.survey_result import SurveyResultService
 from analytics_api.utils.util import allowedorigins, cors_preflight
 
@@ -46,6 +45,21 @@ def _withheld_report_response(engagement_id):
     }, HTTPStatus.FORBIDDEN
 
 
+def _internal_report_denied_response(engagement_id):
+    """Say why the caller may not read this internal report, or None when they may."""
+    try:
+        reason = engagement_access_validator.get_internal_report_denial_reason(engagement_id)
+    except engagement_access_validator.MembershipCheckError as err:
+        current_app.logger.error('Engagement membership check against met-api failed: %s', err)
+        return {'message': 'Could not check engagement membership.'}, HTTPStatus.SERVICE_UNAVAILABLE
+    if not reason:
+        return None
+    return {
+        'message': "You aren't assigned to this engagement.",
+        'reason': reason,
+    }, HTTPStatus.FORBIDDEN
+
+
 @cors_preflight('GET,OPTIONS')
 @API.route('/<engagement_id>/internal')
 class SurveyResultInternal(Resource):
@@ -53,10 +67,14 @@ class SurveyResultInternal(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @_jwt.has_one_of_roles([Role.VIEW_ALL_SURVEY_RESULTS.value])
+    @_jwt.requires_auth
     def get(engagement_id):
         """Fetch survey result for a single engagement id."""
         try:
+            denied = _internal_report_denied_response(engagement_id)
+            if denied:
+                return denied
+
             withheld = _withheld_report_response(engagement_id)
             if withheld:
                 return withheld

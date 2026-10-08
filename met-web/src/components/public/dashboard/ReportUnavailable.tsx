@@ -16,6 +16,15 @@ const STAFF_GUIDANCE: Partial<Record<UnavailableReason, string>> = {
     [UNAVAILABLE_REASON.SEND_REPORT_OFF]:
         "Turn on Send Report under the engagement's Settings tab to make this report public.",
     [UNAVAILABLE_REASON.ENGAGEMENT_UNPUBLISHED]: 'Publish this engagement again to make this report public.',
+    [UNAVAILABLE_REASON.NOT_ASSIGNED]: 'Ask a Superuser to add you to the engagement team to view its internal report.',
+};
+
+const NOT_PUBLIC = 'The report for this engagement has not been made public.';
+const EXPLANATION: Record<UnavailableReason, string> = {
+    [UNAVAILABLE_REASON.SEND_REPORT_OFF]: NOT_PUBLIC,
+    [UNAVAILABLE_REASON.ENGAGEMENT_UNPUBLISHED]: NOT_PUBLIC,
+    [UNAVAILABLE_REASON.NOT_ASSIGNED]: "You aren't assigned to this engagement.",
+    [UNAVAILABLE_REASON.UNKNOWN]: 'The report for this engagement is not available right now.',
 };
 
 /**
@@ -34,7 +43,7 @@ export const ReportUnavailable = ({ reason }: ReportUnavailableProps) => {
                 <InfoOutlinedIcon sx={{ color: Palette.primary.main, mt: '2px' }} />
                 <Box>
                     <MetHeader4 sx={{ mb: 1 }}>This report isn&apos;t available</MetHeader4>
-                    <MetBody>The report for this engagement has not been made public.</MetBody>
+                    <MetBody>{EXPLANATION[reason]}</MetBody>
                     {staffGuidance && (
                         <MetBody data-testid="report-unavailable-staff-guidance" sx={{ mt: 2 }}>
                             {staffGuidance}

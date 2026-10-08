@@ -2,6 +2,7 @@ import Stack from '@mui/material/Stack';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from 'hooks';
 import { USER_ROLES } from 'services/userService/constants';
+import { canViewInternalReport } from 'services/userService/reportAccess';
 import { SubmissionStatus } from 'constants/engagementStatus';
 import { SurveyListItem } from 'models/survey';
 import { SecondaryButton } from 'components/shared/common';
@@ -17,7 +18,7 @@ export const ReportButtons = ({ survey }: { survey: SurveyListItem }) => {
     const canAccess = roles.includes(USER_ROLES.ACCESS_DASHBOARD) || assignedEngagements.includes(engagementId);
 
     const canViewPublic = submissionHasBeenOpened && canAccess;
-    const canViewInternal = canViewPublic && roles.includes(USER_ROLES.VIEW_ALL_SURVEY_RESULTS);
+    const canViewInternal = canViewPublic && canViewInternalReport(roles, assignedEngagements, engagementId);
 
     return (
         <Stack direction="row" spacing={1}>

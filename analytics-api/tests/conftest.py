@@ -16,7 +16,8 @@ import pytest
 from sqlalchemy import event, text
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from analytics_api import create_app
+from analytics_api import create_app, setup_jwt_manager
+from analytics_api.auth import jwt as _jwt
 from analytics_api.models import db as _db
 from flask_migrate import Migrate, upgrade
 
@@ -27,6 +28,13 @@ def app():
     _app = create_app('testing')
 
     return _app
+
+
+@pytest.fixture(scope='session', autouse=True)
+def jwt(app):  # pylint: disable=redefined-outer-name
+    """Return a JWT Manager that signs and accepts test tokens."""
+    setup_jwt_manager(app, _jwt)
+    return _jwt
 
 
 @pytest.fixture(scope='function')

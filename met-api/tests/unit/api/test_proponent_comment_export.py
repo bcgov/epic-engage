@@ -16,6 +16,7 @@
 The export carries only approved comments on free-text questions that are shown in the public
 report and switched on for the export, grouped by question within their survey page.
 """
+import copy
 from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
@@ -168,6 +169,19 @@ def test_proponent_export_forbidden_for_unassigned_team_member(client, jwt, sess
     factory_staff_user_model(TestJwtClaims.team_member_role.get('sub'))
 
     rv = _export(client, jwt, survey.id, claims=TestJwtClaims.team_member_role)
+
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+
+
+def test_proponent_export_forbidden_for_unassigned_team_member_with_export_all_to_csv(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert the Team Member group's export_all_to_csv role does not open other engagements' exports."""
+    survey, _ = _survey_with_settings()
+    factory_staff_user_model(TestJwtClaims.team_member_role.get('sub'))
+    claims = copy.deepcopy(TestJwtClaims.team_member_role.value)
+    claims['realm_access']['roles'].append('export_all_to_csv')
+
+    rv = _export(client, jwt, survey.id, claims=claims)
 
     assert rv.status_code == HTTPStatus.FORBIDDEN
 

@@ -17,7 +17,6 @@ import { getUserResponseDetailByMonth } from 'services/analytics/userResponseDet
 import { getProponentCommentSheet } from 'services/commentService';
 import { getDashboardDataSheet } from 'services/surveyService';
 import { fetchSurveyReportSettings } from 'services/surveyService/reportSettingsService';
-import { USER_ROLES } from 'services/userService/constants';
 import { openNotification } from 'services/notificationService/notificationSlice';
 import { useAppDispatch, useAppSelector } from 'hooks';
 import { DashboardType } from 'constants/dashboardType';
@@ -59,13 +58,9 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
     const { dashboardType } = useContext(DashboardContext);
     const dispatch = useAppDispatch();
     const isAuthenticated = useAppSelector((state) => state.user.authentication.authenticated);
-    const roles = useAppSelector((state) => state.user.roles);
     const userDetail = useAppSelector((state) => state.user.userDetail);
     const assignedEngagements = useAppSelector((state) => state.user.assignedEngagements);
-    const canExport =
-        dashboardType === DashboardType.INTERNAL &&
-        isAuthenticated &&
-        roles.includes(USER_ROLES.VIEW_ALL_SURVEY_RESULTS);
+    const canExport = dashboardType === DashboardType.INTERNAL && isAuthenticated;
     // The internal export includes rejected comments, so only Superusers may download it.
     const isSuperuser = isSuperuserGroup(userDetail.groups);
     // The chart images and the Public/Proponent comment export only ever hold what is cleared for the public,

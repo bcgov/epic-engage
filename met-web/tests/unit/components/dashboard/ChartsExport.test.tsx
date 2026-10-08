@@ -106,9 +106,13 @@ describe('export file names', () => {
 });
 
 describe('Internal report export menu', () => {
+    const GROUP_ROLES: Record<string, string[]> = {
+        '/ENGAGE/EAO_IT_ADMIN': [USER_ROLES.ACCESS_DASHBOARD, USER_ROLES.VIEW_ALL_SURVEY_RESULTS],
+        '/ENGAGE/EAO_TEAM_MEMBER': [USER_ROLES.ACCESS_DASHBOARD, USER_ROLES.EXPORT_PROPONENT_COMMENT_SHEET],
+    };
     const renderHeader = (group: string, assigned: number[]) => {
         store.dispatch(userAuthentication(true));
-        store.dispatch(userRoles([USER_ROLES.VIEW_ALL_SURVEY_RESULTS]));
+        store.dispatch(userRoles(GROUP_ROLES[group]));
         store.dispatch(userDetails({ sub: '', email_verified: true, preferred_username: '', groups: [group] }));
         store.dispatch(assignedEngagements(assigned));
         render(
