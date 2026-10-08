@@ -204,9 +204,8 @@ class ProjectService:
 
             if project_type == 'notification':
                 # Every configured target sends notifications to Eagle; only an explicit DEMI-only call skips them.
-                if targets is not None and 'eagle' not in targets:
-                    return None
-                return ProjectService._update_project_notification(
+                skip = targets is not None and 'eagle' not in targets
+                return None if skip else ProjectService._update_project_notification(
                     engagement, project_id, eao_service_account_token, engagement_metadata
                 )
 
@@ -331,10 +330,9 @@ class ProjectService:
             project_type = ProjectService._get_project_type(project_id, eao_service_account_token)
 
             if project_type == 'notification':
-                if not tracking_id:
-                    return True
-                return ProjectService._delete_project_notification(project_id, eao_service_account_token,
-                                                                   eng_id, engagement_metadata)
+                # Without a tracking id nothing was ever written to the notification.
+                return not tracking_id or ProjectService._delete_project_notification(
+                    project_id, eao_service_account_token, eng_id, engagement_metadata)
 
             ok = True
             if to_eagle and tracking_id:
