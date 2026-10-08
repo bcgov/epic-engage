@@ -336,7 +336,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                             <Typography
                                                 sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}
                                             >
-                                                Raw and aggregated survey data across 4 sheets
+                                                Raw and aggregated survey data across 5 sheets
                                             </Typography>
                                         </Box>
                                     </MenuItem>

@@ -17,7 +17,7 @@
 Test-Suite to ensure that the /Engagement endpoint is working as expected.
 """
 import copy
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from http import HTTPStatus
 from io import BytesIO
 import json
@@ -27,14 +27,17 @@ from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 import pytest
 
+from met_api.constants.comment_status import Status as CommentStatus
 from met_api.constants.engagement_status import Status
 from met_api.models.engagement import Engagement as EngagementModel
+from met_api.models.engagement_metadata import EngagementMetadataModel
 from met_api.models.membership import Membership as MembershipModel
 from met_api.models.tenant import Tenant as TenantModel
 from met_api.services.dashboard_export_service import (
-    AGGREGATE_COLUMNS, AGGREGATE_HEADER_ROW, ALL_DATA, COMMENT_DATA_START_ROW, DASHBOARD_SHEETS,
-    DATA_START_ROW, OPTION_LABEL_ROW, PAGE_TITLE_ROW, QUALITATIVE_RESPONSES,
-    QUANTITATIVE_AGGREGATED, QUANTITATIVE_NON_AGGREGATED, QUESTION_TITLE_ROW, QUESTION_TYPE_ROW)
+    AGGREGATE_COLUMNS, AGGREGATE_HEADER_ROW, ALL_DATA, APPROVED_QUALITATIVE, COMMENT_AUDIT,
+    COMMENT_DATA_START_ROW, DASHBOARD_SHEETS, DATA_START_ROW, DESCRIPTION_ROW, OPTION_LABEL_ROW,
+    PAGE_TITLE_ROW, QUANTITATIVE_AGGREGATED, QUANTITATIVE_NON_AGGREGATED, QUESTION_TITLE_ROW,
+    QUESTION_TYPE_ROW)
 from met_api.utils.constants import TENANT_ID_HEADER
 from met_api.utils.enums import ContentType, MembershipStatus
 from met_api.utils.export_styles import (
@@ -50,6 +53,9 @@ from tests.utilities.factory_utils import (
 
 
 surveys_url = '/api/surveys/'
+
+# The dashboard export is for Superusers alone, which the token's groups claim decides.
+superuser_claims = {**TestJwtClaims.staff_admin_role.value, 'groups': ['/ENGAGE/EAO_IT_ADMIN']}
 
 
 @pytest.mark.parametrize('survey_info', [TestSurveyInfo.survey1])
@@ -772,23 +778,36 @@ def test_get_survey_dashboard_survey_not_found(client, session):  # pylint:disab
 
 
 def test_get_survey_dashboard_sheet(client, jwt, session):  # pylint:disable=unused-argument
-    """Assert that the dashboard export returns a workbook with the four labelled sheets."""
+    """Assert that the dashboard export returns five sheets, each opening with its description."""
     survey, _ = factory_survey_and_eng_model()
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    headers = factory_auth_header(jwt=jwt, claims=superuser_claims)
 
     rv = client.get(f'{surveys_url}{survey.id}/dashboard/sheet', headers=headers,
                     content_type=ContentType.JSON.value)
 
     assert rv.status_code == HTTPStatus.OK
     workbook = load_workbook(BytesIO(rv.data))
-    assert workbook.sheetnames == [sheet.tab_name for sheet in DASHBOARD_SHEETS]
-    # Excel caps tab names at 31 characters, so "All Data" is the shortened form of its title.
-    assert [sheet.title for sheet in DASHBOARD_SHEETS] == [
-        'Quantitative - Non-aggregated',
+    assert workbook.sheetnames == [
+        'Quantitative - Non-agg',
         'Quantitative - Aggregated',
-        'All Data (Quantitative and Qualitative)',
-        'Qualitative Responses',
+        'All Data',
+        'Approved Qualitative Responses',
+        'Comment Audit',
     ]
+    for sheet in DASHBOARD_SHEETS:
+        assert workbook[sheet.tab_name].cell(row=DESCRIPTION_ROW, column=1).value == sheet.description
+    assert COMMENT_AUDIT.description.startswith('Complete record of all responses')
+
+
+def test_get_survey_dashboard_sheet_needs_superuser(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that the export role alone is not enough: the Superuser group is required."""
+    survey, _ = factory_survey_and_eng_model()
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.FORBIDDEN
 
 
 def test_get_survey_dashboard_sheet_unauthorized(client, jwt, session):  # pylint:disable=unused-argument
@@ -804,7 +823,7 @@ def test_get_survey_dashboard_sheet_unauthorized(client, jwt, session):  # pylin
 
 def test_get_survey_dashboard_sheet_survey_not_found(client, jwt, session):  # pylint:disable=unused-argument
     """Assert that exporting a nonexistent survey returns 404."""
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    headers = factory_auth_header(jwt=jwt, claims=superuser_claims)
 
     rv = client.get(f'{surveys_url}999999999/dashboard/sheet', headers=headers,
                     content_type=ContentType.JSON.value)
@@ -857,7 +876,7 @@ quantitative_survey_info = {
 
 def _export_workbook(client, jwt, survey_id):
     """Fetch the dashboard export and return its non-aggregated worksheet."""
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    headers = factory_auth_header(jwt=jwt, claims=superuser_claims)
     rv = client.get(f'{surveys_url}{survey_id}/dashboard/sheet', headers=headers,
                     content_type=ContentType.JSON.value)
     assert rv.status_code == HTTPStatus.OK
@@ -889,7 +908,7 @@ def test_dashboard_sheet_header_structure(client, jwt, session):  # pylint:disab
     # Each page is bannered across its own columns.
     assert sheet.cell(row=PAGE_TITLE_ROW, column=3).value == 'Page 1 - Demographics'
     assert sheet.cell(row=PAGE_TITLE_ROW, column=5).value == 'Page 2 - Outreach'
-    assert {str(r) for r in sheet.merged_cells.ranges} == {'C1:D1', 'E1:J1'}
+    assert {str(r) for r in sheet.merged_cells.ranges} == {'C2:D2', 'E2:J2'}
 
 
 def test_dashboard_sheet_respondent_rows(client, jwt, session):  # pylint:disable=unused-argument
@@ -981,7 +1000,7 @@ def test_dashboard_sheet_unanswered_questions_stay_blank(client, jwt, session): 
 
 def _aggregated_sheet(client, jwt, survey_id):
     """Fetch the dashboard export and return its aggregated worksheet."""
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    headers = factory_auth_header(jwt=jwt, claims=superuser_claims)
     rv = client.get(f'{surveys_url}{survey_id}/dashboard/sheet', headers=headers,
                     content_type=ContentType.JSON.value)
     assert rv.status_code == HTTPStatus.OK
@@ -1020,7 +1039,8 @@ def test_dashboard_aggregated_sheet_header_and_banners(client, jwt, session):  #
     question_banner = sheet.cell(row=AGGREGATE_HEADER_ROW + 2, column=1)
     assert question_banner.value == 'What is your age?'
     assert question_banner.fill.fgColor.rgb[2:] == QUESTION_BANNER_COLOUR
-    assert f'A2:{get_column_letter(len(AGGREGATE_COLUMNS))}2' in {
+    banner_row = AGGREGATE_HEADER_ROW + 1
+    assert f'A{banner_row}:{get_column_letter(len(AGGREGATE_COLUMNS))}{banner_row}' in {
         str(r) for r in sheet.merged_cells.ranges
     }
     # Each page banner takes its own page colour.
@@ -1116,7 +1136,7 @@ conditional_comment_survey_info = {
 
 def _all_data_sheet(client, jwt, survey_id):
     """Fetch the dashboard export and return its combined worksheet."""
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    headers = factory_auth_header(jwt=jwt, claims=superuser_claims)
     rv = client.get(f'{surveys_url}{survey_id}/dashboard/sheet', headers=headers,
                     content_type=ContentType.JSON.value)
     assert rv.status_code == HTTPStatus.OK
@@ -1131,9 +1151,9 @@ def test_all_data_sheet_combines_quantitative_and_free_text(client, jwt, session
     sheet = _all_data_sheet(client, jwt, survey.id)
 
     # The quantitative sheet's 8 question columns, plus the survey's one free-text question.
-    assert sheet.max_column == 3 + 9
+    assert sheet.max_column == 4 + 9
     assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == [
-        'Respondent ID', 'Submissions', 'Comment ID',
+        'Respondent ID', 'Comment Status', 'Submissions', 'Comment ID',
         'What is your age?', 'How often?', 'Rate each method', 'Rate each method',
         'Rank these', 'Rank these', 'Which activities?', 'Which activities?', 'Anything else?',
     ]
@@ -1158,27 +1178,27 @@ def test_all_data_sheet_keeps_every_respondent(client, jwt, session):  # pylint:
     assert [sheet.cell(row=r, column=1).value
             for r in (DATA_START_ROW, DATA_START_ROW + 1)] == ['R-0001-01', 'R-0002-01']
     # The comment id is the submission id the review screens label the submission by.
-    assert [sheet.cell(row=r, column=3).value
+    assert [sheet.cell(row=r, column=4).value
             for r in (DATA_START_ROW, DATA_START_ROW + 1)] == [s.id for s in submissions]
     # The second respondent is present with their quantitative answer but no comment.
-    assert sheet.cell(row=DATA_START_ROW + 1, column=4).value == '18-34'
-    assert sheet.cell(row=DATA_START_ROW + 1, column=12).value is None
+    assert sheet.cell(row=DATA_START_ROW + 1, column=5).value == '18-34'
+    assert sheet.cell(row=DATA_START_ROW + 1, column=13).value is None
 
 
 def _qualitative_sheet(client, jwt, survey_id):
     """Fetch the dashboard export and return its qualitative worksheet."""
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
+    headers = factory_auth_header(jwt=jwt, claims=superuser_claims)
     rv = client.get(f'{surveys_url}{survey_id}/dashboard/sheet', headers=headers,
                     content_type=ContentType.JSON.value)
     assert rv.status_code == HTTPStatus.OK
-    return load_workbook(BytesIO(rv.data))[QUALITATIVE_RESPONSES.tab_name]
+    return load_workbook(BytesIO(rv.data))[APPROVED_QUALITATIVE.tab_name]
 
 
 def test_dashboard_qualitative_sheet_structure(client, jwt, session):  # pylint:disable=unused-argument
     """Assert two header rows holding only free-text questions, and pages that keep their number."""
     survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
     submission = factory_submission_model(survey.id, eng.id, factory_participant_model().id,
-                                          {**TestSubmissionInfo.submission1.value,
+                                          {**TestSubmissionInfo.approved_submission.value,
                                            'submission_json': {'age': 'a1', 'notes': 'Some feedback'}})
 
     sheet = _qualitative_sheet(client, jwt, survey.id)
@@ -1200,7 +1220,7 @@ def test_dashboard_qualitative_sheet_lists_only_commenters(client, jwt, session)
     survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
     for answers in ({'notes': 'First'}, {'age': 'a1'}, {'notes': 'Third'}):
         factory_submission_model(survey.id, eng.id, factory_participant_model().id,
-                                 {**TestSubmissionInfo.submission1.value, 'submission_json': answers})
+                                 {**TestSubmissionInfo.approved_submission.value, 'submission_json': answers})
 
     sheet = _qualitative_sheet(client, jwt, survey.id)
 
@@ -1217,7 +1237,7 @@ def test_dashboard_qualitative_sheet_labels_follow_ups(client, jwt, session):  #
     """Assert follow-ups sharing a label are told apart by the option that triggers them."""
     survey, eng = factory_survey_and_eng_model(conditional_comment_survey_info)
     factory_submission_model(survey.id, eng.id, factory_participant_model().id,
-                             {**TestSubmissionInfo.submission1.value,
+                             {**TestSubmissionInfo.approved_submission.value,
                               'submission_json': {'vc': 'air', 'why1': 'Air matters'}})
 
     sheet = _qualitative_sheet(client, jwt, survey.id)
@@ -1271,3 +1291,139 @@ def test_dashboard_sheet_tones_answers_by_value(client, jwt, session):  # pylint
     assert sheet.cell(row=row, column=4).value is None
     assert fill_of(4) == mute_colour(page_one_band)
     assert fill_of(3) == page_one_band
+
+
+def _seed_every_comment_status(survey, eng):
+    """Add one submission per comment status, each answering the radio and the free text.
+
+    Returns the submissions in the order they appear on the sheets.
+    """
+    reviewed = datetime(2025, 11, 3, 20, 0)  # 12:00 Pacific, so the date is the same either side
+    seeds = (
+        # (comment_status_id, extra attributes)
+        (CommentStatus.Approved.value, {'reviewed_by': 'Ann Approver', 'review_date': reviewed,
+                                        # Stale flags from an earlier rejection must not show.
+                                        'has_profanity': True, 'rejected_reason_other': 'Old reason'}),
+        (CommentStatus.Rejected.value, {'reviewed_by': 'Rex Rejecter', 'review_date': reviewed,
+                                        'has_profanity': True, 'rejected_reason_other': 'Off topic'}),
+        (CommentStatus.Pending.value, {}),
+        (CommentStatus.Pending.value, {'is_resubmission': True}),
+        (CommentStatus.Needs_further_review.value, {}),
+        (None, {}),
+    )
+    submissions = []
+    for status_id, extra in seeds:
+        submission = factory_submission_model(
+            survey.id, eng.id, factory_participant_model().id,
+            {**TestSubmissionInfo.submission1.value, 'comment_status_id': status_id,
+             'review_date': None, 'submission_json': {'age': 'a1', 'notes': f'Text {status_id}'}},
+        )
+        for name, value in extra.items():
+            setattr(submission, name, value)
+        submission.save()
+        submissions.append(submission)
+    # Auto-approved by the system, having left no free text.
+    submissions.append(factory_submission_model(
+        survey.id, eng.id, factory_participant_model().id,
+        {**TestSubmissionInfo.submission1.value, 'comment_status_id': CommentStatus.Approved.value,
+         'reviewed_by': 'System', 'review_date': None, 'submission_json': {'age': 'a2'}},
+    ))
+    return submissions
+
+
+def _export(client, jwt, survey_id):
+    """Fetch the dashboard export workbook."""
+    headers = factory_auth_header(jwt=jwt, claims=superuser_claims)
+    rv = client.get(f'{surveys_url}{survey_id}/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.OK
+    return load_workbook(BytesIO(rv.data))
+
+
+def _column(sheet, heading):
+    """Return a sheet's column number for a heading in its question title row."""
+    return [c.value for c in sheet[QUESTION_TITLE_ROW]].index(heading) + 1
+
+
+def _column_values(sheet, heading, first_row=DATA_START_ROW):
+    """Return a column's values from the first data row down."""
+    column = _column(sheet, heading)
+    return [sheet.cell(row=r, column=column).value for r in range(first_row, sheet.max_row + 1)]
+
+
+STATUS_LABELS = ['Approved', 'Rejected', 'Pending', 'Resubmitted', 'Needs Further Review', None, 'Approved']
+
+
+def test_all_data_sheet_shows_only_approved_comment_text(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert every submission keeps its quantitative answers, but only approved text shows."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    _seed_every_comment_status(survey, eng)
+
+    sheet = _export(client, jwt, survey.id)[ALL_DATA.tab_name]
+
+    assert [c.value for c in sheet[QUESTION_TITLE_ROW]][:4] == \
+        ['Respondent ID', 'Comment Status', 'Submissions', 'Comment ID']
+    # 'Data' heads the identity columns.
+    assert sheet.cell(row=PAGE_TITLE_ROW, column=1).value == 'Data'
+    assert 'A2:D2' in {str(r) for r in sheet.merged_cells.ranges}
+    assert _column_values(sheet, 'Comment Status') == STATUS_LABELS
+    assert _column_values(sheet, 'What is your age?') == ['18-34'] * 6 + ['35-54']
+    assert _column_values(sheet, 'Anything else?') == [f'Text {CommentStatus.Approved.value}'] + [None] * 6
+
+
+def test_approved_qualitative_sheet_lists_only_approved(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert the qualitative sheet holds approved comments alone, with no status column."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    submissions = _seed_every_comment_status(survey, eng)
+
+    sheet = _export(client, jwt, survey.id)[APPROVED_QUALITATIVE.tab_name]
+
+    assert [c.value for c in sheet[QUESTION_TITLE_ROW]] == \
+        ['Respondent ID', 'Submissions', 'Comment ID', 'Anything else?']
+    # The system-approved submission left no text, so only the reviewed approval remains.
+    assert sheet.max_row == COMMENT_DATA_START_ROW
+    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=3).value == submissions[0].id
+    assert sheet.cell(row=COMMENT_DATA_START_ROW, column=4).value == f'Text {CommentStatus.Approved.value}'
+
+
+def test_comment_audit_sheet_keeps_every_submission(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert the audit shows all text and how each submission was reviewed."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    EngagementMetadataModel(engagement_id=eng.id, project_metadata={'project_name': 'Big Ranch'}).save()
+    _seed_every_comment_status(survey, eng)
+
+    sheet = _export(client, jwt, survey.id)[COMMENT_AUDIT.tab_name]
+
+    assert [c.value for c in sheet[QUESTION_TITLE_ROW]][:7] == [
+        'Respondent ID', 'Comment Status', 'Reason for Rejection', 'Published Date', 'Reviewer',
+        'Project', 'What is your age?',
+    ]
+    assert sheet.cell(row=PAGE_TITLE_ROW, column=1).value == 'Data'
+    assert 'A2:F2' in {str(r) for r in sheet.merged_cells.ranges}
+    assert _column_values(sheet, 'Comment Status') == STATUS_LABELS
+    # The reason follows the status: the approved row's stale flags are not shown.
+    assert _column_values(sheet, 'Reason for Rejection') == \
+        [None, 'Contains profanity or inappropriate language, Off topic'] + [None] * 5
+    assert [d and d.date() for d in _column_values(sheet, 'Published Date')] == \
+        [date(2025, 11, 3), date(2025, 11, 3)] + [None] * 5
+    assert _column_values(sheet, 'Reviewer') == \
+        ['Ann Approver', 'Rex Rejecter', None, None, None, None, 'System']
+    assert _column_values(sheet, 'Project') == ['Big Ranch'] * 7
+    # Quantitative answers and every status's text are all kept.
+    assert _column_values(sheet, 'What is your age?') == ['18-34'] * 6 + ['35-54']
+    assert _column_values(sheet, 'Anything else?') == [
+        f'Text {status}' for status in (CommentStatus.Approved.value, CommentStatus.Rejected.value,
+                                        CommentStatus.Pending.value, CommentStatus.Pending.value,
+                                        CommentStatus.Needs_further_review.value, None)
+    ] + [None]
+
+
+def test_comment_audit_sheet_without_project(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert the project is left blank when the engagement has no project metadata."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    factory_submission_model(survey.id, eng.id, factory_participant_model().id,
+                             {**TestSubmissionInfo.submission1.value, 'submission_json': {'age': 'a1'}})
+
+    sheet = _export(client, jwt, survey.id)[COMMENT_AUDIT.tab_name]
+
+    assert _column_values(sheet, 'Project') == [None]
