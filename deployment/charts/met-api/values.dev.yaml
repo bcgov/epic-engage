@@ -47,3 +47,6 @@ configMapData:
   VERIFICATION_EMAIL_TEMPLATE_ID: "c4cc1633-321a-4400-8a22-272acecd836a"
   EAO_SUBMISSION_REPORT: "07f0f037-5ccb-44c5-89c6-9fe86078323e"
   REJECTED_EMAIL_TEMPLATE_ID: "8410c055-587b-4788-bd2f-b563562bcb2d"
+  # Comment period push: eagle, both or demi. DEMI_API_KEY comes from the demi-api-details secret.
+  EPIC_SYNC_TARGET: "eagle"
+  DEMI_API_URL: ""

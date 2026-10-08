@@ -62,7 +62,6 @@ class RestService:
             data = json.dumps(data)
 
         current_app.logger.debug(f'Endpoint: {endpoint}')
-        current_app.logger.debug(f'headers: {headers}')
         current_app.logger.debug(f'data: {data}')
 
         response = None

@@ -16,3 +16,5 @@ data:
   EMAIL_ENVIRONMENT: {{ .Values.configMapData.EMAIL_ENVIRONMENT }}
   ENGAGEMENT_CLOSEOUT_EMAIL_TEMPLATE_ID: {{ .Values.configMapData.ENGAGEMENT_CLOSEOUT_EMAIL_TEMPLATE_ID }}
   SITE_URL: {{ .Values.configMapData.SITE_URL }}
+  EPIC_SYNC_TARGET: "{{ .Values.configMapData.EPIC_SYNC_TARGET | default "eagle" }}"
+  DEMI_API_URL: "{{ .Values.configMapData.DEMI_API_URL }}"

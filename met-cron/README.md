@@ -43,6 +43,32 @@ For example the `run_met_publish.sh` file contains the command to publish a sche
 
 >`python3 invoke_jobs.py ENGAGEMENT_PUBLISH` 
 
+`run_met_demi_backfill.sh` runs a manual job. It has no crontab entry and only runs when someone starts it.
+It loads existing engagements into DEMI and writes only to DEMI, never to Eagle. It sends every engagement that has
+an EPIC project id and is published, scheduled or closed, through the same path the publish job uses. Unpublished
+engagements that were already pushed (they have a tracking id) are sent too, so DEMI shows them as unpublished.
+Drafts are skipped. Engagements linked to a project notification are skipped and counted as `skipped_notification`.
+
+The job refuses to start, and the run is marked failed, unless `IS_EAO_ENVIRONMENT` is true and `EPIC_SYNC_TARGET`
+is `both` or `demi`. Each failed push is logged with its engagement id. A failed push does not stop the run. At the
+end the log shows how many engagements were selected, pushed, failed and skipped, with the failed ids, and the run is
+marked failed if any push failed.
+
+The backfill, publish and close-out jobs share one lock, so only one of them runs at a time:
+
+- If a publish or close-out run holds the lock, the backfill exits with status 1 without running. Start it again later.
+- While the backfill holds the lock, each publish run is skipped (exit 0) and runs again 5 minutes later.
+- Close-out waits up to 10 minutes for the lock, then gives up for the day. So run the backfill well clear of the
+  17:00 UTC close-out.
+
+Run it from the met-cron pod with `./run_met_demi_backfill.sh`. The direct command below skips the lock, so use it
+only when no publish or close-out run can start:
+
+>`python3 invoke_jobs.py ENGAGEMENT_DEMI_BACKFILL`
+
+If close-out gives up waiting, its log line starts with `skip invoke_jobs.py ENGAGEMENT_CLOSEOUT`. Rerun it by hand
+from the met-cron pod with `./run_met_closeout.sh`.
+
 ## Runbook: scheduled job monitoring
 
 ### Where the history lives

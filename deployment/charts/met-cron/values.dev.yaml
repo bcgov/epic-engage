@@ -30,3 +30,6 @@ configMapData:
   EMAIL_ENVIRONMENT: You are using a DEV environment
   ENGAGEMENT_CLOSEOUT_EMAIL_TEMPLATE_ID: b7ea041b-fc30-4ad3-acb2-82119dd4f95d
   SITE_URL: 'https://dev.engage.eao.gov.bc.ca'
+  # Comment period push: eagle, both or demi. DEMI_API_KEY comes from the demi-api-details secret.
+  EPIC_SYNC_TARGET: 'eagle'
+  DEMI_API_URL: ''
