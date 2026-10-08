@@ -1,5 +1,7 @@
 """The jobs build their own Flask config, so the EPIC push only happens if that config carries the EPIC keys."""
+from datetime import datetime
 import importlib
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from flask import Flask
@@ -131,3 +133,22 @@ def test_update_project_info_skips_without_eao_flag(load_config):
 
     rest.get_access_token_with_password.assert_not_called()
     rest.put.assert_not_called()
+
+
+@pytest.mark.parametrize('slug, public_path', [('my-engagement', '/my-engagement'), (None, '/engagements/7/view')])
+def test_engagement_fields_build_urls_with_job_config(load_config, monkeypatch, slug, public_path):
+    """The payload fields shared by the Eagle and DEMI pushes resolve with the job's config, slugged or not."""
+    for key in ('ENGAGEMENT_PATH', 'ENGAGEMENT_PATH_SLUG', 'LEGISLATIVE_TIMEZONE'):
+        monkeypatch.delenv(key, raising=False)
+    app = _app(load_config(SITE_URL='https://engage.example', IS_SINGLE_TENANT_ENVIRONMENT='true'))
+    engagement = SimpleNamespace(id=7, tenant_id=1, banner_filename=None, status_id=2,
+                                 start_date=datetime(2026, 3, 1, 12, 0), end_date=None)
+    slug_row = SimpleNamespace(slug=slug) if slug else None
+
+    with app.app_context(), patch('met_api.services.email_verification_service.EngagementSlugModel') as slugs:
+        slugs.find_by_engagement_id.return_value = slug_row
+        fields = ProjectService._engagement_fields(engagement)  # pylint: disable=protected-access
+
+    assert fields['metURL'] == f'https://engage.example{public_path}'
+    assert fields['metURLAdmin'] == 'https://engage.example/engagements/7/view'
+    assert fields['start'] == '2026-03-01 20:00:00'

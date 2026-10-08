@@ -149,6 +149,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     # needed for publish emails for met api
     ENGAGEMENT_VIEW_PATH = os.getenv('ENGAGEMENT_VIEW_PATH', '/engagements/{engagement_id}/view')
     ENGAGEMENT_VIEW_PATH_SLUG = os.getenv('ENGAGEMENT_VIEW_PATH_SLUG', '/{slug}')
+    # Read by met-api code during the EPIC/DEMI push; keep in step with met-api config.
+    ENGAGEMENT_PATH = os.getenv('ENGAGEMENT_PATH', '/engagements/{engagement_id}/view')
+    ENGAGEMENT_PATH_SLUG = os.getenv('ENGAGEMENT_PATH_SLUG', '/{slug}')
+    LEGISLATIVE_TIMEZONE = os.getenv('LEGISLATIVE_TIMEZONE', 'America/Vancouver')
     UNSUBSCRIBE_PATH = os.getenv('UNSUBSCRIBE_PATH', '/engagements/unsubscribe/{token}')
 
     # The GC notify email variables

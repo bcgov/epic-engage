@@ -97,6 +97,10 @@ spec:
         envFrom:
           - configMapRef:
               name: {{ .Chart.Name }}
+          # S3_HOST and S3_BUCKET build the banner URL sent in the EPIC/DEMI push.
+          - configMapRef:
+              name: s3-objectstore
+              optional: true
         ports:
           - containerPort: 8080
             protocol: TCP
