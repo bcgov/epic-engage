@@ -78,7 +78,7 @@ export const getSurveyForDashboard = async (
 };
 
 // Fetch the internal dashboard's data export. An .xlsx. The export spans
-// four sheets with colour coding
+// five sheets with colour coding
 export const getDashboardDataSheet = async (surveyId: number) => {
     const url = replaceUrl(Endpoints.Survey.GET_DASHBOARD_SHEET, 'survey_id', String(surveyId));
     const headers = {
