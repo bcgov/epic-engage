@@ -13,12 +13,12 @@
 # limitations under the License.
 """Service for exporting internal dashboard survey data to a spreadsheet.
 
-Builds the five sheets the dashboard's data export offers: the quantitative answers per
-submission and aggregated, both combined with the free text, the approved free text alone, and a
-comment audit carrying every submission's text and review details whatever its status.
+Builds the sheets the dashboard's data export offers: the quantitative answers per submission
+and aggregated, both combined with the free text, the approved free text alone, and a comment
+audit carrying every submission's text and review details whatever its status.
 
-Comment text that has not been approved appears only on the Comment Audit sheet, which is why
-the export is for Superusers alone.
+Comment text that has not been approved appears only on the Comment Audit sheet, so only
+Superusers get it. Team Members of the engagement get the other four sheets.
 
 Every submission gets its own row and its own id. Resubmissions from one email share a
 respondent number (R-0001-01, R-0001-02), sit together, and carry a count of how many came from
@@ -30,6 +30,7 @@ sheets, zebra striping or colour coding.
 from __future__ import annotations
 
 from io import BytesIO
+import re
 from typing import NamedTuple
 
 from openpyxl import Workbook
@@ -38,10 +39,12 @@ from openpyxl.utils import get_column_letter
 import pytz
 
 from met_api.constants.comment_status import Status
+from met_api.constants.membership_type import MembershipType
 from met_api.constants.report_setting_type import FormIoComponentType
 from met_api.models.engagement_metadata import EngagementMetadataModel
 from met_api.models.submission import Submission as SubmissionModel
 from met_api.models.survey import Survey as SurveyModel
+from met_api.services import authorization
 from met_api.services.comment_service import CommentService
 from met_api.utils.datetime import legislative_timezone, utc_datetime
 from met_api.utils.export_styles import (
@@ -52,10 +55,12 @@ from met_api.utils.export_styles import (
     RESPONDENT_TYPE_COLOUR, RESPONDENT_TYPE_FONT_COLOUR, get_page_colours,
     get_question_type_colours, get_question_type_label, get_respondent_zebra_colour,
     get_zebra_colour, mute_colour)
+from met_api.utils.roles import Role
 from met_api.utils.survey_export_aggregates import build_aggregate_rows
 from met_api.utils.survey_export_columns import (
     FREE_TEXT_TYPES, QUANTITATIVE_TYPES, build_export_columns, build_respondent_rows,
     filter_respondents_with_comments)
+from met_api.utils.token_info import TokenInfo
 
 
 # Types whose answer is a number rather than an option label
@@ -232,6 +237,14 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         survey = SurveyModel.find_by_id(survey_id)
         if not survey:
             raise KeyError(f'Survey with id {survey_id} not found')
+        # The Comment Audit sheet holds unreviewed and rejected comment text, so only Superusers
+        # get it. The engagement's Team Members get the other sheets, which hold approved text only.
+        include_comment_audit = TokenInfo.is_superuser()
+        if include_comment_audit:
+            one_of_roles = (Role.EXPORT_INTERNAL_COMMENT_SHEET.value,)
+        else:
+            one_of_roles = (MembershipType.TEAM_MEMBER.name,)
+        authorization.check_auth(one_of_roles=one_of_roles, engagement_id=survey.engagement_id)
 
         workbook = Workbook()
 
@@ -243,6 +256,8 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         respondents = build_respondent_rows(SubmissionModel.get_by_survey_id(survey.id))
 
         for sheet in DASHBOARD_SHEETS:
+            if sheet is COMMENT_AUDIT and not include_comment_audit:
+                continue
             worksheet = workbook.create_sheet(title=sheet.tab_name)
             cls._write_description(worksheet, sheet.description)
             if sheet is QUANTITATIVE_NON_AGGREGATED:
@@ -279,7 +294,7 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         stream = BytesIO()
         workbook.save(stream)
         stream.seek(0)
-        return stream, cls._build_file_name(survey)
+        return stream, cls._build_file_name(survey, include_comment_audit)
 
     @classmethod
     def _build_non_aggregated_sheet(  # pylint: disable=too-many-arguments
@@ -684,12 +699,15 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         return cell
 
     @staticmethod
-    def _build_file_name(survey: SurveyModel) -> str:
-        """Build the download filename for a survey's dashboard export.
+    def _build_file_name(survey: SurveyModel, include_comment_audit: bool) -> str:
+        """Build the download filename, e.g. INTERNAL_BigRanch_SuperuserSurveyData_2026-10-09.xlsx.
 
-        Date only, in UTC: a time separator would be a colon, invalid in Windows filenames.
+        The engagement name keeps letters and digits only, as the chart downloads do. Date only,
+        in UTC: a time separator would be a colon, invalid in Windows filenames.
         The web client builds the same name for the file it saves.
         """
         engagement_name = survey.engagement.name if survey.engagement else survey.name
+        slug = re.sub(r'[^A-Za-z0-9]', '', engagement_name or '') or 'Engagement'
+        audience = 'Superuser' if include_comment_audit else 'TeamMember'
         timestamp = utc_datetime().strftime('%Y-%m-%d')
-        return f'{engagement_name} - Dashboard Data - {timestamp}.xlsx'
+        return f'INTERNAL_{slug}_{audience}SurveyData_{timestamp}.xlsx'

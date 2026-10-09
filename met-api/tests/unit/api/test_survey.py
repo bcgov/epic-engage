@@ -21,6 +21,7 @@ from datetime import date, datetime, timedelta
 from http import HTTPStatus
 from io import BytesIO
 import json
+import re
 
 from flask import current_app
 from openpyxl import load_workbook
@@ -54,7 +55,8 @@ from tests.utilities.factory_utils import (
 
 surveys_url = '/api/surveys/'
 
-# The dashboard export is for Superusers alone, which the token's groups claim decides.
+# The full dashboard export, Comment Audit included, is for Superusers alone, which the token's
+# groups claim decides. The engagement's Team Members get the other four sheets.
 superuser_claims = {**TestJwtClaims.staff_admin_role.value, 'groups': ['/ENGAGE/EAO_IT_ADMIN']}
 
 
@@ -849,6 +851,8 @@ def test_get_survey_dashboard_sheet(client, jwt, session):  # pylint:disable=unu
                     content_type=ContentType.JSON.value)
 
     assert rv.status_code == HTTPStatus.OK
+    assert re.search(r'filename="INTERNAL_[A-Za-z0-9]+_SuperuserSurveyData_\d{4}-\d{2}-\d{2}\.xlsx"',
+                     rv.headers['content-disposition'])
     workbook = load_workbook(BytesIO(rv.data))
     assert workbook.sheetnames == [
         'Quantitative - Non-agg',
@@ -863,7 +867,7 @@ def test_get_survey_dashboard_sheet(client, jwt, session):  # pylint:disable=unu
 
 
 def test_get_survey_dashboard_sheet_needs_superuser(client, jwt, session):  # pylint:disable=unused-argument
-    """Assert that the export role alone is not enough: the Superuser group is required."""
+    """Assert that the export role alone is not enough: a non-Superuser must be on the engagement's team."""
     survey, _ = factory_survey_and_eng_model()
     headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.staff_admin_role)
 
@@ -873,15 +877,61 @@ def test_get_survey_dashboard_sheet_needs_superuser(client, jwt, session):  # py
     assert rv.status_code == HTTPStatus.FORBIDDEN
 
 
-def test_get_survey_dashboard_sheet_unauthorized(client, jwt, session):  # pylint:disable=unused-argument
-    """Assert that the dashboard export is not available without the export role."""
-    survey, _ = factory_survey_and_eng_model()
-    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.public_user_role)
+def _team_member_claims(eng):
+    """Add a Team Member to the engagement and return their token claims."""
+    claims = TestJwtClaims.team_member_role.value
+    user = factory_staff_user_model(claims['sub'])
+    factory_membership_model(user_id=user.id, engagement_id=eng.id)
+    return claims
+
+
+def test_get_survey_dashboard_sheet_for_team_member(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a Team Member gets every sheet but the Comment Audit, in a file named for them."""
+    survey, eng = factory_survey_and_eng_model()
+    headers = factory_auth_header(jwt=jwt, claims=_team_member_claims(eng))
 
     rv = client.get(f'{surveys_url}{survey.id}/dashboard/sheet', headers=headers,
                     content_type=ContentType.JSON.value)
 
+    assert rv.status_code == HTTPStatus.OK
+    assert re.search(r'filename="INTERNAL_[A-Za-z0-9]+_TeamMemberSurveyData_\d{4}-\d{2}-\d{2}\.xlsx"',
+                     rv.headers['content-disposition'])
+    workbook = load_workbook(BytesIO(rv.data))
+
+    assert workbook.sheetnames == [
+        'Quantitative - Non-agg',
+        'Quantitative - Aggregated',
+        'All Data',
+        'Approved Qualitative Responses',
+    ]
+    for sheet in DASHBOARD_SHEETS[:-1]:
+        assert workbook[sheet.tab_name].cell(row=DESCRIPTION_ROW, column=1).value == sheet.description
+
+
+def test_get_survey_dashboard_sheet_team_member_of_another_engagement(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that a Team Member may not export another engagement's data."""
+    survey, _ = factory_survey_and_eng_model()
+    _, other_eng = factory_survey_and_eng_model()
+    headers = factory_auth_header(jwt=jwt, claims=_team_member_claims(other_eng))
+
+    rv = client.get(f'{surveys_url}{survey.id}/dashboard/sheet', headers=headers,
+                    content_type=ContentType.JSON.value)
+
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+
+
+def test_get_survey_dashboard_sheet_unauthorized(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert that the dashboard export needs a token, and is forbidden to anyone off the team."""
+    survey, _ = factory_survey_and_eng_model()
+    url = f'{surveys_url}{survey.id}/dashboard/sheet'
+
+    rv = client.get(url, content_type=ContentType.JSON.value)
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+    headers = factory_auth_header(jwt=jwt, claims=TestJwtClaims.public_user_role)
+    rv = client.get(url, headers=headers, content_type=ContentType.JSON.value)
+    assert rv.status_code == HTTPStatus.FORBIDDEN
 
 
 def test_get_survey_dashboard_sheet_survey_not_found(client, jwt, session):  # pylint:disable=unused-argument
@@ -1394,9 +1444,9 @@ def _seed_every_comment_status(survey, eng):
     return submissions
 
 
-def _export(client, jwt, survey_id):
-    """Fetch the dashboard export workbook."""
-    headers = factory_auth_header(jwt=jwt, claims=superuser_claims)
+def _export(client, jwt, survey_id, claims=None):
+    """Fetch the dashboard export workbook, as a Superuser unless other claims are given."""
+    headers = factory_auth_header(jwt=jwt, claims=claims or superuser_claims)
     rv = client.get(f'{surveys_url}{survey_id}/dashboard/sheet', headers=headers,
                     content_type=ContentType.JSON.value)
     assert rv.status_code == HTTPStatus.OK
@@ -1447,6 +1497,21 @@ def test_approved_qualitative_sheet_lists_only_approved(client, jwt, session):  
     assert sheet.max_row == COMMENT_DATA_START_ROW
     assert sheet.cell(row=COMMENT_DATA_START_ROW, column=3).value == submissions[0].id
     assert sheet.cell(row=COMMENT_DATA_START_ROW, column=4).value == f'Text {CommentStatus.Approved.value}'
+
+
+def test_team_member_export_shows_only_approved_comment_text(
+        client, jwt, session):  # pylint:disable=unused-argument
+    """Assert a Team Member's export carries approved comment text alone."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    _seed_every_comment_status(survey, eng)
+
+    workbook = _export(client, jwt, survey.id, _team_member_claims(eng))
+
+    all_data = workbook[ALL_DATA.tab_name]
+    assert _column_values(all_data, 'Comment Status') == STATUS_LABELS
+    assert _column_values(all_data, 'Anything else?') == [f'Text {CommentStatus.Approved.value}'] + [None] * 6
+    assert _column_values(workbook[APPROVED_QUALITATIVE.tab_name], 'Anything else?', COMMENT_DATA_START_ROW) == \
+        [f'Text {CommentStatus.Approved.value}']
 
 
 def test_comment_audit_sheet_keeps_every_submission(client, jwt, session):  # pylint:disable=unused-argument
