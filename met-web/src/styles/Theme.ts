@@ -116,6 +116,14 @@ export const Palette = {
             label: tokens.supportTypographyColorWarning,
             value: tokens.supportTypographyColorWarningEmphasis,
         },
+        exportWarning: {
+            bg: tokens.supportBorderColorDanger,
+            color: tokens.typographyColorPrimaryInvert,
+        },
+        exportDisclaimer: {
+            bg: tokens.dataVizGray40,
+            color: tokens.typographyColorPrimary,
+        },
     },
     icons: {
         surveyReady: tokens.iconsColorSuccess,

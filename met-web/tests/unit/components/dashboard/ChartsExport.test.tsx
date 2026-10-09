@@ -15,6 +15,9 @@ import {
 import { TypedSurveyData } from 'models/analytics/surveyResult';
 import { SurveyReportSetting } from 'models/surveyReportSetting';
 import * as commentService from 'services/commentService';
+import * as surveyService from 'services/surveyService';
+import * as reportSettingsService from 'services/surveyService/reportSettingsService';
+import * as surveyResultService from 'services/analytics/surveyResult';
 import { USER_ROLES } from 'services/userService/constants';
 import * as utils from 'utils';
 import { assignedEngagements, userAuthentication, userDetails, userRoles } from 'services/userService/userSlice';
@@ -169,6 +172,78 @@ describe('Internal report export menu', () => {
         expect(download.mock.calls[0][1]).toMatch(
             /^Open Engagement - Public Proponent Export - \d{4}-\d{2}-\d{2}\.xlsx$/,
         );
+    });
+
+    it('marks the data export as internal', async () => {
+        renderHeader('/ENGAGE/EAO_IT_ADMIN', []);
+        await openMenu();
+        expect(screen.getByText('INTERNAL')).toBeInTheDocument();
+    });
+
+    it('asks Superusers to confirm the internal data export before downloading', async () => {
+        const getSheet = jest
+            .spyOn(surveyService, 'getDashboardDataSheet')
+            .mockResolvedValue({ data: new Blob() } as never);
+        const download = jest.spyOn(utils, 'downloadFile').mockImplementation(() => undefined);
+        renderHeader('/ENGAGE/EAO_IT_ADMIN', []);
+        await openMenu();
+
+        fireEvent.click(screen.getByText('Excel Data Export'));
+
+        expect(
+            screen.getByText(
+                'This export contains raw survey responses and is for internal use only. Do not share this file externally.',
+            ),
+        ).toBeInTheDocument();
+        expect(getSheet).not.toHaveBeenCalled();
+        expect(screen.getByText('PNG / ZIP').closest('li')).toHaveAttribute('aria-disabled', 'true');
+        expect(screen.getByText('Public/Proponent Comment Export').closest('li')).toHaveAttribute(
+            'aria-disabled',
+            'true',
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /yes, download/i }));
+
+        await waitFor(() => expect(download).toHaveBeenCalled());
+        expect(getSheet).toHaveBeenCalledWith(openEngagement.surveys[0].id);
+    });
+
+    it('restores the export options when the warning is cancelled', async () => {
+        const getSheet = jest.spyOn(surveyService, 'getDashboardDataSheet');
+        renderHeader('/ENGAGE/EAO_IT_ADMIN', []);
+        await openMenu();
+
+        fireEvent.click(screen.getByText('Excel Data Export'));
+        fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+
+        expect(screen.queryByRole('button', { name: /yes, download/i })).not.toBeInTheDocument();
+        expect(screen.getByText('PNG / ZIP').closest('li')).not.toHaveAttribute('aria-disabled');
+        expect(getSheet).not.toHaveBeenCalled();
+    });
+
+    it('shows the public-charts disclaimer before exporting charts', async () => {
+        const getResults = jest
+            .spyOn(surveyResultService, 'getSurveyResultData')
+            .mockResolvedValue({ data: [] } as never);
+        const getSettings = jest.spyOn(reportSettingsService, 'fetchSurveyReportSettings').mockResolvedValue([]);
+        renderHeader('/ENGAGE/EAO_TEAM_MEMBER', [openEngagement.id]);
+        await openMenu();
+
+        fireEvent.click(screen.getByText('PNG / ZIP'));
+
+        expect(
+            screen.getByText('Only charts marked for public report view will be included in this export.'),
+        ).toBeInTheDocument();
+        expect(screen.getByText('Public/Proponent Comment Export').closest('li')).toHaveAttribute(
+            'aria-disabled',
+            'true',
+        );
+        expect(getResults).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByRole('button', { name: /^download$/i }));
+
+        await waitFor(() => expect(getSettings).toHaveBeenCalledWith(String(openEngagement.surveys[0].id)));
+        expect(getResults).toHaveBeenCalled();
     });
 
     it('offers a team member not assigned to the engagement no export', async () => {
