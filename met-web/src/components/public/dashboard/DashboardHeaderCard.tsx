@@ -1,11 +1,11 @@
-import { MouseEvent, useContext, useEffect, useState } from 'react';
+import { KeyboardEvent, MouseEvent, ReactNode, useContext, useEffect, useState } from 'react';
 import { Box, Menu, MenuItem, Skeleton, Stack, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import TableChartOutlinedIcon from '@mui/icons-material/TableChartOutlined';
-import { PrimaryButton } from 'components/shared/common';
+import { PrimaryButton, SecondaryButton } from 'components/shared/common';
 import { Engagement } from 'models/engagement';
 import { USER_GROUP } from 'models/user';
 import { UserResponseDetailByMonth } from 'models/analytics/userResponseDetail';
@@ -48,6 +48,89 @@ const statValueSx = {
 
 const statSeparator = <Box sx={{ width: '1px', height: 28, backgroundColor: Palette.border.default, mr: 2 }} />;
 
+const exportItemSx = { alignItems: 'center', gap: 1.25, py: 1.25, whiteSpace: 'normal' };
+
+const internalBadge = (
+    <Box
+        component="span"
+        sx={{
+            ml: 0.5,
+            px: 0.75,
+            py: '1px',
+            borderRadius: '10px',
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+            color: Palette.error.main,
+            backgroundColor: Palette.error.light,
+        }}
+    >
+        INTERNAL
+    </Box>
+);
+
+interface ExportConfirmProps {
+    icon: ReactNode;
+    title: string;
+    description: string;
+    message: string;
+    confirmLabel: string;
+    header: { bg: string; color: string };
+    borderTop?: boolean;
+    onCancel: () => void;
+    onConfirm: () => void;
+}
+
+const ExportConfirm = ({
+    icon,
+    title,
+    description,
+    message,
+    confirmLabel,
+    header,
+    borderTop,
+    onCancel,
+    onConfirm,
+}: ExportConfirmProps) => (
+    <Box
+        role="group"
+        aria-label={`Confirm ${title}`}
+        // MenuList closes on Tab and steals arrow keys; let Escape through to close the menu.
+        onKeyDown={(event: KeyboardEvent) => event.key !== 'Escape' && event.stopPropagation()}
+        sx={{ borderTop: borderTop ? `1px solid ${Palette.border.subtle}` : 'none' }}
+    >
+        <Stack
+            direction="row"
+            alignItems="center"
+            gap={1.25}
+            sx={{ px: 2, py: 1.5, backgroundColor: header.bg, color: header.color }}
+        >
+            {icon}
+            <Box>
+                <Typography sx={{ fontSize: 13, fontWeight: 700, lineHeight: 1.35, color: 'inherit' }}>
+                    {title}
+                </Typography>
+                <Typography sx={{ fontSize: 11, lineHeight: 1.35, color: 'inherit', opacity: 0.85 }}>
+                    {description}
+                </Typography>
+            </Box>
+        </Stack>
+        <Box sx={{ p: 2, maxWidth: 320 }}>
+            <Typography sx={{ fontSize: 12, lineHeight: 1.5, color: Palette.text.primary, mb: 1.75 }}>
+                {message}
+            </Typography>
+            <Stack direction="row" gap={1}>
+                <SecondaryButton size="small" onClick={onCancel} autoFocus>
+                    Cancel
+                </SecondaryButton>
+                <PrimaryButton size="small" startIcon={<FileDownloadOutlinedIcon />} onClick={onConfirm}>
+                    {confirmLabel}
+                </PrimaryButton>
+            </Stack>
+        </Box>
+    </Box>
+);
+
 // Backend returns showdataby as "YYYY-Mon" (e.g. "2024-Jan"); the header displays "Mon YYYY".
 const formatMonthLabel = (showdataby: string) => {
     const [year, month] = showdataby.split('-');
@@ -76,6 +159,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
     const [activity, setActivity] = useState<UserResponseDetailByMonth[]>([]);
     const [isActivityOpen, setIsActivityOpen] = useState(false);
     const [exportAnchorEl, setExportAnchorEl] = useState<null | HTMLElement>(null);
+    const [pendingExport, setPendingExport] = useState<'data' | 'charts' | null>(null);
     const [dataAsOf, setDataAsOf] = useState<Date | null>(null);
     const [isExporting, setIsExporting] = useState(false);
     const [chartsExport, setChartsExport] = useState<{
@@ -202,7 +286,14 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
 
     return (
         <Box sx={{ px: { xs: 2, md: 3 }, pt: 2, backgroundColor: Palette.background.light }}>
-            <Box sx={{ backgroundColor: Palette.background.default, border: `1px solid ${Palette.border.default}`, borderRadius: '8px', p: '18px 24px 16px' }}>
+            <Box
+                sx={{
+                    backgroundColor: Palette.background.default,
+                    border: `1px solid ${Palette.border.default}`,
+                    borderRadius: '8px',
+                    p: '18px 24px 16px',
+                }}
+            >
                 <Stack
                     direction={{ xs: 'column', sm: 'row' }}
                     justifyContent="space-between"
@@ -210,7 +301,14 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                     gap={2}
                 >
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography sx={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em', color: Palette.primary.main }}>
+                        <Typography
+                            sx={{
+                                fontSize: 22,
+                                fontWeight: 700,
+                                letterSpacing: '-0.02em',
+                                color: Palette.primary.main,
+                            }}
+                        >
                             What We Heard
                         </Typography>
                         <Stack direction="row" alignItems="center" flexWrap="wrap" sx={{ mt: 1.25 }}>
@@ -256,7 +354,9 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                         <Typography sx={statLabelSx}>Live activity</Typography>
                                         <Stack direction="row" alignItems="center" gap={0.5}>
                                             <Typography sx={statValueSx}>
-                                                {peakMonth ? `${formatMonthLabel(peakMonth.showdataby)} · Peak month` : ''}
+                                                {peakMonth
+                                                    ? `${formatMonthLabel(peakMonth.showdataby)} · Peak month`
+                                                    : ''}
                                             </Typography>
                                             <ExpandMoreIcon
                                                 sx={{
@@ -314,55 +414,84 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                 anchorEl={exportAnchorEl}
                                 open={Boolean(exportAnchorEl)}
                                 onClose={() => setExportAnchorEl(null)}
+                                TransitionProps={{ onExited: () => setPendingExport(null) }}
                                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                                 slotProps={{ paper: { sx: { minWidth: 260 } } }}
                             >
-                                {isSuperuser && (
+                                {isSuperuser &&
+                                    (pendingExport === 'data' ? (
+                                        <ExportConfirm
+                                            icon={<TableChartOutlinedIcon sx={{ fontSize: 18 }} />}
+                                            title="Excel Data Export"
+                                            description="Raw and aggregated survey data across 4 sheets"
+                                            message="This export contains raw survey responses and is for internal use only. Do not share this file externally."
+                                            confirmLabel="Yes, download"
+                                            header={Palette.dashboard.exportWarning}
+                                            onCancel={() => setPendingExport(null)}
+                                            onConfirm={handleExportCsv}
+                                        />
+                                    ) : (
+                                        <MenuItem
+                                            onClick={() => setPendingExport('data')}
+                                            disabled={pendingExport !== null}
+                                            sx={exportItemSx}
+                                        >
+                                            <TableChartOutlinedIcon
+                                                sx={{ fontSize: 18, color: Palette.primary.main }}
+                                            />
+                                            <Box>
+                                                <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
+                                                    Excel Data Export
+                                                    {internalBadge}
+                                                </Typography>
+                                                <Typography
+                                                    sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}
+                                                >
+                                                    Raw and aggregated survey data across 4 sheets
+                                                </Typography>
+                                            </Box>
+                                        </MenuItem>
+                                    ))}
+                                {pendingExport === 'charts' ? (
+                                    <ExportConfirm
+                                        icon={<ImageOutlinedIcon sx={{ fontSize: 18 }} />}
+                                        title="PNG / ZIP"
+                                        description="Download charts as a ZIP bundle"
+                                        message="Only charts marked for public report view will be included in this export."
+                                        confirmLabel="Download"
+                                        header={Palette.dashboard.exportDisclaimer}
+                                        borderTop={isSuperuser}
+                                        onCancel={() => setPendingExport(null)}
+                                        onConfirm={handleExportPng}
+                                    />
+                                ) : (
                                     <MenuItem
-                                        onClick={handleExportCsv}
-                                        sx={{ alignItems: 'center', gap: 1.25, py: 1.25, whiteSpace: 'normal' }}
+                                        onClick={() => setPendingExport('charts')}
+                                        disabled={pendingExport !== null}
+                                        sx={{
+                                            ...exportItemSx,
+                                            borderTop: isSuperuser ? `1px solid ${Palette.border.subtle}` : 'none',
+                                        }}
                                     >
-                                        <TableChartOutlinedIcon sx={{ fontSize: 18, color: Palette.primary.main }} />
+                                        <ImageOutlinedIcon sx={{ fontSize: 18, color: Palette.success.emphasis }} />
                                         <Box>
                                             <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
-                                                Excel Data Export
+                                                PNG / ZIP
                                             </Typography>
                                             <Typography
                                                 sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}
                                             >
-                                                Raw and aggregated survey data across 4 sheets
+                                                Download charts as a ZIP bundle
                                             </Typography>
                                         </Box>
                                     </MenuItem>
                                 )}
                                 <MenuItem
-                                    onClick={handleExportPng}
-                                    sx={{
-                                        alignItems: 'center',
-                                        gap: 1.25,
-                                        py: 1.25,
-                                        whiteSpace: 'normal',
-                                        borderTop: isSuperuser ? `1px solid ${Palette.border.subtle}` : 'none',
-                                    }}
-                                >
-                                    <ImageOutlinedIcon sx={{ fontSize: 18, color: Palette.success.emphasis }} />
-                                    <Box>
-                                        <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
-                                            PNG / ZIP
-                                        </Typography>
-                                        <Typography sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}>
-                                            Download charts as a ZIP bundle
-                                        </Typography>
-                                    </Box>
-                                </MenuItem>
-                                <MenuItem
                                     onClick={handleExportProponentComments}
+                                    disabled={pendingExport !== null}
                                     sx={{
-                                        alignItems: 'center',
-                                        gap: 1.25,
-                                        py: 1.25,
-                                        whiteSpace: 'normal',
+                                        ...exportItemSx,
                                         borderTop: `1px solid ${Palette.border.subtle}`,
                                     }}
                                 >
