@@ -1,8 +1,13 @@
 """Helper for token decoding."""
 from flask import current_app, g
 
+from met_api.utils.enums import KeycloakGroupName
 from met_api.utils.roles import Role
 from met_api.utils.user_context import UserContext, user_context
+
+
+# The Keycloak group path carried in the token's groups claim; the web app checks the same one.
+SUPERUSER_GROUP = f'/ENGAGE/{KeycloakGroupName.EAO_IT_ADMIN.value}'
 
 
 class TokenInfo:
@@ -41,3 +46,9 @@ class TokenInfo:
         valid_roles = set(item.value for item in Role)
         token_roles = current_app.config['JWT_ROLE_CALLBACK'](g.jwt_oidc_token_info)
         return valid_roles.intersection(token_roles)
+
+    @staticmethod
+    def is_superuser() -> bool:
+        """Check whether the token belongs to a member of the Superuser group."""
+        token_info = getattr(g, 'jwt_oidc_token_info', None) or {}
+        return SUPERUSER_GROUP in (token_info.get('groups') or [])

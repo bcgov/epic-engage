@@ -13,8 +13,12 @@
 # limitations under the License.
 """Service for exporting internal dashboard survey data to a spreadsheet.
 
-Builds the four sheets the dashboard's data export offers: the quantitative answers per
-submission and aggregated, both combined with the free text, and the free text alone.
+Builds the five sheets the dashboard's data export offers: the quantitative answers per
+submission and aggregated, both combined with the free text, the approved free text alone, and a
+comment audit carrying every submission's text and review details whatever its status.
+
+Comment text that has not been approved appears only on the Comment Audit sheet, which is why
+the export is for Superusers alone.
 
 Every submission gets its own row and its own id. Resubmissions from one email share a
 respondent number (R-0001-01, R-0001-02), sit together, and carry a count of how many came from
@@ -31,11 +35,15 @@ from typing import NamedTuple
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+import pytz
 
+from met_api.constants.comment_status import Status
 from met_api.constants.report_setting_type import FormIoComponentType
+from met_api.models.engagement_metadata import EngagementMetadataModel
 from met_api.models.submission import Submission as SubmissionModel
 from met_api.models.survey import Survey as SurveyModel
-from met_api.utils.datetime import utc_datetime
+from met_api.services.comment_service import CommentService
+from met_api.utils.datetime import legislative_timezone, utc_datetime
 from met_api.utils.export_styles import (
     AGGREGATE_HEADER_DESCRIBE_COLOUR, AGGREGATE_HEADER_LIKERT_COLOUR, AGGREGATE_HEADER_RANK_COLOUR,
     AGGREGATE_HEADER_TALLY_COLOUR, BODY_FONT_COLOUR, CELL_BORDER_COLOUR,
@@ -58,61 +66,109 @@ class DashboardSheet(NamedTuple):
     """A sheet in the dashboard export workbook."""
 
     tab_name: str
-    title: str
+    # Shown above the table, saying what the sheet holds.
+    description: str
 
 
-QUANTITATIVE_NON_AGGREGATED = DashboardSheet('Quantitative - Non-agg', 'Quantitative - Non-aggregated')
-QUANTITATIVE_AGGREGATED = DashboardSheet('Quantitative - Aggregated', 'Quantitative - Aggregated')
-ALL_DATA = DashboardSheet('All Data', 'All Data (Quantitative and Qualitative)')
-QUALITATIVE_RESPONSES = DashboardSheet('Qualitative Responses', 'Qualitative Responses')
+QUANTITATIVE_NON_AGGREGATED = DashboardSheet(
+    'Quantitative - Non-agg',
+    'Individual survey responses for all quantitative questions, one row per respondent. '
+    'Does not include free-text comments.',
+)
+QUANTITATIVE_AGGREGATED = DashboardSheet(
+    'Quantitative - Aggregated',
+    'Survey results for all quantitative questions summarized by answer option. Use this tab to '
+    'quickly understand how respondents answered each question at a glance.',
+)
+ALL_DATA = DashboardSheet(
+    'All Data',
+    'All quantitative and qualitative data in a single view, one row per respondent. Comment text '
+    'is only visible for approved submissions - entries with a status of Rejected, Resubmitted, or '
+    'Pending will not display comment text until reviewed. Comment status applies to free-text '
+    'responses only; quantitative answers are always included regardless of comment status.',
+)
+APPROVED_QUALITATIVE = DashboardSheet(
+    'Approved Qualitative Responses',
+    'All free-text responses with a status of Approved. Use this tab to review approved comment '
+    'content.',
+)
+COMMENT_AUDIT = DashboardSheet(
+    'Comment Audit',
+    'Complete record of all responses, including comment text for all statuses. Some entries may '
+    'contain unreviewed or sensitive content - handle with care and follow privacy best practices.',
+)
 
 DASHBOARD_SHEETS = (
     QUANTITATIVE_NON_AGGREGATED,
     QUANTITATIVE_AGGREGATED,
     ALL_DATA,
-    QUALITATIVE_RESPONSES,
+    APPROVED_QUALITATIVE,
+    COMMENT_AUDIT,
 )
 
-# The four header rows every data sheet opens with
-PAGE_TITLE_ROW = 1
-QUESTION_TITLE_ROW = 2
-OPTION_LABEL_ROW = 3
-QUESTION_TYPE_ROW = 4
-DATA_START_ROW = 5
+# Every sheet opens with its description, then the header rows of its table.
+DESCRIPTION_ROW = 1
+PAGE_TITLE_ROW = 2
+QUESTION_TITLE_ROW = 3
+OPTION_LABEL_ROW = 4
+QUESTION_TYPE_ROW = 5
+DATA_START_ROW = 6
 
-RESPONDENT_COLUMN = 1
-SUBMISSION_COUNT_COLUMN = 2
-COMMENT_ID_COLUMN = 3
+# The columns identifying a submission, ahead of any question. Each sheet picks its own, and they
+# take the sheet's first columns in the order given.
+RESPONDENT_COLUMN = 'respondent_id'
+SUBMISSION_COUNT_COLUMN = 'submission_count'
+# The submission id the comment review screens label a submission by, so an answer in the export
+# can be traced back to the submission it was reviewed under.
+COMMENT_ID_COLUMN = 'comment_id'
+COMMENT_STATUS_COLUMN = 'comment_status'
+REJECTION_REASON_COLUMN = 'rejection_reason'
+PUBLISHED_DATE_COLUMN = 'published_date'
+REVIEWER_COLUMN = 'reviewer'
+PROJECT_COLUMN = 'project'
 
-# The columns identifying a submission, ahead of any question. Sheets carrying the free text
-# add the comment id - the submission id the comment review screens label a submission by - so
-# an answer in the export can be traced back to the submission it was reviewed under.
 RESPONDENT_COLUMNS = (RESPONDENT_COLUMN, SUBMISSION_COUNT_COLUMN)
 RESPONDENT_COLUMNS_WITH_COMMENT_ID = RESPONDENT_COLUMNS + (COMMENT_ID_COLUMN,)
+ALL_DATA_COLUMNS = (RESPONDENT_COLUMN, COMMENT_STATUS_COLUMN, SUBMISSION_COUNT_COLUMN, COMMENT_ID_COLUMN)
+COMMENT_AUDIT_COLUMNS = (
+    RESPONDENT_COLUMN, COMMENT_STATUS_COLUMN, REJECTION_REASON_COLUMN, PUBLISHED_DATE_COLUMN,
+    REVIEWER_COLUMN, PROJECT_COLUMN,
+)
 
-RESPONDENT_COLUMN_WIDTH = 12
-SUBMISSION_COUNT_COLUMN_WIDTH = 12
-COMMENT_ID_COLUMN_WIDTH = 12
 QUESTION_COLUMN_WIDTH = 22
 
 IDENTITY_COLUMN_HEADINGS = {
     RESPONDENT_COLUMN: 'Respondent ID',
     SUBMISSION_COUNT_COLUMN: 'Submissions',
     COMMENT_ID_COLUMN: 'Comment ID',
+    COMMENT_STATUS_COLUMN: 'Comment Status',
+    REJECTION_REASON_COLUMN: 'Reason for Rejection',
+    PUBLISHED_DATE_COLUMN: 'Published Date',
+    REVIEWER_COLUMN: 'Reviewer',
+    PROJECT_COLUMN: 'Project',
 }
 
 IDENTITY_COLUMN_WIDTHS = {
-    RESPONDENT_COLUMN: RESPONDENT_COLUMN_WIDTH,
-    SUBMISSION_COUNT_COLUMN: SUBMISSION_COUNT_COLUMN_WIDTH,
-    COMMENT_ID_COLUMN: COMMENT_ID_COLUMN_WIDTH,
+    RESPONDENT_COLUMN: 12,
+    SUBMISSION_COUNT_COLUMN: 12,
+    COMMENT_ID_COLUMN: 12,
+    COMMENT_STATUS_COLUMN: 16,
+    REJECTION_REASON_COLUMN: 30,
+    PUBLISHED_DATE_COLUMN: 18,
+    REVIEWER_COLUMN: 20,
+    PROJECT_COLUMN: 24,
 }
 
+# The heading over the identity columns on the sheets that carry comment status.
+IDENTITY_BANNER = 'Data'
+PUBLISHED_DATE_FORMAT = 'mmmm d, yyyy'
+
 # The qualitative sheet drops the option and type rows.
-COMMENT_DATA_START_ROW = 3
+COMMENT_DATA_START_ROW = 4
 COMMENT_COLUMN_WIDTH = 48
 
 # The aggregated sheet's single header row, then banners and option rows beneath it.
-AGGREGATE_HEADER_ROW = 1
+AGGREGATE_HEADER_ROW = 2
 AGGREGATE_COLUMN_WIDTH = 24
 PERCENTAGE_FORMAT = '0.0%'
 
@@ -137,7 +193,25 @@ AGGREGATE_PERCENTAGE_COLUMNS = (4, 9)
 
 def first_question_column(identity_columns: tuple) -> int:
     """Return the column a sheet's questions start in: whatever follows its identity columns."""
-    return identity_columns[-1] + 1
+    return len(identity_columns) + 1
+
+
+def comment_status_label(submission) -> str | None:
+    """Name a submission's comment status as the review screens show it.
+
+    A resubmission still waiting on review reads as Resubmitted, which the review screens flag
+    separately from its Pending status.
+    """
+    if submission.comment_status_id is None:
+        return None
+    if submission.comment_status_id == Status.Pending.value and submission.is_resubmission:
+        return 'Resubmitted'
+    return Status(submission.comment_status_id).name.replace('_', ' ').title()
+
+
+def is_approved(submission) -> bool:
+    """Whether a submission's comments have been approved for viewing."""
+    return submission.comment_status_id == Status.Approved.value
 
 
 _CENTERED = Alignment(horizontal='center', vertical='center', wrap_text=True)
@@ -170,6 +244,7 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
 
         for sheet in DASHBOARD_SHEETS:
             worksheet = workbook.create_sheet(title=sheet.tab_name)
+            cls._write_description(worksheet, sheet.description)
             if sheet is QUANTITATIVE_NON_AGGREGATED:
                 cls._build_non_aggregated_sheet(worksheet, columns, respondents, RESPONDENT_COLUMNS)
             elif sheet is QUANTITATIVE_AGGREGATED:
@@ -182,13 +257,23 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
                     ),
                 )
             elif sheet is ALL_DATA:
-                # Same shape as the non-aggregated sheet, with the free-text columns kept in.
+                # Same shape as the non-aggregated sheet, with the free-text columns kept in. Every
+                # submission keeps its quantitative answers, but only approved comments show.
                 cls._build_non_aggregated_sheet(
-                    worksheet, all_columns, respondents, RESPONDENT_COLUMNS_WITH_COMMENT_ID
+                    worksheet, all_columns, respondents, ALL_DATA_COLUMNS,
+                    approved_text_only=True, identity_banner=True,
                 )
-            elif sheet is QUALITATIVE_RESPONSES:
+            elif sheet is APPROVED_QUALITATIVE:
                 cls._build_qualitative_sheet(
-                    worksheet, comment_columns, respondents, RESPONDENT_COLUMNS_WITH_COMMENT_ID
+                    worksheet, comment_columns,
+                    [row for row in respondents if is_approved(row.submission)],
+                    RESPONDENT_COLUMNS_WITH_COMMENT_ID,
+                )
+            elif sheet is COMMENT_AUDIT:
+                # Every submission and all of its text, whatever its status, with how it was reviewed.
+                cls._build_non_aggregated_sheet(
+                    worksheet, all_columns, respondents, COMMENT_AUDIT_COLUMNS,
+                    identity_banner=True, project_name=cls._project_name(survey),
                 )
 
         stream = BytesIO()
@@ -197,15 +282,23 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         return stream, cls._build_file_name(survey)
 
     @classmethod
-    def _build_non_aggregated_sheet(
-        cls, worksheet, columns: list, respondents: list, identity_columns: tuple
+    def _build_non_aggregated_sheet(  # pylint: disable=too-many-arguments
+        cls, worksheet, columns: list, respondents: list, identity_columns: tuple, *,
+        approved_text_only: bool = False, identity_banner: bool = False, project_name: str = None,
     ):
-        """Write the one-row-per-respondent sheet: four header rows, then a row per respondent."""
+        """Write the one-row-per-respondent sheet: four header rows, then a row per respondent.
+
+        approved_text_only blanks the free text of any submission not yet approved, leaving its
+        quantitative answers in place. identity_banner heads the identity columns with 'Data'.
+        """
         first_column = first_question_column(identity_columns)
-        cls._write_respondent_header(worksheet, identity_columns)
+        cls._write_respondent_header(worksheet, identity_columns, identity_banner)
         cls._write_page_banners(worksheet, columns, first_column)
         cls._write_question_headers(worksheet, columns, first_column)
-        cls._write_respondent_rows(worksheet, columns, respondents, identity_columns)
+        cls._write_respondent_rows(
+            worksheet, columns, respondents, identity_columns,
+            approved_text_only=approved_text_only, project_name=project_name,
+        )
 
         cls._set_respondent_column_widths(worksheet, identity_columns)
         for offset, column in enumerate(columns):
@@ -276,17 +369,14 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
 
         first_column = first_question_column(identity_columns)
         for row in (PAGE_TITLE_ROW, QUESTION_TITLE_ROW):
-            for column in identity_columns:
+            for column in range(1, first_column):
                 cls._style_header_cell(
                     worksheet.cell(row=row, column=column),
                     fill=RESPONDENT_HEADER_COLOUR,
                     font_colour=RESPONDENT_HEADER_FONT_COLOUR,
                     bold=True,
                 )
-        for column in identity_columns:
-            worksheet.cell(
-                row=QUESTION_TITLE_ROW, column=column, value=IDENTITY_COLUMN_HEADINGS[column]
-            )
+        cls._write_identity_headings(worksheet, identity_columns)
         cls._set_respondent_column_widths(worksheet, identity_columns)
 
         cls._write_page_banners(worksheet, columns, first_column)
@@ -362,27 +452,32 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
                 cell.number_format = PERCENTAGE_FORMAT
 
     @classmethod
-    def _write_respondent_header(cls, worksheet, identity_columns: tuple):
+    def _write_respondent_header(cls, worksheet, identity_columns: tuple, identity_banner: bool = False):
         """Write the respondent columns' headers, kept neutral as they belong to no page."""
+        last_column = len(identity_columns)
         for row in (PAGE_TITLE_ROW, QUESTION_TITLE_ROW, OPTION_LABEL_ROW):
-            for column in identity_columns:
+            for column in range(1, last_column + 1):
                 cls._style_header_cell(
                     worksheet.cell(row=row, column=column),
                     fill=RESPONDENT_HEADER_COLOUR,
                     font_colour=RESPONDENT_HEADER_FONT_COLOUR,
                     bold=True,
                 )
-        for column in identity_columns:
-            worksheet.cell(
-                row=QUESTION_TITLE_ROW, column=column, value=IDENTITY_COLUMN_HEADINGS[column]
-            )
+        cls._write_identity_headings(worksheet, identity_columns)
+        if identity_banner:
+            # Sits in the page banner row, as a heading over the identity columns.
+            worksheet.cell(row=PAGE_TITLE_ROW, column=1, value=IDENTITY_BANNER)
+            if last_column > 1:
+                worksheet.merge_cells(
+                    start_row=PAGE_TITLE_ROW, start_column=1, end_row=PAGE_TITLE_ROW, end_column=last_column
+                )
         # Only the id column names the type row; the others just carry the band across.
-        for column in identity_columns:
+        for column in range(1, last_column + 1):
             cls._style_header_cell(
                 worksheet.cell(
                     row=QUESTION_TYPE_ROW,
                     column=column,
-                    value='TYPE' if column == RESPONDENT_COLUMN else None,
+                    value='TYPE' if column == 1 else None,
                 ),
                 fill=RESPONDENT_TYPE_COLOUR,
                 font_colour=RESPONDENT_TYPE_FONT_COLOUR,
@@ -448,41 +543,98 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
             )
 
     @classmethod
-    def _write_identity_cells(cls, worksheet, row: int, respondent, identity_columns: tuple):
+    def _write_identity_cells(
+        cls, worksheet, row: int, respondent, identity_columns: tuple, project_name: str = None
+    ):
         """Write the columns identifying a submission, banded per email rather than per row.
 
         Every submission from one email shares a band, so a group of them reads as a single
         block and a reviewer can see at a glance that they came from the same person.
         """
+        submission = respondent.submission
         values = {
             RESPONDENT_COLUMN: respondent.respondent_id,
             SUBMISSION_COUNT_COLUMN: respondent.submission_count,
-            COMMENT_ID_COLUMN: respondent.submission.id,
+            COMMENT_ID_COLUMN: submission.id,
+            COMMENT_STATUS_COLUMN: comment_status_label(submission),
+            REJECTION_REASON_COLUMN: cls._rejection_reason(submission),
+            PUBLISHED_DATE_COLUMN: cls._published_date(submission),
+            REVIEWER_COLUMN: submission.reviewed_by,
+            PROJECT_COLUMN: project_name,
         }
-        for column in identity_columns:
-            cls._style_data_cell(
-                worksheet.cell(row=row, column=column, value=values[column]),
+        for column, key in enumerate(identity_columns, start=1):
+            cell = cls._style_data_cell(
+                worksheet.cell(row=row, column=column, value=values[key] or None),
                 fill=get_respondent_zebra_colour(respondent.group_index),
                 font_colour=RESPONDENT_FONT_COLOUR,
             )
+            if key == PUBLISHED_DATE_COLUMN:
+                cell.number_format = PUBLISHED_DATE_FORMAT
 
     @classmethod
-    def _write_respondent_rows(cls, worksheet, columns: list, respondents: list,
-                               identity_columns: tuple):
+    def _write_respondent_rows(  # pylint: disable=too-many-arguments
+        cls, worksheet, columns: list, respondents: list, identity_columns: tuple, *,
+        approved_text_only: bool = False, project_name: str = None,
+    ):
         """Write one row per submission, zebra striped in their page's two band colours."""
         first_column = first_question_column(identity_columns)
         for row_index, respondent in enumerate(respondents):
             row = DATA_START_ROW + row_index
 
-            cls._write_identity_cells(worksheet, row, respondent, identity_columns)
+            cls._write_identity_cells(worksheet, row, respondent, identity_columns, project_name)
             for offset, column in enumerate(columns):
-                answer = column.read_answer(respondent.submission.submission_json)
+                answer = cls._read_answer(column, respondent.submission, approved_text_only)
                 band = get_zebra_colour(column.page_index, row_index)
                 cls._style_data_cell(
                     worksheet.cell(row=row, column=first_column + offset, value=answer),
                     fill=band if answer is not None else mute_colour(band),
                     font_colour=cls._answer_font_colour(column, answer),
                 )
+
+    @staticmethod
+    def _read_answer(column, submission, approved_text_only: bool):
+        """Read a submission's answer for a column, holding back free text not yet approved."""
+        if approved_text_only and column.component_type in FREE_TEXT_TYPES and not is_approved(submission):
+            return None
+        return column.read_answer(submission.submission_json)
+
+    @staticmethod
+    def _write_identity_headings(worksheet, identity_columns: tuple):
+        """Name each identity column in the question title row."""
+        for column, key in enumerate(identity_columns, start=1):
+            worksheet.cell(row=QUESTION_TITLE_ROW, column=column, value=IDENTITY_COLUMN_HEADINGS[key])
+
+    @staticmethod
+    def _rejection_reason(submission) -> str | None:
+        """List why a submission was rejected; nothing unless it is currently Rejected."""
+        if submission.comment_status_id != Status.Rejected.value:
+            return None
+        return CommentService.get_rejection_note({
+            'has_personal_info': submission.has_personal_info,
+            'has_profanity': submission.has_profanity,
+            'has_threat': submission.has_threat,
+            'rejected_reason_other': submission.rejected_reason_other,
+        })
+
+    @staticmethod
+    def _published_date(submission):
+        """Return the date the submission was reviewed, in Pacific time, or None if never."""
+        if not submission.review_date:
+            return None
+        return submission.review_date.replace(tzinfo=pytz.utc).astimezone(legislative_timezone()).date()
+
+    @staticmethod
+    def _project_name(survey: SurveyModel) -> str | None:
+        """Return the project the survey's engagement is for, from its metadata."""
+        metadata = EngagementMetadataModel.find_by_id(survey.engagement_id)
+        return (metadata.project_metadata or {}).get('project_name') if metadata else None
+
+    @staticmethod
+    def _write_description(worksheet, description: str):
+        """Write the sheet's description above its table; it overflows across the empty row."""
+        worksheet.cell(row=DESCRIPTION_ROW, column=1, value=description).font = Font(
+            color=BODY_FONT_COLOUR, italic=True, size=9
+        )
 
     @staticmethod
     def _answer_font_colour(column, answer) -> str:
@@ -498,9 +650,8 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def _set_respondent_column_widths(worksheet, identity_columns: tuple):
         """Size the identity columns, shared by every sheet that lists respondents."""
-        for column in identity_columns:
-            worksheet.column_dimensions[get_column_letter(column)].width = \
-                IDENTITY_COLUMN_WIDTHS[column]
+        for column, key in enumerate(identity_columns, start=1):
+            worksheet.column_dimensions[get_column_letter(column)].width = IDENTITY_COLUMN_WIDTHS[key]
 
     @staticmethod
     def _page_spans(columns: list, first_column: int) -> list:
