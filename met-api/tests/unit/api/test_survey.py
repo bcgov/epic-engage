@@ -1484,6 +1484,18 @@ def test_all_data_sheet_shows_only_approved_comment_text(client, jwt, session): 
     assert _column_values(sheet, 'Anything else?') == [f'Text {CommentStatus.Approved.value}'] + [None] * 6
 
 
+def test_dashboard_export_uses_bc_sans_10(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert every filled cell on every sheet is BC Sans 10."""
+    survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
+    _seed_every_comment_status(survey, eng)
+
+    for sheet in _export(client, jwt, survey.id).worksheets:
+        for row in sheet.iter_rows():
+            for cell in row:
+                if cell.value is not None:
+                    assert (cell.font.name, cell.font.sz) == ('BC Sans', 10), (sheet.title, cell.coordinate)
+
+
 def test_approved_qualitative_sheet_lists_only_approved(client, jwt, session):  # pylint:disable=unused-argument
     """Assert the qualitative sheet holds approved comments alone, with no status column."""
     survey, eng = factory_survey_and_eng_model(quantitative_survey_info)

@@ -50,8 +50,8 @@ from met_api.utils.datetime import legislative_timezone, utc_datetime
 from met_api.utils.export_styles import (
     AGGREGATE_HEADER_DESCRIBE_COLOUR, AGGREGATE_HEADER_LIKERT_COLOUR, AGGREGATE_HEADER_RANK_COLOUR,
     AGGREGATE_HEADER_TALLY_COLOUR, BODY_FONT_COLOUR, CELL_BORDER_COLOUR,
-    CHECKBOX_SELECTED_FONT_COLOUR, MUTED_FONT_COLOUR, NUMERIC_FONT_COLOUR, QUESTION_BANNER_COLOUR,
-    RESPONDENT_FONT_COLOUR, RESPONDENT_HEADER_COLOUR, RESPONDENT_HEADER_FONT_COLOUR,
+    CHECKBOX_SELECTED_FONT_COLOUR, FONT_NAME, FONT_SIZE, MUTED_FONT_COLOUR, NUMERIC_FONT_COLOUR,
+    QUESTION_BANNER_COLOUR, RESPONDENT_FONT_COLOUR, RESPONDENT_HEADER_COLOUR, RESPONDENT_HEADER_FONT_COLOUR,
     RESPONDENT_TYPE_COLOUR, RESPONDENT_TYPE_FONT_COLOUR, get_page_colours,
     get_question_type_colours, get_question_type_label, get_respondent_zebra_colour,
     get_zebra_colour, mute_colour)
@@ -427,7 +427,7 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
         """Write a full-width banner row, left aligned so long titles stay readable."""
         cell = worksheet.cell(row=row, column=1, value=text)
         cell.fill = PatternFill('solid', fgColor=fill)
-        cell.font = Font(color=font_colour, bold=True, size=9)
+        cell.font = Font(color=font_colour, bold=True, name=FONT_NAME, size=FONT_SIZE)
         cell.border = _THIN_BORDER
         cell.alignment = _LEFT
         worksheet.merge_cells(
@@ -648,7 +648,7 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
     def _write_description(worksheet, description: str):
         """Write the sheet's description above its table; it overflows across the empty row."""
         worksheet.cell(row=DESCRIPTION_ROW, column=1, value=description).font = Font(
-            color=BODY_FONT_COLOUR, italic=True, size=9
+            color=BODY_FONT_COLOUR, italic=True, name=FONT_NAME, size=FONT_SIZE
         )
 
     @staticmethod
@@ -684,7 +684,7 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
     def _style_header_cell(cell, fill: str, font_colour: str, bold: bool = False, italic: bool = False):
         """Style a cell in the header block. Every header row is centered."""
         cell.fill = PatternFill('solid', fgColor=fill)
-        cell.font = Font(color=font_colour, bold=bold, italic=italic, size=9)
+        cell.font = Font(color=font_colour, bold=bold, italic=italic, name=FONT_NAME, size=FONT_SIZE)
         cell.border = _THIN_BORDER
         cell.alignment = _CENTERED
         return cell
@@ -693,7 +693,7 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
     def _style_data_cell(cell, fill: str, font_colour: str):
         """Style a respondent's answer cell, left aligned so long labels stay readable."""
         cell.fill = PatternFill('solid', fgColor=fill)
-        cell.font = Font(color=font_colour, size=9)
+        cell.font = Font(color=font_colour, name=FONT_NAME, size=FONT_SIZE)
         cell.border = _THIN_BORDER
         cell.alignment = _LEFT
         return cell
