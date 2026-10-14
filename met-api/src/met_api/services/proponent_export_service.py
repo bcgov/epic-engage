@@ -23,6 +23,7 @@ shared as comments come in.
 """
 from __future__ import annotations
 
+import math
 from io import BytesIO
 
 from openpyxl import Workbook
@@ -35,7 +36,9 @@ from met_api.models.report_setting import ReportSetting as ReportSettingModel
 from met_api.models.survey import Survey as SurveyModel
 from met_api.services import authorization
 from met_api.utils.datetime import utc_datetime
-from met_api.utils.export_styles import BODY_FONT_COLOUR, CELL_BORDER_COLOUR, MUTED_FONT_COLOUR
+from met_api.utils.export_styles import (
+    BODY_FONT_COLOUR, CELL_BORDER_COLOUR, MUTED_FONT_COLOUR, QUESTION_BANNER_COLOUR, get_page_colours,
+    get_zebra_colour)
 from met_api.utils.roles import Role
 from met_api.utils.survey_export_columns import FREE_TEXT_TYPES, build_export_columns
 
@@ -47,32 +50,32 @@ COLUMN_HEADINGS = ('Public Comment', 'Proponent Response')
 COMMENT_HEADER_COLOUR = '5A6473'
 RESPONSE_HEADER_COLOUR = '006064'
 HEADER_FONT_COLOUR = 'FFFFFF'
-PAGE_BANNER_COLOUR = '1A3A6B'
-QUESTION_BANNER_COLOUR = 'E3EEF9'
-QUESTION_FONT_COLOUR = '013366'
-COMMENT_FILL_COLOUR = 'F0F4FB'
-RESPONSE_FILL_COLOUR = 'F0FAFA'
-RESPONSE_BORDER_COLOUR = 'B2DFDB'
 
-COMMENT_COLUMN_WIDTH = 120
+FONT_NAME = 'BC Sans'
+FONT_SIZE = 10
 
-FONT_NAME = 'Noto Sans'
-TITLE_FONT_SIZE = 13
-PAGE_FONT_SIZE = 10
-HEADING_FONT_SIZE = 9
-BODY_FONT_SIZE = 10
-RESPONSE_COLUMN_WIDTH = 90
+COMMENT_COLUMN_WIDTH = 80
+RESPONSE_COLUMN_WIDTH = 50
+COLUMN_COUNT = 2
+
+CHARACTERS_PER_WIDTH = 1.1
+LINE_HEIGHT = 13.5
+ROW_PADDING = 3
 
 _WRAP = Alignment(horizontal='left', vertical='top', wrap_text=True)
+_CELL_EDGE = Side(style='thin', color=CELL_BORDER_COLOUR)
+_THIN_BORDER = Border(left=_CELL_EDGE, right=_CELL_EDGE, top=_CELL_EDGE, bottom=_CELL_EDGE)
 
 
-def _border(colour: str) -> Border:
-    edge = Side(style='thin', color=colour)
-    return Border(left=edge, right=edge, top=edge, bottom=edge)
+def _font(**kwargs) -> Font:
+    return Font(name=FONT_NAME, size=FONT_SIZE, **kwargs)
 
 
-def _font(size: int, **kwargs) -> Font:
-    return Font(name=FONT_NAME, size=size, **kwargs)
+def _row_height(text: str, column_width: float) -> float:
+    """Estimate the height a row needs to show all of its wrapped text."""
+    per_line = column_width * CHARACTERS_PER_WIDTH
+    lines = sum(max(1, math.ceil(len(paragraph) / per_line)) for paragraph in text.split('\n'))
+    return lines * LINE_HEIGHT + ROW_PADDING
 
 
 def _set_text(cell, value: str):
@@ -139,9 +142,9 @@ class ProponentExportService:  # pylint: disable=too-few-public-methods
                 page_label = f'Page {column.page_index + 1}'
                 if column.page_title:
                     page_label = f'{page_label} - {column.page_title}'
-                cls._write_banner(sheet, page_label.upper(), PAGE_BANNER_COLOUR,
-                                  _font(PAGE_FONT_SIZE, bold=True, color=HEADER_FONT_COLOUR))
-            cls._write_question(sheet, column.question_label, setting,
+                cls._write_banner(sheet, page_label.upper(), get_page_colours(column.page_index).banner,
+                                  _font(bold=True, color=HEADER_FONT_COLOUR))
+            cls._write_question(sheet, column.page_index, column.question_label, setting,
                                 comments_by_question.get(column.question_key, []))
 
     @staticmethod
@@ -151,58 +154,61 @@ class ProponentExportService:  # pylint: disable=too-few-public-methods
         sheet.column_dimensions['B'].width = RESPONSE_COLUMN_WIDTH
         title = sheet.cell(row=1, column=1)
         _set_text(title, f'{survey.name} - Public / Proponent Export')
-        title.font = _font(TITLE_FONT_SIZE, bold=True)
-        sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=2)
+        title.font = _font(bold=True)
+        sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=COLUMN_COUNT)
         for column, (heading, colour) in enumerate(zip(COLUMN_HEADINGS,
                                                        (COMMENT_HEADER_COLOUR, RESPONSE_HEADER_COLOUR)), start=1):
             cell = sheet.cell(row=2, column=column, value=heading)
             cell.fill = _fill(colour)
-            cell.font = _font(HEADING_FONT_SIZE, bold=True, color=HEADER_FONT_COLOUR)
+            cell.font = _font(bold=True, color=HEADER_FONT_COLOUR)
+            cell.border = _THIN_BORDER
         sheet.freeze_panes = 'A3'
 
     @classmethod
-    def _write_question(cls, sheet, label: str, setting: ReportSettingModel, comments: list):
+    def _write_question(cls, sheet, page_index: int, label: str, setting: ReportSettingModel, comments: list):
         """Write a question, its description and its comments, or a notice that it has none yet."""
-        cls._write_banner(sheet, label, QUESTION_BANNER_COLOUR,
-                          _font(HEADING_FONT_SIZE, bold=True, color=QUESTION_FONT_COLOUR))
+        cls._write_banner(sheet, label, QUESTION_BANNER_COLOUR, _font(bold=True, color=BODY_FONT_COLOUR))
         # An export description left unset follows the report's; one cleared on purpose is ''.
         description = setting.export_description
         if description is None:
             description = setting.description
         if description:
-            cls._write_banner(sheet, description, QUESTION_BANNER_COLOUR,
-                              _font(HEADING_FONT_SIZE, italic=True, color=QUESTION_FONT_COLOUR))
+            cls._write_banner(sheet, description, QUESTION_BANNER_COLOUR, _font(italic=True, color=BODY_FONT_COLOUR))
         if not comments:
-            cls._write_banner(sheet, NO_COMMENTS, None, _font(BODY_FONT_SIZE, italic=True, color=MUTED_FONT_COLOUR))
-        for text in comments:
-            cls._write_comment_row(sheet, text)
+            cls._write_banner(sheet, NO_COMMENTS, get_zebra_colour(page_index, 0), _font(color=MUTED_FONT_COLOUR))
+        # Banded afresh under each question, as the aggregated sheet does.
+        for band_index, text in enumerate(comments):
+            cls._write_comment_row(sheet, text, get_zebra_colour(page_index, band_index))
 
     @staticmethod
-    def _write_banner(sheet, value: str, colour, font: Font):
+    def _write_banner(sheet, value: str, colour: str, font: Font):
         """Write a full-width row: a page, a question, its description or its empty notice."""
         row = sheet.max_row + 1
         cell = sheet.cell(row=row, column=1)
         _set_text(cell, value)
-        sheet.merge_cells(start_row=row, start_column=1, end_row=row, end_column=2)
+        sheet.merge_cells(start_row=row, start_column=1, end_row=row, end_column=COLUMN_COUNT)
         cell.font = font
         cell.alignment = _WRAP
-        if colour:
-            cell.fill = _fill(colour)
+        # merge_cells styles only the first cell; fill the rest so the bar is solid.
+        for column in range(1, COLUMN_COUNT + 1):
+            sheet.cell(row=row, column=column).fill = _fill(colour)
+            sheet.cell(row=row, column=column).border = _THIN_BORDER
+        sheet.row_dimensions[row].height = _row_height(cell.value, COMMENT_COLUMN_WIDTH + RESPONSE_COLUMN_WIDTH)
 
     @staticmethod
-    def _write_comment_row(sheet, text: str):
+    def _write_comment_row(sheet, text: str, band: str):
+        """Write a comment beside its awaiting response, wrapped within the comment column."""
         row = sheet.max_row + 1
         comment = sheet.cell(row=row, column=1)
         _set_text(comment, text)
-        comment.fill = _fill(COMMENT_FILL_COLOUR)
-        comment.font = _font(BODY_FONT_SIZE, color=BODY_FONT_COLOUR)
-        comment.border = _border(CELL_BORDER_COLOUR)
-        comment.alignment = _WRAP
+        comment.font = _font(color=BODY_FONT_COLOUR)
         response = sheet.cell(row=row, column=2, value=AWAITING_RESPONSE)
-        response.fill = _fill(RESPONSE_FILL_COLOUR)
-        response.font = _font(BODY_FONT_SIZE, italic=True, color=MUTED_FONT_COLOUR)
-        response.border = _border(RESPONSE_BORDER_COLOUR)
-        response.alignment = _WRAP
+        response.font = _font(color=MUTED_FONT_COLOUR)
+        for cell in (comment, response):
+            cell.fill = _fill(band)
+            cell.border = _THIN_BORDER
+            cell.alignment = _WRAP
+        sheet.row_dimensions[row].height = _row_height(comment.value, COMMENT_COLUMN_WIDTH)
 
     @staticmethod
     def _build_file_name(survey: SurveyModel) -> str:

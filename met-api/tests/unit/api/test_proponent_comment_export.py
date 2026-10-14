@@ -28,6 +28,7 @@ from met_api.constants.membership_type import MembershipType
 from met_api.constants.user import SYSTEM_REVIEWER
 from met_api.models.report_setting import ReportSetting as ReportSettingModel
 from met_api.utils.enums import ContentType
+from met_api.utils.export_styles import QUESTION_BANNER_COLOUR, get_page_colours
 from tests.utilities.factory_scenarios import TestJwtClaims
 from tests.utilities.factory_utils import (
     factory_auth_header, factory_comment_model, factory_membership_model, factory_participant_model,
@@ -202,38 +203,89 @@ def test_proponent_export_survey_not_found(client, jwt, session):  # pylint:disa
     assert rv.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_proponent_export_gives_comments_the_widest_column(client, jwt, session):  # pylint:disable=unused-argument
-    """Assert long comments get a wide column, so they wrap onto fewer lines."""
+def _sheet(client, jwt, survey_id):
+    return load_workbook(BytesIO(_export(client, jwt, survey_id).data)).active
+
+
+def _row_of(sheet, value):
+    return next(row[0].row for row in sheet.iter_rows(max_col=1) if row[0].value == value)
+
+
+def _fills(sheet, row):
+    return tuple(sheet.cell(row=row, column=column).fill.fgColor.rgb[-6:] for column in (1, 2))
+
+
+def test_proponent_export_fits_both_columns_on_screen(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert the two columns are narrow enough to sit side by side on a laptop screen."""
     survey, _ = _survey_with_settings()
 
-    sheet = load_workbook(BytesIO(_export(client, jwt, survey.id).data)).active
+    sheet = _sheet(client, jwt, survey.id)
 
-    assert sheet.column_dimensions['A'].width == 120
-    assert sheet.column_dimensions['B'].width == 90
+    assert sheet.column_dimensions['A'].width == 80
+    assert sheet.column_dimensions['B'].width == 50
 
 
-def test_proponent_export_uses_the_design_fonts(client, jwt, session):  # pylint:disable=unused-argument
-    """Assert every row uses the design's Noto Sans at the design's sizes."""
+def test_proponent_export_uses_bc_sans_10(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert every cell is BC Sans 10, bold only for the title, headings and banners."""
     survey, eng = _survey_with_settings()
     _add_comment(survey, eng, 'connection', 'First approved')
 
-    sheet = load_workbook(BytesIO(_export(client, jwt, survey.id).data)).active
-    fonts = {
-        row[0].value: (row[0].font.name, row[0].font.sz, bool(row[0].font.b))
-        for row in sheet.iter_rows(max_col=1)
-    }
+    sheet = _sheet(client, jwt, survey.id)
+    bold = {f'{survey.name} - Public / Proponent Export', 'Public Comment', 'Proponent Response',
+            'PAGE 1 - DEMOGRAPHICS', 'PAGE 3 - PROJECT DESIGN', 'Your connection?', 'Design comments?'}
 
-    assert fonts[f'{survey.name} - Public / Proponent Export'] == ('Noto Sans', 13, True)
-    assert fonts['Public Comment'] == ('Noto Sans', 9, True)
-    assert fonts['PAGE 1 - DEMOGRAPHICS'] == ('Noto Sans', 10, True)
-    assert fonts['Your connection?'] == ('Noto Sans', 9, True)
-    assert fonts['Export description'] == ('Noto Sans', 9, False)
-    assert fonts['First approved'] == ('Noto Sans', 10, False)
-    assert fonts[NO_COMMENTS] == ('Noto Sans', 10, False)
-    response = sheet.cell(row=2, column=2).font
-    assert (response.name, response.sz, bool(response.b)) == ('Noto Sans', 9, True)
-    awaiting = next(row[1] for row in sheet.iter_rows(max_col=2) if row[1].value == AWAITING_RESPONSE).font
-    assert (awaiting.name, awaiting.sz) == ('Noto Sans', 10)
+    for row in sheet.iter_rows(max_col=2):
+        for cell in row:
+            if cell.value is None:
+                continue
+            assert (cell.font.name, cell.font.sz) == ('BC Sans', 10), cell.value
+            assert bool(cell.font.b) == (cell.value in bold), cell.value
+
+
+def test_proponent_export_colours_each_page_banner(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert each page separator takes its own page colour, as in the aggregated dashboard export."""
+    survey, _ = _survey_with_settings()
+
+    sheet = _sheet(client, jwt, survey.id)
+
+    # A banner is merged across both columns, and Excel draws it in its first cell's style.
+    assert _fills(sheet, _row_of(sheet, 'PAGE 1 - DEMOGRAPHICS'))[0] == get_page_colours(0).banner
+    assert _fills(sheet, _row_of(sheet, 'PAGE 3 - PROJECT DESIGN'))[0] == get_page_colours(2).banner
+    assert _fills(sheet, _row_of(sheet, 'Your connection?'))[0] == QUESTION_BANNER_COLOUR
+
+
+def test_proponent_export_bands_comments_in_page_colours(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert comment rows alternate their page's two shades, restarting at each question."""
+    survey, eng = _survey_with_settings()
+    _add_comment(survey, eng, 'connection', 'First')
+    _add_comment(survey, eng, 'connection', 'Second')
+    _add_comment(survey, eng, 'connection', 'Third')
+    _add_comment(survey, eng, 'design', 'On page three')
+
+    sheet = _sheet(client, jwt, survey.id)
+    page_one, page_three = get_page_colours(0), get_page_colours(2)
+
+    assert _fills(sheet, _row_of(sheet, 'First')) == (page_one.band_light,) * 2
+    assert _fills(sheet, _row_of(sheet, 'Second')) == (page_one.band_dark,) * 2
+    assert _fills(sheet, _row_of(sheet, 'Third')) == (page_one.band_light,) * 2
+    assert _fills(sheet, _row_of(sheet, 'On page three')) == (page_three.band_light,) * 2
+
+
+def test_proponent_export_wraps_long_comments_in_own_column(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert a long comment wraps inside Public Comment, in a row tall enough to show all of it."""
+    survey, eng = _survey_with_settings()
+    long_comment = 'A long comment about the project and its effects on the watershed. ' * 12
+    _add_comment(survey, eng, 'connection', 'Short')
+    _add_comment(survey, eng, 'connection', long_comment)
+
+    sheet = _sheet(client, jwt, survey.id)
+    short_row, long_row = _row_of(sheet, 'Short'), _row_of(sheet, long_comment)
+
+    assert sheet.cell(row=long_row, column=1).alignment.wrap_text
+    merged_rows = {row for merged in sheet.merged_cells.ranges for row in range(merged.min_row, merged.max_row + 1)}
+    assert long_row not in merged_rows
+    assert sheet.cell(row=long_row, column=2).value == AWAITING_RESPONSE
+    assert sheet.row_dimensions[long_row].height > (sheet.row_dimensions[short_row].height or 15) * 4
 
 
 def test_proponent_export_cleared_description_stays_cleared(client, jwt, session):  # pylint:disable=unused-argument
