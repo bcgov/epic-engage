@@ -26,7 +26,7 @@ import { DashboardContext } from './DashboardContext';
 import { LiveActivityChart } from './LiveActivityChart';
 import { ResultsAsOfWatermark } from './ResultsAsOfWatermark';
 import { ChartsPngExport } from './ChartsPngExport';
-import { isSuperuser as isSuperuserGroup, selectPublicCharts } from './exportCharts';
+import { dataSheetName, isSuperuser as isSuperuserGroup, selectPublicCharts } from './exportCharts';
 import { Palette } from 'styles/Theme';
 
 interface DashboardHeaderCardProps {
@@ -144,10 +144,10 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
     const userDetail = useAppSelector((state) => state.user.userDetail);
     const assignedEngagements = useAppSelector((state) => state.user.assignedEngagements);
     const canExport = dashboardType === DashboardType.INTERNAL && isAuthenticated;
-    // The internal export includes rejected comments, so only Superusers may download it.
+    // The Excel export's Comment Audit sheet holds rejected and unreviewed comments, so only Superusers get it.
+    // The engagement's team get the Excel export without that sheet, along with the chart images and the
+    // Public/Proponent comment export, which only ever hold what is cleared for the public.
     const isSuperuser = isSuperuserGroup(userDetail.groups);
-    // The chart images and the Public/Proponent comment export only ever hold what is cleared for the public,
-    // so the engagement's team may take them too.
     const canExportCharts =
         isSuperuser ||
         (Boolean(userDetail.groups?.includes('/ENGAGE/' + USER_GROUP.TEAM_MEMBER.value)) &&
@@ -176,7 +176,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
             setIsExporting(true);
             const response = await getDashboardDataSheet(Number(surveyId));
             const timestamp = formatToUTC(Date(), 'YYYY-MM-DD');
-            downloadFile(response, `${engagement.name} - Dashboard Data - ${timestamp}.xlsx`);
+            downloadFile(response, dataSheetName(engagement.name, timestamp, isSuperuser));
         } catch (error) {
             dispatch(
                 openNotification({
@@ -419,40 +419,39 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                                 slotProps={{ paper: { sx: { minWidth: 260 } } }}
                             >
-                                {isSuperuser &&
-                                    (pendingExport === 'data' ? (
-                                        <ExportConfirm
-                                            icon={<TableChartOutlinedIcon sx={{ fontSize: 18 }} />}
-                                            title="Excel Data Export"
-                                            description="Raw and aggregated survey data across 5 sheets"
-                                            message="This export contains raw survey responses and is for internal use only. Do not share this file externally."
-                                            confirmLabel="Yes, download"
-                                            header={Palette.dashboard.exportWarning}
-                                            onCancel={() => setPendingExport(null)}
-                                            onConfirm={handleExportCsv}
-                                        />
-                                    ) : (
-                                        <MenuItem
-                                            onClick={() => setPendingExport('data')}
-                                            disabled={pendingExport !== null}
-                                            sx={exportItemSx}
-                                        >
-                                            <TableChartOutlinedIcon
-                                                sx={{ fontSize: 18, color: Palette.primary.main }}
-                                            />
-                                            <Box>
-                                                <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
-                                                    Excel Data Export
-                                                    {internalBadge}
-                                                </Typography>
-                                                <Typography
-                                                    sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}
-                                                >
-                                                    Raw and aggregated survey data across 5 sheets
-                                                </Typography>
-                                            </Box>
-                                        </MenuItem>
-                                    ))}
+                                {pendingExport === 'data' ? (
+                                    <ExportConfirm
+                                        icon={<TableChartOutlinedIcon sx={{ fontSize: 18 }} />}
+                                        title="Excel Data Export"
+                                        description={`Raw and aggregated survey data across ${
+                                            isSuperuser ? 5 : 4
+                                        } sheets`}
+                                        message="This export contains raw survey responses and is for internal use only. Do not share this file externally."
+                                        confirmLabel="Yes, download"
+                                        header={Palette.dashboard.exportWarning}
+                                        onCancel={() => setPendingExport(null)}
+                                        onConfirm={handleExportCsv}
+                                    />
+                                ) : (
+                                    <MenuItem
+                                        onClick={() => setPendingExport('data')}
+                                        disabled={pendingExport !== null}
+                                        sx={exportItemSx}
+                                    >
+                                        <TableChartOutlinedIcon sx={{ fontSize: 18, color: Palette.primary.main }} />
+                                        <Box>
+                                            <Typography sx={{ fontSize: 13, fontWeight: 600, lineHeight: 1.3 }}>
+                                                Excel Data Export
+                                                {internalBadge}
+                                            </Typography>
+                                            <Typography
+                                                sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}
+                                            >
+                                                Raw and aggregated survey data across {isSuperuser ? 5 : 4} sheets
+                                            </Typography>
+                                        </Box>
+                                    </MenuItem>
+                                )}
                                 {pendingExport === 'charts' ? (
                                     <ExportConfirm
                                         icon={<ImageOutlinedIcon sx={{ fontSize: 18 }} />}
@@ -461,7 +460,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                         message="Only charts marked for public report view will be included in this export."
                                         confirmLabel="Download"
                                         header={Palette.dashboard.exportDisclaimer}
-                                        borderTop={isSuperuser}
+                                        borderTop
                                         onCancel={() => setPendingExport(null)}
                                         onConfirm={handleExportPng}
                                     />
@@ -471,7 +470,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                         disabled={pendingExport !== null}
                                         sx={{
                                             ...exportItemSx,
-                                            borderTop: isSuperuser ? `1px solid ${Palette.border.subtle}` : 'none',
+                                            borderTop: `1px solid ${Palette.border.subtle}`,
                                         }}
                                     >
                                         <ImageOutlinedIcon sx={{ fontSize: 18, color: Palette.success.emphasis }} />

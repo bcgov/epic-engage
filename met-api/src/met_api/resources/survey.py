@@ -105,13 +105,9 @@ class SurveyDashboardSheet(Resource):
 
     @staticmethod
     @cross_origin(origins=allowedorigins())
-    @require_role([Role.EXPORT_INTERNAL_COMMENT_SHEET.value])
+    @_jwt.requires_auth
     def get(survey_id):
-        """Export the internal dashboard's survey data."""
-        # The Comment Audit sheet holds unreviewed and rejected comment text, so the export role
-        # alone is not enough: only Superusers may take it.
-        if not TokenInfo.is_superuser():
-            return 'Only Superusers may export the dashboard data', HTTPStatus.FORBIDDEN
+        """Export the internal dashboard's survey data; the user's token decides which sheets."""
         try:
             stream, file_name = DashboardExportService().export_dashboard_data_to_spread_sheet(survey_id)
             headers = {

@@ -10,6 +10,7 @@ import {
     chartFileName,
     chartFileNames,
     chartZipName,
+    dataSheetName,
     selectPublicCharts,
 } from 'components/public/dashboard/exportCharts';
 import { TypedSurveyData } from 'models/analytics/surveyResult';
@@ -106,6 +107,15 @@ describe('export file names', () => {
             'BigDeliciousRanchEAs_SurveyCharts_2026-09-23.zip',
         );
     });
+
+    it('names the Excel export after the engagement, the audience and export date', () => {
+        expect(dataSheetName("Big Delicious Ranch - EA's", '2026-10-09', true)).toBe(
+            'INTERNAL_BigDeliciousRanchEAs_SuperuserSurveyData_2026-10-09.xlsx',
+        );
+        expect(dataSheetName('Big Delicious Ranch', '2026-10-09', false)).toBe(
+            'INTERNAL_BigDeliciousRanch_TeamMemberSurveyData_2026-10-09.xlsx',
+        );
+    });
 });
 
 describe('Internal report export menu', () => {
@@ -145,15 +155,17 @@ describe('Internal report export menu', () => {
         renderHeader('/ENGAGE/EAO_IT_ADMIN', []);
         await openMenu();
         expect(screen.getByText('Excel Data Export')).toBeInTheDocument();
+        expect(screen.getByText('Raw and aggregated survey data across 5 sheets')).toBeInTheDocument();
         expect(screen.getByText('Download charts as a ZIP bundle')).toBeInTheDocument();
         expect(screen.getByText('Public/Proponent Comment Export')).toBeInTheDocument();
         expect(screen.getByText('Comments safe to share with the public and Proponents')).toBeInTheDocument();
     });
 
-    it('offers an assigned team member only the chart export', async () => {
+    it('offers an assigned team member the Excel export without the Comment Audit sheet', async () => {
         renderHeader('/ENGAGE/EAO_TEAM_MEMBER', [openEngagement.id]);
         await openMenu();
-        expect(screen.queryByText('Excel Data Export')).not.toBeInTheDocument();
+        expect(screen.getByText('Excel Data Export')).toBeInTheDocument();
+        expect(screen.getByText('Raw and aggregated survey data across 4 sheets')).toBeInTheDocument();
         expect(screen.getByText('Public/Proponent Comment Export')).toBeInTheDocument();
     });
 

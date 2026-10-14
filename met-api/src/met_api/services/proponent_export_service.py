@@ -37,8 +37,8 @@ from met_api.models.survey import Survey as SurveyModel
 from met_api.services import authorization
 from met_api.utils.datetime import utc_datetime
 from met_api.utils.export_styles import (
-    BODY_FONT_COLOUR, CELL_BORDER_COLOUR, MUTED_FONT_COLOUR, QUESTION_BANNER_COLOUR, get_page_colours,
-    get_zebra_colour)
+    BODY_FONT_COLOUR, CELL_BORDER_COLOUR, FONT_NAME, FONT_SIZE, MUTED_FONT_COLOUR, QUESTION_BANNER_COLOUR,
+    get_page_colours, get_zebra_colour)
 from met_api.utils.roles import Role
 from met_api.utils.survey_export_columns import FREE_TEXT_TYPES, build_export_columns
 
@@ -50,9 +50,6 @@ COLUMN_HEADINGS = ('Public Comment', 'Proponent Response')
 COMMENT_HEADER_COLOUR = '5A6473'
 RESPONSE_HEADER_COLOUR = '006064'
 HEADER_FONT_COLOUR = 'FFFFFF'
-
-FONT_NAME = 'BC Sans'
-FONT_SIZE = 10
 
 COMMENT_COLUMN_WIDTH = 80
 RESPONSE_COLUMN_WIDTH = 50

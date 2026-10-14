@@ -50,3 +50,9 @@ export const chartFileName = (engagementName: string, chart: TypedSurveyData) =>
 
 export const chartZipName = (engagementName: string, date: string) =>
     `${toFileSlug(engagementName) || 'Engagement'}_SurveyCharts_${date}.zip`;
+
+// "INTERNAL_<Engagement>_<Superuser|TeamMember>SurveyData_<date>.xlsx". The API builds the same name.
+export const dataSheetName = (engagementName: string, date: string, superuser: boolean) =>
+    `INTERNAL_${toFileSlug(engagementName) || 'Engagement'}_${
+        superuser ? 'Superuser' : 'TeamMember'
+    }SurveyData_${date}.xlsx`;
