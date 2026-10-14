@@ -424,7 +424,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                         <ExportConfirm
                                             icon={<TableChartOutlinedIcon sx={{ fontSize: 18 }} />}
                                             title="Excel Data Export"
-                                            description="Raw and aggregated survey data across 4 sheets"
+                                            description="Raw and aggregated survey data across 5 sheets"
                                             message="This export contains raw survey responses and is for internal use only. Do not share this file externally."
                                             confirmLabel="Yes, download"
                                             header={Palette.dashboard.exportWarning}
@@ -448,7 +448,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                                 <Typography
                                                     sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}
                                                 >
-                                                    Raw and aggregated survey data across 4 sheets
+                                                    Raw and aggregated survey data across 5 sheets
                                                 </Typography>
                                             </Box>
                                         </MenuItem>
