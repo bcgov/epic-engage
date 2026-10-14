@@ -418,14 +418,13 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                                 slotProps={{ paper: { sx: { minWidth: 260 } } }}
+                                MenuListProps={{ sx: { py: 0 } }}
                             >
                                 {pendingExport === 'data' ? (
                                     <ExportConfirm
                                         icon={<TableChartOutlinedIcon sx={{ fontSize: 18 }} />}
                                         title="Excel Data Export"
-                                        description={`Raw and aggregated survey data across ${
-                                            isSuperuser ? 5 : 4
-                                        } sheets`}
+                                        description="Raw and aggregated survey data - internal use only"
                                         message="This export contains raw survey responses and is for internal use only. Do not share this file externally."
                                         confirmLabel="Yes, download"
                                         header={Palette.dashboard.exportWarning}
@@ -447,7 +446,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                             <Typography
                                                 sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}
                                             >
-                                                Raw and aggregated survey data across {isSuperuser ? 5 : 4} sheets
+                                                Raw and aggregated survey data - internal use only
                                             </Typography>
                                         </Box>
                                     </MenuItem>
@@ -456,7 +455,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                     <ExportConfirm
                                         icon={<ImageOutlinedIcon sx={{ fontSize: 18 }} />}
                                         title="PNG / ZIP"
-                                        description="Download charts as a ZIP bundle"
+                                        description="Download all public charts as a ZIP bundle"
                                         message="Only charts marked for public report view will be included in this export."
                                         confirmLabel="Download"
                                         header={Palette.dashboard.exportDisclaimer}
@@ -481,7 +480,7 @@ export const DashboardHeaderCard = ({ engagement, engagementIsLoading }: Dashboa
                                             <Typography
                                                 sx={{ fontSize: 11, color: Palette.text.muted, lineHeight: 1.35 }}
                                             >
-                                                Download charts as a ZIP bundle
+                                                Download all public charts as a ZIP bundle
                                             </Typography>
                                         </Box>
                                     </MenuItem>

@@ -155,8 +155,8 @@ describe('Internal report export menu', () => {
         renderHeader('/ENGAGE/EAO_IT_ADMIN', []);
         await openMenu();
         expect(screen.getByText('Excel Data Export')).toBeInTheDocument();
-        expect(screen.getByText('Raw and aggregated survey data across 5 sheets')).toBeInTheDocument();
-        expect(screen.getByText('Download charts as a ZIP bundle')).toBeInTheDocument();
+        expect(screen.getByText('Raw and aggregated survey data - internal use only')).toBeInTheDocument();
+        expect(screen.getByText('Download all public charts as a ZIP bundle')).toBeInTheDocument();
         expect(screen.getByText('Public/Proponent Comment Export')).toBeInTheDocument();
         expect(screen.getByText('Comments safe to share with the public and Proponents')).toBeInTheDocument();
     });
@@ -165,7 +165,7 @@ describe('Internal report export menu', () => {
         renderHeader('/ENGAGE/EAO_TEAM_MEMBER', [openEngagement.id]);
         await openMenu();
         expect(screen.getByText('Excel Data Export')).toBeInTheDocument();
-        expect(screen.getByText('Raw and aggregated survey data across 4 sheets')).toBeInTheDocument();
+        expect(screen.getByText('Raw and aggregated survey data - internal use only')).toBeInTheDocument();
         expect(screen.getByText('Public/Proponent Comment Export')).toBeInTheDocument();
     });
 
