@@ -164,7 +164,7 @@ class ProponentExportService:  # pylint: disable=too-few-public-methods
     @classmethod
     def _write_question(cls, sheet, page_index: int, label: str, setting: ReportSettingModel, comments: list):
         """Write a question, its description and its comments, or a notice that it has none yet."""
-        cls._write_banner(sheet, label, QUESTION_BANNER_COLOUR, _font(bold=True, color=BODY_FONT_COLOUR))
+        cls._write_banner(sheet, label, QUESTION_BANNER_COLOUR, _font(bold=True, color=BODY_FONT_COLOUR), columns=1)
         # An export description left unset follows the report's; one cleared on purpose is ''.
         description = setting.export_description
         if description is None:
@@ -178,19 +178,25 @@ class ProponentExportService:  # pylint: disable=too-few-public-methods
             cls._write_comment_row(sheet, text, get_zebra_colour(page_index, band_index))
 
     @staticmethod
-    def _write_banner(sheet, value: str, colour: str, font: Font):
-        """Write a full-width row: a page, a question, its description or its empty notice."""
+    def _write_banner(sheet, value: str, colour: str, font: Font, columns: int = COLUMN_COUNT):
+        """Write a banner row: a page, a question, its description or its empty notice.
+
+        Its text spans the whole sheet unless told otherwise; a question wraps within the comment
+        column only. The row is coloured across the sheet either way.
+        """
         row = sheet.max_row + 1
         cell = sheet.cell(row=row, column=1)
         _set_text(cell, value)
-        sheet.merge_cells(start_row=row, start_column=1, end_row=row, end_column=COLUMN_COUNT)
+        if columns > 1:
+            sheet.merge_cells(start_row=row, start_column=1, end_row=row, end_column=columns)
         cell.font = font
         cell.alignment = _WRAP
         # merge_cells styles only the first cell; fill the rest so the bar is solid.
         for column in range(1, COLUMN_COUNT + 1):
             sheet.cell(row=row, column=column).fill = _fill(colour)
             sheet.cell(row=row, column=column).border = _THIN_BORDER
-        sheet.row_dimensions[row].height = _row_height(cell.value, COMMENT_COLUMN_WIDTH + RESPONSE_COLUMN_WIDTH)
+        width = COMMENT_COLUMN_WIDTH if columns == 1 else COMMENT_COLUMN_WIDTH + RESPONSE_COLUMN_WIDTH
+        sheet.row_dimensions[row].height = _row_height(cell.value, width)
 
     @staticmethod
     def _write_comment_row(sheet, text: str, band: str):

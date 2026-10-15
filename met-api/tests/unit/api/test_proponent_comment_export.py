@@ -254,6 +254,20 @@ def test_proponent_export_colours_each_page_banner(client, jwt, session):  # pyl
     assert _fills(sheet, _row_of(sheet, 'Your connection?'))[0] == QUESTION_BANNER_COLOUR
 
 
+def test_proponent_export_keeps_question_to_comment_column(client, jwt, session):  # pylint:disable=unused-argument
+    """Assert a question wraps within the comment column, while its row is coloured across the sheet."""
+    survey, _ = _survey_with_settings()
+
+    sheet = _sheet(client, jwt, survey.id)
+    question_row = _row_of(sheet, 'Your connection?')
+
+    merged_rows = {row for merged in sheet.merged_cells.ranges for row in range(merged.min_row, merged.max_row + 1)}
+    assert question_row not in merged_rows
+    assert sheet.cell(row=question_row, column=1).alignment.wrap_text
+    assert sheet.cell(row=question_row, column=2).value is None
+    assert _fills(sheet, question_row) == (QUESTION_BANNER_COLOUR,) * 2
+
+
 def test_proponent_export_bands_comments_in_page_colours(client, jwt, session):  # pylint:disable=unused-argument
     """Assert comment rows alternate their page's two shades, restarting at each question."""
     survey, eng = _survey_with_settings()
