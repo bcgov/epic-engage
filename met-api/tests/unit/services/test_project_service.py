@@ -107,7 +107,7 @@ def _dated_engagement():
     eng.name = 'Test Engagement'
     eng.description = 'Test Description'
     eng.banner_filename = 'banner.webp'
-    # Local Vancouver times, UTC-7; kept before November so the tz database's BC rule change cannot move them.
+    # Local Vancouver times, kept before November so the tz database's BC rule change cannot move them.
     eng.start_date = datetime(2026, 10, 8, 9, 0)
     eng.end_date = datetime(2026, 10, 30, 23, 59)
     return eng
