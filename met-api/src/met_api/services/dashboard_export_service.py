@@ -76,31 +76,40 @@ class DashboardSheet(NamedTuple):
 
 
 QUANTITATIVE_NON_AGGREGATED = DashboardSheet(
-    'Quantitative - Non-agg',
+    'Quantitative - Non-aggregated',
     'Individual survey responses for all quantitative questions, one row per respondent. '
-    'Does not include free-text comments.',
+    'Does not include qualitative comments. Use this tab for detailed cross-comparison analysis '
+    'of quantitative data.',
 )
 QUANTITATIVE_AGGREGATED = DashboardSheet(
     'Quantitative - Aggregated',
     'Survey results for all quantitative questions summarized by answer option. Use this tab to '
-    'quickly understand how respondents answered each question at a glance.',
+    'quickly understand how all respondents answered each quantitative question at a glance. '
+    'NOTE: Visualizations of these data are available within the internal dashboard on '
+    'EPIC.engage.',
 )
 ALL_DATA = DashboardSheet(
     'All Data',
-    'All quantitative and qualitative data in a single view, one row per respondent. Comment text '
-    'is only visible for approved submissions - entries with a status of Rejected, Resubmitted, or '
-    'Pending will not display comment text until reviewed. Comment status applies to free-text '
-    'responses only; quantitative answers are always included regardless of comment status.',
+    'All quantitative and qualitative data in a single view, one row per respondent. Use this tab '
+    'to compare and infer trends between quantitative responses (like location, or gender) with '
+    "qualitative comments, or to cross-reference a respondent's qualitative comment (e.g. if they "
+    'write "see my previous comment"). Note: Qualitative comments are only visible for approved '
+    'submissions; Pending or Rejected comments are not included. Comment status applies to '
+    'free-text responses only; quantitative answers are always included regardless of comment '
+    'status.',
 )
 APPROVED_QUALITATIVE = DashboardSheet(
     'Approved Qualitative Responses',
-    'All free-text responses with a status of Approved. Use this tab to review approved comment '
-    'content.',
+    'All approved qualitative comments. Use this tab to review and analyze approved qualitative '
+    "comments. NOTE: For internal use only. Use the 'Public/proponent' output option for "
+    'sharing with proponents.',
 )
 COMMENT_AUDIT = DashboardSheet(
     'Comment Audit',
-    'Complete record of all responses, including comment text for all statuses. Some entries may '
-    'contain unreviewed or sensitive content - handle with care and follow privacy best practices.',
+    'Complete record of all qualitative comments received and review status. Some entries may '
+    'contain unreviewed or sensitive content - handle with care and follow privacy requirements - '
+    'INTERNAL USE ONLY. Use this tab to investigate submission anomalies or analyze comment '
+    'review statistics.',
 )
 
 DASHBOARD_SHEETS = (
