@@ -177,11 +177,9 @@ class ProjectService:
 
     @staticmethod
     def update_project_info(eng_id: str, targets=None):
-        """Create or update a CommentPeriod in the EPIC/EAO system for the given engagement.
+        """Create or update the EPIC CommentPeriod for the engagement; targets overrides EPIC_SYNC_TARGET.
 
-        targets: iterable of 'eagle'/'demi' overriding EPIC_SYNC_TARGET; None reads the config.
-        Never raises. Returns False when any push failed (already logged), True otherwise, skips included.
-        Returns None for a project notification when targets exclude Eagle, the only place notifications go.
+        Never raises. False if any push failed (logged); None for a project notification without Eagle; else True.
         """
         engagement_metadata = None
         try:
