@@ -177,11 +177,9 @@ class ProjectService:
 
     @staticmethod
     def update_project_info(eng_id: str, targets=None):
-        """Create or update a CommentPeriod in the EPIC/EAO system for the given engagement.
+        """Create or update the EPIC CommentPeriod for the engagement; targets overrides EPIC_SYNC_TARGET.
 
-        targets: iterable of 'eagle'/'demi' overriding EPIC_SYNC_TARGET; None reads the config.
-        Never raises. Returns False when any push failed (already logged), True otherwise, skips included.
-        Returns None for a project notification when targets exclude Eagle, the only place notifications go.
+        Never raises. False if any push failed (logged); None for a project notification without Eagle; else True.
         """
         engagement_metadata = None
         try:
@@ -199,7 +197,7 @@ class ProjectService:
             if not _epic_url_set(eng_id):
                 return False
 
-            eao_service_account_token = ProjectService._get_eao_service_account_token()
+            eao_service_account_token = notification.get_epic_service_account_token()
             project_type = ProjectService._get_project_type(project_id, eao_service_account_token)
 
             if project_type == 'notification':
@@ -324,7 +322,7 @@ class ProjectService:
             if not _epic_url_set(eng_id):
                 return False
 
-            eao_service_account_token = ProjectService._get_eao_service_account_token()
+            eao_service_account_token = notification.get_epic_service_account_token()
             project_id = engagement_metadata.project_id or tracking_id
 
             project_type = ProjectService._get_project_type(project_id, eao_service_account_token)
@@ -427,11 +425,3 @@ class ProjectService:
             },
             'pushedAt': ProjectService._pushed_at(engagement, engagement_metadata),
         }
-
-    @staticmethod
-    def _get_eao_service_account_token():
-        kc_service_id = current_app.config.get('EPIC_KEYCLOAK_SERVICE_ACCOUNT_ID')
-        kc_secret = current_app.config.get('EPIC_KEYCLOAK_SERVICE_ACCOUNT_SECRET')
-        issuer_url = current_app.config.get('EPIC_JWT_OIDC_ISSUER')
-        client_id = current_app.config.get('EPIC_KC_CLIENT_ID')
-        return RestService.get_access_token_with_password(kc_service_id, kc_secret, client_id, issuer_url)

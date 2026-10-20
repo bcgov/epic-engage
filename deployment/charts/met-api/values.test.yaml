@@ -37,6 +37,7 @@ configMapData:
   KEYCLOAK_REALMNAME: eao-epic
   KEYCLOAK_BASE_URL: 'https://test.loginproxy.gov.bc.ca'
   NOTIFICATIONS_EMAIL_ENDPOINT: 'https://epic-engage-notify-api-test.apps.gold.devops.gov.bc.ca/api/v1/notifications/email'
+  EAGLE_NOTIFY_EMAIL_ENDPOINT: 'https://notify-api-test.azurewebsites.net/api/messages'
   EMAIL_ENVIRONMENT: You are using a Test environment
   ACCESS_REQUEST_EMAIL_TEMPLATE_ID: 41afa792-4c75-425a-9ad9-c558561d6669
   IS_EAO_ENVIRONMENT: 'true'
