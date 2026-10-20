@@ -27,6 +27,7 @@ from met_api.constants.engagement_status import Status
 from met_api.services import project_service
 from met_api.services.project_service import ProjectService
 from met_api.services.rest_service import RestServiceConnectionError
+from met_api.utils import notification
 
 
 PROJECT_ID = 'abc123projectid'
@@ -189,7 +190,7 @@ def test_update_project_info_stores_underscore_id(app):
              patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
              patch.object(ProjectService, '_get_project_type', return_value='project'), \
              patch.object(ProjectService, '_construct_epic_payload', return_value={}), \
-             patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
+             patch.object(notification, 'get_epic_service_account_token', return_value='token'), \
              patch('met_api.services.project_service.RestService') as mock_rest:
 
             app.config['IS_EAO_ENVIRONMENT'] = True
@@ -220,7 +221,7 @@ def test_update_project_info_uses_put_when_tracking_id_exists(app):
              patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
              patch.object(ProjectService, '_get_project_type', return_value='project'), \
              patch.object(ProjectService, '_construct_epic_payload', return_value={}), \
-             patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
+             patch.object(notification, 'get_epic_service_account_token', return_value='token'), \
              patch('met_api.services.project_service.RestService') as mock_rest:
 
             app.config['IS_EAO_ENVIRONMENT'] = True
@@ -258,7 +259,7 @@ def test_delete_from_epic_calls_rest_delete(app):
     with app.app_context():
         with patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
              patch.object(ProjectService, '_get_project_type', return_value='project'), \
-             patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
+             patch.object(notification, 'get_epic_service_account_token', return_value='token'), \
              patch('met_api.services.project_service.RestService') as mock_rest:
 
             app.config['IS_EAO_ENVIRONMENT'] = True
@@ -295,7 +296,6 @@ def test_update_project_info_project_notification(app):
         with patch('met_api.services.project_service.EngagementModel') as mock_eng_model, \
              patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
              patch.object(ProjectService, '_get_project_type', return_value='notification'), \
-             patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
              patch('met_api.services.project_service.notification') as mock_notif, \
              patch('met_api.services.project_service.EmailVerificationService') as mock_evs, \
              patch('met_api.services.project_service.requests.get') as mock_get, \
@@ -304,6 +304,7 @@ def test_update_project_info_project_notification(app):
             app.config['IS_EAO_ENVIRONMENT'] = True
             app.config['EPIC_URL'] = 'https://eagle-dev/api/commentperiod'
 
+            mock_notif.get_epic_service_account_token.return_value = 'token'
             mock_notif.get_tenant_site_url.return_value = 'https://engage.test/'
             mock_evs.get_engagement_path.return_value = '/engagements/test'
 
@@ -345,7 +346,7 @@ def test_delete_from_epic_project_notification(app):
     with app.app_context():
         with patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
              patch.object(ProjectService, '_get_project_type', return_value='notification'), \
-             patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
+             patch.object(notification, 'get_epic_service_account_token', return_value='token'), \
              patch('met_api.services.project_service.requests.get') as mock_get, \
              patch('met_api.services.project_service.RestService') as mock_rest:
 
@@ -391,7 +392,7 @@ def push_env(app, monkeypatch):
             patch('met_api.services.project_service.EngagementModel') as mock_eng_model, \
             patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
             patch.object(ProjectService, '_get_project_type', return_value='project'), \
-            patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
+            patch.object(notification, 'get_epic_service_account_token', return_value='token'), \
             patch.object(ProjectService, '_construct_epic_payload', return_value={}), \
             patch.object(ProjectService, '_engagement_fields', return_value={}):
         mock_eng_model.find_by_id.return_value = _make_engagement()
@@ -460,7 +461,7 @@ def test_update_project_info_rolls_back_outside_the_push(cp_env, caplog):
     mock_meta_model, mock_rest = cp_env
     mock_meta_model.find_by_engagement_id.return_value = _make_metadata(tracking_id=TRACKING_ID)
 
-    with patch.object(ProjectService, '_get_eao_service_account_token', side_effect=RuntimeError('kc down')), \
+    with patch.object(notification, 'get_epic_service_account_token', side_effect=RuntimeError('kc down')), \
             patch('met_api.services.project_service.db') as mock_db:
         assert ProjectService.update_project_info(7) is False
 
@@ -621,7 +622,6 @@ def test_demi_mode_notification_stays_on_eagle(app, monkeypatch):
             patch('met_api.services.project_service.EngagementModel') as mock_eng_model, \
             patch('met_api.services.project_service.EngagementMetadataModel') as mock_meta_model, \
             patch.object(ProjectService, '_get_project_type', return_value='notification'), \
-            patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
             patch('met_api.services.project_service.notification'), \
             patch('met_api.services.project_service.EmailVerificationService'), \
             patch('met_api.services.project_service.requests.get') as mock_get, \
@@ -750,7 +750,7 @@ def test_epic_url_unset_skips_with_error(app, monkeypatch, cp_env, caplog, call)
     mock_meta_model, mock_rest = cp_env
     mock_meta_model.find_by_engagement_id.return_value = _make_metadata(tracking_id=TRACKING_ID)
 
-    with patch.object(ProjectService, '_get_eao_service_account_token') as token:
+    with patch.object(notification, 'get_epic_service_account_token') as token:
         assert call(1) is False
 
     token.assert_not_called()

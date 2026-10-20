@@ -5,10 +5,11 @@ from flask import Flask
 import pytest
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Query
-
 import config
 from met_api.models import db
 from met_api.services.project_service import ProjectService
+from met_api.utils import notification
+
 from tasks.met_demi_backfill import MetDemiBackfill
 
 
@@ -51,7 +52,7 @@ def push_env(app):
     with app.app_context(), \
             patch('met_api.services.project_service.EngagementModel') as engagement_model, \
             patch('met_api.services.project_service.EngagementMetadataModel') as metadata_model, \
-            patch.object(ProjectService, '_get_eao_service_account_token', return_value='token'), \
+            patch.object(notification, 'get_epic_service_account_token', return_value='token'), \
             patch.object(ProjectService, '_engagement_fields', return_value={}), \
             patch('met_api.services.project_service.RestService') as rest:
         engagement_model.find_by_id.side_effect = lambda eng_id: MagicMock(id=eng_id, updated_date=None)

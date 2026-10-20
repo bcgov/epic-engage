@@ -31,7 +31,7 @@ def send_email(subject, email, html_body, args, template_id, reference=None):
     sender = current_app.config.get('MAIL_FROM_ID')
     eagle_notify_endpoint = current_app.config.get('EAGLE_NOTIFY_EMAIL_ENDPOINT')
     if eagle_notify_endpoint:
-        service_account_token = _get_epic_service_account_token()
+        service_account_token = get_epic_service_account_token()
         send_email_endpoint = eagle_notify_endpoint
     else:
         service_account_token = RestService.get_service_account_token()
@@ -56,8 +56,8 @@ def send_email(subject, email, html_body, args, template_id, reference=None):
     response.raise_for_status()
 
 
-def _get_epic_service_account_token():
-    """Get a token for the EPIC account that ENGAGE also uses for eagle-api pushes."""
+def get_epic_service_account_token():
+    """Get a token for the EPIC account used for eagle-api pushes and eagle-notify mail."""
     return RestService.get_access_token_with_password(
         current_app.config.get('EPIC_KEYCLOAK_SERVICE_ACCOUNT_ID'),
         current_app.config.get('EPIC_KEYCLOAK_SERVICE_ACCOUNT_SECRET'),
