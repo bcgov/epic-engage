@@ -95,7 +95,8 @@ def _push(app):
             patch.object(ProjectService, '_get_project_type', return_value='project'), \
             patch.object(ProjectService, '_construct_epic_payload', return_value={'isMet': True}), \
             patch.object(ProjectService, '_engagement_fields', return_value={'isPublished': True}), \
-            patch('met_api.services.project_service.RestService') as rest:
+            patch('met_api.services.project_service.RestService') as rest, \
+            patch('met_api.utils.notification.RestService', rest):
         engagement_model.find_by_id.return_value = MagicMock(id=1, updated_date=None)
         metadata_model.find_by_engagement_id.return_value = metadata
         rest.get_access_token_with_password.return_value = 'token'
