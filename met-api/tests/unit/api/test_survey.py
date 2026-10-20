@@ -855,7 +855,7 @@ def test_get_survey_dashboard_sheet(client, jwt, session):  # pylint:disable=unu
                      rv.headers['content-disposition'])
     workbook = load_workbook(BytesIO(rv.data))
     assert workbook.sheetnames == [
-        'Quantitative - Non-agg',
+        'Quantitative - Non-aggregated',
         'Quantitative - Aggregated',
         'All Data',
         'Approved Qualitative Responses',
@@ -863,7 +863,7 @@ def test_get_survey_dashboard_sheet(client, jwt, session):  # pylint:disable=unu
     ]
     for sheet in DASHBOARD_SHEETS:
         assert workbook[sheet.tab_name].cell(row=DESCRIPTION_ROW, column=1).value == sheet.description
-    assert COMMENT_AUDIT.description.startswith('Complete record of all responses')
+    assert COMMENT_AUDIT.description.startswith('Complete record of all qualitative comments')
 
 
 def test_get_survey_dashboard_sheet_needs_superuser(client, jwt, session):  # pylint:disable=unused-argument
@@ -899,7 +899,7 @@ def test_get_survey_dashboard_sheet_for_team_member(client, jwt, session):  # py
     workbook = load_workbook(BytesIO(rv.data))
 
     assert workbook.sheetnames == [
-        'Quantitative - Non-agg',
+        'Quantitative - Non-aggregated',
         'Quantitative - Aggregated',
         'All Data',
         'Approved Qualitative Responses',
