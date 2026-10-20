@@ -204,6 +204,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     }
 
     NOTIFICATIONS_EMAIL_ENDPOINT = os.getenv('NOTIFICATIONS_EMAIL_ENDPOINT')
+    # Set to send mail through eagle-notify with the EPIC account; empty keeps notify-api.
+    EAGLE_NOTIFY_EMAIL_ENDPOINT = os.getenv('EAGLE_NOTIFY_EMAIL_ENDPOINT', '')
     # CDOGS
     CDOGS_ACCESS_TOKEN = os.getenv('CDOGS_ACCESS_TOKEN')
     CDOGS_BASE_URL = os.getenv('CDOGS_BASE_URL')

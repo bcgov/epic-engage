@@ -191,6 +191,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     ENGAGEMENT_CLOSEOUT_EMAIL_SUBJECT = \
         os.getenv('ENGAGEMENT_CLOSEOUT_EMAIL_SUBJECT', '{engagement_name} - What we heard')
     NOTIFICATIONS_EMAIL_ENDPOINT = os.getenv('NOTIFICATIONS_EMAIL_ENDPOINT')
+    # Set to send mail through eagle-notify with the EPIC account; empty keeps notify-api.
+    EAGLE_NOTIFY_EMAIL_ENDPOINT = os.getenv('EAGLE_NOTIFY_EMAIL_ENDPOINT', '')
 
     # Timeout, in seconds, on outbound HTTP calls made by the met-api code these
     # jobs reuse (notify-api). Jobs have no worker timeout to bound them, so

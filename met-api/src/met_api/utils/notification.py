@@ -29,8 +29,13 @@ def send_email(subject, email, html_body, args, template_id, reference=None):
         return
 
     sender = current_app.config.get('MAIL_FROM_ID')
-    service_account_token = RestService.get_service_account_token()
-    send_email_endpoint = current_app.config.get('NOTIFICATIONS_EMAIL_ENDPOINT')
+    eagle_notify_endpoint = current_app.config.get('EAGLE_NOTIFY_EMAIL_ENDPOINT')
+    if eagle_notify_endpoint:
+        service_account_token = _get_epic_service_account_token()
+        send_email_endpoint = eagle_notify_endpoint
+    else:
+        service_account_token = RestService.get_service_account_token()
+        send_email_endpoint = current_app.config.get('NOTIFICATIONS_EMAIL_ENDPOINT')
     payload = {
         'bodyType': 'html',
         'body': html_body,
@@ -49,6 +54,15 @@ def send_email(subject, email, html_body, args, template_id, reference=None):
                              data=json.dumps(payload),
                              timeout=current_app.config.get('CONNECT_TIMEOUT', 60))
     response.raise_for_status()
+
+
+def _get_epic_service_account_token():
+    """Get a token for the EPIC account that ENGAGE also uses for eagle-api pushes."""
+    return RestService.get_access_token_with_password(
+        current_app.config.get('EPIC_KEYCLOAK_SERVICE_ACCOUNT_ID'),
+        current_app.config.get('EPIC_KEYCLOAK_SERVICE_ACCOUNT_SECRET'),
+        current_app.config.get('EPIC_KC_CLIENT_ID'),
+        current_app.config.get('EPIC_JWT_OIDC_ISSUER'))
 
 
 def is_valid_email(email: str):
