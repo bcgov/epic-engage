@@ -30,6 +30,7 @@ sheets, zebra striping or colour coding.
 from __future__ import annotations
 
 from io import BytesIO
+import math
 import re
 from typing import NamedTuple
 
@@ -71,7 +72,7 @@ class DashboardSheet(NamedTuple):
     """A sheet in the dashboard export workbook."""
 
     tab_name: str
-    # Shown above the table, saying what the sheet holds.
+    # Shown above the table, saying what the sheet holds. A newline starts its note on a new line.
     description: str
 
 
@@ -84,7 +85,7 @@ QUANTITATIVE_NON_AGGREGATED = DashboardSheet(
 QUANTITATIVE_AGGREGATED = DashboardSheet(
     'Quantitative - Aggregated',
     'Survey results for all quantitative questions summarized by answer option. Use this tab to '
-    'quickly understand how all respondents answered each quantitative question at a glance. '
+    'quickly understand how all respondents answered each quantitative question at a glance.\n'
     'NOTE: Visualizations of these data are available within the internal dashboard on '
     'EPIC.engage.',
 )
@@ -93,7 +94,7 @@ ALL_DATA = DashboardSheet(
     'All quantitative and qualitative data in a single view, one row per respondent. Use this tab '
     'to compare and infer trends between quantitative responses (like location, or gender) with '
     "qualitative comments, or to cross-reference a respondent's qualitative comment (e.g. if they "
-    'write "see my previous comment"). Note: Qualitative comments are only visible for approved '
+    'write "see my previous comment").\nNote: Qualitative comments are only visible for approved '
     'submissions; Pending or Rejected comments are not included. Comment status applies to '
     'free-text responses only; quantitative answers are always included regardless of comment '
     'status.',
@@ -101,7 +102,7 @@ ALL_DATA = DashboardSheet(
 APPROVED_QUALITATIVE = DashboardSheet(
     'Approved Qualitative Responses',
     'All approved qualitative comments. Use this tab to review and analyze approved qualitative '
-    "comments. NOTE: For internal use only. Use the 'Public/proponent' output option for "
+    "comments.\nNOTE: For internal use only. Use the 'Public/proponent' output option for "
     'sharing with proponents.',
 )
 COMMENT_AUDIT = DashboardSheet(
@@ -127,6 +128,10 @@ QUESTION_TITLE_ROW = 3
 OPTION_LABEL_ROW = 4
 QUESTION_TYPE_ROW = 5
 DATA_START_ROW = 6
+# The description is merged across the table, up to this many columns, and wrapped within them.
+DESCRIPTION_COLUMNS = 8
+# Excel's width for a column the sheet leaves unset.
+DEFAULT_COLUMN_WIDTH = 8.43
 
 # The columns identifying a submission, ahead of any question. Each sheet picks its own, and they
 # take the sheet's first columns in the order given.
@@ -230,6 +235,7 @@ def is_approved(submission) -> bool:
 
 _CENTERED = Alignment(horizontal='center', vertical='center', wrap_text=True)
 _LEFT = Alignment(horizontal='left', vertical='center')
+_WRAPPED_TOP_LEFT = Alignment(horizontal='left', vertical='top', wrap_text=True)
 _CELL_EDGE = Side(style='thin', color=CELL_BORDER_COLOUR)
 _THIN_BORDER = Border(left=_CELL_EDGE, right=_CELL_EDGE, top=_CELL_EDGE, bottom=_CELL_EDGE)
 
@@ -268,7 +274,6 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
             if sheet is COMMENT_AUDIT and not include_comment_audit:
                 continue
             worksheet = workbook.create_sheet(title=sheet.tab_name)
-            cls._write_description(worksheet, sheet.description)
             if sheet is QUANTITATIVE_NON_AGGREGATED:
                 cls._build_non_aggregated_sheet(worksheet, columns, respondents, RESPONDENT_COLUMNS)
             elif sheet is QUANTITATIVE_AGGREGATED:
@@ -299,6 +304,8 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
                     worksheet, all_columns, respondents, COMMENT_AUDIT_COLUMNS,
                     identity_banner=True, project_name=cls._project_name(survey),
                 )
+            # Written last, so it can size itself to the column widths the table set.
+            cls._write_description(worksheet, sheet.description)
 
         stream = BytesIO()
         workbook.save(stream)
@@ -331,8 +338,9 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
                 COMMENT_COLUMN_WIDTH if column.component_type in FREE_TEXT_TYPES
                 else QUESTION_COLUMN_WIDTH
             )
-        # Keep the header and respondent id column in view while scrolling.
-        worksheet.freeze_panes = worksheet.cell(row=DATA_START_ROW, column=first_column)
+        # Keep the header in view while scrolling. Columns stay unfrozen so the description can
+        # merge across them.
+        worksheet.freeze_panes = worksheet.cell(row=DATA_START_ROW, column=1)
 
     @classmethod
     def _build_aggregated_sheet(cls, worksheet, rows: list):
@@ -427,9 +435,7 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
                     font_colour=BODY_FONT_COLOUR if answer is not None else MUTED_FONT_COLOUR,
                 )
 
-        worksheet.freeze_panes = worksheet.cell(
-            row=COMMENT_DATA_START_ROW, column=first_column
-        )
+        worksheet.freeze_panes = worksheet.cell(row=COMMENT_DATA_START_ROW, column=1)
 
     @classmethod
     def _write_aggregate_banner(cls, worksheet, row: int, text: str, fill: str, font_colour: str):
@@ -655,10 +661,26 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def _write_description(worksheet, description: str):
-        """Write the sheet's description above its table; it overflows across the empty row."""
-        worksheet.cell(row=DESCRIPTION_ROW, column=1, value=description).font = Font(
-            color=BODY_FONT_COLOUR, italic=True, name=FONT_NAME, size=FONT_SIZE
+        """Write the sheet's description above its table, merged across and wrapped to fit."""
+        cell = worksheet.cell(row=DESCRIPTION_ROW, column=1, value=description)
+        cell.font = Font(color=BODY_FONT_COLOUR, italic=True, name=FONT_NAME, size=FONT_SIZE)
+        cell.alignment = _WRAPPED_TOP_LEFT
+        end_column = min(worksheet.max_column, DESCRIPTION_COLUMNS)
+        if end_column > 1:
+            worksheet.merge_cells(
+                start_row=DESCRIPTION_ROW, start_column=1,
+                end_row=DESCRIPTION_ROW, end_column=end_column,
+            )
+        # Excel won't fit a merged row's height to its text, so estimate it.
+        # ponytail: a column width is about one character, so lines are approximate; measure the
+        # font if the text gets clipped or leaves big gaps.
+        width = sum(
+            worksheet.column_dimensions[letter].width
+            if letter in worksheet.column_dimensions else DEFAULT_COLUMN_WIDTH
+            for letter in map(get_column_letter, range(1, end_column + 1))
         )
+        lines = sum(math.ceil(len(line) / width) or 1 for line in description.split('\n'))
+        worksheet.row_dimensions[DESCRIPTION_ROW].height = lines * FONT_SIZE * 1.5
 
     @staticmethod
     def _answer_font_colour(column, answer) -> str:
