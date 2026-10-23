@@ -862,7 +862,11 @@ def test_get_survey_dashboard_sheet(client, jwt, session):  # pylint:disable=unu
         'Comment Audit',
     ]
     for sheet in DASHBOARD_SHEETS:
-        assert workbook[sheet.tab_name].cell(row=DESCRIPTION_ROW, column=1).value == sheet.description
+        worksheet = workbook[sheet.tab_name]
+        assert worksheet.cell(row=DESCRIPTION_ROW, column=1).value == sheet.description
+        # The description is merged across the top, so no columns are frozen beneath it. A sheet
+        # with no questions to list freezes nothing.
+        assert worksheet.freeze_panes is None or worksheet.freeze_panes.startswith('A')
     assert COMMENT_AUDIT.description.startswith('Complete record of all qualitative comments')
 
 
@@ -1021,7 +1025,7 @@ def test_dashboard_sheet_header_structure(client, jwt, session):  # pylint:disab
     # Each page is bannered across its own columns.
     assert sheet.cell(row=PAGE_TITLE_ROW, column=3).value == 'Page 1 - Demographics'
     assert sheet.cell(row=PAGE_TITLE_ROW, column=5).value == 'Page 2 - Outreach'
-    assert {str(r) for r in sheet.merged_cells.ranges} == {'C2:D2', 'E2:J2'}
+    assert {str(r) for r in sheet.merged_cells.ranges} == {'A1:H1', 'C2:D2', 'E2:J2'}
 
 
 def test_dashboard_sheet_respondent_rows(client, jwt, session):  # pylint:disable=unused-argument
