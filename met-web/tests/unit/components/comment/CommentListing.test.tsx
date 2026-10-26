@@ -3,7 +3,6 @@ import React, { ReactNode } from 'react';
 import '@testing-library/jest-dom';
 import { setupEnv } from '../setEnvVars';
 import * as reactRedux from 'react-redux';
-import * as commentService from 'services/commentService';
 import * as surveyService from 'services/surveyService';
 import * as submissionService from 'services/submissionService';
 import { createDefaultSurvey } from 'models/survey';
@@ -11,9 +10,7 @@ import { createDefaultSubmission } from 'models/surveySubmission';
 import { createDefaultComment } from 'models/comment';
 import SubmissionListing from 'components/admin/comments/admin/SubmissionListing';
 import CommentTextListing from 'components/admin/comments/admin/CommentTextListing';
-import * as utils from 'utils';
 import { USER_ROLES } from 'services/userService/constants';
-import { AxiosResponse } from 'axios';
 
 const mockSurveyOne = {
     ...createDefaultSurvey(),
@@ -91,11 +88,6 @@ describe('Comment listing tests', () => {
             total: 1,
         }),
     );
-    const mockGetCommentsSheet = jest
-        .spyOn(commentService, 'getStaffCommentSheet')
-        .mockReturnValue(Promise.resolve({ data: new Blob(), status: 200, statusText: '', headers: {}, config: {} } as AxiosResponse));
-    const mockDownloadFile = jest.spyOn(utils, 'downloadFile').mockImplementation(() => jest.fn());
-
     beforeEach(() => {
         setupEnv();
     });
@@ -109,30 +101,14 @@ describe('Comment listing tests', () => {
         });
     });
 
-    test('Export comments work', async () => {
+    test('Export to CSV button is hidden', async () => {
         render(<CommentTextListing />);
 
         await waitFor(() => {
             expect(screen.getByText(mockComment1.text)).toBeVisible();
         });
 
-        const exportButton = screen.getByText('Export to CSV');
-        fireEvent.click(exportButton);
-
-        // Check if the dropdown content is visible
-        const dropdownContent = screen.getByText('Internal Only/Detailed');
-        // The Public/Proponent export moved to the internal report's Export menu.
-        expect(screen.queryByText('Public/Proponent')).not.toBeInTheDocument();
-        await waitFor(() => {
-            expect(dropdownContent).toBeInTheDocument();
-        });
-
-        // Click on the dropdown value
-        fireEvent.click(dropdownContent);
-        await waitFor(() => {
-            expect(mockGetCommentsSheet).toHaveBeenCalledOnce();
-            expect(mockDownloadFile).toHaveBeenCalledOnce();
-        });
+        expect(screen.queryByText('Export to CSV')).not.toBeInTheDocument();
     });
 
     test('Advanced search appear', async () => {

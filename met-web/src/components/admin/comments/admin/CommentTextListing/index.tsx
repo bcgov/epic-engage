@@ -32,6 +32,9 @@ import { getSurvey } from 'services/surveyService';
 import { Survey, createDefaultSurvey } from 'models/survey';
 import { PermissionsGate } from 'components/shared/permissionsGate';
 
+// Hidden per ENGAGE-329: the Superuser internal export carries this data. Set true to bring it back.
+const SHOW_EXPORT_TO_CSV = false;
+
 const CommentTextListing = () => {
     const { roles, userDetail, assignedEngagements } = useAppSelector((state) => state.user);
     const { search } = useLocation();
@@ -336,41 +339,43 @@ const CommentTextListing = () => {
                     <PrimaryButton component={Link} to={`/surveys/${submissions[0]?.survey_id || 0}/comments`}>
                         Return to Comments List
                     </PrimaryButton>
-                    <PermissionsGate
-                        scopes={[USER_ROLES.EXPORT_INTERNAL_COMMENT_SHEET]}
-                        errorProps={{ disabled: true }}
-                    >
-                        <SecondaryButton
-                            variant="contained"
-                            onClick={handleExportToCSVOpen}
-                            aria-controls="simple-menu"
-                            aria-haspopup="true"
-                            loading={isExporting}
-                            startIcon={
-                                <ExpandMoreIcon
-                                    style={{
-                                        transition: 'transform 0.3s',
-                                        transform: exportToCSVOpen ? 'rotate(180deg)' : 'none',
-                                    }}
-                                />
-                            }
+                    <When condition={SHOW_EXPORT_TO_CSV}>
+                        <PermissionsGate
+                            scopes={[USER_ROLES.EXPORT_INTERNAL_COMMENT_SHEET]}
+                            errorProps={{ disabled: true }}
                         >
-                            Export to CSV
-                        </SecondaryButton>
-                    </PermissionsGate>
-                    <Menu
-                        id="simple-menu"
-                        anchorEl={anchorEl}
-                        keepMounted
-                        open={Boolean(anchorEl)}
-                        onClose={handleExportToCSVClose}
-                    >
-                        <PermissionsGate scopes={[USER_ROLES.EXPORT_INTERNAL_COMMENT_SHEET]}>
-                            <MenuItem onClick={handleExportStaffComments} style={customStyle}>
-                                Internal Only/Detailed
-                            </MenuItem>
+                            <SecondaryButton
+                                variant="contained"
+                                onClick={handleExportToCSVOpen}
+                                aria-controls="simple-menu"
+                                aria-haspopup="true"
+                                loading={isExporting}
+                                startIcon={
+                                    <ExpandMoreIcon
+                                        style={{
+                                            transition: 'transform 0.3s',
+                                            transform: exportToCSVOpen ? 'rotate(180deg)' : 'none',
+                                        }}
+                                    />
+                                }
+                            >
+                                Export to CSV
+                            </SecondaryButton>
                         </PermissionsGate>
-                    </Menu>
+                        <Menu
+                            id="simple-menu"
+                            anchorEl={anchorEl}
+                            keepMounted
+                            open={Boolean(anchorEl)}
+                            onClose={handleExportToCSVClose}
+                        >
+                            <PermissionsGate scopes={[USER_ROLES.EXPORT_INTERNAL_COMMENT_SHEET]}>
+                                <MenuItem onClick={handleExportStaffComments} style={customStyle}>
+                                    Internal Only/Detailed
+                                </MenuItem>
+                            </PermissionsGate>
+                        </Menu>
+                    </When>
                 </Stack>
             </Grid>
             <Grid item lg={12}>
