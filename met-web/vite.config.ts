@@ -82,6 +82,10 @@ export default defineConfig(({ mode }) => {
             commonjsOptions: {
                 include: [/met-formio/, /node_modules/],
                 transformMixedEsModules: true,
+                // Wrap every CJS module in a lazy require. The default ('auto') only wraps modules it
+                // detects in cycles, which varies between builds — sometimes @formio/core's FieldError
+                // is hoisted to top level and requires validateDay before its exports object exists.
+                strictRequires: true,
             },
             rollupOptions: {
                 output: {
