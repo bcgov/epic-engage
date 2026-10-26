@@ -1534,17 +1534,18 @@ def test_comment_audit_sheet_keeps_every_submission(client, jwt, session):  # py
     """Assert the audit shows all text and how each submission was reviewed."""
     survey, eng = factory_survey_and_eng_model(quantitative_survey_info)
     EngagementMetadataModel(engagement_id=eng.id, project_metadata={'project_name': 'Big Ranch'}).save()
-    _seed_every_comment_status(survey, eng)
+    submissions = _seed_every_comment_status(survey, eng)
 
     sheet = _export(client, jwt, survey.id)[COMMENT_AUDIT.tab_name]
 
-    assert [c.value for c in sheet[QUESTION_TITLE_ROW]][:7] == [
-        'Respondent ID', 'Comment Status', 'Reason for Rejection', 'Published Date', 'Reviewer',
-        'Project', 'What is your age?',
+    assert [c.value for c in sheet[QUESTION_TITLE_ROW]][:8] == [
+        'Respondent ID', 'Comment Status', 'Comment ID', 'Reason for Rejection', 'Published Date',
+        'Reviewer', 'Project', 'What is your age?',
     ]
     assert sheet.cell(row=PAGE_TITLE_ROW, column=1).value == 'Data'
-    assert 'A2:F2' in {str(r) for r in sheet.merged_cells.ranges}
+    assert 'A2:G2' in {str(r) for r in sheet.merged_cells.ranges}
     assert _column_values(sheet, 'Comment Status') == STATUS_LABELS
+    assert _column_values(sheet, 'Comment ID') == [s.id for s in submissions]
     # The reason follows the status: the approved row's stale flags are not shown.
     assert _column_values(sheet, 'Reason for Rejection') == \
         [None, 'Contains profanity or inappropriate language, Off topic'] + [None] * 5
