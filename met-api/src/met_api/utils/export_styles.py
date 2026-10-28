@@ -16,6 +16,7 @@
 Cells are colour-coded by survey page (four shades each) and by question type. Values come
 from the approved export design, and live here so every sheet builder styles rows the same.
 """
+from functools import lru_cache
 from typing import NamedTuple
 
 from met_api.constants.report_setting_type import FormIoComponentType
@@ -103,11 +104,13 @@ def get_page_colours(page_index: int) -> PageColours:
     return PAGE_COLOURS[page_index % len(PAGE_COLOURS)]
 
 
+@lru_cache(maxsize=None)
 def mute_colour(hex_colour: str) -> str:
     """Drain a fill toward neutral grey, for a cell holding no answer.
 
     An empty cell has no text to grey, so the greying happens in the fill. Blending rather
-    than replacing keeps the page's colour coding readable.
+    than replacing keeps the page's colour coding readable. Cached, as every unanswered cell
+    asks for one of a handful of bands.
     """
     channels = ((hex_colour[i:i + 2], MUTED_FILL_NEUTRAL[i:i + 2]) for i in (0, 2, 4))
     blended = (

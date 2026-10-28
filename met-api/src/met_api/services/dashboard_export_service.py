@@ -29,10 +29,12 @@ sheets, zebra striping or colour coding.
 """
 from __future__ import annotations
 
+from copy import copy
 from io import BytesIO
 import math
 import re
 from typing import NamedTuple
+from weakref import WeakKeyDictionary
 
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -238,6 +240,32 @@ _LEFT = Alignment(horizontal='left', vertical='center')
 _WRAPPED_TOP_LEFT = Alignment(horizontal='left', vertical='top', wrap_text=True)
 _CELL_EDGE = Side(style='thin', color=CELL_BORDER_COLOUR)
 _THIN_BORDER = Border(left=_CELL_EDGE, right=_CELL_EDGE, top=_CELL_EDGE, bottom=_CELL_EDGE)
+
+# The style indexes each combination of fill, font and alignment resolved to, per workbook.
+_STYLE_CACHE = WeakKeyDictionary()
+
+
+def _apply_cell_style(  # pylint: disable=too-many-arguments
+    cell, fill: str, font_colour: str, alignment: Alignment, *, bold: bool = False, italic: bool = False,
+):
+    """Give a cell its fill, font, border and alignment, resolving each combination only once.
+
+    Assigning a style to an openpyxl cell hashes it against every style the workbook already
+    holds. Done four times a cell, that was most of the time a large survey's export took, so
+    the first cell of each look is styled in full and the rest copy its style indexes.
+    """
+    cache = _STYLE_CACHE.setdefault(cell.parent.parent, {})
+    key = (fill, font_colour, alignment.horizontal, alignment.vertical, alignment.wrap_text, bold, italic)
+    style = cache.get(key)
+    if style is None:
+        cell.fill = PatternFill('solid', fgColor=fill)
+        cell.font = Font(color=font_colour, bold=bold, italic=italic, name=FONT_NAME, size=FONT_SIZE)
+        cell.border = _THIN_BORDER
+        cell.alignment = alignment
+        cache[key] = copy(cell._style)  # pylint: disable=protected-access
+    else:
+        cell._style = copy(style)  # pylint: disable=protected-access
+    return cell
 
 
 class DashboardExportService:  # pylint: disable=too-few-public-methods
@@ -714,20 +742,12 @@ class DashboardExportService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def _style_header_cell(cell, fill: str, font_colour: str, bold: bool = False, italic: bool = False):
         """Style a cell in the header block. Every header row is centered."""
-        cell.fill = PatternFill('solid', fgColor=fill)
-        cell.font = Font(color=font_colour, bold=bold, italic=italic, name=FONT_NAME, size=FONT_SIZE)
-        cell.border = _THIN_BORDER
-        cell.alignment = _CENTERED
-        return cell
+        return _apply_cell_style(cell, fill, font_colour, _CENTERED, bold=bold, italic=italic)
 
     @staticmethod
     def _style_data_cell(cell, fill: str, font_colour: str):
         """Style a respondent's answer cell, left aligned so long labels stay readable."""
-        cell.fill = PatternFill('solid', fgColor=fill)
-        cell.font = Font(color=font_colour, name=FONT_NAME, size=FONT_SIZE)
-        cell.border = _THIN_BORDER
-        cell.alignment = _LEFT
-        return cell
+        return _apply_cell_style(cell, fill, font_colour, _LEFT)
 
     @staticmethod
     def _build_file_name(survey: SurveyModel, include_comment_audit: bool) -> str:
