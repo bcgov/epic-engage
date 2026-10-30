@@ -6,6 +6,7 @@ from analytics_api.models.survey import Survey as EtlSurveyModel
 from analytics_api.utils.util import FormIoComponentType
 from dagster import Out, Output, op
 from datetime import datetime
+from met_api.models.report_setting import ReportSetting as MetReportSettingModel
 from met_api.models.survey import Survey as MetSurveyModel
 from sqlalchemy import func
 
@@ -109,6 +110,8 @@ def load_survey(context, new_survey, updated_survey, survey_new_runcycleid):
                     page_position = extract_survey_components(context, session, survey, survey_new_runcycleid,
                                                               form_components, page_position)
 
+            _apply_report_settings(context, context.resources.met_db_session, session, survey.id)
+
     yield Output(survey_new_runcycleid, "survey_new_runcycleid")
 
     context.log.info("completed loading survey table")
@@ -150,6 +153,26 @@ def extract_survey_components(context, session, survey, survey_new_runcycleid, f
                                                 survey_new_runcycleid)
 
     return position
+
+
+# carry report setting hide/show flags onto the new survey version, whose questions otherwise default to visible
+def _apply_report_settings(context, met_session, session, source_survey_id):
+    active_survey_id = session.query(EtlSurveyModel.id).filter(EtlSurveyModel.source_survey_id == source_survey_id,
+                                                               EtlSurveyModel.is_active == True).scalar()
+
+    settings = met_session.query(MetReportSettingModel).filter(
+        MetReportSettingModel.survey_id == source_survey_id).all()
+
+    for setting in settings:
+        session.query(EtlRequestTypeOption).filter(EtlRequestTypeOption.survey_id == active_survey_id,
+                                                   EtlRequestTypeOption.key == setting.question_key,
+                                                   EtlRequestTypeOption.is_active == True).update(
+            {'display': setting.display})
+
+    session.commit()
+
+    context.log.info('Survey: %s applied %s report settings to analytics survey %s',
+                     source_survey_id, len(settings), active_survey_id)
 
 
 # inactivate if record is existing in analytics database
