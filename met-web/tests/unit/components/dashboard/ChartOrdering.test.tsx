@@ -93,11 +93,44 @@ describe('LikertChart', () => {
     ];
     const axisLabels: [string, string] = ['Not effective', 'Effective'];
 
-    it('renders rows in survey order rather than by net favourability', () => {
+    const rowOrder = (container: HTMLElement, names: string[]) =>
+        labelsInOrder(container, 'svg g > text').filter((t) => names.includes(t ?? ''));
+
+    it('sorts rows by weighted score, highest first', () => {
         const { container } = render(<LikertChart data={rows} axisLabels={axisLabels} />);
 
-        const rowLabels = labelsInOrder(container, 'svg g > text').filter((t) => t === 'Cost' || t === 'Speed');
-        expect(rowLabels).toEqual(['Cost', 'Speed']);
+        expect(rowOrder(container, ['Cost', 'Speed'])).toEqual(['Speed', 'Cost']);
+    });
+
+    it('keeps survey order between rows with the same weighted score', () => {
+        const tied = [
+            { label: 'Cost', pcts: [20, 20, 20, 20, 20], n: 100 },
+            { label: 'Speed', pcts: [20, 20, 20, 20, 20], n: 100 },
+        ];
+        const { container } = render(<LikertChart data={tied} axisLabels={axisLabels} />);
+
+        expect(rowOrder(container, ['Cost', 'Speed'])).toEqual(['Cost', 'Speed']);
+    });
+
+    it('shows each row its weighted score under the label', () => {
+        // Legacy weights -1..+3: Cost (-40 + 20 + 20 + 30) / 100 = 0.3, Speed 1.6.
+        render(<LikertChart data={rows} axisLabels={axisLabels} />);
+
+        expect(screen.getAllByTestId('likert-weighted-score').map((t) => t.textContent)).toEqual([
+            '+1.6 weighted score',
+            '+0.3 weighted score',
+        ]);
+    });
+
+    it('shows no weighted score, and keeps survey order, on a scale with no sides', () => {
+        const fourPoint = [
+            { label: 'Cost', pcts: [10, 10, 10, 70], n: 50 },
+            { label: 'Speed', pcts: [70, 10, 10, 10], n: 50 },
+        ];
+        const { container } = render(<LikertChart data={fourPoint} scaleLabels={['One', 'Two', 'Three', 'Four']} />);
+
+        expect(screen.queryByTestId('likert-weighted-score')).toBeNull();
+        expect(rowOrder(container, ['Cost', 'Speed'])).toEqual(['Cost', 'Speed']);
     });
 
     it('renders one legend entry per scale point', () => {

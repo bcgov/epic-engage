@@ -11,6 +11,8 @@ export interface ResolvedSegment {
     border: string;
     text: string;
     polarity: Polarity;
+    // Steps from the centre of the scale: negatives count down from -1, positives up from +1.
+    weight: number;
 }
 
 export interface ResolvedLikertScale {
@@ -33,7 +35,28 @@ const fromClassification = (label: string, c: LikertClassification): ResolvedSeg
     border: Palette.chart.likertClassification[c].border,
     text: Palette.chart.likertClassification[c].label,
     polarity: polarityOf(c),
+    weight: 0,
 });
+
+// Negatives sit first in rank order, so the nearest-centre negative is -1 and the outermost -n.
+// Equals "position relative to Neutral" when there is one, and still works on scales without one.
+const withWeights = (segments: ResolvedSegment[]): ResolvedSegment[] => {
+    const negatives = segments.filter((s) => s.polarity === 'negative').length;
+    let positives = 0;
+    return segments.map((s, i) => {
+        if (s.polarity === 'negative') return { ...s, weight: i - negatives };
+        if (s.polarity === 'positive') return { ...s, weight: ++positives };
+        return s;
+    });
+};
+
+// Mean weight of the scored answers; Not sure is never in pcts. Null when there is nothing to score.
+export function weightedScore(pcts: number[], { diverging, segments }: ResolvedLikertScale): number | null {
+    if (!diverging) return null;
+    const scored = pcts.reduce((sum, pct) => sum + pct, 0);
+    if (scored <= 0) return null;
+    return pcts.reduce((sum, pct, i) => sum + pct * (segments[i]?.weight ?? 0), 0) / scored;
+}
 
 // Anything the palette does not know, and any classification used twice, is drawn as legacy:
 // the API passes unknown keys through, and duplicates would share a colour and skew the axis.
@@ -51,11 +74,16 @@ export function resolveLikertScale(labels: string[], scale?: LikertScalePoint[])
     if (classified) {
         return {
             diverging: true,
-            segments: scale.map((p) => fromClassification(p.label, p.classification as LikertClassification)),
+            segments: withWeights(
+                scale.map((p) => fromClassification(p.label, p.classification as LikertClassification)),
+            ),
         };
     }
     if (labels.length === LEGACY_FIVE.length) {
-        return { diverging: true, segments: labels.map((label, i) => fromClassification(label, LEGACY_FIVE[i])) };
+        return {
+            diverging: true,
+            segments: withWeights(labels.map((label, i) => fromClassification(label, LEGACY_FIVE[i]))),
+        };
     }
     return {
         diverging: false,
@@ -67,6 +95,7 @@ export function resolveLikertScale(labels: string[], scale?: LikertScalePoint[])
                 border: fill,
                 text: Palette.chart.likertLabel[i] ?? Palette.chart.fallback.label,
                 polarity: 'positive',
+                weight: 0,
             };
         }),
     };

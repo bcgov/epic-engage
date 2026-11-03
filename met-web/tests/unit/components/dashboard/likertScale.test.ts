@@ -1,4 +1,4 @@
-import { resolveLikertScale } from 'components/public/dashboard/charts/likertScale';
+import { resolveLikertScale, weightedScore } from 'components/public/dashboard/charts/likertScale';
 import { Palette } from 'styles/Theme';
 import { LikertClassification, LikertScalePoint } from 'models/analytics/surveyResult';
 
@@ -105,5 +105,57 @@ describe('resolveLikertScale guards', () => {
         const { diverging } = resolveLikertScale(['p0', 'p1', 'p2'], points('pos1', 'pos1', 'neg1'));
 
         expect(diverging).toBe(false);
+    });
+});
+
+describe('Likert weights', () => {
+    const classified = (...cs: LikertClassification[]) =>
+        resolveLikertScale(
+            cs,
+            cs.map((classification) => ({ label: classification, classification })),
+        );
+    const weights = (r: ReturnType<typeof resolveLikertScale>) => r.segments.map((s) => s.weight);
+
+    it('counts out from Neutral on a standard 5-point scale', () => {
+        expect(weights(classified('neg2', 'neg1', 'neutral', 'pos1', 'pos2'))).toEqual([-2, -1, 0, 1, 2]);
+    });
+
+    it('comes out asymmetric on an asymmetric scale', () => {
+        expect(weights(classified('neg1', 'neutral', 'pos1', 'pos2', 'pos3'))).toEqual([-1, 0, 1, 2, 3]);
+    });
+
+    it('counts out from the centre when there is no Neutral', () => {
+        expect(weights(classified('neg2', 'neg1', 'pos1', 'pos2'))).toEqual([-2, -1, 1, 2]);
+    });
+
+    it('weights an unclassified 5-point scale by its legacy positions', () => {
+        expect(weights(resolveLikertScale(['a', 'b', 'c', 'd', 'e']))).toEqual([-1, 0, 1, 2, 3]);
+    });
+});
+
+describe('weightedScore', () => {
+    const standard = resolveLikertScale(
+        ['a', 'b', 'c', 'd', 'e'],
+        (['neg2', 'neg1', 'neutral', 'pos1', 'pos2'] as LikertClassification[]).map((classification) => ({
+            label: classification,
+            classification,
+        })),
+    );
+
+    it('sums each share of the scored answers times its weight', () => {
+        expect(weightedScore([10, 20, 30, 25, 15], standard)).toBeCloseTo(0.15, 10);
+    });
+
+    it('rescales over scored answers, so Not sure does not pull the score toward zero', () => {
+        // Same shape as above with 50% Not sure taken out of every point.
+        expect(weightedScore([5, 10, 15, 12.5, 7.5], standard)).toBeCloseTo(0.15, 10);
+    });
+
+    it('has no score when nothing was scored', () => {
+        expect(weightedScore([0, 0, 0, 0, 0], standard)).toBeNull();
+    });
+
+    it('has no score on a scale with no sides', () => {
+        expect(weightedScore([25, 25, 25, 25], resolveLikertScale(['a', 'b', 'c', 'd']))).toBeNull();
     });
 });

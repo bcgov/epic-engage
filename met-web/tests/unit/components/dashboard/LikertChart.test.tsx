@@ -1,5 +1,5 @@
 import { act, render } from '@testing-library/react';
-import { LikertChart } from 'components/public/dashboard/charts/LikertChart';
+import { formatScore, LikertChart } from 'components/public/dashboard/charts/LikertChart';
 
 // The chart only draws once it has measured its container.
 beforeAll(() => {
@@ -334,5 +334,16 @@ describe('LikertChart', () => {
         expect(container.querySelector('[data-testid="likert-not-sure"]')).toBeNull();
         expect(queryByText('NOT SURE')).toBeNull();
         expect(queryByTestId('likert-legend-not-sure')).toBeNull();
+    });
+});
+
+describe('formatScore', () => {
+    it('signs and rounds to one decimal place', () => {
+        expect(formatScore(1.36)).toBe('+1.4 weighted score');
+        expect(formatScore(-0.31)).toBe('-0.3 weighted score');
+    });
+
+    it('never shows a negative zero', () => {
+        expect(formatScore(-0.04)).toBe('+0.0 weighted score');
     });
 });
