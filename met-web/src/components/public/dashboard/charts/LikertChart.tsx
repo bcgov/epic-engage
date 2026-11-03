@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material';
 import { Palette } from 'styles/Theme';
 import { MET_Header_Font_Family } from 'styles/constants';
 import { LikertScalePoint } from 'models/analytics/surveyResult';
-import { resolveLikertScale, ResolvedSegment } from './likertScale';
+import { resolveLikertScale, ResolvedSegment, weightedScore } from './likertScale';
 
 const LABEL_W = 220;
 const N_COL_W = 70;
@@ -25,6 +25,7 @@ const LABEL_INSET = 4;
 const LABEL_MAX_W = LABEL_W - LABEL_INSET * 2;
 // Last line is ellipsised.
 const LABEL_MAX_LINES = 4;
+const SCORE_FONT_SIZE = 10;
 
 const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
 
@@ -133,6 +134,12 @@ function wrapLabel(label: string, maxWidth = LABEL_MAX_W, maxLines = LABEL_MAX_L
     return lines;
 }
 
+// Round before picking the sign, so a score just under zero reads "+0.0", never "-0.0".
+export function formatScore(score: number): string {
+    const rounded = Math.round(score * 10) / 10;
+    return `${rounded >= 0 ? '+' : ''}${rounded.toFixed(1)} weighted score`;
+}
+
 interface LikertChartProps {
     data: LikertRow[];
     // Labels for each scale point, in order, used by the legend, axis header and tooltips.
@@ -180,10 +187,14 @@ export const LikertChart = ({
     });
 
     const scaleLength = data.reduce((longest, d) => Math.max(longest, d.pcts.length), 0);
-    const labels = Array.from({ length: scaleLength }, (_, i) => scaleLabels[i] ?? `Scale point ${i + 1}`);
+    const labels = useMemo(
+        () => Array.from({ length: scaleLength }, (_, i) => scaleLabels[i] ?? `Scale point ${i + 1}`),
+        [scaleLength, scaleLabels],
+    );
     const [axisStart, axisEnd] = axisLabels ?? [labels[0] ?? 'Negative', labels[labels.length - 1] ?? 'Positive'];
 
-    const { diverging, segments } = resolveLikertScale(labels, scale);
+    const resolved = useMemo(() => resolveLikertScale(labels, scale), [labels, scale]);
+    const { diverging, segments } = resolved;
     const segmentAt = (i: number): ResolvedSegment =>
         segments[i] ?? {
             label: labels[i],
@@ -191,6 +202,7 @@ export const LikertChart = ({
             border: Palette.chart.fallback.swatch,
             text: Palette.chart.fallback.label,
             polarity: 'positive',
+            weight: 0,
         };
 
     // Keep SVG units at CSS pixel size even when ResizeObserver reports a fractional width.
@@ -201,17 +213,21 @@ export const LikertChart = ({
     const barRight = hasNotSure ? nsLeft - NS_GAP : countX - BAR_GAP;
     const barColW = barRight - barLeft;
 
-    // Grow rows to fit however many lines their label wraps to
+    // Highest weighted score first; the sort is stable, so ties (and unscored scales) keep survey order.
+    // Rows grow to fit however many lines their label wraps to, plus the score line.
     const rows = useMemo(() => {
+        const scored = data.map((row) => ({ row, score: weightedScore(row.pcts, resolved) }));
+        scored.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
         let y = PAD_TOP;
-        return data.map((row) => {
+        return scored.map(({ row, score }) => {
             const lines = wrapLabel(row.label);
-            const h = Math.max(ROW_H, lines.length * LABEL_LINE_H + 16);
-            const layout = { row, lines, y, h };
+            const textLines = lines.length + (score === null ? 0 : 1);
+            const h = Math.max(ROW_H, textLines * LABEL_LINE_H + 16);
+            const layout = { row, score, lines, textLines, y, h };
             y += h;
             return layout;
         });
-    }, [data]);
+    }, [data, resolved]);
     const svgH = rows.reduce((sum, r) => sum + r.h, PAD_TOP + 8);
 
     // Everything negative, plus half of neutral, sits left of the centre axis.
@@ -364,7 +380,7 @@ export const LikertChart = ({
                             strokeWidth={1}
                         />
 
-                        {rows.map(({ row, lines, y: y0, h: rowH }, i) => {
+                        {rows.map(({ row, score, lines, textLines, y: y0, h: rowH }, i) => {
                             const barY = y0 + (rowH - BAR_H) / 2;
 
                             // Snap shared boundaries, not individual widths: adjacent segments must meet,
@@ -390,7 +406,7 @@ export const LikertChart = ({
                                 segs[segs.length - 1].roundRight = true;
                             }
 
-                            const firstBaseline = y0 + (rowH - lines.length * LABEL_LINE_H) / 2 + LABEL_LINE_H - 3;
+                            const firstBaseline = y0 + (rowH - textLines * LABEL_LINE_H) / 2 + LABEL_LINE_H - 3;
 
                             return (
                                 <g key={row.label}>
@@ -420,6 +436,17 @@ export const LikertChart = ({
                                                 {line}
                                             </text>
                                         ))}
+                                        {score !== null && (
+                                            <text
+                                                data-testid="likert-weighted-score"
+                                                x={PAD_L + LABEL_INSET}
+                                                y={firstBaseline + lines.length * LABEL_LINE_H}
+                                                fontSize={SCORE_FONT_SIZE}
+                                                fill={Palette.text.secondary}
+                                            >
+                                                {formatScore(score)}
+                                            </text>
+                                        )}
                                     </g>
 
                                     {/* Keep the axis in the row gutters so it cannot obscure borders or corners. */}
