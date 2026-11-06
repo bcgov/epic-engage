@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
             tsconfigPaths(),
             nodePolyfills({
                 // Enable polyfills for specific Node.js globals and modules
-                include: ['crypto', 'stream', 'buffer', 'process', 'util'],
+                include: ['stream', 'buffer', 'process', 'util'],
                 globals: {
                     Buffer: true,
                     global: true,
@@ -55,7 +55,8 @@ export default defineConfig(({ mode }) => {
                     'met-formio',
                     // Pre-bundle map libraries together to avoid circular dependency issues
                     'maplibre-gl',
-                    'react-map-gl',
+                    // react-map-gl v8 has no root export; the maplibre entry re-exports @vis.gl/react-maplibre
+                    'react-map-gl/maplibre',
                 ],
                 esbuildOptions: {
                     mainFields: ['module', 'main'],
@@ -104,7 +105,11 @@ export default defineConfig(({ mode }) => {
                             return 'formio';
                         }
                         // Map libraries — keep together to avoid spatial index init ordering issues
-                        if (id.includes('/node_modules/maplibre-gl/') || id.includes('/node_modules/react-map-gl/')) {
+                        if (
+                            id.includes('/node_modules/maplibre-gl/') ||
+                            id.includes('/node_modules/react-map-gl/') ||
+                            id.includes('/node_modules/@vis.gl/react-maplibre/')
+                        ) {
                             return 'maplibre';
                         }
                         // Date pickers — validateDay.js throws if dayjs is in a separate chunk

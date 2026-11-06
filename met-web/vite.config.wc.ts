@@ -26,7 +26,7 @@ export default defineConfig({
         }),
         tsconfigPaths(),
         nodePolyfills({
-            include: ['crypto', 'stream', 'buffer', 'process', 'util'],
+            include: ['stream', 'buffer', 'process', 'util'],
             globals: {
                 Buffer: true,
                 global: true,

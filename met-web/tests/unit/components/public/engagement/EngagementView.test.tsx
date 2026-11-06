@@ -58,10 +58,7 @@ jest.mock('react-router-dom', () => ({
     }),
 }));
 
-// Mock maplibre
-jest.mock('maplibre-gl/dist/maplibre-gl', () => ({
-    Map: () => ({}),
-}));
+jest.mock('components/admin/MetMap', () => ({ __esModule: true, default: () => null, MAP_STYLE: '' }));
 
 // Mock MUI components that may have issues in test environment
 jest.mock('@mui/material', () => ({

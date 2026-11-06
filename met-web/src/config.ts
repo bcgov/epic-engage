@@ -39,8 +39,11 @@ export const getEnv = (key: string, defaultValue = ''): string => {
         return window._env_[key];
     }
     // For Jest and Node environments, use process.env
-    if (typeof process !== 'undefined' && process.env && process.env[key]) {
-        return process.env[key] as string;
+    // Read through globalThis: in dev, vite-plugin-node-polyfills rewrites a bare `process` to its shim,
+    // whose env is empty, while Vite's client publishes the `define` values on the real global.
+    const processEnv = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+    if (processEnv?.[key]) {
+        return processEnv[key] as string;
     }
     return defaultValue;
 };

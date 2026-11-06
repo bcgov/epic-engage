@@ -8,7 +8,6 @@ module.exports = {
     cacheDirectory: '<rootDir>/.jest-cache',
     moduleFileExtensions: ['js', 'jsx', 'ts', 'tsx', 'json', 'css', 'scss'],
     moduleNameMapper: {
-        '^uuid$': require.resolve('uuid'),
         'react-dnd': 'react-dnd-cjs',
         'react-dnd-html5-backend': 'react-dnd-html5-backend-cjs',
         'dnd-core': 'dnd-core-cjs',
