@@ -27,9 +27,7 @@ jest.mock('components/shared/common', () => ({
     },
 }));
 
-jest.mock('maplibre-gl/dist/maplibre-gl', () => ({
-    Map: () => ({}),
-}));
+jest.mock('components/admin/MetMap', () => ({ __esModule: true, default: () => null, MAP_STYLE: '' }));
 
 jest.mock('@mui/material', () => ({
     ...jest.requireActual('@mui/material'),

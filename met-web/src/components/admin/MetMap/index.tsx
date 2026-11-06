@@ -1,5 +1,7 @@
 import React from 'react';
-import Map, { Marker, NavigationControl, Source, Layer, Popup } from 'react-map-gl/maplibre';
+import Map, { Marker, NavigationControl, Source, Layer, Popup, type MapLayerMouseEvent } from 'react-map-gl/maplibre';
+import { setWorkerUrl } from 'maplibre-gl';
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { GeoJSON } from 'geojson';
 import MarkerIcon from '@mui/icons-material/LocationOnRounded';
@@ -15,6 +17,11 @@ interface MapProps {
     geojson?: GeoJSON;
     zoom: number;
 }
+
+// maplibre 6 builds its default worker URL from import.meta.url at runtime, so Vite never emits the
+// file and geojson sources never load. Going through ?worker also emits a .js file: nginx's mime.types
+// has no .mjs entry, and a worker served as application/octet-stream is refused under nosniff.
+setWorkerUrl(maplibreWorkerUrl);
 
 export const MAP_STYLE = window.location.origin + '/basic-map.json';
 
@@ -82,7 +89,7 @@ const MetMap = ({ geojson, latitude, longitude, markerLabel, zoom }: MapProps) =
         latitude: number;
     } | null>(null);
 
-    const handlePolygonHover = (event: maplibregl.MapLayerMouseEvent) => {
+    const handlePolygonHover = (event: MapLayerMouseEvent) => {
         const feature = event?.features?.[0];
         const properties = feature?.properties;
         const label = properties?.Label;
@@ -115,7 +122,7 @@ const MetMap = ({ geojson, latitude, longitude, markerLabel, zoom }: MapProps) =
             }}
         >
             <NavigationControl />
-            <When condition={Boolean(geojson)}>
+            {geojson && (
                 <Source id="geojson-data" type="geojson" data={geojson}>
                     <Layer
                         id="lines"
@@ -152,7 +159,7 @@ const MetMap = ({ geojson, latitude, longitude, markerLabel, zoom }: MapProps) =
                         filter={['all', ['==', ['geometry-type'], 'Polygon']]}
                     />
                 </Source>
-            </When>
+            )}
             <When condition={Boolean(hoverLabel)}>
                 <Popup
                     longitude={hoverLabel?.longitude || longitude}
