@@ -1,9 +1,6 @@
 gunicorn
 Flask==3.1.3
 Flask-Migrate>=4.0.5
-Flask-Mail
-Flask-Script==2.0.5
-Flask-Moment
 Flask-SQLAlchemy>=3.1.1
 flask-restx
 flask-marshmallow>=1.2.1
@@ -14,8 +11,6 @@ marshmallow-sqlalchemy>=0.29.1
 jsonschema
 requests
 itsdangerous
-bcrypt
-jaeger-client
 Werkzeug>=3.0.3
 sqlalchemy-utils
 Flask-Caching
