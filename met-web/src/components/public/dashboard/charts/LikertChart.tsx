@@ -26,6 +26,10 @@ const LABEL_MAX_W = LABEL_W - LABEL_INSET * 2;
 // Last line is ellipsised.
 const LABEL_MAX_LINES = 4;
 const SCORE_FONT_SIZE = 10;
+// Weighted score sits in a pill under the label, set apart from long labels.
+const SCORE_PILL_H = 16;
+const SCORE_PILL_GAP = 6;
+const SCORE_PILL_PAD_X = 6;
 
 const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
 
@@ -214,16 +218,16 @@ export const LikertChart = ({
     const barColW = barRight - barLeft;
 
     // Highest weighted score first; the sort is stable, so ties (and unscored scales) keep survey order.
-    // Rows grow to fit however many lines their label wraps to, plus the score line.
+    // Rows grow to fit however many lines their label wraps to, plus the score pill.
     const rows = useMemo(() => {
         const scored = data.map((row) => ({ row, score: weightedScore(row.pcts, resolved) }));
         scored.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
         let y = PAD_TOP;
         return scored.map(({ row, score }) => {
             const lines = wrapLabel(row.label);
-            const textLines = lines.length + (score === null ? 0 : 1);
-            const h = Math.max(ROW_H, textLines * LABEL_LINE_H + 16);
-            const layout = { row, score, lines, textLines, y, h };
+            const blockH = lines.length * LABEL_LINE_H + (score === null ? 0 : SCORE_PILL_GAP + SCORE_PILL_H);
+            const h = Math.max(ROW_H, blockH + 16);
+            const layout = { row, score, lines, blockH, y, h };
             y += h;
             return layout;
         });
@@ -380,7 +384,7 @@ export const LikertChart = ({
                             strokeWidth={1}
                         />
 
-                        {rows.map(({ row, score, lines, textLines, y: y0, h: rowH }, i) => {
+                        {rows.map(({ row, score, lines, blockH, y: y0, h: rowH }, i) => {
                             const barY = y0 + (rowH - BAR_H) / 2;
 
                             // Snap shared boundaries, not individual widths: adjacent segments must meet,
@@ -406,7 +410,9 @@ export const LikertChart = ({
                                 segs[segs.length - 1].roundRight = true;
                             }
 
-                            const firstBaseline = y0 + (rowH - textLines * LABEL_LINE_H) / 2 + LABEL_LINE_H - 3;
+                            const blockTop = y0 + (rowH - blockH) / 2;
+                            const firstBaseline = blockTop + LABEL_LINE_H - 3;
+                            const pillY = blockTop + lines.length * LABEL_LINE_H + SCORE_PILL_GAP;
 
                             return (
                                 <g key={row.label}>
@@ -437,15 +443,31 @@ export const LikertChart = ({
                                             </text>
                                         ))}
                                         {score !== null && (
-                                            <text
-                                                data-testid="likert-weighted-score"
-                                                x={PAD_L + LABEL_INSET}
-                                                y={firstBaseline + lines.length * LABEL_LINE_H}
-                                                fontSize={SCORE_FONT_SIZE}
-                                                fill={Palette.text.secondary}
-                                            >
-                                                {formatScore(score)}
-                                            </text>
+                                            <g data-testid="likert-weighted-score-pill">
+                                                <rect
+                                                    x={PAD_L + LABEL_INSET}
+                                                    y={pillY}
+                                                    width={
+                                                        (textWidth(formatScore(score)) * SCORE_FONT_SIZE) /
+                                                            LABEL_FONT_SIZE +
+                                                        SCORE_PILL_PAD_X * 2
+                                                    }
+                                                    height={SCORE_PILL_H}
+                                                    rx={SCORE_PILL_H / 2}
+                                                    fill={Palette.chart.likertClassification.neutral.fill}
+                                                    stroke={Palette.chart.likertClassification.neutral.border}
+                                                />
+                                                <text
+                                                    data-testid="likert-weighted-score"
+                                                    x={PAD_L + LABEL_INSET + SCORE_PILL_PAD_X}
+                                                    y={pillY + SCORE_PILL_H / 2}
+                                                    dominantBaseline="central"
+                                                    fontSize={SCORE_FONT_SIZE}
+                                                    fill={Palette.chart.likertClassification.neutral.label}
+                                                >
+                                                    {formatScore(score)}
+                                                </text>
+                                            </g>
                                         )}
                                     </g>
 
