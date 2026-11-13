@@ -17,6 +17,8 @@ Test suite to ensure that the Submission service routines are working as expecte
 """
 from unittest.mock import patch
 
+import pytest
+
 from met_api.constants.comment_status import Status
 from met_api.schemas.submission import SubmissionSchema
 from met_api.services import authorization
@@ -47,6 +49,24 @@ def test_create_submission(session):  # pylint:disable=unused-argument
 
     assert submission is not None
     assert actual_email_verification['is_active'] is False
+
+
+def test_create_submission_twice_with_same_token(session):  # pylint:disable=unused-argument
+    """Assert that a repeat submit with an already-used token is rejected."""
+    survey, eng = factory_survey_and_eng_model()
+    email_verification = factory_email_verification(survey.id)
+    factory_engagement_setting_model(eng.id)
+    token = email_verification.verification_token
+    survey_id = survey.id
+    submission_request: SubmissionSchema = {
+        'submission_json': '{ "test_question": "test answer"}',
+        'survey_id': survey_id,
+        'verification_token': token,
+    }
+    SubmissionService().create(token, dict(submission_request))
+
+    with pytest.raises(ValueError, match='already verified'):
+        SubmissionService().create(token, dict(submission_request))
 
 
 def test_create_submission_rollback(session):  # pylint:disable=unused-argument

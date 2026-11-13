@@ -96,7 +96,8 @@ class EmailVerificationService:
     @classmethod
     def verify(cls, verification_token, survey_id, submission_id, session):
         """Validate and update an email verification."""
-        db_email_verification = EmailVerification.get(verification_token)
+        # Lock the row so concurrent requests (e.g. a double-clicked submit) can't both see is_active=True.
+        db_email_verification = EmailVerification.get(verification_token, for_update=True)
         email_verification = EmailVerificationSchema().dump(db_email_verification)
         cls.validate_email_verification(email_verification)
 
