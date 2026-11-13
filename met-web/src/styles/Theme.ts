@@ -258,6 +258,10 @@ export const Palette = {
             drawer: tokens.surfaceColorBackgroundGray,
             bar: tokens.surfaceColorBackgroundSkyBlue,
         },
+        // Weighted score pill under each Likert row label.
+        likertScorePill: {
+            fill: tokens.dataVizScorePill,
+        },
         // Marker on a conditional follow-up question.
         conditionalMarker: tokens.dataVizGreen,
     },

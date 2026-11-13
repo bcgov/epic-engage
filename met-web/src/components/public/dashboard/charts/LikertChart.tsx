@@ -454,7 +454,7 @@ export const LikertChart = ({
                                                     }
                                                     height={SCORE_PILL_H}
                                                     rx={SCORE_PILL_H / 2}
-                                                    fill={Palette.chart.likertClassification.neutral.fill}
+                                                    fill={Palette.chart.likertScorePill.fill}
                                                     stroke={Palette.chart.likertClassification.neutral.border}
                                                 />
                                                 <text
