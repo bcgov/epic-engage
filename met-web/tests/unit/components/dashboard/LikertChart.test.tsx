@@ -237,6 +237,24 @@ describe('LikertChart', () => {
         expect(fills(container)).toEqual(['#FBD389', '#FEF8E8', '#E0DEDC', '#A8D0FB', '#3470B1']);
     });
 
+    it('draws the weighted score in a light pill', () => {
+        const scale = [
+            { label: 'Disagree', classification: 'neg1' as const },
+            { label: 'Neutral', classification: 'neutral' as const },
+            { label: 'Agree', classification: 'pos1' as const },
+        ];
+        const { container } = render(
+            <LikertChart
+                data={[{ label: 'Row', pcts: [20, 30, 50], n: 10 }]}
+                scaleLabels={scale.map((s) => s.label)}
+                scale={scale}
+            />,
+        );
+
+        const pill = container.querySelector('[data-testid="likert-weighted-score-pill"] rect');
+        expect(pill?.getAttribute('fill')?.toUpperCase()).toBe('#EDEBE9');
+    });
+
     it('keeps the legacy 5-point split for unclassified data', () => {
         const { container } = render(<LikertChart data={[{ label: 'Row', pcts, n: 10 }]} />);
 

@@ -140,6 +140,7 @@ export const dataVizGold10Border = '#f9d576';
 // Neutral
 export const dataVizGray40 = '#e0dedc';
 export const dataVizGray40Border = '#aba6a0';
+export const dataVizScorePill = '#edebe9';
 // Positive
 export const dataVizBlue40 = '#a8d0fb';
 export const dataVizBlue40Border = '#469bf6';
