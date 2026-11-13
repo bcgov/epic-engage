@@ -51,6 +51,8 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [savedEngagement, setSavedEngagement] = useState<Engagement | null>(null);
     const savedEngagementRef = useRef<Engagement | null>(null);
+    // Ref, not state: a second click can fire before the isSubmitting re-render disables the button.
+    const isSubmittingRef = useRef(false);
     const [isEngagementLoading, setIsEngagementLoading] = useState(true);
     const [slug, setSlug] = useState<string>('');
     const [participantId, setParticipantId] = useState<string | undefined>(() => {
@@ -215,6 +217,8 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
     }, [savedSurvey.engagement_id]);
 
     const handleSubmit = async (submissionData: unknown) => {
+        if (isSubmittingRef.current) return;
+        isSubmittingRef.current = true;
         try {
             setIsSubmitting(true);
             await submitSurvey({
@@ -262,6 +266,7 @@ export const SubmitSurveyProvider = ({ children }: { children: JSX.Element }) =>
                     text: 'Error occurred during survey submission',
                 }),
             );
+            isSubmittingRef.current = false;
             setIsSubmitting(false);
             verifyToken();
         }

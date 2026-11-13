@@ -30,12 +30,12 @@ class EmailVerification(BaseModel):  # pylint: disable=too-few-public-methods
     engagement_id = db.Column(db.Integer, ForeignKey('engagement.id'), nullable=True)
 
     @classmethod
-    def get(cls, verification_token) -> EmailVerification:
-        """Get an email verification."""
-        db_email_verification = db.session.query(EmailVerification)\
-            .filter_by(verification_token=verification_token)\
-            .first()
-        return db_email_verification
+    def get(cls, verification_token, for_update=False) -> EmailVerification:
+        """Get an email verification. for_update row-locks it until the transaction ends."""
+        query = db.session.query(EmailVerification).filter_by(verification_token=verification_token)
+        if for_update:
+            query = query.with_for_update()
+        return query.first()
 
     @classmethod
     def create(cls, email_verification: EmailVerificationSchema, session=None) -> EmailVerification:
