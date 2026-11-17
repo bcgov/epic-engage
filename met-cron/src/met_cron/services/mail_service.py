@@ -3,6 +3,7 @@ from http import HTTPStatus
 from typing import List
 
 from flask import current_app
+from itsdangerous import BadData
 from met_api.exceptions.business_exception import BusinessException
 from met_api.models import Tenant as TenantModel
 from met_api.models.engagement import Engagement as EngagementModel
@@ -13,8 +14,19 @@ from met_api.services.email_verification_service import EmailVerificationService
 from met_api.utils import notification
 from met_cron.utils.scrub import scrub_sensitive
 from met_cron.utils.subscription_checker import CheckSubscription
+from sqlalchemy.exc import SQLAlchemyError
 
 from met_cron.models.db import db
+
+MAX_LOGGED_SUBSCRIPTION_IDS = 10
+
+
+def raise_if_engagements_failed(failed_engagement_ids):
+    """Fail the job after every engagement had its turn, so the run is still logged as failed."""
+    if failed_engagement_ids:
+        raise BusinessException(
+            error=f'Sending emails failed for engagements {failed_engagement_ids}.',
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
 
 
 class EmailService:  # pylint: disable=too-few-public-methods
@@ -22,19 +34,22 @@ class EmailService:  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def _send_email_notification_for_subscription(engagement_id, template_id, subject, template):
+        """Email every subscriber of the engagement; raises only when no email was sent and some failed."""
         engagement: EngagementModel = EngagementModel.find_by_id(engagement_id)
 
         # find emails from the subscription table
         subscription_list: List[SubscriptionModel] = db.session.query(SubscriptionModel).distinct().filter(
             SubscriptionModel.is_subscribed == True).all()
-        subscriber: SubscriptionModel
+        # A rollback expires every loaded row, so the ids are read up front.
+        subscriptions = [(subscriber.id, subscriber.participant_id, subscriber) for subscriber in subscription_list]
         email_list = []
-        sent = failed = 0
-        for subscriber in subscription_list:
+        sent = 0
+        failures = {}
+        for subscription_id, participant_id, subscriber in subscriptions:
             try:
                 if not CheckSubscription.check_subscription(subscriber, engagement_id):
                     continue
-                participant = ParticipantModel.find_by_id(subscriber.participant_id)
+                participant = ParticipantModel.find_by_id(participant_id)
                 if participant.email_address is None:
                     continue
                 email_address = ParticipantModel.decode_email(participant.email_address)
@@ -42,27 +57,30 @@ class EmailService:  # pylint: disable=too-few-public-methods
                     continue
                 email_list.append(email_address)
                 body, args = EmailService._render_email_template(engagement, participant, template)
-                EmailService._send_email_notification(subject,
-                                                      email_address,
-                                                      body,
-                                                      args,
-                                                      template_id)
+                notification.send_email(subject=subject,
+                                        email=email_address,
+                                        html_body=body,
+                                        args=args,
+                                        template_id=template_id)
                 sent += 1
             except Exception as exc:  # noqa: B902
-                failed += 1
-                current_app.logger.error('<Email for subscription %s (participant %s) on engagement %s '
-                                         'failed with %s: %s', subscriber.id, subscriber.participant_id,
-                                         engagement_id, type(exc).__name__, scrub_sensitive(str(exc)))
-                db.session.rollback()
-        current_app.logger.info('<Engagement %s emails: %s sent, %s failed', engagement_id, sent, failed)
-        return sent, failed
+                if isinstance(exc, SQLAlchemyError):
+                    db.session.rollback()
+                # itsdangerous messages carry part of the signed address.
+                detail = '' if isinstance(exc, BadData) else scrub_sensitive(str(exc))
+                failure = failures.setdefault(type(exc).__name__, {'ids': [], 'detail': detail})
+                failure['ids'].append(subscription_id)
 
-    @staticmethod
-    def raise_if_engagements_failed(failed_engagement_ids):
-        """Fail the job after every engagement had its turn, so the run is still logged as failed."""
-        if failed_engagement_ids:
+        failed = 0
+        for error_type, failure in failures.items():
+            failed += len(failure['ids'])
+            current_app.logger.warning('<Engagement %s: %s subscriptions failed with %s, ids %s: %s',
+                                       engagement_id, len(failure['ids']), error_type,
+                                       failure['ids'][:MAX_LOGGED_SUBSCRIPTION_IDS], failure['detail'])
+        current_app.logger.info('<Engagement %s emails: %s sent, %s failed', engagement_id, sent, failed)
+        if failed and not sent:
             raise BusinessException(
-                error=f'Sending emails failed for engagements {failed_engagement_ids}.',
+                error=f'Every email for engagement {engagement_id} failed.',
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
 
     @staticmethod
@@ -103,18 +121,3 @@ class EmailService:  # pylint: disable=too-few-public-methods
     def _get_tenant_name(tenant_id):
         tenant = TenantModel.find_by_id(tenant_id)
         return tenant.name
-
-    @staticmethod
-    def _send_email_notification(subject, email, body, args, template_id):
-        try:
-            notification.send_email(subject=subject,
-                                    email=email,
-                                    html_body=body,
-                                    args=args,
-                                    template_id=template_id)                
-        except Exception as exc:  # noqa: B902
-            current_app.logger.error('<Notification for publish engagement failed: %s',
-                                     scrub_sensitive(str(exc)))
-            raise BusinessException(
-                error='Error sending publish engagement notification email.',
-                status_code=HTTPStatus.INTERNAL_SERVER_ERROR) from exc
