@@ -29,8 +29,10 @@ class ClosingSoonEmailService:  # pylint: disable=too-few-public-methods
         engagement_ids = [engagement.id for engagement in engagements_closing_soon or []]
         for engagement_id in engagement_ids:
             try:
-                EmailService._send_email_notification_for_subscription(engagement_id, template_id,
-                                                                        subject, template)
+                result = EmailService._send_email_notification_for_subscription(engagement_id, template_id,
+                                                                                 subject, template)
+                if result.failed:
+                    failed_engagement_ids.append(engagement_id)
             except Exception as exc:  # noqa: B902
                 db.session.rollback()
                 failed_engagement_ids.append(engagement_id)

@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 from flask import Flask
 import pytest
+import requests
 from itsdangerous import URLSafeSerializer
 from sqlalchemy.exc import OperationalError
 
@@ -11,7 +12,7 @@ from met_api.exceptions.business_exception import BusinessException
 from met_api.models.participant import Participant as ParticipantModel
 from met_cron.services import closing_soon_mail_service, mail_service, publish_mail_service
 from met_cron.services.closing_soon_mail_service import ClosingSoonEmailService
-from met_cron.services.mail_service import EmailService
+from met_cron.services.mail_service import EmailService, SendResult
 from met_cron.services.publish_mail_service import PublishEmailService
 
 
@@ -39,8 +40,8 @@ class _QueuedMail:
 class _Session:
     """Answers any query chain with the given rows; a rollback expires them like ORM rows."""
 
-    def __init__(self, rows):
-        self.rows = rows
+    def __init__(self, rows=None):
+        self.rows = rows or []
         self.rolled_back = False
 
     def query(self, *_):
@@ -67,11 +68,16 @@ class _Subscription:
         raise OperationalError('SELECT subscription', {}, Exception('expired row needs the database'))
 
 
-def _stub_subscribers_and_template(monkeypatch, participants, find_participant=None):
+def _stub_db(monkeypatch, session):
+    for module in (mail_service, publish_mail_service, closing_soon_mail_service):
+        monkeypatch.setattr(module, 'db', SimpleNamespace(session=session))
+
+
+def _stub_subscribers_and_template(monkeypatch, participants, find_participant=None, send_email=None):
     """Serve the participants as confirmed subscribers, skip template rendering, record who gets mail."""
-    session = _Session([])
+    session = _Session()
     session.rows = [_Subscription(session, participant_id) for participant_id in participants]
-    monkeypatch.setattr(mail_service, 'db', SimpleNamespace(session=session))
+    _stub_db(monkeypatch, session)
     monkeypatch.setattr(mail_service.EngagementModel, 'find_by_id', lambda _id: SimpleNamespace(id=_id))
     monkeypatch.setattr(mail_service.CheckSubscription, 'check_subscription', lambda *_: True)
     monkeypatch.setattr(ParticipantModel, 'find_by_id', find_participant or (
@@ -79,7 +85,8 @@ def _stub_subscribers_and_template(monkeypatch, participants, find_participant=N
     monkeypatch.setattr(EmailService, '_render_email_template', lambda *_: ('body', {}))
     monkeypatch.setattr(publish_mail_service.Template, 'get_template', lambda _name: None)
     sent_to = []
-    monkeypatch.setattr(mail_service.notification, 'send_email', lambda **kwargs: sent_to.append(kwargs['email']))
+    monkeypatch.setattr(mail_service.notification, 'send_email',
+                        send_email or (lambda **kwargs: sent_to.append(kwargs['email'])))
     return sent_to
 
 
@@ -88,11 +95,12 @@ def _queue(monkeypatch, *mails):
                         lambda _size: list(mails))
 
 
-def test_undecodable_subscriber_does_not_block_the_others(monkeypatch):
-    """A subscriber whose address cannot be decoded is skipped; each other address gets one email."""
+def test_undecodable_subscriber_does_not_block_the_others(monkeypatch, caplog):
+    """A subscriber whose address cannot be decoded is skipped and logged by type only."""
+    undecodable = WRONG_KEY.dumps('broken@example.com')
     sent_to = _stub_subscribers_and_template(monkeypatch, {
         1: GOOD.dumps('first@example.com'),
-        2: WRONG_KEY.dumps('broken@example.com'),
+        2: undecodable,
         3: GOOD.dumps('third@example.com'),
         4: GOOD.dumps('first@example.com'),
     })
@@ -100,14 +108,17 @@ def test_undecodable_subscriber_does_not_block_the_others(monkeypatch):
     _queue(monkeypatch, mail)
 
     with _app().app_context():
-        PublishEmailService.do_mail()
+        with pytest.raises(BusinessException):
+            PublishEmailService.do_mail()
 
     assert sent_to == ['first@example.com', 'third@example.com']
     assert mail.notification_status == NotificationStatus.SENT.value
+    assert 'BadSignature' in caplog.text
+    assert not [part for part in undecodable.split('.') if part in caplog.text]
 
 
-def test_database_error_after_a_send_keeps_the_row_sent(monkeypatch):
-    """Once one email went out, a lost database connection must not queue the row for a resend."""
+def test_lost_database_after_a_confirmed_send_marks_the_row_sent(monkeypatch):
+    """Once one email was confirmed, a lost database connection must not queue the row for a resend."""
     participants = {1: GOOD.dumps('first@example.com'), 2: GOOD.dumps('second@example.com')}
 
     def find_participant(participant_id):
@@ -116,18 +127,42 @@ def test_database_error_after_a_send_keeps_the_row_sent(monkeypatch):
         return SimpleNamespace(id=participant_id, email_address=participants[participant_id])
 
     sent_to = _stub_subscribers_and_template(monkeypatch, participants, find_participant)
+    session = mail_service.db.session
+
+    def lost_rollback():
+        session.rolled_back = True
+        raise OperationalError('ROLLBACK', {}, Exception('connection lost'))
+
+    monkeypatch.setattr(session, 'rollback', lost_rollback)
     mail = _QueuedMail(entity_id=42)
     _queue(monkeypatch, mail)
 
     with _app().app_context():
-        PublishEmailService.do_mail()
+        with pytest.raises(BusinessException):
+            PublishEmailService.do_mail()
 
     assert sent_to == ['first@example.com']
     assert mail.notification_status == NotificationStatus.SENT.value
 
 
-def test_row_is_queued_again_when_every_subscriber_fails(monkeypatch):
-    """No email sent and some failed means the engagement failed: the job fails and the row is retried."""
+def test_unconfirmed_send_leaves_the_row_processing(monkeypatch):
+    """A send that may have reached the mail service is never queued again, so nobody is mailed twice."""
+    def time_out(**_kwargs):
+        raise requests.ReadTimeout('read timed out')
+
+    _stub_subscribers_and_template(monkeypatch, {1: GOOD.dumps('first@example.com')}, send_email=time_out)
+    mail = _QueuedMail(entity_id=42)
+    _queue(monkeypatch, mail)
+
+    with _app().app_context():
+        with pytest.raises(BusinessException):
+            PublishEmailService.do_mail()
+
+    assert mail.notification_status == NotificationStatus.PROCESSING.value
+
+
+def test_row_is_queued_again_when_every_subscriber_fails_before_sending(monkeypatch):
+    """No send tried and some subscribers failed: the job fails and the row is retried."""
     _stub_subscribers_and_template(monkeypatch, {1: WRONG_KEY.dumps('broken@example.com')})
     mail = _QueuedMail(entity_id=42)
     _queue(monkeypatch, mail)
@@ -139,14 +174,33 @@ def test_row_is_queued_again_when_every_subscriber_fails(monkeypatch):
     assert mail.notification_status is None
 
 
+def test_skipped_address_does_not_count_as_sent(monkeypatch):
+    """An invalid address is skipped, not sent, so a failure beside it still queues the row again."""
+    sent_to = _stub_subscribers_and_template(monkeypatch, {
+        1: GOOD.dumps('not-an-address'),
+        2: WRONG_KEY.dumps('broken@example.com'),
+    })
+    mail = _QueuedMail(entity_id=42)
+    _queue(monkeypatch, mail)
+
+    with _app().app_context():
+        with pytest.raises(BusinessException):
+            PublishEmailService.do_mail()
+
+    assert sent_to == []
+    assert mail.notification_status is None
+
+
 def test_failed_engagement_send_is_queued_again_and_the_next_row_is_sent(monkeypatch):
     """A row whose engagement send fails goes back to unprocessed, and the rows after it are still sent."""
     def send(engagement_id, *_):
         if engagement_id == 1:
             raise RuntimeError('engagement lookup failed')
+        return SendResult(sent=1, attempted=1, failed=0, skipped=0)
 
     failing, working = _QueuedMail(entity_id=1), _QueuedMail(entity_id=2)
     _queue(monkeypatch, failing, working)
+    _stub_db(monkeypatch, _Session())
     monkeypatch.setattr(publish_mail_service.Template, 'get_template', lambda _name: None)
     monkeypatch.setattr(EmailService, '_send_email_notification_for_subscription', send)
 
@@ -166,7 +220,9 @@ def test_closing_soon_continues_past_a_failing_engagement(monkeypatch):
         attempted.append(engagement_id)
         if engagement_id == 1:
             raise RuntimeError('engagement lookup failed')
+        return SendResult(sent=1, attempted=1, failed=0, skipped=0)
 
+    _stub_db(monkeypatch, _Session())
     monkeypatch.setattr(ClosingSoonEmailService, 'get_public_engagements_closing_soon',
                         lambda _days: [SimpleNamespace(id=1), SimpleNamespace(id=2)])
     monkeypatch.setattr(closing_soon_mail_service.Template, 'get_template', lambda _name: None)

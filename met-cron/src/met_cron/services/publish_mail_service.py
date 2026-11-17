@@ -35,15 +35,20 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
             mail.commit()
 
             try:
-                EmailService._send_email_notification_for_subscription(entity_id, template_id,
-                                                                        subject, template)
-                mail.notification_status = NotificationStatus.SENT.value
+                result = EmailService._send_email_notification_for_subscription(entity_id, template_id,
+                                                                                 subject, template)
             except Exception as exc:  # noqa: B902
                 db.session.rollback()
-                failed_engagement_ids.append(entity_id)
                 current_app.logger.error('<Publish email for engagement %s failed with %s: %s',
                                          entity_id, type(exc).__name__, scrub_sensitive(str(exc)))
+                result = None
+            if result is None or result.failed:
+                failed_engagement_ids.append(entity_id)
+            if result is not None and (result.sent or not result.failed):
+                mail.notification_status = NotificationStatus.SENT.value
+            elif result is None or not result.attempted:
                 mail.notification_status = None
+            # Otherwise a send was tried but none confirmed: it stays PROCESSING so nobody is mailed twice.
             mail.updated_date = datetime.utcnow()
             mail.commit()
         raise_if_engagements_failed(failed_engagement_ids)
