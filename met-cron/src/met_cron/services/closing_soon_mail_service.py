@@ -10,6 +10,7 @@ from met_api.utils.datetime import local_datetime
 from met_api.utils.template import Template
 from met_cron.models.db import db
 from met_cron.services.mail_service import EmailService
+from met_cron.utils.scrub import scrub_sensitive
 
 
 class ClosingSoonEmailService:  # pylint: disable=too-few-public-methods
@@ -23,10 +24,17 @@ class ClosingSoonEmailService:  # pylint: disable=too-few-public-methods
         template_id = current_app.config.get('ENGAGEMENT_CLOSING_SOON_EMAIL_TEMPLATE_ID', None)
         subject = current_app.config.get('ENGAGEMENT_CLOSING_SOON_EMAIL_SUBJECT')
         template = Template.get_template('engagement_closing_soon.html')
-        if engagements_closing_soon is not None:
-            for engagement in engagements_closing_soon:
+        failed_engagement_ids = []
+        for engagement in engagements_closing_soon or []:
+            try:
                 EmailService._send_email_notification_for_subscription(engagement.id, template_id,
                                                                         subject, template)
+            except Exception as exc:  # noqa: B902
+                db.session.rollback()
+                failed_engagement_ids.append(engagement.id)
+                current_app.logger.error('<Closing soon email for engagement %s failed with %s: %s',
+                                         engagement.id, type(exc).__name__, scrub_sensitive(str(exc)))
+        EmailService.raise_if_engagements_failed(failed_engagement_ids)
 
     @staticmethod
     def get_public_engagements_closing_soon(offset_days: int) -> List[EngagementModel]:

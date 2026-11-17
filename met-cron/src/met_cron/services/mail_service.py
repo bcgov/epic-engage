@@ -29,27 +29,41 @@ class EmailService:  # pylint: disable=too-few-public-methods
             SubscriptionModel.is_subscribed == True).all()
         subscriber: SubscriptionModel
         email_list = []
+        sent = failed = 0
         for subscriber in subscription_list:
-            is_subscribed = CheckSubscription.check_subscription(subscriber, engagement_id)
-            if is_subscribed:
-                try:
-                    participant = ParticipantModel.find_by_id(subscriber.participant_id)
-                    if participant.email_address is not None:
-                        email_address = ParticipantModel.decode_email(participant.email_address)
-                        if email_address not in email_list:
-                            email_list.append(email_address)
-                            body, args = EmailService._render_email_template(engagement, participant, template)
-                            EmailService._send_email_notification(subject,
-                                                                  email_address,
-                                                                  body,
-                                                                  args,
-                                                                  template_id)
-                except Exception as exc:  # noqa: B902
-                    current_app.logger.error('<Extracting email address for subscribers failed: %s',
-                                             scrub_sensitive(str(exc)))
-                    raise BusinessException(
-                        error='Error extracting email address for subscribers.',
-                        status_code=HTTPStatus.INTERNAL_SERVER_ERROR) from exc
+            try:
+                if not CheckSubscription.check_subscription(subscriber, engagement_id):
+                    continue
+                participant = ParticipantModel.find_by_id(subscriber.participant_id)
+                if participant.email_address is None:
+                    continue
+                email_address = ParticipantModel.decode_email(participant.email_address)
+                if email_address in email_list:
+                    continue
+                email_list.append(email_address)
+                body, args = EmailService._render_email_template(engagement, participant, template)
+                EmailService._send_email_notification(subject,
+                                                      email_address,
+                                                      body,
+                                                      args,
+                                                      template_id)
+                sent += 1
+            except Exception as exc:  # noqa: B902
+                failed += 1
+                current_app.logger.error('<Email for subscription %s (participant %s) on engagement %s '
+                                         'failed with %s: %s', subscriber.id, subscriber.participant_id,
+                                         engagement_id, type(exc).__name__, scrub_sensitive(str(exc)))
+                db.session.rollback()
+        current_app.logger.info('<Engagement %s emails: %s sent, %s failed', engagement_id, sent, failed)
+        return sent, failed
+
+    @staticmethod
+    def raise_if_engagements_failed(failed_engagement_ids):
+        """Fail the job after every engagement had its turn, so the run is still logged as failed."""
+        if failed_engagement_ids:
+            raise BusinessException(
+                error=f'Sending emails failed for engagements {failed_engagement_ids}.',
+                status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
 
     @staticmethod
     def _render_email_template(engagement, participant, template):
