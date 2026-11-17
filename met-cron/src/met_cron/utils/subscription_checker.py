@@ -35,6 +35,8 @@ class CheckSubscription:
             return True
         elif subscriber.type == SubscriptionType.PROJECT.value:
             engagement_metadata: EngagementMetadataModel = EngagementMetadataModel.find_by_id(engagement_id)
+            if engagement_metadata is None:
+                return False
             if subscriber.project_id == engagement_metadata.project_id:
                 return True
         elif subscriber.type == SubscriptionType.ENGAGEMENT.value:

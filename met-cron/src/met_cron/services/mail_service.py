@@ -1,7 +1,8 @@
 from collections import namedtuple
 from datetime import datetime
 from http import HTTPStatus
-from typing import List
+from typing import List, Optional
+from urllib.parse import urlparse
 
 from flask import current_app
 from itsdangerous import BadData
@@ -15,22 +16,85 @@ from met_api.services.email_verification_service import EmailVerificationService
 from met_api.utils import notification
 from met_cron.utils.scrub import scrub_sensitive
 from met_cron.utils.subscription_checker import CheckSubscription
+from requests import exceptions as request_errors
 from sqlalchemy.exc import SQLAlchemyError
+from urllib3.exceptions import ConnectTimeoutError, MaxRetryError
 
 from met_cron.models.db import db
 
 MAX_LOGGED_SUBSCRIPTION_IDS = 10
+TOKEN_PATH_SUFFIX = '/protocol/openid-connect/token'
 
-# attempted counts every send_email call, sent only the calls that returned without an error.
-SendResult = namedtuple('SendResult', ['sent', 'attempted', 'failed', 'skipped'])
+# Raised before the request reaches the mail service.
+NOT_DELIVERED_REQUEST_ERRORS = (
+    request_errors.ConnectTimeout,
+    request_errors.InvalidURL,
+    request_errors.MissingSchema,
+    request_errors.InvalidSchema,
+    request_errors.InvalidHeader,
+    request_errors.URLRequired,
+    request_errors.InvalidJSONError,
+)
+
+# failed includes ambiguous: sends that raised after the mail service may have accepted them.
+SendResult = namedtuple('SendResult', ['sent', 'failed', 'ambiguous', 'skipped', 'duplicate'])
 
 
 def raise_if_engagements_failed(failed_engagement_ids):
     """Fail the job after every engagement had its turn, so the run is still logged as failed."""
     if failed_engagement_ids:
         raise BusinessException(
-            error=f'Sending emails failed for engagements {failed_engagement_ids}.',
+            error=f'Sending emails failed for engagements {sorted(failed_engagement_ids)}.',
             status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
+
+
+def may_have_been_delivered(exc) -> bool:
+    """Return False only when the error proves the mail service never received the email."""
+    if not isinstance(exc, request_errors.RequestException):
+        return False
+    url = getattr(exc.request, 'url', None)
+    if url and urlparse(url).path.endswith(TOKEN_PATH_SUFFIX):
+        return False
+    if isinstance(exc, NOT_DELIVERED_REQUEST_ERRORS):
+        return False
+    if isinstance(exc, request_errors.ConnectionError) and exc.args and isinstance(exc.args[0], MaxRetryError) \
+            and isinstance(exc.args[0].reason, ConnectTimeoutError):
+        return False
+    if isinstance(exc, request_errors.HTTPError) and exc.response is not None and exc.response.status_code < 500:
+        return False
+    return True
+
+
+def safe_rollback():
+    """Roll back the session; a failing rollback is logged, never raised."""
+    try:
+        db.session.rollback()
+    except Exception as exc:  # noqa: B902
+        current_app.logger.error('<Rollback failed with %s: %s', type(exc).__name__, scrub_sensitive(str(exc)))
+
+
+def send_engagement_emails(engagement_id, template_id, subject, template, label) -> Optional[SendResult]:
+    """Email the engagement's subscribers; returns None when the engagement itself failed."""
+    try:
+        return EmailService._send_email_notification_for_subscription(engagement_id, template_id, subject, template)
+    except Exception as exc:  # noqa: B902
+        safe_rollback()
+        current_app.logger.error('<%s email for engagement %s failed with %s: %s',
+                                 label, engagement_id, type(exc).__name__, scrub_sensitive(str(exc)))
+        return None
+
+
+def _record(bucket, reason, subscription_id, detail=''):
+    entry = bucket.setdefault(reason, {'ids': [], 'detail': detail})
+    entry['ids'].append(subscription_id)
+
+
+def _log_buckets(engagement_id, bucket, outcome):
+    for reason, entry in bucket.items():
+        detail = f": {entry['detail']}" if entry['detail'] else ''
+        current_app.logger.warning('<Engagement %s: %s subscriptions %s %s, ids %s%s',
+                                   engagement_id, len(entry['ids']), outcome, reason,
+                                   entry['ids'][:MAX_LOGGED_SUBSCRIPTION_IDS], detail)
 
 
 class EmailService:  # pylint: disable=too-few-public-methods
@@ -46,55 +110,57 @@ class EmailService:  # pylint: disable=too-few-public-methods
             SubscriptionModel.is_subscribed == True).all()
         # The ids are read before any rollback can expire the rows, so a failure can always be logged.
         subscriptions = [(subscriber.id, subscriber.participant_id, subscriber) for subscriber in subscription_list]
-        email_list = []
-        sent = attempted = failed = skipped = 0
+        email_addresses = set()
+        sent = failed = ambiguous = skipped = duplicate = 0
         failures = {}
+        skips = {}
         for subscription_id, participant_id, subscriber in subscriptions:
+            email_address = None
             try:
                 if not CheckSubscription.check_subscription(subscriber, engagement_id):
                     continue
-                participant = ParticipantModel.find_by_id(participant_id)
+                participant = ParticipantModel.find_by_id(participant_id) if participant_id is not None else None
+                if participant is None:
+                    skipped += 1
+                    _record(skips, 'no participant', subscription_id)
+                    continue
                 if participant.email_address is None:
                     skipped += 1
+                    _record(skips, 'no address', subscription_id)
                     continue
                 email_address = ParticipantModel.decode_email(participant.email_address)
                 if not notification.is_valid_email(email_address):
                     skipped += 1
+                    _record(skips, 'invalid address', subscription_id)
                     continue
-                if email_address in email_list:
+                if email_address in email_addresses:
+                    duplicate += 1
                     continue
-                email_list.append(email_address)
                 body, args = EmailService._render_email_template(engagement, participant, template)
-                attempted += 1
                 notification.send_email(subject=subject,
                                         email=email_address,
                                         html_body=body,
                                         args=args,
                                         template_id=template_id)
+                email_addresses.add(email_address)
                 sent += 1
             except Exception as exc:  # noqa: B902
                 failed += 1
-                EmailService._record_failure(failures, subscription_id, exc)
+                if may_have_been_delivered(exc):
+                    ambiguous += 1
+                    email_addresses.add(email_address)
+                # itsdangerous messages carry part of the signed address.
+                detail = '' if isinstance(exc, BadData) else scrub_sensitive(str(exc))
+                _record(failures, type(exc).__name__, subscription_id, detail)
                 if isinstance(exc, SQLAlchemyError):
-                    try:
-                        db.session.rollback()
-                    except Exception as rollback_exc:  # noqa: B902
-                        EmailService._record_failure(failures, subscription_id, rollback_exc)
+                    safe_rollback()
 
-        for error_type, failure in failures.items():
-            current_app.logger.warning('<Engagement %s: %s subscriptions failed with %s, ids %s: %s',
-                                       engagement_id, len(failure['ids']), error_type,
-                                       failure['ids'][:MAX_LOGGED_SUBSCRIPTION_IDS], failure['detail'])
-        current_app.logger.info('<Engagement %s emails: %s sent, %s attempted, %s failed, %s skipped',
-                                engagement_id, sent, attempted, failed, skipped)
-        return SendResult(sent, attempted, failed, skipped)
-
-    @staticmethod
-    def _record_failure(failures, subscription_id, exc):
-        # itsdangerous messages carry part of the signed address.
-        detail = '' if isinstance(exc, BadData) else scrub_sensitive(str(exc))
-        failure = failures.setdefault(type(exc).__name__, {'ids': [], 'detail': detail})
-        failure['ids'].append(subscription_id)
+        _log_buckets(engagement_id, failures, 'failed with')
+        _log_buckets(engagement_id, skips, 'skipped')
+        current_app.logger.info('<Engagement %s emails: %s checked, %s sent, %s failed (%s maybe delivered), '
+                                '%s skipped, %s duplicate', engagement_id, sent + failed + skipped + duplicate,
+                                sent, failed, ambiguous, skipped, duplicate)
+        return SendResult(sent, failed, ambiguous, skipped, duplicate)
 
     @staticmethod
     def _render_email_template(engagement, participant, template):
