@@ -1,7 +1,14 @@
-"""Add a send attempt count to email_queue."""
+"""add send attempt count to email_queue
+
+Revision ID: 5d03bf969bba
+Revises: 3f6b2d8e9a41
+Create Date: 2026-11-18 14:30:00.000000
+
+"""
 from alembic import op
 import sqlalchemy as sa
 
+# revision identifiers, used by Alembic.
 revision = '5d03bf969bba'
 down_revision = '3f6b2d8e9a41'
 branch_labels = None

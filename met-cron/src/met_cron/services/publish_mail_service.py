@@ -31,7 +31,8 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
                 partial(EmailQueueModel.claim, mail_id, max_attempts, backoff_minutes),
                 mail_id, NotificationStatus.PROCESSING)
             if attempts is None:
-                # Still unprocessed in the database: sending now could mail everyone twice next run.
+                # Neither commit is known to have applied: if the row is still unprocessed, sending now
+                # could mail everyone twice next run.
                 failed_engagement_ids.add(entity_id)
                 continue
             if not attempts and commit_try > 1:
