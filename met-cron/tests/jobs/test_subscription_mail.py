@@ -11,15 +11,11 @@ from sqlalchemy.exc import OperationalError
 from urllib3 import exceptions as urllib3_errors
 
 from met_api.constants.notification_status import NotificationStatus
-from met_api.constants.subscription_type import SubscriptionType
 from met_api.exceptions.business_exception import BusinessException
-from met_api.models.participant import Participant as ParticipantModel
 from met_cron.services import closing_soon_mail_service, mail_service, publish_mail_service
 from met_cron.services.closing_soon_mail_service import ClosingSoonEmailService
 from met_cron.services.mail_service import EmailService, SendResult
 from met_cron.services.publish_mail_service import PublishEmailService
-from met_cron.utils import subscription_checker
-from met_cron.utils.subscription_checker import CheckSubscription
 
 
 SECRET = 'cron-test-secret'
@@ -28,11 +24,13 @@ WRONG_KEY = URLSafeSerializer('another-key')
 SEND_URL = 'https://notify.example.com/api/messages'
 TOKEN_URL = 'https://login.example.com/auth/realms/standard/protocol/openid-connect/token'
 ONE_SENT = SendResult(sent=1, failed=0, ambiguous=0, skipped=0, duplicate=0)
+TEMPLATE = SimpleNamespace(render=lambda **_: 'body')
 
 
 def _app(**config):
     app = Flask(__name__)
-    app.config.update(EMAIL_SECRET_KEY=SECRET, MAIL_BATCH_SIZE='10', OFFSET_DAYS='2')
+    app.config.update(EMAIL_SECRET_KEY=SECRET, MAIL_BATCH_SIZE='10', OFFSET_DAYS='2',
+                      UNSUBSCRIBE_PATH='/unsubscribe/{token}', ENGAGEMENT_VIEW_PATH='/engagements/{engagement_id}')
     app.config.update(config)
     return app
 
@@ -94,41 +92,16 @@ class _QueuedMail:  # pylint: disable=too-few-public-methods
             raise OperationalError('UPDATE email_queue', {}, Exception('connection lost'))
 
 
-class _Session:
-    """Answers any query chain with the given rows; a rollback expires them like ORM rows."""
+class _Session:  # pylint: disable=too-few-public-methods
+    """A session whose rollback raises rollback_error if one is set."""
 
-    def __init__(self, rows=None, rollback_error=None):
-        self.rows = rows or []
-        self.rolled_back = False
+    def __init__(self, rollback_error=None):
         self.rollback_error = rollback_error
 
-    def query(self, *_):
-        """Start a query chain."""
-        return self
-
-    def all(self):
-        """End a query chain."""
-        return self.rows
-
     def rollback(self):
-        """Expire the rows, then raise rollback_error if one is set."""
-        self.rolled_back = True
+        """Raise rollback_error if one is set."""
         if self.rollback_error:
             raise self.rollback_error
-
-    def __getattr__(self, _name):
-        return lambda *_args, **_kwargs: self
-
-
-class _Subscription:  # pylint: disable=too-few-public-methods
-    def __init__(self, session, subscription_id, participant_id):
-        self._session = session
-        self._values = {'id': subscription_id, 'participant_id': participant_id}
-
-    def __getattr__(self, name):
-        if name in self._values and not self._session.rolled_back:
-            return self._values[name]
-        raise OperationalError('SELECT subscription', {}, Exception('expired row needs the database'))
 
 
 def _lost_connection():
@@ -140,22 +113,63 @@ def _stub_db(monkeypatch, session):
         monkeypatch.setattr(module, 'db', SimpleNamespace(session=session))
 
 
-def _stub_subscribers_and_template(monkeypatch, participants, find_participant=None, send_email=None):
-    """Serve the participants as confirmed subscribers, skip template rendering, record who gets mail."""
-    session = _Session()
-    session.rows = [_Subscription(session, subscription_id, participant_id)
-                    for subscription_id, participant_id in enumerate(participants, start=1)]
-    _stub_db(monkeypatch, session)
-    monkeypatch.setattr(mail_service.EngagementModel, 'find_by_id', lambda _id: SimpleNamespace(id=_id))
-    monkeypatch.setattr(mail_service.CheckSubscription, 'check_subscription', lambda *_: True)
-    monkeypatch.setattr(ParticipantModel, 'find_by_id', find_participant or (
-        lambda _id: SimpleNamespace(id=_id, email_address=participants[_id])))
-    monkeypatch.setattr(EmailService, '_render_email_template', lambda *_: ('body', {}))
-    monkeypatch.setattr(publish_mail_service.Template, 'get_template', lambda _name: None)
-    sent_to = []
-    monkeypatch.setattr(mail_service.notification, 'send_email',
-                        send_email or (lambda **kwargs: sent_to.append(kwargs['email'])))
-    return sent_to
+def _stub_subscribers_and_template(monkeypatch, participants, **stubs):
+    """Serve participants {participant_id: encoded address} as one engagement's subscribers and record the calls.
+
+    stubs can replace send_email, fetch_token or unsubscribe, and set the engagement's metadata.
+    """
+    calls = SimpleNamespace(queries=[], metadata_lookups=0, engagement_args=0, token_fetches=0,
+                            sent_to=[], tokens=[], unsubscribe=[])
+    rows = [(subscription_id, participant_id, address)
+            for subscription_id, (participant_id, address) in enumerate(participants.items(), start=1)]
+
+    def find_metadata(_engagement_id):
+        calls.metadata_lookups += 1
+        return stubs.get('metadata')
+
+    def site_url(_tenant_id):
+        calls.engagement_args += 1
+        return 'https://engage.example.com'
+
+    def create_unsubscribe_token(participant_id, _engagement_id):
+        calls.unsubscribe.append(participant_id)
+        return stubs.get('unsubscribe', str)(participant_id)
+
+    def get_send_email_token():
+        calls.token_fetches += 1
+        return f'token-{calls.token_fetches}'
+
+    def send(**kwargs):
+        calls.sent_to.append(kwargs['email'])
+        calls.tokens.append(kwargs['token'])
+
+    _stub_db(monkeypatch, _Session())
+    monkeypatch.setattr(mail_service.EngagementModel, 'find_by_id', lambda _id: SimpleNamespace(
+        id=_id, tenant_id=1, name='Engagement', end_date=datetime(2026, 3, 1)))
+    monkeypatch.setattr(mail_service.TenantModel, 'find_by_id', lambda _id: SimpleNamespace(name='Tenant'))
+    monkeypatch.setattr(mail_service.EngagementMetadataModel, 'find_by_id', find_metadata)
+    monkeypatch.setattr(mail_service.SubscriptionModel, 'get_confirmed_for_engagement',
+                        lambda *args: calls.queries.append(args) or rows)
+    monkeypatch.setattr(mail_service.notification, 'get_tenant_site_url', site_url)
+    monkeypatch.setattr(mail_service.EmailVerificationService, 'create_unsubscribe_token', create_unsubscribe_token)
+    monkeypatch.setattr(publish_mail_service.Template, 'get_template',
+                        lambda _name: TEMPLATE)
+    monkeypatch.setattr(mail_service.notification, 'get_send_email_token',
+                        stubs.get('fetch_token', get_send_email_token))
+    monkeypatch.setattr(mail_service.notification, 'send_email', stubs.get('send_email', send))
+    return calls
+
+
+def _scripted(outcomes, on_success):
+    """Raise the next exception in outcomes, or call on_success when the next outcome is None or none are left."""
+    remaining = list(outcomes)
+
+    def call(**kwargs):
+        outcome = remaining.pop(0) if remaining else None
+        if outcome is not None:
+            raise outcome
+        return on_success(**kwargs)
+    return call
 
 
 def _failing_send(error):
@@ -189,7 +203,7 @@ def _stub_engagement_sends(monkeypatch, failing_ids, session=None):
 def test_undecodable_subscriber_does_not_block_the_others(monkeypatch, caplog):
     """A subscriber whose address cannot be decoded is skipped and logged by type only."""
     undecodable = WRONG_KEY.dumps('broken@example.com')
-    sent_to = _stub_subscribers_and_template(monkeypatch, {
+    calls = _stub_subscribers_and_template(monkeypatch, {
         1: GOOD.dumps('first@example.com'),
         2: undecodable,
         3: GOOD.dumps('third@example.com'),
@@ -202,7 +216,7 @@ def test_undecodable_subscriber_does_not_block_the_others(monkeypatch, caplog):
         with pytest.raises(BusinessException):
             PublishEmailService.do_mail()
 
-    assert sent_to == ['first@example.com', 'third@example.com']
+    assert calls.sent_to == ['first@example.com', 'third@example.com']
     assert mail.notification_status == NotificationStatus.SENT.value
     assert 'BadSignature' in caplog.text
     assert not [part for part in undecodable.split('.') if part in caplog.text]
@@ -210,14 +224,14 @@ def test_undecodable_subscriber_does_not_block_the_others(monkeypatch, caplog):
 
 def test_lost_database_after_a_confirmed_send_marks_the_row_sent(monkeypatch):
     """Once one email was confirmed, a lost database connection must not queue the row for a resend."""
-    participants = {1: GOOD.dumps('first@example.com'), 2: GOOD.dumps('second@example.com')}
-
-    def find_participant(participant_id):
+    def unsubscribe(participant_id):
         if participant_id != 1:
-            raise OperationalError('SELECT participant', {}, Exception('connection lost'))
-        return SimpleNamespace(id=participant_id, email_address=participants[participant_id])
+            raise OperationalError('INSERT email_verification', {}, Exception('connection lost'))
+        return 'unsubscribe'
 
-    sent_to = _stub_subscribers_and_template(monkeypatch, participants, find_participant)
+    calls = _stub_subscribers_and_template(
+        monkeypatch, {1: GOOD.dumps('first@example.com'), 2: GOOD.dumps('second@example.com')},
+        unsubscribe=unsubscribe)
     mail_service.db.session.rollback_error = _lost_connection()
     mail = _QueuedMail(entity_id=42)
     _queue(monkeypatch, mail)
@@ -226,7 +240,7 @@ def test_lost_database_after_a_confirmed_send_marks_the_row_sent(monkeypatch):
         with pytest.raises(BusinessException):
             PublishEmailService.do_mail()
 
-    assert sent_to == ['first@example.com']
+    assert calls.sent_to == ['first@example.com']
     assert mail.notification_status == NotificationStatus.SENT.value
 
 
@@ -275,7 +289,7 @@ def test_row_is_queued_again_when_every_subscriber_fails_before_sending(monkeypa
 
 def test_skipped_address_does_not_count_as_sent(monkeypatch):
     """An invalid address is skipped, not sent, so a failure beside it still queues the row again."""
-    sent_to = _stub_subscribers_and_template(monkeypatch, {
+    calls = _stub_subscribers_and_template(monkeypatch, {
         1: GOOD.dumps('not-an-address'),
         2: WRONG_KEY.dumps('broken@example.com'),
     })
@@ -286,46 +300,36 @@ def test_skipped_address_does_not_count_as_sent(monkeypatch):
         with pytest.raises(BusinessException):
             PublishEmailService.do_mail()
 
-    assert not sent_to
+    assert not calls.sent_to
     assert mail.notification_status is None
 
 
-@pytest.mark.parametrize('subscribed, participants', [
-    (False, {1: GOOD.dumps('first@example.com')}),
-    (True, {1: None, 2: GOOD.dumps('not-an-address')}),
+@pytest.mark.parametrize('participants', [
+    {},
+    {None: GOOD.dumps('first@example.com'), 2: None, 3: GOOD.dumps('not-an-address')},
 ], ids=['no matching subscriber', 'every subscriber skipped'])
-def test_row_with_nothing_to_send_is_marked_sent(monkeypatch, subscribed, participants):
-    """An engagement with nobody to email has finished: the row ends SENT and the job succeeds."""
-    sent_to = _stub_subscribers_and_template(
-        monkeypatch, participants,
-        lambda _id: SimpleNamespace(id=_id, email_address=participants[_id]) if participants[_id] else None)
-    monkeypatch.setattr(mail_service.CheckSubscription, 'check_subscription', lambda *_: subscribed)
+def test_row_with_nothing_to_send_is_marked_sent(monkeypatch, participants):
+    """An engagement with nobody to email finishes without a token request or engagement args: the row ends SENT."""
+    def no_token():
+        raise AssertionError('a token was requested with nobody to email')
+
+    calls = _stub_subscribers_and_template(monkeypatch, participants, fetch_token=no_token)
     mail = _QueuedMail(entity_id=42)
     _queue(monkeypatch, mail)
 
     with _app().app_context():
         PublishEmailService.do_mail()
 
-    assert not sent_to
+    assert calls.engagement_args == 0
     assert mail.notification_status == NotificationStatus.SENT.value
 
 
-@pytest.mark.parametrize('participants', [
-    {1: GOOD.dumps('first@example.com'), 2: None},
-    {1: GOOD.dumps('first@example.com'), None: GOOD.dumps('second@example.com')},
-], ids=['participant row gone', 'no participant id'])
-def test_missing_participant_is_skipped(monkeypatch, participants):
+def test_missing_participant_is_skipped(monkeypatch):
     """A subscription without a participant is skipped, not a failure."""
-    def find_participant(participant_id):
-        if participant_id is None:
-            raise ValueError('looked up a participant without an id')
-        address = participants[participant_id]
-        return SimpleNamespace(id=participant_id, email_address=address) if address else None
-
-    _stub_subscribers_and_template(monkeypatch, participants, find_participant)
+    _stub_subscribers_and_template(monkeypatch, {1: GOOD.dumps('first@example.com'), None: None})
 
     with _app().app_context():
-        result = EmailService.send_engagement_emails(42, None, 'subject', None, 'Publish')
+        result = EmailService.send_engagement_emails(42, None, 'subject', TEMPLATE, 'Publish')
 
     assert result.sent == 1
     assert result.skipped == 1
@@ -351,20 +355,12 @@ def test_same_address_resent_only_if_not_delivered(monkeypatch, make_error, send
     }, send_email=send_email)
 
     with _app().app_context():
-        result = EmailService.send_engagement_emails(42, None, 'subject', None, 'Publish')
+        result = EmailService.send_engagement_emails(42, None, 'subject', TEMPLATE, 'Publish')
 
     assert len(calls) == sends
     assert result.sent == sent
     assert result.failed == failed
     assert result.duplicate == 1
-
-
-def test_project_subscription_without_metadata_is_not_subscribed(monkeypatch):
-    """An engagement with no metadata row has no project, so a project subscription does not match."""
-    monkeypatch.setattr(subscription_checker.EngagementMetadataModel, 'find_by_id', lambda _id: None)
-    subscriber = SimpleNamespace(type=SubscriptionType.PROJECT, project_id='project-1')
-
-    assert CheckSubscription.check_subscription(subscriber, 42) is False
 
 
 def test_failed_engagement_and_rollback_do_not_stop_the_next_row(monkeypatch):
@@ -447,3 +443,94 @@ def test_closing_soon_continues_past_a_failing_engagement_and_rollback(monkeypat
             ClosingSoonEmailService.do_mail()
 
     assert attempted == [1, 2]
+
+
+@pytest.mark.parametrize('metadata, query', [
+    (SimpleNamespace(project_id='p1', project_metadata={}), (42, True, 'p1')),
+    (None, (42, False, None)),
+], ids=['with metadata', 'without metadata'])
+def test_engagement_lookups_and_token_run_once_for_many_subscribers(monkeypatch, metadata, query):
+    """One query, one metadata lookup, one set of engagement args and one token serve every subscriber."""
+    calls = _stub_subscribers_and_template(monkeypatch, {
+        1: GOOD.dumps('first@example.com'),
+        2: GOOD.dumps('second@example.com'),
+        3: GOOD.dumps('third@example.com'),
+    }, metadata=metadata)
+
+    with _app().app_context():
+        result = EmailService.send_engagement_emails(42, None, 'subject', TEMPLATE, 'Publish')
+
+    assert result.sent == 3
+    assert calls.queries == [query]
+    assert calls.metadata_lookups == 1
+    assert calls.engagement_args == 1
+    assert calls.token_fetches == 1
+    assert calls.tokens == ['token-1', 'token-1', 'token-1']
+    assert calls.unsubscribe == [1, 2, 3]
+
+
+def test_expired_token_is_fetched_again_once(monkeypatch):
+    """A 401 on a token that already worked fetches a new token and retries that send."""
+    calls = _stub_subscribers_and_template(
+        monkeypatch, {1: GOOD.dumps('first@example.com'), 2: GOOD.dumps('second@example.com')})
+    record = mail_service.notification.send_email
+    monkeypatch.setattr(mail_service.notification, 'send_email', _scripted([None, _http_error(401)], record))
+    mail = _QueuedMail(entity_id=42)
+    _queue(monkeypatch, mail)
+
+    with _app().app_context():
+        PublishEmailService.do_mail()
+
+    assert calls.token_fetches == 2
+    assert calls.tokens == ['token-1', 'token-2']
+    assert mail.notification_status == NotificationStatus.SENT.value
+
+
+def test_refused_new_token_is_not_retried(monkeypatch):
+    """A 401 on a token that never worked is not retried; the send was not delivered, so the row is queued again."""
+    calls = _stub_subscribers_and_template(monkeypatch, {1: GOOD.dumps('first@example.com')},
+                                           send_email=_failing_send(_http_error(401)))
+    mail = _QueuedMail(entity_id=42)
+    _queue(monkeypatch, mail)
+
+    with _app().app_context():
+        with pytest.raises(BusinessException):
+            PublishEmailService.do_mail()
+
+    assert calls.token_fetches == 1
+    assert mail.notification_status is None
+
+
+@pytest.mark.parametrize('fetch_outcomes, send_errors, subscribers, expected', [
+    (['fail'], [], 3, (2, 2, NotificationStatus.SENT.value)),
+    (['fail', 'fail'], [], 4, (2, 0, None)),
+    (['ok', 'fail', 'fail'], [None, _http_error(401)], 4, (3, 1, NotificationStatus.SENT.value)),
+    (['fail', 'ok', 'fail'], [None, _http_error(401)], 4, (4, 2, NotificationStatus.SENT.value)),
+], ids=['one failed request', 'two failed requests in a row', 'failed requests after an expired token',
+        'failed requests not in a row'])
+def test_token_failure_retries_then_stops(monkeypatch, fetch_outcomes, send_errors, subscribers, expected):
+    """A failed token request fails only that subscriber; two in a row stop the engagement.
+
+    expected is (token requests, emails sent, final row status).
+    """
+    fetches = []
+
+    def fetch_token():
+        fetches.append(fetch_outcomes[len(fetches)] if len(fetches) < len(fetch_outcomes) else 'ok')
+        if fetches[-1] == 'fail':
+            raise NOT_DELIVERED['read timeout on the token request']()
+        return f'token-{len(fetches)}'
+
+    calls = _stub_subscribers_and_template(
+        monkeypatch, {index: GOOD.dumps(f'person{index}@example.com') for index in range(1, subscribers + 1)},
+        fetch_token=fetch_token)
+    monkeypatch.setattr(mail_service.notification, 'send_email',
+                        _scripted(send_errors, mail_service.notification.send_email))
+    mail = _QueuedMail(entity_id=42)
+    _queue(monkeypatch, mail)
+
+    with _app().app_context():
+        with pytest.raises(BusinessException):
+            PublishEmailService.do_mail()
+
+    assert (len(fetches), len(calls.sent_to), mail.notification_status) == expected

@@ -1,7 +1,8 @@
 from collections import namedtuple
 from datetime import datetime
+from functools import cached_property
 from http import HTTPStatus
-from typing import List, Optional
+from typing import Optional
 from urllib.parse import urlparse
 
 from flask import current_app
@@ -19,10 +20,10 @@ from met_api.models.subscription import Subscription as SubscriptionModel
 from met_api.services.email_verification_service import EmailVerificationService
 from met_api.utils import notification
 from met_cron.utils.scrub import scrub_sensitive
-from met_cron.utils.subscription_checker import CheckSubscription
 from met_cron.models.db import db
 
 MAX_LOGGED_SUBSCRIPTION_IDS = 10
+MAX_TOKEN_FETCH_FAILURES_IN_A_ROW = 2
 TOKEN_PATH_SUFFIX = '/protocol/openid-connect/token'
 
 # Errors that mean the mail service never got the email. InvalidJSONError has no URL to check: it is safe
@@ -94,6 +95,91 @@ def _log_buckets(engagement_id, bucket, outcome):
                                    entry['ids'][:MAX_LOGGED_SUBSCRIPTION_IDS], detail)
 
 
+def _is_unauthorized(exc):
+    return isinstance(exc, request_errors.HTTPError) and exc.response is not None \
+        and exc.response.status_code == HTTPStatus.UNAUTHORIZED
+
+
+class EngagementMail:
+    """Sends one engagement's emails with one token and one set of engagement args, both built at the first send."""
+
+    def __init__(self, engagement, metadata, template, subject, template_id):
+        """Hold the engagement and the mail settings; no token is fetched yet."""
+        self.engagement = engagement
+        self.metadata = metadata
+        self.template = template
+        self.mail_kwargs = {'subject': subject, 'template_id': template_id}
+        self.token = None
+        self.token_worked = False
+        self.fetch_failures = 0
+
+    @cached_property
+    def engagement_args(self):
+        """Return the site URL and the email args shared by every subscriber of the engagement."""
+        engagement = self.engagement
+        site_url = notification.get_tenant_site_url(engagement.tenant_id)
+        project_name = None
+        if self.metadata and 'project_name' in self.metadata.project_metadata:
+            project_name = self.metadata.project_metadata.get('project_name')
+        view_path = current_app.config.get('ENGAGEMENT_VIEW_PATH'). \
+            format(engagement_id=engagement.id)
+        return site_url, {
+            'project_name': project_name if project_name else engagement.name,
+            'survey_url': f'{site_url}{view_path}',
+            'end_date': datetime.strftime(engagement.end_date, EmailVerificationService.full_date_format),
+            'tenant_name': TenantModel.find_by_id(engagement.tenant_id).name,
+            'email_environment': current_app.config.get('EMAIL_ENVIRONMENT', ''),
+        }
+
+    def render(self, participant_id):
+        """Return the body and args of one subscriber's email."""
+        site_url, shared_args = self.engagement_args
+        # Generate secure unsubscribe token instead of using plain participant_id
+        unsubscribe_token = EmailVerificationService.create_unsubscribe_token(participant_id, self.engagement.id)
+        unsubscribe_url = current_app.config.get('UNSUBSCRIBE_PATH'). \
+            format(token=unsubscribe_token)
+        args = {**shared_args, 'unsubscribe_url': f'{site_url}{unsubscribe_url}'}
+        body = self.template.render(
+            project_name=args.get('project_name'),
+            survey_url=args.get('survey_url'),
+            end_date=args.get('end_date'),
+            tenant_name=args.get('tenant_name'),
+            email_environment=args.get('email_environment'),
+            unsubscribe_url=args.get('unsubscribe_url'),
+        )
+        return body, args
+
+    def send(self, participant_id, email_address, send_number):
+        """Send one email; a 401 on a token that already worked fetches a new token and retries once."""
+        body, args = self.render(participant_id)
+        try:
+            self._send(email_address, body, args)
+        except request_errors.HTTPError as exc:
+            if not _is_unauthorized(exc):
+                raise
+            if not self.token_worked:
+                current_app.logger.warning('<Engagement %s: send %s was refused with a new token, not retried',
+                                           self.engagement.id, send_number)
+                raise
+            current_app.logger.info('<Engagement %s: token fetched again after a 401 on send %s',
+                                    self.engagement.id, send_number)
+            self.token = None
+            self._send(email_address, body, args)
+        self.token_worked = True
+
+    def _send(self, email_address, body, args):
+        if self.token is None:
+            try:
+                self.token = notification.get_send_email_token()
+            except Exception:  # noqa: B902
+                self.fetch_failures += 1
+                raise
+            self.fetch_failures = 0
+            self.token_worked = False
+        notification.send_email(email=email_address, html_body=body, args=args, token=self.token,
+                                **self.mail_kwargs)
+
+
 class EmailService:  # pylint: disable=too-few-public-methods
     """Mail on updates."""
 
@@ -114,42 +200,37 @@ class EmailService:  # pylint: disable=too-few-public-methods
             engagement_id, template_id, subject, template) -> SendResult:
         """Email every subscriber of the engagement; a failing subscriber is logged and skipped."""
         engagement: EngagementModel = EngagementModel.find_by_id(engagement_id)
-
-        # find emails from the subscription table
-        subscription_list: List[SubscriptionModel] = db.session.query(SubscriptionModel).distinct().filter(
-            SubscriptionModel.is_subscribed == True).all()
-        # The ids are read before any rollback can expire the rows, so a failure can always be logged.
-        subscriptions = [(subscriber.id, subscriber.participant_id, subscriber) for subscriber in subscription_list]
+        metadata: EngagementMetadataModel = EngagementMetadataModel.find_by_id(engagement_id)
+        rows = SubscriptionModel.get_confirmed_for_engagement(
+            engagement_id, metadata is not None, metadata.project_id if metadata else None)
+        mail = EngagementMail(engagement, metadata, template, subject, template_id)
         email_addresses = set()
         undelivered = {}
         sent = failed = ambiguous = duplicate = 0
         failures = {}
         skips = {}
-        for subscription_id, participant_id, subscriber in subscriptions:
+        for index, (subscription_id, participant_id, encoded_address) in enumerate(rows):
+            if mail.fetch_failures >= MAX_TOKEN_FETCH_FAILURES_IN_A_ROW:
+                current_app.logger.warning('<Engagement %s: stopped after %s failed token requests in a row, '
+                                           '%s subscriptions not tried', engagement_id, mail.fetch_failures,
+                                           len(rows) - index)
+                break
             email_address = None
             try:
-                if not CheckSubscription.check_subscription(subscriber, engagement_id):
-                    continue
-                participant = ParticipantModel.find_by_id(participant_id) if participant_id is not None else None
-                if participant is None:
+                if participant_id is None:
                     _record(skips, 'no participant', subscription_id)
                     continue
-                if participant.email_address is None:
+                if encoded_address is None:
                     _record(skips, 'no address', subscription_id)
                     continue
-                email_address = ParticipantModel.decode_email(participant.email_address)
+                email_address = ParticipantModel.decode_email(encoded_address)
                 if not notification.is_valid_email(email_address):
                     _record(skips, 'invalid address', subscription_id)
                     continue
                 if email_address in email_addresses:
                     duplicate += 1
                     continue
-                body, args = EmailService._render_email_template(engagement, participant, template)
-                notification.send_email(subject=subject,
-                                        email=email_address,
-                                        html_body=body,
-                                        args=args,
-                                        template_id=template_id)
+                mail.send(participant_id, email_address, sent + failed + 1)
                 email_addresses.add(email_address)
                 sent += 1
                 # The address got its email after all, so its earlier failures were only duplicates.
@@ -177,42 +258,3 @@ class EmailService:  # pylint: disable=too-few-public-methods
                                 '%s skipped, %s duplicate', engagement_id, sent + failed + skipped + duplicate,
                                 sent, failed, ambiguous, skipped, duplicate)
         return SendResult(sent, failed, ambiguous, skipped, duplicate)
-
-    @staticmethod
-    def _render_email_template(engagement, participant, template):
-        site_url = notification.get_tenant_site_url(engagement.tenant_id)
-        tenant_name = EmailService._get_tenant_name(engagement.tenant_id)
-        metadata_model: EngagementMetadataModel = EngagementMetadataModel.find_by_id(engagement.id)
-        project_name = None
-        if metadata_model and 'project_name' in metadata_model.project_metadata:
-            project_name = metadata_model.project_metadata.get('project_name')
-        view_path = current_app.config.get('ENGAGEMENT_VIEW_PATH'). \
-            format(engagement_id=engagement.id)
-        # Generate secure unsubscribe token instead of using plain participant_id
-        unsubscribe_token = EmailVerificationService.create_unsubscribe_token(
-            participant.id, engagement.id)
-        unsubscribe_url = current_app.config.get('UNSUBSCRIBE_PATH'). \
-            format(token=unsubscribe_token)
-        email_environment = current_app.config.get('EMAIL_ENVIRONMENT', '')
-        args = {
-            'project_name': project_name if project_name else engagement.name,
-            'survey_url': f'{site_url}{view_path}',
-            'end_date': datetime.strftime(engagement.end_date, EmailVerificationService.full_date_format),
-            'tenant_name': tenant_name,
-            'email_environment': email_environment,
-            'unsubscribe_url': f'{site_url}{unsubscribe_url}',
-        }
-        body = template.render(
-            project_name=args.get('project_name'),
-            survey_url=args.get('survey_url'),
-            end_date=args.get('end_date'),
-            tenant_name=args.get('tenant_name'),
-            email_environment=args.get('email_environment'),
-            unsubscribe_url=args.get('unsubscribe_url'),
-        )
-        return body, args
-
-    @staticmethod
-    def _get_tenant_name(tenant_id):
-        tenant = TenantModel.find_by_id(tenant_id)
-        return tenant.name
