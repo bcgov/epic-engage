@@ -43,7 +43,7 @@ class EmailQueue(BaseModel):  # pylint: disable=too-few-public-methods
     @classmethod
     def get_unprocessed_mails_for_open_engagements(cls, max_size: int, max_attempts: int,
                                                    backoff_minutes: int) -> List[EmailQueue]:
-        """Return rows ready to send for engagements starting today, least recently tried first."""
+        """Return rows ready to send for engagements starting today, or retries from yesterday, oldest first."""
         now = local_datetime().date()
         query = db.session.query(cls)\
             .join(Engagement, Engagement.id == cls.entity_id)\
@@ -52,7 +52,7 @@ class EmailQueue(BaseModel):  # pylint: disable=too-few-public-methods
                     cls.action == SourceAction.PUBLISHED.value,
                     # A retry that crosses midnight still goes out while the engagement is published.
                     or_(func.date(Engagement.start_date) == now,
-                        and_(cls.attempts > 0, func.date(Engagement.start_date) < now,
+                        and_(cls.attempts > 0, func.date(Engagement.start_date) == now - timedelta(days=1),
                              Engagement.status_id == EngagementStatus.Published.value)))\
             .order_by(func.coalesce(cls.updated_date, cls.created_date), cls.id)
         if max_size:

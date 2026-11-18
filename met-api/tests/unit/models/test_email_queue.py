@@ -29,7 +29,7 @@ def _engagement(started_days_ago=0, status=EngagementStatus.Published.value):
     return factory_engagement_model({**TestEngagementInfo.engagement1, 'start_date': start}, status=status)
 
 
-def _retried_mail(engagement_id, attempts=1):
+def _mail_past_backoff(engagement_id, attempts=1):
     return _queued_mail(engagement_id, attempts=attempts,
                         updated_date=datetime.utcnow() - timedelta(minutes=BACKOFF_MINUTES + 5))
 
@@ -98,18 +98,19 @@ def test_least_recently_tried_rows_come_first_within_the_batch(session):  # pyli
 
 def test_retry_continues_after_the_start_date_while_published(session):  # pylint:disable=unused-argument
     """A row that failed late on the start date is still retried the next day instead of being dropped silently."""
-    mail = _retried_mail(_engagement(started_days_ago=1).id)
+    mail = _mail_past_backoff(_engagement(started_days_ago=1).id)
 
     assert mail.id in _unprocessed_ids()
-    assert EmailQueue.claim(mail.id, MAX_ATTEMPTS, BACKOFF_MINUTES) == 2
 
 
-@pytest.mark.parametrize('attempts, status', [
-    (0, EngagementStatus.Published.value),
-    (1, EngagementStatus.Closed.value),
-], ids=['never tried', 'engagement closed'])
-def test_row_after_the_start_date_is_not_listed(session, attempts, status):  # pylint:disable=unused-argument
-    """Past the start date only retries of a still published engagement go out, so no old backlog is mailed."""
-    mail = _retried_mail(_engagement(started_days_ago=1, status=status).id, attempts=attempts)
+@pytest.mark.parametrize('attempts, status, started_days_ago', [
+    (0, EngagementStatus.Published.value, 1),
+    (1, EngagementStatus.Closed.value, 1),
+    (1, EngagementStatus.Published.value, 2),
+], ids=['never tried', 'engagement closed', 'started two days ago'])
+def test_row_after_the_start_date_is_not_listed(session, attempts, status,
+                                                started_days_ago):  # pylint:disable=unused-argument
+    """Only retries crossing one midnight on a still published engagement go out, so no old row is mailed."""
+    mail = _mail_past_backoff(_engagement(started_days_ago, status).id, attempts=attempts)
 
     assert mail.id not in _unprocessed_ids()
