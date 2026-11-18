@@ -85,11 +85,6 @@ oc new-app --template=postgresql-persistent -p POSTGRESQL_DATABASE=app -p DATABA
 1. Users Setup script is located at /tools/postgres/init/00_postgresql-user-setup.sql
 1. Initial database setup script is located at /tools/postgres/init/01_postgresql-schema-setup.sql
 1. Openshift secret yaml is located at ./database-users.secret.yml
-1. Create the Secret `met-email-key` with the key `EMAIL_SECRET_KEY`. The met-api and met-cron pods do not start without it. The command reads the value from the prompt, so it does not show on screen or in shell history:
-
-    ```bash
-    read -rs KEY && printf '%s' "$KEY" | oc create secret generic met-email-key -n <namespace> --from-file=EMAIL_SECRET_KEY=/dev/stdin; unset KEY
-    ```
 
 ## Restore Backup Script
 
@@ -157,6 +152,23 @@ To restore the backup follow these steps:
 
 In each environment namespace (dev, test, prod) use the following
 IMAGE_TAG values of the following commands should also be changed to reflect the environment they will be installed to
+
+### Email key Secret
+
+The met-api and met-cron pods read `EMAIL_SECRET_KEY` from the Secret `met-email-key`. The pods do not start without it. `oc create` fails if the Secret already exists.
+
+In a namespace that already runs met-api, the Secret must hold the value the namespace already uses. Create it before the next `helm upgrade`, because the upgrade removes the key from the `met-api` ConfigMap. This command copies the value without printing it:
+
+```bash
+oc get cm met-api -n <namespace> -o jsonpath='{.data.EMAIL_SECRET_KEY}' | oc create secret generic met-email-key -n <namespace> --from-file=EMAIL_SECRET_KEY=/dev/stdin
+```
+
+In a new namespace, type the value at the prompt. It does not show on screen or in shell history:
+
+```bash
+IFS= read -rsp 'EMAIL_SECRET_KEY: ' KEY; echo
+[ -n "$KEY" ] && printf '%s' "$KEY" | oc create secret generic met-email-key -n <namespace> --from-file=EMAIL_SECRET_KEY=/dev/stdin; unset KEY
+```
 
 Deploy the web application:
 ```
