@@ -214,6 +214,27 @@ helm dependency build
 helm install met-analytics ./ -f ./values.yaml --set redash.image.tag=test
 ```
 
+### Email key Secret
+
+The met-api and met-cron pods read `EMAIL_SECRET_KEY` from the Secret `met-email-key`. The pods do not start without it. `oc create` fails if the Secret already exists.
+
+In a namespace that already runs met-api, the Secret must hold the value the namespace already uses. Create it before the next `helm upgrade`, because the upgrade removes the key from the `met-api` ConfigMap. This command copies the value without printing it:
+
+```bash
+V=$(oc get cm met-api -n <namespace> -o jsonpath='{.data.EMAIL_SECRET_KEY}')
+if [ -n "$V" ]; then printf '%s' "$V" | oc create secret generic met-email-key -n <namespace> --from-file=EMAIL_SECRET_KEY=/dev/stdin; else echo 'Value empty or unreadable. Secret not created.'; fi; unset V
+```
+
+If the command prints "Secret not created", do not run `helm upgrade`. Agree the value with the team first, then create the Secret with the command below.
+
+Any value that differs from the one the namespace uses, even if that one is empty, is a key change. Stored participant email addresses are signed with the key and stop decoding after a change. You re-sign the stored addresses under the key in the Secret, with the met-api and met-cron pods stopped, before the pods start with it.
+
+In a new namespace, type the value at the prompt. It does not show on screen or in shell history:
+
+```bash
+IFS= read -rsp 'EMAIL_SECRET_KEY: ' KEY; echo
+if [ -n "$KEY" ]; then printf '%s' "$KEY" | oc create secret generic met-email-key -n <namespace> --from-file=EMAIL_SECRET_KEY=/dev/stdin; else echo 'Value empty. Secret not created.'; fi; unset KEY
+```
 
 ### Additional NetworkPolicies
 
