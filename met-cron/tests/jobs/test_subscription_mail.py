@@ -30,7 +30,8 @@ TEMPLATE = SimpleNamespace(render=lambda **_: 'body')
 
 def _app(**config):
     app = Flask(__name__)
-    app.config.update(EMAIL_SECRET_KEY=SECRET, MAIL_BATCH_SIZE='10', OFFSET_DAYS='2',
+    app.config.update(EMAIL_SECRET_KEY=SECRET, MAIL_BATCH_SIZE='10', MAIL_MAX_ATTEMPTS=3,
+                      MAIL_RETRY_BACKOFF_MINUTES=30, OFFSET_DAYS='2',
                       UNSUBSCRIBE_PATH='/unsubscribe/{token}', ENGAGEMENT_VIEW_PATH='/engagements/{engagement_id}')
     app.config.update(config)
     return app
@@ -71,12 +72,10 @@ MAYBE_DELIVERED = {
 
 
 class _QueuedMail:  # pylint: disable=too-few-public-methods
-    def __init__(self, entity_id, created_date=datetime(2026, 3, 1), updated_date=None, fail_commits=(),
-                 failed_claim_applies=False):
+    def __init__(self, entity_id, attempts=0, fail_commits=(), failed_claim_applies=False):
         self.id = entity_id
         self.entity_id = entity_id
-        self.created_date = created_date
-        self.updated_date = updated_date
+        self.attempts = attempts
         self.notification_status = None
         self.commits = []
         self._fail_commits = fail_commits
@@ -184,21 +183,23 @@ def _failing_send(error):
 def _queue(monkeypatch, *mails):
     by_id = {mail.id: mail for mail in mails}
 
-    def claim(mail_id):
+    def claim(mail_id, _max_attempts, _backoff_minutes):
         mail = by_id[mail_id]
         if mail.notification_status is not None:
-            return False
+            return 0
         mail.notification_status = NotificationStatus.PROCESSING.value
+        mail.attempts += 1
         try:
             mail.commit()
         except OperationalError:
             if not mail.failed_claim_applies:
                 mail.notification_status = None
+                mail.attempts -= 1
             raise
-        return True
+        return mail.attempts
 
     monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'get_unprocessed_mails_for_open_engagements',
-                        lambda size: list(mails)[:size] if size else list(mails))
+                        lambda size, *_: list(mails)[:size] if size else list(mails))
     monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'claim', claim)
 
 
@@ -468,18 +469,33 @@ def test_status_commit_failing_twice_fails_the_job(monkeypatch):
     assert working.notification_status == NotificationStatus.SENT.value
 
 
-def test_oldest_queued_row_goes_first(monkeypatch):
-    """Rows go oldest first by last update, so a row that keeps failing cannot block newer ones."""
-    attempted = _stub_engagement_sends(monkeypatch, failing_ids=set())
-    requeued = _QueuedMail(entity_id=1, created_date=datetime(2026, 2, 28), updated_date=datetime(2026, 3, 3))
-    newer = _QueuedMail(entity_id=2, created_date=datetime(2026, 3, 2))
-    older = _QueuedMail(entity_id=3, created_date=datetime(2026, 3, 1))
-    _queue(monkeypatch, requeued, newer, older)
+def test_batch_size_and_retry_settings_reach_the_query(monkeypatch):
+    """The query orders, limits and filters the batch in SQL, so it must get the configured settings."""
+    _stub_engagement_sends(monkeypatch, failing_ids=set())
+    asked = []
+    monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'get_unprocessed_mails_for_open_engagements',
+                        lambda *args: asked.append(args) or [])
 
-    with _app(MAIL_BATCH_SIZE='2').app_context():
+    with _app(MAIL_BATCH_SIZE='2', MAIL_MAX_ATTEMPTS=4, MAIL_RETRY_BACKOFF_MINUTES=15).app_context():
         PublishEmailService.do_mail()
 
-    assert attempted == [3, 2]
+    assert asked == [(2, 4, 15)]
+
+
+@pytest.mark.parametrize('attempts_before, warned', [(1, False), (2, True)], ids=['under the cap', 'last attempt'])
+def test_failed_send_at_the_attempt_cap_is_logged(monkeypatch, caplog, attempts_before, warned):
+    """The failed send that reaches MAIL_MAX_ATTEMPTS logs a warning, since the query will not list the row again."""
+    _stub_subscribers_and_template(monkeypatch, {1: GOOD.dumps('first@example.com')},
+                                   send_email=_failing_send(NOT_DELIVERED['connect timeout']()))
+    mail = _QueuedMail(entity_id=42, attempts=attempts_before)
+    _queue(monkeypatch, mail)
+
+    with _app(MAIL_MAX_ATTEMPTS=3).app_context():
+        with pytest.raises(BusinessException):
+            PublishEmailService.do_mail()
+
+    assert mail.notification_status is None
+    assert ('email_queue 42 for engagement 42 failed 3 send attempts' in caplog.text) is warned
 
 
 def test_closing_soon_continues_past_a_failing_engagement_and_rollback(monkeypatch):

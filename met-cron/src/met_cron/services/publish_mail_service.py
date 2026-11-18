@@ -16,12 +16,10 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def do_mail():
         """Send each unprocessed email_queue row to the engagement's subscribers."""
-        email_batch_size: int = int(current_app.config.get('MAIL_BATCH_SIZE'))
-        # Oldest first, so a row that keeps failing goes to the back instead of blocking the batch.
-        mails = sorted(EmailQueueModel.get_unprocessed_mails_for_open_engagements(0),
-                       key=lambda queued: (queued.updated_date or queued.created_date, queued.id))
-        if email_batch_size:
-            mails = mails[:email_batch_size]
+        max_attempts: int = current_app.config.get('MAIL_MAX_ATTEMPTS')
+        backoff_minutes: int = current_app.config.get('MAIL_RETRY_BACKOFF_MINUTES')
+        mails = EmailQueueModel.get_unprocessed_mails_for_open_engagements(
+            int(current_app.config.get('MAIL_BATCH_SIZE')), max_attempts, backoff_minutes)
         template_id = current_app.config.get('PUBLISH_ENGAGEMENT_EMAIL_TEMPLATE_ID', None)
         subject = current_app.config.get('PUBLISH_ENGAGEMENT_EMAIL_SUBJECT')
         template = Template.get_template('publish_engagement.html')
@@ -29,18 +27,19 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
         # A rollback expires every loaded row, so the ids are read up front.
         rows = [(mail, mail.id, mail.entity_id) for mail in mails]
         for mail, mail_id, entity_id in rows:
-            claimed, attempt = PublishEmailService._commit_with_retry(
-                partial(EmailQueueModel.claim, mail_id), mail_id, NotificationStatus.PROCESSING)
-            if claimed is None:
+            attempts, commit_try = PublishEmailService._commit_with_retry(
+                partial(EmailQueueModel.claim, mail_id, max_attempts, backoff_minutes),
+                mail_id, NotificationStatus.PROCESSING)
+            if attempts is None:
                 # Still unprocessed in the database: sending now could mail everyone twice next run.
                 failed_engagement_ids.add(entity_id)
                 continue
-            if not claimed and attempt > 1:
+            if not attempts and commit_try > 1:
                 # The failed first commit may have applied, which leaves the row PROCESSING with nothing sent.
                 current_app.logger.error('<Claim retry for email_queue %s found it already claimed', mail_id)
                 failed_engagement_ids.add(entity_id)
                 continue
-            if not claimed:
+            if not attempts:
                 current_app.logger.info('Skipping email_queue %s: another run already claimed it', mail_id)
                 continue
 
@@ -54,6 +53,9 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
                 status = NotificationStatus.PROCESSING
             else:
                 status = None
+            if status is None and attempts >= max_attempts:
+                current_app.logger.warning('email_queue %s for engagement %s failed %s send attempts; not retrying',
+                                           mail_id, entity_id, attempts)
             if not PublishEmailService._save_status(mail, mail_id, status):
                 failed_engagement_ids.add(entity_id)
         raise_if_engagements_failed(failed_engagement_ids)
