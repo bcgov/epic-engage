@@ -14,15 +14,16 @@ def _queued_mail():
 
 
 def _stored_status(mail_id):
-    return db.session.execute(select(EmailQueue.notification_status).where(EmailQueue.id == mail_id)).scalar_one()
+    return db.session.execute(select(EmailQueue.notification_status).where(EmailQueue.id == mail_id)).scalar()
 
 
 def test_claim_succeeds_once(session):  # pylint:disable=unused-argument
-    """Only the first claim on an unprocessed row wins, so two overlapping runs cannot both send it."""
+    """Only the first claim wins, and it is committed, so two overlapping runs cannot both send the row."""
     mail_id = _queued_mail().id
 
     assert EmailQueue.claim(mail_id) is True
     assert EmailQueue.claim(mail_id) is False
+    db.session.rollback()
     assert _stored_status(mail_id) == NotificationStatus.PROCESSING
 
 
@@ -30,6 +31,7 @@ def test_requeue_after_claim_is_stored(session):  # pylint:disable=unused-argume
     """Setting a claimed row back to unprocessed reaches the database, so the next run retries it."""
     mail = _queued_mail()
     EmailQueue.claim(mail.id)
+    assert _stored_status(mail.id) == NotificationStatus.PROCESSING
 
     mail.notification_status = None
     mail.commit()

@@ -47,6 +47,6 @@ class EmailQueue(BaseModel):  # pylint: disable=too-few-public-methods
         """Mark an unprocessed row PROCESSING and commit; False when another run claimed it first."""
         claimed = db.session.query(cls)\
             .filter(cls.id == mail_id, cls.notification_status.is_(None))\
-            .update({cls.notification_status: NotificationStatus.PROCESSING}, synchronize_session='fetch')
+            .update({cls.notification_status: NotificationStatus.PROCESSING})
         db.session.commit()
         return claimed == 1

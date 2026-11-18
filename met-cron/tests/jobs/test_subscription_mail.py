@@ -1,7 +1,7 @@
 """Checks that one failing subscriber or engagement does not stop the other emails."""
 from datetime import datetime
-import logging
 from http.client import RemoteDisconnected
+import logging
 from types import SimpleNamespace
 
 from flask import Flask
@@ -71,7 +71,8 @@ MAYBE_DELIVERED = {
 
 
 class _QueuedMail:  # pylint: disable=too-few-public-methods
-    def __init__(self, entity_id, created_date=datetime(2026, 3, 1), updated_date=None, fail_commits=()):
+    def __init__(self, entity_id, created_date=datetime(2026, 3, 1), updated_date=None, fail_commits=(),
+                 failed_claim_applies=False):
         self.id = entity_id
         self.entity_id = entity_id
         self.created_date = created_date
@@ -79,6 +80,7 @@ class _QueuedMail:  # pylint: disable=too-few-public-methods
         self.notification_status = None
         self.commits = []
         self._fail_commits = fail_commits
+        self.failed_claim_applies = failed_claim_applies
 
     @property
     def saved(self):
@@ -190,7 +192,8 @@ def _queue(monkeypatch, *mails):
         try:
             mail.commit()
         except OperationalError:
-            mail.notification_status = None
+            if not mail.failed_claim_applies:
+                mail.notification_status = None
             raise
         return True
 
@@ -421,6 +424,22 @@ def test_row_claimed_by_another_run_is_skipped(monkeypatch, caplog):
     assert attempted == [2]
     assert not taken.commits
     assert 'email_queue 1: another run already claimed it' in caplog.text
+
+
+def test_claim_lost_on_retry_fails_the_job(monkeypatch, caplog):
+    """A claim whose failed commit still applied leaves the row PROCESSING unsent, so the job must fail."""
+    attempted = _stub_engagement_sends(monkeypatch, failing_ids=set())
+    stuck = _QueuedMail(entity_id=1, fail_commits=(1,), failed_claim_applies=True)
+    working = _QueuedMail(entity_id=2)
+    _queue(monkeypatch, stuck, working)
+    caplog.set_level(logging.INFO)
+
+    with _app().app_context():
+        with pytest.raises(BusinessException):
+            PublishEmailService.do_mail()
+
+    assert attempted == [2]
+    assert 'Claim retry for email_queue 1 found it already claimed' in caplog.text
 
 
 def test_failed_status_commit_is_retried_and_the_loop_continues(monkeypatch):
