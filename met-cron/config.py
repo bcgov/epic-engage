@@ -189,6 +189,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     MAIL_BATCH_SIZE = os.getenv('MAIL_BATCH_SIZE', '10')
     MAIL_MAX_ATTEMPTS = _positive_int_from_env('MAIL_MAX_ATTEMPTS', 5)
     MAIL_RETRY_BACKOFF_MINUTES = _positive_int_from_env('MAIL_RETRY_BACKOFF_MINUTES', 30)
+    # Keep above the longest claim-to-first-send gap: a run whose row is swept before its first send skips the row.
+    MAIL_STALE_MINUTES = _positive_int_from_env('MAIL_STALE_MINUTES', 60)
 
     # config for offset days to send reminder emails
     OFFSET_DAYS = os.getenv('OFFSET_DAYS', '2')
