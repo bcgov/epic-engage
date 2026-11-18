@@ -71,22 +71,27 @@ MAYBE_DELIVERED = {
 }
 
 
-class _QueuedMail:
-    def __init__(self, entity_id, created_date=datetime(2026, 3, 1), fail_commits=()):
+class _QueuedMail:  # pylint: disable=too-few-public-methods
+    def __init__(self, entity_id, created_date=datetime(2026, 3, 1), updated_date=None, fail_commits=()):
         self.id = entity_id
         self.entity_id = entity_id
         self.created_date = created_date
+        self.updated_date = updated_date
         self.notification_status = None
-        self.updated_date = None
-        self.saved = []
-        self._commits = 0
+        self.commits = []
         self._fail_commits = fail_commits
 
+    @property
+    def saved(self):
+        """Statuses whose commit went through, in order."""
+        return [status for status, committed in self.commits if committed]
+
     def commit(self):
-        self._commits += 1
-        if self._commits in self._fail_commits:
+        """Record the commit; the attempts numbered in fail_commits raise like a lost connection."""
+        committed = len(self.commits) + 1 not in self._fail_commits
+        self.commits.append((self.notification_status, committed))
+        if not committed:
             raise OperationalError('UPDATE email_queue', {}, Exception('connection lost'))
-        self.saved.append(self.notification_status)
 
 
 class _Session:
@@ -98,12 +103,15 @@ class _Session:
         self.rollback_error = rollback_error
 
     def query(self, *_):
+        """Start a query chain."""
         return self
 
     def all(self):
+        """End a query chain."""
         return self.rows
 
     def rollback(self):
+        """Expire the rows, then raise rollback_error if one is set."""
         self.rolled_back = True
         if self.rollback_error:
             raise self.rollback_error
@@ -112,14 +120,14 @@ class _Session:
         return lambda *_args, **_kwargs: self
 
 
-class _Subscription:
-    def __init__(self, session, participant_id):
+class _Subscription:  # pylint: disable=too-few-public-methods
+    def __init__(self, session, subscription_id, participant_id):
         self._session = session
-        self._participant_id = participant_id
+        self._values = {'id': subscription_id, 'participant_id': participant_id}
 
     def __getattr__(self, name):
-        if name in ('id', 'participant_id') and not self._session.rolled_back:
-            return self._participant_id
+        if name in self._values and not self._session.rolled_back:
+            return self._values[name]
         raise OperationalError('SELECT subscription', {}, Exception('expired row needs the database'))
 
 
@@ -128,14 +136,15 @@ def _lost_connection():
 
 
 def _stub_db(monkeypatch, session):
-    for module in (mail_service, publish_mail_service, closing_soon_mail_service):
-        monkeypatch.setattr(module, 'db', SimpleNamespace(session=session), raising=False)
+    for module in (mail_service, closing_soon_mail_service):
+        monkeypatch.setattr(module, 'db', SimpleNamespace(session=session))
 
 
 def _stub_subscribers_and_template(monkeypatch, participants, find_participant=None, send_email=None):
     """Serve the participants as confirmed subscribers, skip template rendering, record who gets mail."""
     session = _Session()
-    session.rows = [_Subscription(session, participant_id) for participant_id in participants]
+    session.rows = [_Subscription(session, subscription_id, participant_id)
+                    for subscription_id, participant_id in enumerate(participants, start=1)]
     _stub_db(monkeypatch, session)
     monkeypatch.setattr(mail_service.EngagementModel, 'find_by_id', lambda _id: SimpleNamespace(id=_id))
     monkeypatch.setattr(mail_service.CheckSubscription, 'check_subscription', lambda *_: True)
@@ -277,32 +286,37 @@ def test_skipped_address_does_not_count_as_sent(monkeypatch):
         with pytest.raises(BusinessException):
             PublishEmailService.do_mail()
 
-    assert sent_to == []
+    assert not sent_to
     assert mail.notification_status is None
 
 
-def test_missing_participant_is_skipped(monkeypatch):
-    """A subscription whose participant is gone is skipped, not a failure, so the job succeeds."""
-    participants = {1: GOOD.dumps('first@example.com'), 2: None}
-    sent_to = _stub_subscribers_and_template(
-        monkeypatch, participants,
-        lambda _id: SimpleNamespace(id=_id, email_address=participants[_id]) if participants[_id] else None)
-    mail = _QueuedMail(entity_id=42)
-    _queue(monkeypatch, mail)
+@pytest.mark.parametrize('participants', [
+    {1: GOOD.dumps('first@example.com'), 2: None},
+    {1: GOOD.dumps('first@example.com'), None: GOOD.dumps('second@example.com')},
+], ids=['participant row gone', 'no participant id'])
+def test_missing_participant_is_skipped(monkeypatch, participants):
+    """A subscription without a participant is skipped, not a failure."""
+    def find_participant(participant_id):
+        if participant_id is None:
+            raise ValueError('looked up a participant without an id')
+        address = participants[participant_id]
+        return SimpleNamespace(id=participant_id, email_address=address) if address else None
+
+    _stub_subscribers_and_template(monkeypatch, participants, find_participant)
 
     with _app().app_context():
-        PublishEmailService.do_mail()
+        result = EmailService.send_engagement_emails(42, None, 'subject', None, 'Publish')
 
-    assert sent_to == ['first@example.com']
-    assert mail.notification_status == NotificationStatus.SENT.value
+    assert result.sent == 1
+    assert result.skipped == 1
+    assert result.failed == 0
 
 
-@pytest.mark.parametrize('make_error, sends, duplicate', [
-    (NOT_DELIVERED['connect timeout'], 2, 0),
-    (MAYBE_DELIVERED['read timeout'], 1, 1),
+@pytest.mark.parametrize('make_error, sends, sent, failed', [
+    (NOT_DELIVERED['connect timeout'], 2, 1, 0),
+    (MAYBE_DELIVERED['read timeout'], 1, 0, 1),
 ], ids=['not delivered', 'maybe delivered'])
-def test_same_address_is_retried_after_a_not_delivered_failure_and_counted_once_sent(
-        monkeypatch, make_error, sends, duplicate):
+def test_same_address_resent_only_if_not_delivered(monkeypatch, make_error, sends, sent, failed):
     """A second subscription with the same address gets the email only if the first send never arrived."""
     calls = []
 
@@ -317,10 +331,12 @@ def test_same_address_is_retried_after_a_not_delivered_failure_and_counted_once_
     }, send_email=send_email)
 
     with _app().app_context():
-        result = EmailService._send_email_notification_for_subscription(42, None, 'subject', None)
+        result = EmailService.send_engagement_emails(42, None, 'subject', None, 'Publish')
 
     assert len(calls) == sends
-    assert result.duplicate == duplicate
+    assert result.sent == sent
+    assert result.failed == failed
+    assert result.duplicate == 1
 
 
 def test_project_subscription_without_metadata_is_not_subscribed(monkeypatch):
@@ -372,17 +388,31 @@ def test_failed_status_commit_is_retried_and_the_loop_continues(monkeypatch):
     assert working.notification_status == NotificationStatus.SENT.value
 
 
-def test_oldest_queued_row_goes_first(monkeypatch):
-    """With a batch of one, the oldest row is sent, so a row that keeps failing cannot block newer ones."""
-    attempted = _stub_engagement_sends(monkeypatch, failing_ids=set())
-    newer = _QueuedMail(entity_id=1, created_date=datetime(2026, 3, 2))
-    older = _QueuedMail(entity_id=2, created_date=datetime(2026, 3, 1))
-    _queue(monkeypatch, newer, older)
+def test_status_commit_failing_twice_fails_the_job(monkeypatch):
+    """A final status that cannot be saved fails the job, and the next row is still processed."""
+    _stub_engagement_sends(monkeypatch, failing_ids=set())
+    unsaved, working = _QueuedMail(entity_id=1, fail_commits=(2, 3)), _QueuedMail(entity_id=2)
+    _queue(monkeypatch, unsaved, working)
 
-    with _app(MAIL_BATCH_SIZE='1').app_context():
+    with _app().app_context():
+        with pytest.raises(BusinessException):
+            PublishEmailService.do_mail()
+
+    assert working.notification_status == NotificationStatus.SENT.value
+
+
+def test_oldest_queued_row_goes_first(monkeypatch):
+    """Rows go oldest first by last update, so a row that keeps failing cannot block newer ones."""
+    attempted = _stub_engagement_sends(monkeypatch, failing_ids=set())
+    requeued = _QueuedMail(entity_id=1, created_date=datetime(2026, 2, 28), updated_date=datetime(2026, 3, 3))
+    newer = _QueuedMail(entity_id=2, created_date=datetime(2026, 3, 2))
+    older = _QueuedMail(entity_id=3, created_date=datetime(2026, 3, 1))
+    _queue(monkeypatch, requeued, newer, older)
+
+    with _app(MAIL_BATCH_SIZE='2').app_context():
         PublishEmailService.do_mail()
 
-    assert attempted == [2]
+    assert attempted == [3, 2]
 
 
 def test_closing_soon_continues_past_a_failing_engagement_and_rollback(monkeypatch):

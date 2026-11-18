@@ -4,7 +4,7 @@ from flask import current_app
 from met_api.constants.notification_status import NotificationStatus
 from met_api.models.email_queue import EmailQueue as EmailQueueModel
 from met_api.utils.template import Template
-from met_cron.services.mail_service import raise_if_engagements_failed, safe_rollback, send_engagement_emails
+from met_cron.services.mail_service import EmailService, raise_if_engagements_failed, safe_rollback
 from met_cron.utils.scrub import scrub_sensitive
 
 
@@ -37,7 +37,7 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
                 failed_engagement_ids.add(entity_id)
                 continue
 
-            result = send_engagement_emails(entity_id, template_id, subject, template, 'Publish')
+            result = EmailService.send_engagement_emails(entity_id, template_id, subject, template, 'Publish')
             if result is None or result.failed:
                 failed_engagement_ids.add(entity_id)
             if result is not None and (result.sent or not result.failed):
@@ -60,7 +60,7 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
                 mail.updated_date = datetime.utcnow()
                 mail.commit()
                 return True
-            except Exception as exc:  # noqa: B902
+            except Exception as exc:  # noqa: B902 # pylint:disable=broad-except
                 safe_rollback()
                 current_app.logger.error('<Saving status %s for email_queue %s failed on attempt %s with %s: %s',
                                          status.name if status else 'unprocessed', mail_id, attempt,

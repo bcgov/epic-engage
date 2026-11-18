@@ -9,7 +9,7 @@ from met_api.models.engagement import Engagement as EngagementModel
 from met_api.utils.datetime import local_datetime
 from met_api.utils.template import Template
 from met_cron.models.db import db
-from met_cron.services.mail_service import raise_if_engagements_failed, send_engagement_emails
+from met_cron.services.mail_service import EmailService, raise_if_engagements_failed
 
 
 class ClosingSoonEmailService:  # pylint: disable=too-few-public-methods
@@ -27,7 +27,7 @@ class ClosingSoonEmailService:  # pylint: disable=too-few-public-methods
         # A rollback expires every loaded row, so the ids are read up front.
         engagement_ids = [engagement.id for engagement in engagements_closing_soon or []]
         for engagement_id in engagement_ids:
-            result = send_engagement_emails(engagement_id, template_id, subject, template, 'Closing soon')
+            result = EmailService.send_engagement_emails(engagement_id, template_id, subject, template, 'Closing soon')
             if result is None or result.failed:
                 failed_engagement_ids.append(engagement_id)
         raise_if_engagements_failed(failed_engagement_ids)
