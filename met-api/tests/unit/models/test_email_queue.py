@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from met_api.constants.engagement_status import Status as EngagementStatus
 from met_api.constants.notification_status import NotificationStatus
@@ -15,6 +15,7 @@ from tests.utilities.factory_utils import factory_engagement_model
 
 MAX_ATTEMPTS = 3
 BACKOFF_MINUTES = 30
+STALE_MINUTES = 60
 
 
 def _queued_mail(entity_id=1, **fields):
@@ -36,6 +37,20 @@ def _mail_past_backoff(engagement_id, attempts=1):
 
 def _stored(column, mail_id):
     return db.session.execute(select(column).where(EmailQueue.id == mail_id)).scalar()
+
+
+def _backdate(mail_id, **minutes_ago):
+    """Set each named timestamp column of the row to that many minutes before one shared now."""
+    now = datetime.utcnow()
+    db.session.execute(update(EmailQueue).where(EmailQueue.id == mail_id)
+                       .values({name: now - timedelta(minutes=minutes) for name, minutes in minutes_ago.items()}))
+    db.session.commit()
+
+
+def _claimed_and_started():
+    mail_id = _queued_mail().id
+    EmailQueue.mark_send_started(mail_id, EmailQueue.claim(mail_id, MAX_ATTEMPTS, BACKOFF_MINUTES))
+    return mail_id
 
 
 def _unprocessed_ids(max_size=0):
@@ -114,3 +129,56 @@ def test_row_after_the_start_date_is_not_listed(session, attempts, status,
     mail = _mail_past_backoff(_engagement(started_days_ago, status).id, attempts=attempts)
 
     assert mail.id not in _unprocessed_ids()
+
+
+@pytest.mark.parametrize('minutes_since_claim, requeued', [
+    (STALE_MINUTES - 5, False),
+    (STALE_MINUTES + 5, True),
+], ids=['claim still fresh', 'claim stale'])
+def test_stale_unstarted_row_is_requeued(session, minutes_since_claim,
+                                         requeued):  # pylint:disable=unused-argument
+    """A claim that never started sending is queued again once stale, whatever an earlier attempt recorded."""
+    mail_id = _queued_mail(attempts=1, send_started_at=datetime.utcnow() - timedelta(days=1),
+                           updated_date=datetime.utcnow() - timedelta(minutes=BACKOFF_MINUTES + 5)).id
+    EmailQueue.claim(mail_id, MAX_ATTEMPTS, BACKOFF_MINUTES)
+    _backdate(mail_id, updated_date=minutes_since_claim)
+
+    assert ((mail_id, 1, 2) in EmailQueue.requeue_stale_unstarted(STALE_MINUTES)) is requeued
+    assert (_stored(EmailQueue.notification_status, mail_id) is None) is requeued
+
+
+def test_stale_started_row_is_left_processing(session):  # pylint:disable=unused-argument
+    """A row whose send started may have been delivered, so the sweep never queues it again."""
+    mail_id = _claimed_and_started()
+    _backdate(mail_id, updated_date=STALE_MINUTES + 5, send_started_at=STALE_MINUTES + 5)
+
+    assert mail_id not in [row[0] for row in EmailQueue.requeue_stale_unstarted(STALE_MINUTES)]
+    assert _stored(EmailQueue.notification_status, mail_id) == NotificationStatus.PROCESSING
+
+
+@pytest.mark.parametrize('started_ago, updated_ago, reported', [
+    (STALE_MINUTES + 5, STALE_MINUTES + 5, True),
+    (STALE_MINUTES - 5, STALE_MINUTES - 5, False),
+    (STALE_MINUTES + 5, STALE_MINUTES, False),
+    (2 * 24 * 60, 2 * 24 * 60, False),
+], ids=['stale with no final status', 'still sending', 'final status saved', 'started two days ago'])
+def test_stale_started_row_without_final_status_is_reported(session, started_ago, updated_ago,
+                                                            reported):  # pylint:disable=unused-argument
+    """Only a recent send that never saved its final status is reported, so deliberate PROCESSING rows stay quiet."""
+    mail_id = _claimed_and_started()
+    _backdate(mail_id, updated_date=updated_ago, send_started_at=started_ago)
+
+    assert (mail_id in EmailQueue.find_stale_started_ids(STALE_MINUTES)) is reported
+
+
+def test_send_start_from_an_earlier_claim_is_refused(session):  # pylint:disable=unused-argument
+    """A run whose row was swept and claimed again cannot start sending it, so two runs never send one row."""
+    mail_id = _queued_mail().id
+    first = EmailQueue.claim(mail_id, MAX_ATTEMPTS, BACKOFF_MINUTES)
+    _backdate(mail_id, updated_date=STALE_MINUTES + 5)
+    EmailQueue.requeue_stale_unstarted(STALE_MINUTES)
+    _backdate(mail_id, updated_date=BACKOFF_MINUTES + 5)
+    second = EmailQueue.claim(mail_id, MAX_ATTEMPTS, BACKOFF_MINUTES)
+
+    assert not EmailQueue.mark_send_started(mail_id, first)
+    assert EmailQueue.mark_send_started(mail_id, second)

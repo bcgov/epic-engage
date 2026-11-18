@@ -31,7 +31,7 @@ TEMPLATE = SimpleNamespace(render=lambda **_: 'body')
 def _app(**config):
     app = Flask(__name__)
     app.config.update(EMAIL_SECRET_KEY=SECRET, MAIL_BATCH_SIZE='10', MAIL_MAX_ATTEMPTS=3,
-                      MAIL_RETRY_BACKOFF_MINUTES=30, OFFSET_DAYS='2',
+                      MAIL_RETRY_BACKOFF_MINUTES=30, MAIL_STALE_MINUTES=60, OFFSET_DAYS='2',
                       UNSUBSCRIBE_PATH='/unsubscribe/{token}', ENGAGEMENT_VIEW_PATH='/engagements/{engagement_id}')
     app.config.update(config)
     return app
@@ -72,14 +72,16 @@ MAYBE_DELIVERED = {
 
 
 class _QueuedMail:  # pylint: disable=too-few-public-methods
-    def __init__(self, entity_id, attempts=0, fail_commits=(), failed_claim_applies=False):
+    def __init__(self, entity_id, attempts=0, fail_commits=(), failed_claim_applies=False, claimed_again=False):
         self.id = entity_id
         self.entity_id = entity_id
         self.attempts = attempts
         self.notification_status = None
+        self.send_started = False
         self.commits = []
         self._fail_commits = fail_commits
         self.failed_claim_applies = failed_claim_applies
+        self.claimed_again = claimed_again
 
     @property
     def saved(self):
@@ -198,9 +200,29 @@ def _queue(monkeypatch, *mails):
             raise
         return mail.attempts
 
+    def mark_send_started(mail_id, attempts):
+        mail = by_id[mail_id]
+        if mail.claimed_again or mail.attempts != attempts:
+            return False
+        mail.commit()
+        mail.send_started = True
+        return True
+
     monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'get_unprocessed_mails_for_open_engagements',
                         lambda size, *_: list(mails)[:size] if size else list(mails))
     monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'claim', claim)
+    monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'mark_send_started', mark_send_started)
+    _stub_sweep(monkeypatch)
+
+
+def _stub_sweep(monkeypatch, requeued=(), started_ids=()):
+    """Serve the stale sweep's results and record the stale minutes each query got, in call order."""
+    asked = []
+    monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'requeue_stale_unstarted',
+                        lambda minutes: asked.append(('requeue', minutes)) or list(requeued))
+    monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'find_stale_started_ids',
+                        lambda minutes: asked.append(('started', minutes)) or list(started_ids))
+    return asked
 
 
 def _stub_engagement_sends(monkeypatch, failing_ids, session=None):
@@ -469,9 +491,58 @@ def test_status_commit_failing_twice_fails_the_job(monkeypatch):
     assert working.notification_status == NotificationStatus.SENT.value
 
 
+def test_send_started_is_recorded_before_first_send(monkeypatch):
+    """The send start is committed once, before any email goes out, so the stale sweep can never requeue a send."""
+    mail = _QueuedMail(entity_id=42)
+    started_at_each_send = []
+    _stub_subscribers_and_template(monkeypatch, {1: GOOD.dumps('first@example.com'),
+                                                 2: GOOD.dumps('second@example.com')},
+                                   send_email=lambda **_: started_at_each_send.append(mail.send_started))
+    _queue(monkeypatch, mail)
+
+    with _app().app_context():
+        PublishEmailService.do_mail()
+
+    assert started_at_each_send == [True, True]
+    assert mail.saved == [NotificationStatus.PROCESSING.value] * 2 + [NotificationStatus.SENT.value]
+
+
+@pytest.mark.parametrize('mail_kwargs', [{'fail_commits': (2,)}, {'claimed_again': True}],
+                         ids=['commit fails', 'row claimed again'])
+def test_marker_commit_failure_sends_nothing(monkeypatch, mail_kwargs):
+    """Without a recorded send start nothing is sent and no status is saved, so the row is left for the sweep."""
+    calls = _stub_subscribers_and_template(monkeypatch, {1: GOOD.dumps('first@example.com')})
+    mail = _QueuedMail(entity_id=42, **mail_kwargs)
+    _queue(monkeypatch, mail)
+
+    with _app().app_context():
+        with pytest.raises(BusinessException):
+            PublishEmailService.do_mail()
+
+    assert not calls.sent_to
+    assert mail.saved == [NotificationStatus.PROCESSING.value]
+
+
+def test_stale_sweep_logs_what_it_found(monkeypatch, caplog):
+    """Requeued rows, a requeued row at the attempt cap and started rows left alone are each logged."""
+    _stub_engagement_sends(monkeypatch, failing_ids=set())
+    _queue(monkeypatch)
+    asked = _stub_sweep(monkeypatch, requeued=[(7, 70, 1), (8, 80, 3)], started_ids=[9])
+
+    with _app(MAIL_STALE_MINUTES=45).app_context():
+        PublishEmailService.do_mail()
+
+    assert asked == [('requeue', 45), ('started', 45)]
+    assert 'Requeued email_queue 7 for engagement 70' in caplog.text
+    assert 'email_queue 8 for engagement 80 failed 3 send attempts' in caplog.text
+    assert 'email_queue 7 for engagement 70 failed' not in caplog.text
+    assert 'email_queue [9] started sending over 45 minutes ago' in caplog.text
+
+
 def test_batch_size_and_retry_settings_reach_the_query(monkeypatch):
     """The query orders, limits and filters the batch in SQL, so it must get the configured settings."""
     _stub_engagement_sends(monkeypatch, failing_ids=set())
+    _stub_sweep(monkeypatch)
     asked = []
     monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'get_unprocessed_mails_for_open_engagements',
                         lambda *args: asked.append(args) or [])

@@ -1,3 +1,4 @@
+"""Send one engagement's emails to its confirmed subscribers."""
 from collections import namedtuple
 from datetime import datetime
 from functools import cached_property
@@ -40,6 +41,10 @@ NOT_DELIVERED_REQUEST_ERRORS = (
 
 # failed includes ambiguous: sends that raised after the mail service may have accepted them.
 SendResult = namedtuple('SendResult', ['sent', 'failed', 'ambiguous', 'skipped', 'duplicate'])
+
+
+class SendNotStartedError(Exception):
+    """The before_first_send callback failed, so none of the engagement's emails were sent."""
 
 
 def raise_if_engagements_failed(failed_engagement_ids):
@@ -95,12 +100,14 @@ def _log_buckets(engagement_id, bucket, outcome):
                                    entry['ids'][:MAX_LOGGED_SUBSCRIPTION_IDS], detail)
 
 
-class EngagementMail:
+class EngagementMail:  # pylint: disable=too-many-instance-attributes
     """Sends one engagement's emails with one token and one set of engagement args, both built at the first send."""
 
-    def __init__(self, engagement, metadata, template, subject, template_id):
+    def __init__(self, engagement, metadata, template, subject, template_id,  # pylint: disable=too-many-arguments
+                 *, before_first_send=None):
         """Hold the engagement and the mail settings; no token is fetched yet."""
         self.engagement = engagement
+        self.before_first_send = before_first_send
         self.metadata = metadata
         self.template = template
         self.mail_kwargs = {'subject': subject, 'template_id': template_id}
@@ -171,6 +178,12 @@ class EngagementMail:
                 raise
             self.fetch_failures = 0
             self.token_worked = False
+        if self.before_first_send is not None:
+            try:
+                self.before_first_send()
+            except Exception as exc:  # noqa: B902
+                raise SendNotStartedError(f'{type(exc).__name__}: {scrub_sensitive(str(exc))}') from exc
+            self.before_first_send = None
         notification.send_email(email=email_address, html_body=body, args=args, token=self.token,
                                 **self.mail_kwargs)
 
@@ -179,11 +192,20 @@ class EmailService:  # pylint: disable=too-few-public-methods
     """Mail on updates."""
 
     @staticmethod
-    def send_engagement_emails(engagement_id, template_id, subject, template, label) -> Optional[SendResult]:
-        """Email the engagement's subscribers; returns None when the engagement itself failed."""
+    def send_engagement_emails(  # pylint: disable=too-many-arguments
+            engagement_id, template_id, subject, template, label, *, before_first_send=None) -> Optional[SendResult]:
+        """Email the engagement's subscribers; returns None when the engagement itself failed.
+
+        before_first_send runs once, right before the first email; if it raises, SendNotStartedError is raised.
+        """
         try:
             return EmailService._send_email_notification_for_subscription(engagement_id, template_id, subject,
-                                                                          template)
+                                                                          template, before_first_send)
+        except SendNotStartedError as exc:
+            safe_rollback()
+            current_app.logger.error('<%s email for engagement %s not sent: recording the send start failed with %s',
+                                     label, engagement_id, exc)
+            raise
         except Exception as exc:  # noqa: B902 # pylint:disable=broad-except
             safe_rollback()
             current_app.logger.error('<%s email for engagement %s failed with %s: %s',
@@ -191,14 +213,15 @@ class EmailService:  # pylint: disable=too-few-public-methods
             return None
 
     @staticmethod
-    def _send_email_notification_for_subscription(  # pylint: disable=too-many-locals
-            engagement_id, template_id, subject, template) -> SendResult:
+    def _send_email_notification_for_subscription(  # pylint: disable=too-many-locals,too-many-statements
+            engagement_id, template_id, subject, template, before_first_send) -> SendResult:
         """Email every subscriber of the engagement; a failing subscriber is logged and skipped."""
         engagement: EngagementModel = EngagementModel.find_by_id(engagement_id)
         metadata: EngagementMetadataModel = EngagementMetadataModel.find_by_id(engagement_id)
         rows = SubscriptionModel.get_confirmed_for_engagement(
             engagement_id, metadata.project_id if metadata else None)
-        mail = EngagementMail(engagement, metadata, template, subject, template_id)
+        mail = EngagementMail(engagement, metadata, template, subject, template_id,
+                              before_first_send=before_first_send)
         email_addresses = set()
         undelivered = {}
         sent = failed = ambiguous = duplicate = 0
@@ -233,6 +256,8 @@ class EmailService:  # pylint: disable=too-few-public-methods
                     failed -= 1
                     duplicate += 1
                     _unrecord(failures, error_type, failed_id)
+            except SendNotStartedError:
+                raise
             except Exception as exc:  # noqa: B902 # pylint:disable=broad-except
                 failed += 1
                 if may_have_been_delivered(exc):
