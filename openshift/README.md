@@ -85,6 +85,11 @@ oc new-app --template=postgresql-persistent -p POSTGRESQL_DATABASE=app -p DATABA
 1. Users Setup script is located at /tools/postgres/init/00_postgresql-user-setup.sql
 1. Initial database setup script is located at /tools/postgres/init/01_postgresql-schema-setup.sql
 1. Openshift secret yaml is located at ./database-users.secret.yml
+1. Create the Secret `met-email-key` with the key `EMAIL_SECRET_KEY`. The met-api and met-cron pods do not start without it. The command reads the value from the prompt, so it does not show on screen or in shell history:
+
+    ```bash
+    read -rs KEY && printf '%s' "$KEY" | oc create secret generic met-email-key -n <namespace> --from-file=EMAIL_SECRET_KEY=/dev/stdin; unset KEY
+    ```
 
 ## Restore Backup Script
 
