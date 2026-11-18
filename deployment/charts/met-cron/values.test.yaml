@@ -31,5 +31,5 @@ configMapData:
   PUBLISH_ENGAGEMENT_EMAIL_TEMPLATE_ID: 7bf2ffcd-d69e-4c3f-9aa0-e8e89b491e92
   SITE_URL: 'https://test.engage.eao.gov.bc.ca'
   # Comment period push: eagle, both or demi. DEMI_API_KEY comes from the demi-api-details secret.
-  EPIC_SYNC_TARGET: 'eagle'
-  DEMI_API_URL: ''
+  EPIC_SYNC_TARGET: 'demi'
+  DEMI_API_URL: 'https://demi-apim-test.azure-api.net/machine'
