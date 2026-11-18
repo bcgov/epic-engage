@@ -35,23 +35,27 @@ class Subscription(BaseModel):  # pylint: disable=too-few-public-methods
         return db_subscription
 
     @classmethod
-    def get_confirmed_for_engagement(cls, engagement_id, has_metadata, project_id):
+    def get_confirmed_for_engagement(cls, engagement_id, project_id):
         """Return (subscription_id, participant_id, email_address) rows of confirmed subscriptions for the engagement.
 
-        Matches: TENANT in the same tenant, ENGAGEMENT by engagement, PROJECT by project when metadata exists.
+        Matches: TENANT in the same tenant, ENGAGEMENT by engagement, PROJECT by project id or else by engagement.
         """
         source = aliased(Engagement)
         target = aliased(Engagement)
         # NOT EXISTS so a subscription with no engagement, or a NULL tenant on either side, keeps matching.
         other_tenant = exists().where(source.id == cls.engagement_id, target.id == engagement_id,
                                       source.tenant_id != target.tenant_id)
+        # A PROJECT row without a project id falls back to its own engagement,
+        # so it does not match every engagement that has no project either.
+        project_matches = [and_(or_(cls.project_id.is_(None), cls.project_id == ''),
+                                cls.engagement_id == engagement_id)]
+        if project_id:
+            project_matches.append(cls.project_id == project_id)
         matches = [
             and_(cls.type == SubscriptionType.TENANT, ~other_tenant),
             and_(cls.type == SubscriptionType.ENGAGEMENT, cls.engagement_id == engagement_id),
+            and_(cls.type == SubscriptionType.PROJECT, or_(*project_matches)),
         ]
-        if has_metadata:
-            # NULL matches NULL, as the earlier Python comparison of the two project ids did.
-            matches.append(and_(cls.type == SubscriptionType.PROJECT, cls.project_id.is_not_distinct_from(project_id)))
         return db.session.query(cls.id.label('subscription_id'),
                                 Participant.id.label('participant_id'),
                                 Participant.email_address.label('email_address'))\
