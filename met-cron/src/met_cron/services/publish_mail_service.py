@@ -1,3 +1,4 @@
+"""Send the email for each newly published engagement in the email_queue."""
 from datetime import datetime
 from functools import partial
 
@@ -10,16 +11,11 @@ from met_cron.utils.scrub import scrub_sensitive
 
 
 class PublishEmailService:  # pylint: disable=too-few-public-methods
-    """Mail for newly published engagements"""
+    """Mail for newly published engagements."""
 
     @staticmethod
     def do_mail():
-        """Send mail by listening to the email_queue.
-
-            1. Get N number of unprocessed records from the email_queue table
-            2. Process each mail and send it to subscribed users
-
-        """
+        """Send each unprocessed email_queue row to the engagement's subscribers."""
         email_batch_size: int = int(current_app.config.get('MAIL_BATCH_SIZE'))
         # Oldest first, so a row that keeps failing goes to the back instead of blocking the batch.
         mails = sorted(EmailQueueModel.get_unprocessed_mails_for_open_engagements(0),
