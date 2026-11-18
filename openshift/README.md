@@ -227,6 +227,8 @@ if [ -n "$V" ]; then printf '%s' "$V" | oc create secret generic met-email-key -
 
 If the command prints "Secret not created", do not run `helm upgrade`. Agree the value with the team first, then create the Secret with the command below.
 
+Any value that differs from the one the namespace uses, even if that one is empty, is a key change. Stored participant email addresses are signed with the key and stop decoding after a change. You re-sign the stored addresses under the key in the Secret, with the met-api and met-cron pods stopped, before the pods start with it.
+
 In a new namespace, type the value at the prompt. It does not show on screen or in shell history:
 
 ```bash
