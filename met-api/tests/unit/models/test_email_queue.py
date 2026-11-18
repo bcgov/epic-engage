@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import pytest
 from sqlalchemy import select
 
+from met_api.constants.engagement_status import Status as EngagementStatus
 from met_api.constants.notification_status import NotificationStatus
 from met_api.models.db import db
 from met_api.models.email_queue import EmailQueue
@@ -23,9 +24,14 @@ def _queued_mail(entity_id=1, **fields):
     return mail
 
 
-def _engagement_starting_today():
-    return factory_engagement_model({**TestEngagementInfo.engagement1,
-                                     'start_date': local_datetime().replace(tzinfo=None)})
+def _engagement(started_days_ago=0, status=EngagementStatus.Published.value):
+    start = local_datetime().replace(tzinfo=None) - timedelta(days=started_days_ago)
+    return factory_engagement_model({**TestEngagementInfo.engagement1, 'start_date': start}, status=status)
+
+
+def _retried_mail(engagement_id, attempts=1):
+    return _queued_mail(engagement_id, attempts=attempts,
+                        updated_date=datetime.utcnow() - timedelta(minutes=BACKOFF_MINUTES + 5))
 
 
 def _stored(column, mail_id):
@@ -69,7 +75,7 @@ def test_requeue_after_claim_is_stored(session):  # pylint:disable=unused-argume
 def test_row_is_sent_only_under_the_cap_and_past_the_backoff(session, attempts, minutes_since_update,
                                                              claimed_as):  # pylint:disable=unused-argument
     """A failed row waits out the backoff before it is listed or claimed again, and stops at the attempt cap."""
-    engagement = _engagement_starting_today()
+    engagement = _engagement()
     mail = _queued_mail(engagement.id, attempts=attempts,
                         updated_date=datetime.utcnow() - timedelta(minutes=minutes_since_update))
 
@@ -79,7 +85,7 @@ def test_row_is_sent_only_under_the_cap_and_past_the_backoff(session, attempts, 
 
 def test_least_recently_tried_rows_come_first_within_the_batch(session):  # pylint:disable=unused-argument
     """The batch limit applies after ordering by last update, so a retried row cannot crowd out older ones."""
-    engagement = _engagement_starting_today()
+    engagement = _engagement()
     now = datetime.utcnow()
     retried = _queued_mail(engagement.id, attempts=1, created_date=now - timedelta(days=1),
                            updated_date=now - timedelta(minutes=BACKOFF_MINUTES + 1))
@@ -88,3 +94,22 @@ def test_least_recently_tried_rows_come_first_within_the_batch(session):  # pyli
 
     assert _unprocessed_ids(max_size=2) == [older.id, newer.id]
     assert _unprocessed_ids() == [older.id, newer.id, retried.id]
+
+
+def test_retry_continues_after_the_start_date_while_published(session):  # pylint:disable=unused-argument
+    """A row that failed late on the start date is still retried the next day instead of being dropped silently."""
+    mail = _retried_mail(_engagement(started_days_ago=1).id)
+
+    assert mail.id in _unprocessed_ids()
+    assert EmailQueue.claim(mail.id, MAX_ATTEMPTS, BACKOFF_MINUTES) == 2
+
+
+@pytest.mark.parametrize('attempts, status', [
+    (0, EngagementStatus.Published.value),
+    (1, EngagementStatus.Closed.value),
+], ids=['never tried', 'engagement closed'])
+def test_row_after_the_start_date_is_not_listed(session, attempts, status):  # pylint:disable=unused-argument
+    """Past the start date only retries of a still published engagement go out, so no old backlog is mailed."""
+    mail = _retried_mail(_engagement(started_days_ago=1, status=status).id, attempts=attempts)
+
+    assert mail.id not in _unprocessed_ids()

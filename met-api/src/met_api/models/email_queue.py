@@ -9,6 +9,7 @@ from typing import List
 
 from sqlalchemy import and_, func, or_, update
 
+from met_api.constants.engagement_status import Status as EngagementStatus
 from met_api.constants.notification_status import NotificationStatus
 from met_api.models.engagement import Engagement
 from met_api.utils.datetime import local_datetime
@@ -49,7 +50,10 @@ class EmailQueue(BaseModel):  # pylint: disable=too-few-public-methods
             .filter(cls._ready_to_send(max_attempts, backoff_minutes),
                     cls.entity_type == SourceType.ENGAGEMENT.value,
                     cls.action == SourceAction.PUBLISHED.value,
-                    func.date(Engagement.start_date) == now)\
+                    # A retry that crosses midnight still goes out while the engagement is published.
+                    or_(func.date(Engagement.start_date) == now,
+                        and_(cls.attempts > 0, func.date(Engagement.start_date) < now,
+                             Engagement.status_id == EngagementStatus.Published.value)))\
             .order_by(func.coalesce(cls.updated_date, cls.created_date), cls.id)
         if max_size:
             query = query.limit(max_size)
