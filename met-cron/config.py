@@ -133,8 +133,6 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     TIME_DELTA_IN_MINUTES = os.getenv('TIME_DELTA_IN_MINUTES', 30)
 
-    print(f'SQLAlchemy URL (_Config): {SQLALCHEMY_DATABASE_URI}')
-
     # Service account details
     KEYCLOAK_SERVICE_ACCOUNT_ID = os.getenv('MET_ADMIN_CLIENT_ID')
     KEYCLOAK_SERVICE_ACCOUNT_SECRET = os.getenv('MET_ADMIN_CLIENT_SECRET')
@@ -242,15 +240,12 @@ class MigrationConfig(_Config):  # pylint: disable=too-few-public-methods
     SQLALCHEMY_ECHO = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    print(f'SQLAlchemy URL (_Config): {SQLALCHEMY_DATABASE_URI}')
-
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
     """Dev Config."""
 
     TESTING = False
     DEBUG = True
-    print(f'SQLAlchemy URL (DevConfig): {_Config.SQLALCHEMY_DATABASE_URI}')
 
 
 class TestConfig(_Config):  # pylint: disable=too-few-public-methods
@@ -365,8 +360,6 @@ class DockerConfig(_Config):  # pylint: disable=too-few-public-methods
     DB_HOST = os.getenv('DATABASE_DOCKER_HOST')
     DB_PORT = os.getenv('DATABASE_DOCKER_PORT', '5432')
     SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}'
-
-    print(f'SQLAlchemy URL (Docker): {SQLALCHEMY_DATABASE_URI}')
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
