@@ -290,6 +290,26 @@ def test_skipped_address_does_not_count_as_sent(monkeypatch):
     assert mail.notification_status is None
 
 
+@pytest.mark.parametrize('subscribed, participants', [
+    (False, {1: GOOD.dumps('first@example.com')}),
+    (True, {1: None, 2: GOOD.dumps('not-an-address')}),
+], ids=['no matching subscriber', 'every subscriber skipped'])
+def test_row_with_nothing_to_send_is_marked_sent(monkeypatch, subscribed, participants):
+    """An engagement with nobody to email has finished: the row ends SENT and the job succeeds."""
+    sent_to = _stub_subscribers_and_template(
+        monkeypatch, participants,
+        lambda _id: SimpleNamespace(id=_id, email_address=participants[_id]) if participants[_id] else None)
+    monkeypatch.setattr(mail_service.CheckSubscription, 'check_subscription', lambda *_: subscribed)
+    mail = _QueuedMail(entity_id=42)
+    _queue(monkeypatch, mail)
+
+    with _app().app_context():
+        PublishEmailService.do_mail()
+
+    assert not sent_to
+    assert mail.notification_status == NotificationStatus.SENT.value
+
+
 @pytest.mark.parametrize('participants', [
     {1: GOOD.dumps('first@example.com'), 2: None},
     {1: GOOD.dumps('first@example.com'), None: GOOD.dumps('second@example.com')},
