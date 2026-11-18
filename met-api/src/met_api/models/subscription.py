@@ -35,7 +35,7 @@ class Subscription(BaseModel):  # pylint: disable=too-few-public-methods
         return db_subscription
 
     @classmethod
-    def get_confirmed_for_engagement(cls, engagement_id, has_metadata, project_id):
+    def get_confirmed_for_engagement(cls, engagement_id, project_id):
         """Return (subscription_id, participant_id, email_address) rows of confirmed subscriptions for the engagement.
 
         Matches: TENANT in the same tenant, ENGAGEMENT by engagement, PROJECT by project id or else by engagement.
@@ -49,7 +49,7 @@ class Subscription(BaseModel):  # pylint: disable=too-few-public-methods
         # so it does not match every engagement that has no project either.
         project_matches = [and_(or_(cls.project_id.is_(None), cls.project_id == ''),
                                 cls.engagement_id == engagement_id)]
-        if has_metadata and project_id:
+        if project_id:
             project_matches.append(cls.project_id == project_id)
         matches = [
             and_(cls.type == SubscriptionType.TENANT, ~other_tenant),

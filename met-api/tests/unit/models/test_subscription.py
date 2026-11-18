@@ -30,14 +30,12 @@ def _subscription(participant, subscription_type, engagement_id=None, project_id
     return subscription
 
 
-@pytest.mark.parametrize('has_metadata, project_id, project_rows', [
-    (True, 'p1', ['project p1']),
-    (True, None, []),
-    (True, '', []),
-    (False, None, []),
-], ids=['metadata with project', 'metadata without project id', 'metadata with empty project id', 'no metadata'])
-def test_confirmed_subscriptions_for_engagement(session, has_metadata, project_id,
-                                                project_rows):  # pylint:disable=unused-argument
+@pytest.mark.parametrize('project_id, project_rows', [
+    ('p1', ['project p1']),
+    (None, []),
+    ('', []),
+], ids=['with project id', 'without project id', 'with empty project id'])
+def test_confirmed_subscriptions_for_engagement(session, project_id, project_rows):  # pylint:disable=unused-argument
     """Only confirmed subscriptions that match the engagement come back, joined to their participant."""
     participant = factory_participant_model()
     without_address = ParticipantModel(email_address=None)
@@ -65,7 +63,7 @@ def test_confirmed_subscriptions_for_engagement(session, has_metadata, project_i
     }
     created_ids = {subscription.id for subscription in rows.values()}
 
-    found = SubscriptionModel.get_confirmed_for_engagement(ENGAGEMENT_ID, has_metadata, project_id)
+    found = SubscriptionModel.get_confirmed_for_engagement(ENGAGEMENT_ID, project_id)
 
     expected = ['engagement', 'project without id', 'project with empty id', 'tenant', 'tenant without participant',
                 'tenant without address'] + project_rows
@@ -96,7 +94,7 @@ def test_tenant_subscriptions_match_only_their_own_tenant(session):  # pylint:di
     }
     names = {subscription.id: name for name, subscription in rows.items()}
 
-    found = SubscriptionModel.get_confirmed_for_engagement(target.id, False, None)
+    found = SubscriptionModel.get_confirmed_for_engagement(target.id, None)
 
     assert {names[row.subscription_id] for row in found if row.subscription_id in names} == {
         'same tenant', 'engagement without tenant', 'no engagement', 'missing engagement'}
