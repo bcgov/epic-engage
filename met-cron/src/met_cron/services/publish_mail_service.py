@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import partial
 
 from flask import current_app
 from met_api.constants.notification_status import NotificationStatus
@@ -32,9 +33,14 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
         # A rollback expires every loaded row, so the ids are read up front.
         rows = [(mail, mail.id, mail.entity_id) for mail in mails]
         for mail, mail_id, entity_id in rows:
-            if not PublishEmailService._save_status(mail, mail_id, NotificationStatus.PROCESSING):
+            claimed = PublishEmailService._commit_with_retry(
+                partial(EmailQueueModel.claim, mail_id), mail_id, NotificationStatus.PROCESSING)
+            if claimed is None:
                 # Still unprocessed in the database: sending now could mail everyone twice next run.
                 failed_engagement_ids.add(entity_id)
+                continue
+            if not claimed:
+                current_app.logger.info('Skipping email_queue %s: another run already claimed it', mail_id)
                 continue
 
             result = EmailService.send_engagement_emails(entity_id, template_id, subject, template, 'Publish')
@@ -54,15 +60,22 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def _save_status(mail, mail_id, status) -> bool:
         """Commit the row's status, retrying once after a rollback."""
+        def write():
+            mail.notification_status = status.value if status else None
+            mail.updated_date = datetime.utcnow()
+            mail.commit()
+            return True
+        return PublishEmailService._commit_with_retry(write, mail_id, status) is not None
+
+    @staticmethod
+    def _commit_with_retry(write, mail_id, status):
+        """Return what write returns, retrying once after a rollback; None when both attempts fail."""
         for attempt in (1, 2):
             try:
-                mail.notification_status = status.value if status else None
-                mail.updated_date = datetime.utcnow()
-                mail.commit()
-                return True
+                return write()
             except Exception as exc:  # noqa: B902 # pylint:disable=broad-except
                 safe_rollback()
                 current_app.logger.error('<Saving status %s for email_queue %s failed on attempt %s with %s: %s',
                                          status.name if status else 'unprocessed', mail_id, attempt,
                                          type(exc).__name__, scrub_sensitive(str(exc)))
-        return False
+        return None

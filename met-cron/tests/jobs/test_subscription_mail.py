@@ -1,5 +1,6 @@
 """Checks that one failing subscriber or engagement does not stop the other emails."""
 from datetime import datetime
+import logging
 from http.client import RemoteDisconnected
 from types import SimpleNamespace
 
@@ -179,8 +180,23 @@ def _failing_send(error):
 
 
 def _queue(monkeypatch, *mails):
+    by_id = {mail.id: mail for mail in mails}
+
+    def claim(mail_id):
+        mail = by_id[mail_id]
+        if mail.notification_status is not None:
+            return False
+        mail.notification_status = NotificationStatus.PROCESSING.value
+        try:
+            mail.commit()
+        except OperationalError:
+            mail.notification_status = None
+            raise
+        return True
+
     monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'get_unprocessed_mails_for_open_engagements',
                         lambda size: list(mails)[:size] if size else list(mails))
+    monkeypatch.setattr(publish_mail_service.EmailQueueModel, 'claim', claim)
 
 
 def _stub_engagement_sends(monkeypatch, failing_ids, session=None):
@@ -378,7 +394,7 @@ def test_failed_engagement_and_rollback_do_not_stop_the_next_row(monkeypatch):
 
 
 def test_failed_processing_commit_skips_the_row(monkeypatch):
-    """A row that cannot be marked PROCESSING is not sent, since the next run would send it again."""
+    """A row whose claim cannot be committed is not sent, since the next run would send it again."""
     attempted = _stub_engagement_sends(monkeypatch, failing_ids=set())
     stuck, working = _QueuedMail(entity_id=1, fail_commits=(1, 2)), _QueuedMail(entity_id=2)
     _queue(monkeypatch, stuck, working)
@@ -389,6 +405,22 @@ def test_failed_processing_commit_skips_the_row(monkeypatch):
 
     assert attempted == [2]
     assert working.notification_status == NotificationStatus.SENT.value
+
+
+def test_row_claimed_by_another_run_is_skipped(monkeypatch, caplog):
+    """A row another run claimed after this run loaded it is not sent again and does not fail the job."""
+    attempted = _stub_engagement_sends(monkeypatch, failing_ids=set())
+    taken, working = _QueuedMail(entity_id=1), _QueuedMail(entity_id=2)
+    taken.notification_status = NotificationStatus.PROCESSING.value
+    _queue(monkeypatch, taken, working)
+    caplog.set_level(logging.INFO)
+
+    with _app().app_context():
+        PublishEmailService.do_mail()
+
+    assert attempted == [2]
+    assert not taken.commits
+    assert 'email_queue 1: another run already claimed it' in caplog.text
 
 
 def test_failed_status_commit_is_retried_and_the_loop_continues(monkeypatch):
