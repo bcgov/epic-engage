@@ -41,3 +41,12 @@ class EmailQueue(BaseModel):  # pylint: disable=too-few-public-methods
         if max_size != 0:
             query = query.limit(max_size)
         return query.all()
+
+    @classmethod
+    def claim(cls, mail_id: int) -> bool:
+        """Mark an unprocessed row PROCESSING and commit; False when another run claimed it first."""
+        claimed = db.session.query(cls)\
+            .filter(cls.id == mail_id, cls.notification_status.is_(None))\
+            .update({cls.notification_status: NotificationStatus.PROCESSING})
+        db.session.commit()
+        return claimed == 1

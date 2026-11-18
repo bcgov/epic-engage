@@ -1,4 +1,6 @@
+"""Send the email for each newly published engagement in the email_queue."""
 from datetime import datetime
+from functools import partial
 
 from flask import current_app
 from met_api.constants.notification_status import NotificationStatus
@@ -9,16 +11,11 @@ from met_cron.utils.scrub import scrub_sensitive
 
 
 class PublishEmailService:  # pylint: disable=too-few-public-methods
-    """Mail for newly published engagements"""
+    """Mail for newly published engagements."""
 
     @staticmethod
     def do_mail():
-        """Send mail by listening to the email_queue.
-
-            1. Get N number of unprocessed records from the email_queue table
-            2. Process each mail and send it to subscribed users
-
-        """
+        """Send each unprocessed email_queue row to the engagement's subscribers."""
         email_batch_size: int = int(current_app.config.get('MAIL_BATCH_SIZE'))
         # Oldest first, so a row that keeps failing goes to the back instead of blocking the batch.
         mails = sorted(EmailQueueModel.get_unprocessed_mails_for_open_engagements(0),
@@ -32,9 +29,19 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
         # A rollback expires every loaded row, so the ids are read up front.
         rows = [(mail, mail.id, mail.entity_id) for mail in mails]
         for mail, mail_id, entity_id in rows:
-            if not PublishEmailService._save_status(mail, mail_id, NotificationStatus.PROCESSING):
+            claimed, attempt = PublishEmailService._commit_with_retry(
+                partial(EmailQueueModel.claim, mail_id), mail_id, NotificationStatus.PROCESSING)
+            if claimed is None:
                 # Still unprocessed in the database: sending now could mail everyone twice next run.
                 failed_engagement_ids.add(entity_id)
+                continue
+            if not claimed and attempt > 1:
+                # The failed first commit may have applied, which leaves the row PROCESSING with nothing sent.
+                current_app.logger.error('<Claim retry for email_queue %s found it already claimed', mail_id)
+                failed_engagement_ids.add(entity_id)
+                continue
+            if not claimed:
+                current_app.logger.info('Skipping email_queue %s: another run already claimed it', mail_id)
                 continue
 
             result = EmailService.send_engagement_emails(entity_id, template_id, subject, template, 'Publish')
@@ -54,15 +61,22 @@ class PublishEmailService:  # pylint: disable=too-few-public-methods
     @staticmethod
     def _save_status(mail, mail_id, status) -> bool:
         """Commit the row's status, retrying once after a rollback."""
+        def write():
+            mail.notification_status = status.value if status else None
+            mail.updated_date = datetime.utcnow()
+            mail.commit()
+            return True
+        return PublishEmailService._commit_with_retry(write, mail_id, status)[0] is not None
+
+    @staticmethod
+    def _commit_with_retry(write, mail_id, status):
+        """Return (what write returns, attempt number), retrying once after a rollback; None when both fail."""
         for attempt in (1, 2):
             try:
-                mail.notification_status = status.value if status else None
-                mail.updated_date = datetime.utcnow()
-                mail.commit()
-                return True
+                return write(), attempt
             except Exception as exc:  # noqa: B902 # pylint:disable=broad-except
                 safe_rollback()
                 current_app.logger.error('<Saving status %s for email_queue %s failed on attempt %s with %s: %s',
                                          status.name if status else 'unprocessed', mail_id, attempt,
                                          type(exc).__name__, scrub_sensitive(str(exc)))
-        return False
+        return None, attempt
