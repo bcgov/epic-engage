@@ -70,8 +70,8 @@ spec:
               value: '5432'
             - name: EMAIL_SECRET_KEY
               valueFrom:
-                configMapKeyRef:
-                  name: met-api
+                secretKeyRef:
+                  name: met-email-key
                   key: EMAIL_SECRET_KEY
             - name: IS_EAO_ENVIRONMENT
               valueFrom:

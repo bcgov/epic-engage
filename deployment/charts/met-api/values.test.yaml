@@ -7,11 +7,11 @@ image:
 corsOrigin: 'https://epic-engage-web-test.apps.gold.devops.gov.bc.ca/,https://epic-engage-web-test.apps.gold.devops.gov.bc.ca/,http://localhost:4300,https://test.engage.eao.gov.bc.ca,https://www.test.projects.eao.gov.bc.ca,,https://test.projects.eao.gov.bc.ca'
 resources:
   cpu:
-    limit: 100m
-    request: 75m
+    limit: 400m
+    request: 200m
   memory:
-    limit: 512Mi
-    request: 100Mi
+    limit: 700Mi
+    request: 200Mi
 
 replicaCount: 1
 
@@ -48,5 +48,5 @@ configMapData:
   EAO_SUBMISSION_REPORT: 07f0f037-5ccb-44c5-89c6-9fe86078323e
   REJECTED_EMAIL_TEMPLATE_ID: 8410c055-587b-4788-bd2f-b563562bcb2d
   # Comment period push: eagle, both or demi. DEMI_API_KEY comes from the demi-api-details secret.
-  EPIC_SYNC_TARGET: 'eagle'
-  DEMI_API_URL: ''
+  EPIC_SYNC_TARGET: 'demi'
+  DEMI_API_URL: 'https://demi-apim-test.azure-api.net/machine'

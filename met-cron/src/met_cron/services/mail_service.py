@@ -219,7 +219,7 @@ class EmailService:  # pylint: disable=too-few-public-methods
         engagement: EngagementModel = EngagementModel.find_by_id(engagement_id)
         metadata: EngagementMetadataModel = EngagementMetadataModel.find_by_id(engagement_id)
         rows = SubscriptionModel.get_confirmed_for_engagement(
-            engagement_id, metadata is not None, metadata.project_id if metadata else None)
+            engagement_id, metadata.project_id if metadata else None)
         mail = EngagementMail(engagement, metadata, template, subject, template_id,
                               before_first_send=before_first_send)
         email_addresses = set()

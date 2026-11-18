@@ -584,8 +584,8 @@ def test_closing_soon_continues_past_a_failing_engagement_and_rollback(monkeypat
 
 
 @pytest.mark.parametrize('metadata, query', [
-    (SimpleNamespace(project_id='p1', project_metadata={}), (42, True, 'p1')),
-    (None, (42, False, None)),
+    (SimpleNamespace(project_id='p1', project_metadata={}), (42, 'p1')),
+    (None, (42, None)),
 ], ids=['with metadata', 'without metadata'])
 def test_engagement_lookups_and_token_run_once_for_many_subscribers(monkeypatch, metadata, query):
     """One query, one metadata lookup, one set of engagement args and one token serve every subscriber."""
