@@ -1,8 +1,10 @@
 """Service for engagement management."""
 from datetime import datetime
+from functools import partial
 from http import HTTPStatus
 
 from flask import current_app
+from requests.exceptions import HTTPError
 
 from met_api.config import get_gc_notify_config
 from met_api.constants.engagement_status import Status
@@ -311,11 +313,24 @@ class EngagementService:
         try:
             if emails:
                 token = notification.get_send_email_token()
+                token_worked = False
                 for email_address in emails:
-                    notification.send_email(subject=subject, email=email_address, html_body=body,
-                                            args=args, template_id=template_id, token=token)
+                    send = partial(notification.send_email, subject=subject, email=email_address, html_body=body,
+                                   args=args, template_id=template_id)
+                    try:
+                        send(token=token)
+                    except HTTPError as exc:
+                        if not (token_worked and notification.is_unauthorized(exc)):
+                            raise
+                        current_app.logger.info('<Closeout token for engagement %s fetched again after a 401',
+                                                engagement.id)
+                        token = notification.get_send_email_token()
+                        token_worked = False
+                        send(token=token)
+                    token_worked = True
         except Exception as exc:  # noqa: B902
-            current_app.logger.error('<Notification for engagement closeout failed', exc)
+            current_app.logger.error('<Notification for engagement %s closeout failed with %s',
+                                     engagement.id, type(exc).__name__)
             raise BusinessException(
                 error='Error sending engagement closeout.',
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR) from exc

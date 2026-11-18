@@ -2,6 +2,7 @@
 
 import json
 import re
+from http import HTTPStatus
 
 from flask import current_app
 import requests
@@ -21,6 +22,12 @@ def get_tenant_site_url(tenant_id, path=''):
         return site_url + f'/{tenant.short_name}' + path
     else:
         return site_url + path
+
+
+def is_unauthorized(exc):
+    """Return True when the mail service refused the request with 401, as it does for an expired token."""
+    return isinstance(exc, requests.exceptions.HTTPError) and exc.response is not None \
+        and exc.response.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def get_send_email_token():

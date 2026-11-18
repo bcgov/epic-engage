@@ -95,11 +95,6 @@ def _log_buckets(engagement_id, bucket, outcome):
                                    entry['ids'][:MAX_LOGGED_SUBSCRIPTION_IDS], detail)
 
 
-def _is_unauthorized(exc):
-    return isinstance(exc, request_errors.HTTPError) and exc.response is not None \
-        and exc.response.status_code == HTTPStatus.UNAUTHORIZED
-
-
 class EngagementMail:
     """Sends one engagement's emails with one token and one set of engagement args, both built at the first send."""
 
@@ -155,7 +150,7 @@ class EngagementMail:
         try:
             self._send(email_address, body, args)
         except request_errors.HTTPError as exc:
-            if not _is_unauthorized(exc):
+            if not notification.is_unauthorized(exc):
                 raise
             if not self.token_worked:
                 current_app.logger.warning('<Engagement %s: send %s was refused with a new token, not retried',

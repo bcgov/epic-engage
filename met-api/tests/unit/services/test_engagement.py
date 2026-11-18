@@ -20,7 +20,9 @@ from unittest.mock import MagicMock, patch
 
 from faker import Faker
 import pytest
+import requests
 
+from met_api.exceptions.business_exception import BusinessException
 from met_api.models.submission import Submission as SubmissionModel
 from met_api.services import authorization
 from met_api.services.engagement_service import EngagementService
@@ -102,15 +104,17 @@ def test_patch_engagement(session, monkeypatch):  # pylint:disable=unused-argume
 TOKEN_PATH = '/protocol/openid-connect/token'
 
 
-def _post(url, **_kwargs):
-    response = MagicMock()
-    response.json.return_value = {'access_token': 'closeout-token'}
-    return response
+def _unauthorized():
+    response = requests.Response()
+    response.status_code = 401
+    return requests.HTTPError('401 Unauthorized', response=response)
 
 
-@pytest.mark.parametrize('recipients, token_requests', [(3, 1), (0, 0)], ids=['three recipients', 'no recipients'])
-def test_closeout_emails_share_one_token(app, monkeypatch, recipients, token_requests):
-    """The closeout mail asks for one token for all recipients, and none when there is nobody to email."""
+def _closeout(app, monkeypatch, recipients, refused=lambda token, use: False):
+    """Run the closeout mail through a fake Keycloak and mail service; refused(token, use) answers 401.
+
+    Returns the number of token requests and of emails the mail service accepted.
+    """
     for key, value in {
         'EAGLE_NOTIFY_EMAIL_ENDPOINT': 'https://eagle-notify.example.com/api/messages',
         'EPIC_JWT_OIDC_ISSUER': 'https://epic-kc.example.com/auth/realms/eao-epic',
@@ -123,10 +127,51 @@ def test_closeout_emails_share_one_token(app, monkeypatch, recipients, token_req
                     for index in range(recipients)]
     monkeypatch.setattr(EngagementService, '_render_email_template', lambda _engagement: ('subject', 'body', {}))
     monkeypatch.setattr(SubmissionModel, 'get_engaged_participants', lambda _engagement_id: participants)
+    counts = {'tokens': 0, 'accepted': 0}
+    uses = {}
 
-    with app.app_context(), patch('requests.post', side_effect=_post) as mock_post:
+    def post(url, **kwargs):
+        response = MagicMock()
+        if url.endswith(TOKEN_PATH):
+            counts['tokens'] += 1
+            response.json.return_value = {'access_token': f'closeout-token-{counts["tokens"]}'}
+            return response
+        token = kwargs['headers']['Authorization'].removeprefix('Bearer ')
+        uses[token] = uses.get(token, 0) + 1
+        if refused(token, uses[token]):
+            response.raise_for_status.side_effect = _unauthorized()
+        else:
+            counts['accepted'] += 1
+        return response
+
+    with app.app_context(), patch('requests.post', side_effect=post):
         EngagementService._send_closeout_emails(SimpleNamespace(id=42))  # pylint: disable=protected-access
+    return counts['tokens'], counts['accepted']
 
-    urls = [call.args[0] for call in mock_post.call_args_list]
-    assert len([url for url in urls if url.endswith(TOKEN_PATH)]) == token_requests
-    assert len([url for url in urls if not url.endswith(TOKEN_PATH)]) == recipients
+
+@pytest.mark.parametrize('recipients, token_requests', [(3, 1), (0, 0)], ids=['three recipients', 'no recipients'])
+def test_closeout_emails_share_one_token(app, monkeypatch, recipients, token_requests):
+    """The closeout mail asks for one token for all recipients, and none when there is nobody to email."""
+    assert _closeout(app, monkeypatch, recipients) == (token_requests, recipients)
+
+
+def test_closeout_token_refused_partway_is_fetched_again(app, monkeypatch):
+    """A 401 on a token that already worked fetches a new token, so every recipient still gets the email."""
+    def refused(token, use):
+        return token == 'closeout-token-1' and use >= 3
+
+    assert _closeout(app, monkeypatch, 5, refused) == (2, 5)
+
+
+def test_closeout_fresh_token_refused_is_not_retried(app, monkeypatch):
+    """A 401 on a token that never worked is not retried: the closeout fails after one token request."""
+    tokens = []
+
+    def refused(token, _use):
+        tokens.append(token)
+        return True
+
+    with pytest.raises(BusinessException):
+        _closeout(app, monkeypatch, 3, refused)
+
+    assert tokens == ['closeout-token-1']
