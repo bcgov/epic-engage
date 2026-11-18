@@ -116,9 +116,9 @@ spec:
             value: "True"
           - name: EMAIL_SECRET_KEY
             valueFrom:
-              configMapKeyRef:
+              secretKeyRef:
                 key: EMAIL_SECRET_KEY
-                name: met-api
+                name: met-email-key
           - name: DEMI_API_KEY
             valueFrom:
               secretKeyRef:

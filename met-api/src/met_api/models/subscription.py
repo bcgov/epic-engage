@@ -6,11 +6,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import ForeignKey, and_, or_
+from sqlalchemy import ForeignKey, and_, exists, or_
+from sqlalchemy.orm import aliased
 
 from met_api.constants.subscription_type import SubscriptionType
 from .base_model import BaseModel
 from .db import db
+from .engagement import Engagement
 from .participant import Participant
 
 
@@ -36,11 +38,15 @@ class Subscription(BaseModel):  # pylint: disable=too-few-public-methods
     def get_confirmed_for_engagement(cls, engagement_id, has_metadata, project_id):
         """Return (subscription_id, participant_id, email_address) rows of confirmed subscriptions for the engagement.
 
-        Tenant subscriptions match every engagement, engagement subscriptions their own engagement, and project
-        subscriptions the engagement's project when it has a metadata row.
+        Matches: TENANT in the same tenant, ENGAGEMENT by engagement, PROJECT by project when metadata exists.
         """
+        source = aliased(Engagement)
+        target = aliased(Engagement)
+        # NOT EXISTS so a subscription with no engagement, or a NULL tenant on either side, keeps matching.
+        other_tenant = exists().where(source.id == cls.engagement_id, target.id == engagement_id,
+                                      source.tenant_id != target.tenant_id)
         matches = [
-            cls.type == SubscriptionType.TENANT,
+            and_(cls.type == SubscriptionType.TENANT, ~other_tenant),
             and_(cls.type == SubscriptionType.ENGAGEMENT, cls.engagement_id == engagement_id),
         ]
         if has_metadata:
