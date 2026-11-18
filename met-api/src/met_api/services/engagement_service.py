@@ -309,8 +309,11 @@ class EngagementService:
         # Removes duplicated records
         emails = list(set(emails))
         try:
-            [notification.send_email(subject=subject, email=email_address, html_body=body,
-                                     args=args, template_id=template_id) for email_address in emails]
+            if emails:
+                token = notification.get_send_email_token()
+                for email_address in emails:
+                    notification.send_email(subject=subject, email=email_address, html_body=body,
+                                            args=args, template_id=template_id, token=token)
         except Exception as exc:  # noqa: B902
             current_app.logger.error('<Notification for engagement closeout failed', exc)
             raise BusinessException(

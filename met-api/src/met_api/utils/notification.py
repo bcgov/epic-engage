@@ -23,19 +23,22 @@ def get_tenant_site_url(tenant_id, path=''):
         return site_url + path
 
 
-def send_email(subject, email, html_body, args, template_id, reference=None):
-    """Send the email asynchronously, using the given details."""
+def get_send_email_token():
+    """Get a token for the configured mail service, so a caller can reuse it across sends."""
+    if current_app.config.get('EAGLE_NOTIFY_EMAIL_ENDPOINT'):
+        return get_epic_service_account_token()
+    return RestService.get_service_account_token()
+
+
+def send_email(subject, email, html_body, args, template_id, reference=None, token=None):
+    """Send the email asynchronously, using the given details; fetches a token when none is given."""
     if not email or not is_valid_email(email):
         return
 
     sender = current_app.config.get('MAIL_FROM_ID')
-    eagle_notify_endpoint = current_app.config.get('EAGLE_NOTIFY_EMAIL_ENDPOINT')
-    if eagle_notify_endpoint:
-        service_account_token = get_epic_service_account_token()
-        send_email_endpoint = eagle_notify_endpoint
-    else:
-        service_account_token = RestService.get_service_account_token()
-        send_email_endpoint = current_app.config.get('NOTIFICATIONS_EMAIL_ENDPOINT')
+    service_account_token = token or get_send_email_token()
+    send_email_endpoint = current_app.config.get('EAGLE_NOTIFY_EMAIL_ENDPOINT') or \
+        current_app.config.get('NOTIFICATIONS_EMAIL_ENDPOINT')
     payload = {
         'bodyType': 'html',
         'body': html_body,

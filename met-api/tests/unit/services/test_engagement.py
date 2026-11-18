@@ -15,10 +15,13 @@
 
 Test suite to ensure that the Engagement service routines are working as expected.
 """
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 from faker import Faker
+import pytest
 
+from met_api.models.submission import Submission as SubmissionModel
 from met_api.services import authorization
 from met_api.services.engagement_service import EngagementService
 from tests.utilities.factory_scenarios import TestEngagementInfo, TestJwtClaims
@@ -94,3 +97,36 @@ def test_patch_engagement(session, monkeypatch):  # pylint:disable=unused-argume
         assert updated_engagement_record.description == engagement_edits.get('description')
         assert updated_engagement_record.content == engagement_edits.get('content')
         assert updated_engagement_record.created_date.strftime(date_format) == engagement_edits.get('created_date')
+
+
+TOKEN_PATH = '/protocol/openid-connect/token'
+
+
+def _post(url, **_kwargs):
+    response = MagicMock()
+    response.json.return_value = {'access_token': 'closeout-token'}
+    return response
+
+
+@pytest.mark.parametrize('recipients, token_requests', [(3, 1), (0, 0)], ids=['three recipients', 'no recipients'])
+def test_closeout_emails_share_one_token(app, monkeypatch, recipients, token_requests):
+    """The closeout mail asks for one token for all recipients, and none when there is nobody to email."""
+    for key, value in {
+        'EAGLE_NOTIFY_EMAIL_ENDPOINT': 'https://eagle-notify.example.com/api/messages',
+        'EPIC_JWT_OIDC_ISSUER': 'https://epic-kc.example.com/auth/realms/eao-epic',
+        'EPIC_KEYCLOAK_SERVICE_ACCOUNT_ID': 'epic-user',
+        'EPIC_KEYCLOAK_SERVICE_ACCOUNT_SECRET': 'epic-pw',
+        'EPIC_KC_CLIENT_ID': 'epic-client',
+    }.items():
+        monkeypatch.setitem(app.config, key, value)
+    participants = [SimpleNamespace(email_address=index, decode_email=lambda index: f'person{index}@example.com')
+                    for index in range(recipients)]
+    monkeypatch.setattr(EngagementService, '_render_email_template', lambda _engagement: ('subject', 'body', {}))
+    monkeypatch.setattr(SubmissionModel, 'get_engaged_participants', lambda _engagement_id: participants)
+
+    with app.app_context(), patch('requests.post', side_effect=_post) as mock_post:
+        EngagementService._send_closeout_emails(SimpleNamespace(id=42))  # pylint: disable=protected-access
+
+    urls = [call.args[0] for call in mock_post.call_args_list]
+    assert len([url for url in urls if url.endswith(TOKEN_PATH)]) == token_requests
+    assert len([url for url in urls if not url.endswith(TOKEN_PATH)]) == recipients

@@ -112,3 +112,16 @@ def test_send_email_uses_notify_api_when_endpoint_empty(mail_config, monkeypatch
     assert kwargs['auth'] == ('met-admin', 'met-admin-pw')
     assert kwargs['data'] == 'grant_type=client_credentials'
     _assert_mail_call(mail_call, NOTIFY_API_URL)
+
+
+def test_send_email_with_a_token_skips_the_token_request(mail_config, monkeypatch):
+    """A caller that already holds a token sends with it, so a batch costs one token request, not one per email."""
+    monkeypatch.setitem(mail_config.config, 'EAGLE_NOTIFY_EMAIL_ENDPOINT', EAGLE_NOTIFY_URL)
+
+    with mail_config.app_context(), patch('requests.post') as mock_post:
+        notification.send_email('Subject', 'person@example.com', '<p>hi</p>', {'a': 1}, 'tpl-1', token='given')
+
+    assert len(mock_post.call_args_list) == 1
+    args, kwargs = mock_post.call_args
+    assert args[0] == EAGLE_NOTIFY_URL
+    assert kwargs['headers']['Authorization'] == 'Bearer given'
