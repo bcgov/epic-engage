@@ -6,11 +6,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, and_, or_
 
 from met_api.constants.subscription_type import SubscriptionType
 from .base_model import BaseModel
 from .db import db
+from .participant import Participant
 
 
 class Subscription(BaseModel):  # pylint: disable=too-few-public-methods
@@ -30,6 +31,28 @@ class Subscription(BaseModel):  # pylint: disable=too-few-public-methods
         """Get a subscription."""
         db_subscription = db.session.query(Subscription)
         return db_subscription
+
+    @classmethod
+    def get_confirmed_for_engagement(cls, engagement_id, has_metadata, project_id):
+        """Return (subscription_id, participant_id, email_address) rows of confirmed subscriptions for the engagement.
+
+        Tenant subscriptions match every engagement, engagement subscriptions their own engagement, and project
+        subscriptions the engagement's project when it has a metadata row.
+        """
+        matches = [
+            cls.type == SubscriptionType.TENANT,
+            and_(cls.type == SubscriptionType.ENGAGEMENT, cls.engagement_id == engagement_id),
+        ]
+        if has_metadata:
+            # NULL matches NULL, as the earlier Python comparison of the two project ids did.
+            matches.append(and_(cls.type == SubscriptionType.PROJECT, cls.project_id.is_not_distinct_from(project_id)))
+        return db.session.query(cls.id.label('subscription_id'),
+                                Participant.id.label('participant_id'),
+                                Participant.email_address.label('email_address'))\
+            .outerjoin(Participant, Participant.id == cls.participant_id)\
+            .filter(cls.is_subscribed.is_(True), or_(*matches))\
+            .order_by(cls.id)\
+            .all()
 
     @classmethod
     def get_by_engagement_id(cls, engagement_id) -> Subscription:
