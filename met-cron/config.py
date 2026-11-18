@@ -11,13 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""All of the configuration for the service is captured here.
-
-All items are loaded,
-or have Constants defined here that are loaded into the Flask configuration.
-All modules and lookups get their configuration from the Flask config,
-rather than reading environment variables directly or by accessing this configuration directly.
-"""
+"""Configuration for the jobs; modules read it from the Flask config, not from the environment."""
 
 import os
 import sys
@@ -29,12 +23,7 @@ load_dotenv(find_dotenv())
 
 
 def _positive_int_from_env(name: str, default: int) -> int:
-    """Read a positive int from the environment, falling back to default.
-
-    Falls back when the variable is unset, empty, non-numeric or non-positive, so
-    a blank or mistyped value degrades to a safe timeout instead of raising at
-    import time and preventing the jobs from starting.
-    """
+    """Read a positive int from the environment; an unset or bad value gives default instead of failing at import."""
     try:
         value = int(os.getenv(name, ''))
     except (TypeError, ValueError):
@@ -97,16 +86,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     MET_DB_PORT = os.getenv('MET_DATABASE_PORT', '5432')
     MET_DB_NAME = os.getenv('MET_DB_NAME', '')
 
-    """
-    Though the main data base associated with this microservice is MET Analytics database , its configured as a bind.
-    MET DB is configured as the main database since the models are used from the met-api python module and we cant change it to add bind.
-    So all the models in this project will have a bind.
-
-    To handle migrations ,we need to connect to MET Analytics database. For that a new Migration config is added.
-    """
-
-    # MET MASTER DB.
-    SQLALCHEMY_DATABASE_URI = f'postgresql://{MET_DB_USER}:{MET_DB_PASSWORD}@{MET_DB_HOST}:{int(MET_DB_PORT)}/{MET_DB_NAME}'
+    # MET DB is the main database because the met-api models cannot take a bind; the analytics
+    # database is a bind here, and MigrationConfig connects to it directly for migrations.
+    SQLALCHEMY_DATABASE_URI = (f'postgresql://{MET_DB_USER}:{MET_DB_PASSWORD}@{MET_DB_HOST}:{int(MET_DB_PORT)}/'
+                               f'{MET_DB_NAME}')
 
     # MET ANALYTICS DB.
     SQLALCHEMY_BINDS = {
@@ -130,8 +113,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     S3_HOST = os.getenv('S3_HOST')
     S3_REGION = os.getenv('S3_REGION')
     S3_SERVICE = os.getenv('S3_SERVICE')
-
-    TIME_DELTA_IN_MINUTES = os.getenv('TIME_DELTA_IN_MINUTES', 30)
 
     # Service account details
     KEYCLOAK_SERVICE_ACCOUNT_ID = os.getenv('MET_ADMIN_CLIENT_ID')
@@ -192,33 +173,28 @@ class _Config():  # pylint: disable=too-few-public-methods
     # Set to send mail through eagle-notify with the EPIC account; empty keeps notify-api.
     EAGLE_NOTIFY_EMAIL_ENDPOINT = os.getenv('EAGLE_NOTIFY_EMAIL_ENDPOINT', '')
 
-    # Timeout, in seconds, on outbound HTTP calls made by the met-api code these
-    # jobs reuse (notify-api). Jobs have no worker timeout to bound them, so
-    # without this the mailer jobs would fall back to met-api's 60s default and a
-    # stalled notify-api would stretch a run by that much per recipient. Sized
-    # above notify-api's 30s worst case so a real upstream error surfaces here.
+    # Seconds per notify-api call: jobs have no worker timeout, and met-api's 60s default would stall
+    # a run per recipient. Above notify-api's 30s worst case so its own errors still surface.
     CONNECT_TIMEOUT = _positive_int_from_env('CONNECT_TIMEOUT', 35)
 
     # Environment from which email is sent
     EMAIL_ENVIRONMENT = os.getenv('EMAIL_ENVIRONMENT', '')
 
-    # config for comment_redact_service
-    # Days after an engagement's end date before rejected comments are erased.
-    # 14 days is the agreed retention window; see docs/comment-redaction-waiting-period.md
-    # before changing it in any environment. int() because timedelta rejects strings,
-    # and anything coming from the environment or a ConfigMap arrives as one.
+    # Agreed retention window in days before rejected comments are erased; read
+    # docs/comment-redaction-waiting-period.md before changing it. int() as timedelta rejects strings.
     N_DAYS = int(os.getenv('N_DAYS') or 14)
     REDACTION_TEXT = os.getenv('REDACTION_TEXT', '[Comment Redacted]')
 
     # config for email queue
-    MAIL_BATCH_SIZE = os.getenv('MAIL_BATCH_SIZE', 10)
+    MAIL_BATCH_SIZE = os.getenv('MAIL_BATCH_SIZE', '10')
     MAIL_MAX_ATTEMPTS = _positive_int_from_env('MAIL_MAX_ATTEMPTS', 5)
     MAIL_RETRY_BACKOFF_MINUTES = _positive_int_from_env('MAIL_RETRY_BACKOFF_MINUTES', 30)
 
     # config for offset days to send reminder emails
-    OFFSET_DAYS = os.getenv('OFFSET_DAYS', 2)
+    OFFSET_DAYS = os.getenv('OFFSET_DAYS', '2')
 
     JOB_LOG_ERROR_MAX_CHARS = int(os.getenv('JOB_LOG_ERROR_MAX_CHARS', '4000'))
+
 
 class MigrationConfig(_Config):  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults for all the other configurations."""
