@@ -16,10 +16,9 @@ OTHER_ENGAGEMENT_ID = 9102
 MISSING_ENGAGEMENT_ID = 9199
 
 
-def _engagement_in(tenant):
+def _engagement_in(tenant_id):
     engagement = factory_engagement_model()
-    engagement.tenant_id = tenant.id
-    engagement.save()
+    engagement.tenant_id = tenant_id
     return engagement
 
 
@@ -72,13 +71,15 @@ def test_tenant_subscriptions_match_only_their_own_tenant(session):  # pylint:di
     """A tenant subscription matches engagements of its own tenant, or every engagement when its tenant is unknown."""
     tenant = factory_tenant_model()
     other_tenant = factory_tenant_model(TestTenantInfo.tenant2)
-    target = _engagement_in(tenant)
+    target = _engagement_in(tenant.id)
     participant = factory_participant_model()
     rows = {
         'same tenant': _subscription(participant, SubscriptionType.TENANT,
-                                     engagement_id=_engagement_in(tenant).id),
+                                     engagement_id=_engagement_in(tenant.id).id),
         'other tenant': _subscription(participant, SubscriptionType.TENANT,
-                                      engagement_id=_engagement_in(other_tenant).id),
+                                      engagement_id=_engagement_in(other_tenant.id).id),
+        'engagement without tenant': _subscription(participant, SubscriptionType.TENANT,
+                                                   engagement_id=_engagement_in(None).id),
         'no engagement': _subscription(participant, SubscriptionType.TENANT),
         'missing engagement': _subscription(participant, SubscriptionType.TENANT,
                                             engagement_id=MISSING_ENGAGEMENT_ID),
@@ -88,4 +89,4 @@ def test_tenant_subscriptions_match_only_their_own_tenant(session):  # pylint:di
     found = SubscriptionModel.get_confirmed_for_engagement(target.id, False, None)
 
     assert {names[row.subscription_id] for row in found if row.subscription_id in names} == {
-        'same tenant', 'no engagement', 'missing engagement'}
+        'same tenant', 'engagement without tenant', 'no engagement', 'missing engagement'}
