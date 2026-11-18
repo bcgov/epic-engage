@@ -7,11 +7,20 @@ import pytest
 from met_api.constants.subscription_type import SubscriptionType
 from met_api.models.participant import Participant as ParticipantModel
 from met_api.models.subscription import Subscription as SubscriptionModel
-from tests.utilities.factory_utils import factory_participant_model
+from tests.utilities.factory_scenarios import TestTenantInfo
+from tests.utilities.factory_utils import factory_engagement_model, factory_participant_model, factory_tenant_model
 
 
 ENGAGEMENT_ID = 9101
 OTHER_ENGAGEMENT_ID = 9102
+MISSING_ENGAGEMENT_ID = 9199
+
+
+def _engagement_in(tenant):
+    engagement = factory_engagement_model()
+    engagement.tenant_id = tenant.id
+    engagement.save()
+    return engagement
 
 
 def _subscription(participant, subscription_type, engagement_id=None, project_id=None, is_subscribed=True):
@@ -57,3 +66,26 @@ def test_confirmed_subscriptions_for_engagement(session, has_metadata, project_i
         if rows[name].participant_id else (rows[name].id, None, None)
         for name in expected
     }
+
+
+def test_tenant_subscriptions_match_only_their_own_tenant(session):  # pylint:disable=unused-argument
+    """A tenant subscription matches engagements of its own tenant, or every engagement when its tenant is unknown."""
+    tenant = factory_tenant_model()
+    other_tenant = factory_tenant_model(TestTenantInfo.tenant2)
+    target = _engagement_in(tenant)
+    participant = factory_participant_model()
+    rows = {
+        'same tenant': _subscription(participant, SubscriptionType.TENANT,
+                                     engagement_id=_engagement_in(tenant).id),
+        'other tenant': _subscription(participant, SubscriptionType.TENANT,
+                                      engagement_id=_engagement_in(other_tenant).id),
+        'no engagement': _subscription(participant, SubscriptionType.TENANT),
+        'missing engagement': _subscription(participant, SubscriptionType.TENANT,
+                                            engagement_id=MISSING_ENGAGEMENT_ID),
+    }
+    names = {subscription.id: name for name, subscription in rows.items()}
+
+    found = SubscriptionModel.get_confirmed_for_engagement(target.id, False, None)
+
+    assert {names[row.subscription_id] for row in found if row.subscription_id in names} == {
+        'same tenant', 'no engagement', 'missing engagement'}
