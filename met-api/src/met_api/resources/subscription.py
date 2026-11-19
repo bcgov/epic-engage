@@ -130,34 +130,21 @@ class UnsubscribeByToken(Resource):
     @cross_origin(origins=allowedorigins())
     @limiter.limit(public_write_limit)
     def patch(token):
-        """Update subscription status using a secure token.
+        """Set is_subscribed on every subscription that mails the participant about the token's engagement.
 
-        This endpoint validates the unsubscribe token and updates the subscription
-        for the specific engagement associated with that token. The token remains
-        active to allow toggling between subscribed/unsubscribed states.
+        The token stays active so the same link can re-subscribe.
         """
         try:
-            # Validate token and get participant/engagement context
             email_verification = EmailVerificationService.get_unsubscribe_verification(token)
-            participant_id = email_verification.get('participant_id')
-            engagement_id = email_verification.get('engagement_id')
-
-            # Get desired subscription state from request body
-            request_json = request.get_json() or {}
-            is_subscribed = request_json.get('is_subscribed', False)
-
-            # Update subscription for this specific engagement
-            subscription_data = {
-                'participant_id': participant_id,
-                'engagement_id': engagement_id,
-                'is_subscribed': is_subscribed,
-            }
-            result = SubscriptionService.update_subscription_for_participant_eng(subscription_data)
-
-            return {
-                'is_subscribed': result.get('is_subscribed', False),
-                'engagement_id': engagement_id,
-            }, HTTPStatus.OK
-
         except ValueError as err:
             return {'message': str(err)}, HTTPStatus.BAD_REQUEST
+        participant_id = email_verification.get('participant_id')
+        engagement_id = email_verification.get('engagement_id')
+        is_subscribed = (request.get_json() or {}).get('is_subscribed', False)
+        try:
+            result = SubscriptionService.update_subscriptions_mailed_about(participant_id, engagement_id, is_subscribed)
+        except ValueError as err:
+            current_app.logger.warning('Unsubscribe token for participant %s and engagement %s matched no subscription',
+                                       participant_id, engagement_id)
+            return {'message': str(err)}, HTTPStatus.BAD_REQUEST
+        return {**result, 'engagement_id': engagement_id}, HTTPStatus.OK

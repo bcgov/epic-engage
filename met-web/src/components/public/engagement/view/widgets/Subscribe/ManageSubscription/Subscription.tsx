@@ -11,6 +11,13 @@ import { SubscriptionType } from './subscribe';
 import { verifyEmailVerification } from 'services/emailVerificationService';
 import { confirmSubscription, unSubscribe, unSubscribeByToken } from 'services/subscriptionService';
 import { Palette } from 'styles/Theme';
+import { SubscriptionType as SubscriptionScope } from 'constants/subscriptionType';
+
+const UNSUBSCRIBED_SCOPE_TEXT: Record<SubscriptionScope, string> = {
+    [SubscriptionScope.ENGAGEMENT]: 'You will no longer receive communications for this engagement.',
+    [SubscriptionScope.PROJECT]: 'You will no longer receive communications for this project.',
+    [SubscriptionScope.TENANT]: 'You will no longer receive updates about new engagements.',
+};
 
 export type SubscriptionParams = {
     engagementId?: string;
@@ -21,7 +28,7 @@ export type SubscriptionParams = {
 
 export const Subscription = () => {
     const { engagementId, subscriptionStatus, scriptionKey, token } = useParams<SubscriptionParams>();
-    const [subscriptionText, setSubscriptionText] = useState(['']);
+    const [subscriptionText, setSubscriptionText] = useState<string[]>([]);
 
     const dispatch = useAppDispatch();
     const { t: translate } = useAppTranslation();
@@ -34,12 +41,12 @@ export const Subscription = () => {
         try {
             // Handle new token-based unsubscribe route
             if (token) {
-                await unSubscribeByToken(token, false);
+                const { subscription_type } = await unSubscribeByToken(token, false);
                 setSubscriptionText([
                     'We are sorry to see you go.',
                     '',
                     'We wanted to confirm that you have been successfully unsubscribed.',
-                    'You will no longer receive communications for this engagement.',
+                    UNSUBSCRIBED_SCOPE_TEXT[subscription_type] ?? UNSUBSCRIBED_SCOPE_TEXT[SubscriptionScope.ENGAGEMENT],
                     '',
                     'Thank you.',
                 ]);
@@ -77,9 +84,8 @@ export const Subscription = () => {
                     'Thank you.',
                 ]);
             }
-        } catch (error) {
+        } catch {
             dispatch(openNotification({ severity: 'error', text: 'Error processing subscription request' }));
-            return Promise.reject(error);
         }
     };
 
@@ -141,13 +147,15 @@ export const Subscription = () => {
                 m={{ lg: '3em 5em 0 3em', md: '3em', sm: '1em' }}
                 rowSpacing={2}
             >
-                <CheckCircleRoundedIcon style={{ color: Palette.success.main, fontSize: 50 }} />
+                {subscriptionText.length > 0 && (
+                    <CheckCircleRoundedIcon style={{ color: Palette.success.main, fontSize: 50 }} />
+                )}
                 <MetLabel m={{ lg: '.5em 0 0 .5em', md: '3em', sm: '1em' }}>
-                    {subscriptionText.map((text) => (
-                        <>
+                    {subscriptionText.map((text, index) => (
+                        <React.Fragment key={index}>
                             {text}
                             <br />
-                        </>
+                        </React.Fragment>
                     ))}
                 </MetLabel>
             </Grid>

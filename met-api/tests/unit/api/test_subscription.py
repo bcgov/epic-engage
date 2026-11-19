@@ -18,12 +18,19 @@ Test-Suite to ensure that the subscription endpoint is working as expected.
 """
 import json
 
+import pytest
+
+from met_api.constants.engagement_status import Status
+from met_api.constants.subscription_type import SubscriptionType
+from met_api.models.engagement_metadata import EngagementMetadataModel
+from met_api.models.subscription import Subscription as SubscriptionModel
 from met_api.services.email_verification_service import EmailVerificationService
 from met_api.utils.enums import ContentType
-from tests.utilities.factory_scenarios import TestJwtClaims
+from tests.utilities.factory_scenarios import TestJwtClaims, TestParticipantInfo
 from tests.utilities.factory_utils import (
-    factory_auth_header, factory_participant_model, factory_subscription_model, factory_subscription_model_with_ids,
-    factory_survey_and_eng_model, set_global_tenant, setup_participant_and_engagement)
+    factory_auth_header, factory_engagement_model, factory_participant_model, factory_subscription_model,
+    factory_subscription_model_with_ids, factory_survey_and_eng_model, set_global_tenant,
+    setup_participant_and_engagement)
 
 
 def test_create_subscription(client, jwt, session):  # pylint:disable=unused-argument
@@ -104,6 +111,68 @@ def test_resubscribe_by_token(client, jwt, session):
 
     assert rv.status_code == 200
     assert rv.json['is_subscribed'] is True
+
+
+@pytest.mark.parametrize('subscription_type, project_id', [
+    (SubscriptionType.TENANT, None),
+    (SubscriptionType.PROJECT, 'p1'),
+], ids=['tenant', 'project'])
+def test_unsubscribe_by_token_from_other_engagement_mail(client, session, subscription_type, project_id):
+    """A link in mail about engagement B turns off the subscription that sent it, made on engagement A."""
+    participant, signed_up_on = setup_participant_and_engagement(session)
+    announced = factory_engagement_model(status=Status.Published.value)
+    EngagementMetadataModel(engagement_id=announced.id, project_id=project_id).save()
+    subscription = factory_subscription_model_with_ids(participant.id, signed_up_on.id, subscription_type, project_id)
+    token = EmailVerificationService.create_unsubscribe_token(participant.id, announced.id)
+
+    rv = client.patch(f'/api/subscription/unsubscribe/{token}', json={'is_subscribed': False})
+
+    assert rv.status_code == 200
+    assert rv.json['subscription_type'] == subscription_type.name
+    assert SubscriptionModel.find_by_id(subscription.id).is_subscribed is False
+
+
+def test_unsubscribe_by_token_reports_widest_type(client, session):
+    """With ENGAGEMENT, TENANT and PROJECT subscriptions all mailed, the response names TENANT."""
+    participant, engagement = setup_participant_and_engagement(session)
+    EngagementMetadataModel(engagement_id=engagement.id, project_id='p1').save()
+    # TENANT sits between narrower rows so neither the first nor the last row is the widest.
+    factory_subscription_model_with_ids(participant.id, engagement.id)
+    factory_subscription_model_with_ids(participant.id, engagement.id, SubscriptionType.TENANT)
+    factory_subscription_model_with_ids(participant.id, engagement.id, SubscriptionType.PROJECT, 'p1')
+    token = EmailVerificationService.create_unsubscribe_token(participant.id, engagement.id)
+
+    rv = client.patch(f'/api/subscription/unsubscribe/{token}', json={'is_subscribed': False})
+
+    assert rv.status_code == 200
+    assert rv.json['subscription_type'] == 'TENANT'
+
+
+def test_unsubscribe_by_token_leaves_other_participant_subscribed(client, session):
+    """Another participant's TENANT subscription, mailed about the same engagement, stays on."""
+    participant, engagement = setup_participant_and_engagement(session)
+    neighbour = factory_participant_model(TestParticipantInfo.participant2)
+    factory_subscription_model_with_ids(participant.id, engagement.id, SubscriptionType.TENANT)
+    neighbours = factory_subscription_model_with_ids(neighbour.id, engagement.id, SubscriptionType.TENANT)
+    token = EmailVerificationService.create_unsubscribe_token(participant.id, engagement.id)
+
+    rv = client.patch(f'/api/subscription/unsubscribe/{token}', json={'is_subscribed': False})
+
+    assert rv.status_code == 200
+    assert SubscriptionModel.find_by_id(neighbours.id).is_subscribed is True
+
+
+def test_unsubscribe_by_token_leaves_unrelated_subscription(client, session):
+    """A token whose engagement matches none of the participant's subscriptions changes nothing."""
+    participant, signed_up_on = setup_participant_and_engagement(session)
+    other = factory_engagement_model(status=Status.Published.value)
+    subscription = factory_subscription_model_with_ids(participant.id, signed_up_on.id)
+    token = EmailVerificationService.create_unsubscribe_token(participant.id, other.id)
+
+    rv = client.patch(f'/api/subscription/unsubscribe/{token}', json={'is_subscribed': False})
+
+    assert rv.status_code == 400
+    assert SubscriptionModel.find_by_id(subscription.id).is_subscribed is True
 
 
 def test_unsubscribe_invalid_token(client, session):

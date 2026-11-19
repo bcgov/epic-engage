@@ -1,3 +1,5 @@
+import { SubscriptionType } from 'constants/subscriptionType';
+
 export type SubscribeTypeLabel = 'EMAIL_LIST' | 'SIGN_UP';
 
 export type CallToActionTypes = 'link' | 'button';
@@ -30,6 +32,7 @@ export interface UnsubscribeByToken {
 export interface UnsubscribeByTokenResponse {
     is_subscribed: boolean;
     engagement_id: number;
+    subscription_type: SubscriptionType;
 }
 
 export const SUBSCRIBE_TYPE: { [x in SubscribeTypeLabel]: SubscribeTypeLabel } = {

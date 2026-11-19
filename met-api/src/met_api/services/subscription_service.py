@@ -1,4 +1,5 @@
 """Service for Subscription management."""
+from met_api.models.engagement_metadata import EngagementMetadataModel
 from met_api.models.subscription import Subscription as SubscriptionModel
 from met_api.schemas.subscription import SubscriptionSchema
 
@@ -41,6 +42,18 @@ class SubscriptionService:
         if not update_subscription:
             raise ValueError('Subscription to update was not found')
         return SubscriptionSchema().dump(update_subscription)
+
+    @staticmethod
+    def update_subscriptions_mailed_about(participant_id, engagement_id, is_subscribed) -> dict:
+        """Update the participant's subscriptions that get mail about the engagement; return the widest type."""
+        metadata = EngagementMetadataModel.find_by_id(engagement_id)
+        records = SubscriptionModel.update_mailed_about_for_participant(
+            participant_id, engagement_id, metadata.project_id if metadata else None, is_subscribed)
+        if not records:
+            raise ValueError('Subscription Not Found')
+        # SubscriptionType values grow with scope: ENGAGEMENT < PROJECT < TENANT.
+        widest = max((record.type for record in records), key=lambda subscription_type: subscription_type.value)
+        return {'is_subscribed': is_subscribed, 'subscription_type': widest.name}
 
     @classmethod
     def create_or_update_subscription(cls, subscription: dict):
