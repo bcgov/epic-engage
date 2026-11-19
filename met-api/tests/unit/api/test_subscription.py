@@ -133,10 +133,13 @@ def test_unsubscribe_by_token_from_other_engagement_mail(client, session, subscr
 
 
 def test_unsubscribe_by_token_reports_widest_type(client, session):
-    """With an ENGAGEMENT and a TENANT subscription both mailed, the response names TENANT."""
+    """With ENGAGEMENT, TENANT and PROJECT subscriptions all mailed, the response names TENANT."""
     participant, engagement = setup_participant_and_engagement(session)
+    EngagementMetadataModel(engagement_id=engagement.id, project_id='p1').save()
+    # TENANT sits between narrower rows so neither the first nor the last row is the widest.
     factory_subscription_model_with_ids(participant.id, engagement.id)
     factory_subscription_model_with_ids(participant.id, engagement.id, SubscriptionType.TENANT)
+    factory_subscription_model_with_ids(participant.id, engagement.id, SubscriptionType.PROJECT, 'p1')
     token = EmailVerificationService.create_unsubscribe_token(participant.id, engagement.id)
 
     rv = client.patch(f'/api/subscription/unsubscribe/{token}', json={'is_subscribed': False})
