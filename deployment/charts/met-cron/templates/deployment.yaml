@@ -29,6 +29,8 @@ spec:
           requests:
             cpu: {{ .Values.resources.cpu.request }}
             memory: {{ .Values.resources.memory.request }}
+        {{- $epicPush := or (not (hasKey .Values "epicPush")) .Values.epicPush }}
+        {{- $loadConfigMap := or (not (hasKey .Values "loadConfigMap")) .Values.loadConfigMap }}
         env:
             - name: DATABASE_USERNAME
               valueFrom:
@@ -73,6 +75,7 @@ spec:
                 secretKeyRef:
                   name: met-email-key
                   key: EMAIL_SECRET_KEY
+            {{- if $epicPush }}
             - name: IS_EAO_ENVIRONMENT
               valueFrom:
                 configMapKeyRef:
@@ -94,13 +97,20 @@ spec:
                   key: {{ . }}
                   optional: true
             {{- end }}
+            {{- end }}
+        {{- if or $loadConfigMap $epicPush }}
         envFrom:
+          {{- if $loadConfigMap }}
           - configMapRef:
               name: {{ .Chart.Name }}
+          {{- end }}
+          {{- if $epicPush }}
           # S3_HOST and S3_BUCKET build the banner URL sent in the EPIC/DEMI push.
           - configMapRef:
               name: s3-objectstore
               optional: true
+          {{- end }}
+        {{- end }}
         ports:
           - containerPort: 8080
             protocol: TCP

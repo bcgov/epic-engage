@@ -6,6 +6,11 @@ image:
 
 replicaCount: 1
 
+# Dev met-cron runs without the met-cron ConfigMap and without the EPIC push settings.
+# Both default to true when unset.
+loadConfigMap: false
+epicPush: false
+
 resources:
   cpu:
     limit: 1000m
