@@ -22,6 +22,7 @@ from flask import current_app, g
 
 from met_api.config import get_named_config
 from met_api.constants.engagement_status import Status
+from met_api.constants.subscription_type import SubscriptionType
 from met_api.constants.widget import WidgetType
 from met_api.constants.email_verification import EmailVerificationType
 from met_api.models import Tenant
@@ -378,12 +379,15 @@ def setup_participant_and_engagement(session=None):
     return participant, engagement
 
 
-def factory_subscription_model_with_ids(participant_id, engagement_id):
+def factory_subscription_model_with_ids(participant_id, engagement_id, subscription_type=SubscriptionType.ENGAGEMENT,
+                                        project_id=None):
     """Produce a subscription model with specific participant and engagement."""
     subscription = SubscriptionModel(
         engagement_id=engagement_id,
         participant_id=participant_id,
         is_subscribed=True,
+        type=subscription_type,
+        project_id=project_id,
     )
     subscription.save()
     return subscription

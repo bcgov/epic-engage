@@ -35,8 +35,8 @@ class Subscription(BaseModel):  # pylint: disable=too-few-public-methods
         return db_subscription
 
     @classmethod
-    def get_confirmed_for_engagement(cls, engagement_id, project_id):
-        """Return (subscription_id, participant_id, email_address) rows of confirmed subscriptions for the engagement.
+    def _mailed_about(cls, engagement_id, project_id):
+        """Return the filter for subscriptions that get mail about the engagement.
 
         Matches: TENANT in the same tenant, ENGAGEMENT by engagement, PROJECT by project id or else by engagement.
         """
@@ -51,18 +51,35 @@ class Subscription(BaseModel):  # pylint: disable=too-few-public-methods
                                 cls.engagement_id == engagement_id)]
         if project_id:
             project_matches.append(cls.project_id == project_id)
-        matches = [
+        return or_(
             and_(cls.type == SubscriptionType.TENANT, ~other_tenant),
             and_(cls.type == SubscriptionType.ENGAGEMENT, cls.engagement_id == engagement_id),
             and_(cls.type == SubscriptionType.PROJECT, or_(*project_matches)),
-        ]
+        )
+
+    @classmethod
+    def get_confirmed_for_engagement(cls, engagement_id, project_id):
+        """Return (subscription_id, participant_id, email_address) of confirmed subscriptions for the engagement."""
         return db.session.query(cls.id.label('subscription_id'),
                                 Participant.id.label('participant_id'),
                                 Participant.email_address.label('email_address'))\
             .outerjoin(Participant, Participant.id == cls.participant_id)\
-            .filter(cls.is_subscribed.is_(True), or_(*matches))\
+            .filter(cls.is_subscribed.is_(True), cls._mailed_about(engagement_id, project_id))\
             .order_by(cls.id)\
             .all()
+
+    @classmethod
+    def update_mailed_about_for_participant(cls, participant_id, engagement_id, project_id,
+                                            is_subscribed) -> list[Subscription]:
+        """Set is_subscribed on every subscription of the participant that gets mail about the engagement."""
+        records = cls.query.filter(cls.participant_id == participant_id,
+                                   cls._mailed_about(engagement_id, project_id)).all()
+        for record in records:
+            record.is_subscribed = is_subscribed
+            record.updated_date = datetime.utcnow()
+            record.updated_by = participant_id
+        db.session.commit()
+        return records
 
     @classmethod
     def get_by_engagement_id(cls, engagement_id) -> Subscription:
