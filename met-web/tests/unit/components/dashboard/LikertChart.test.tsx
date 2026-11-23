@@ -253,6 +253,13 @@ describe('LikertChart', () => {
 
         const pill = container.querySelector('[data-testid="likert-weighted-score-pill"] rect');
         expect(pill?.getAttribute('fill')?.toUpperCase()).toBe('#EDEBE9');
+
+        // Centred text keeps the left and right padding equal.
+        const text = container.querySelector('[data-testid="likert-weighted-score"]');
+        expect(text?.getAttribute('text-anchor')).toBe('middle');
+        expect(Number(text?.getAttribute('x'))).toBeCloseTo(
+            Number(pill?.getAttribute('x')) + Number(pill?.getAttribute('width')) / 2,
+        );
     });
 
     it('keeps the legacy 5-point split for unclassified data', () => {

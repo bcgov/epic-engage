@@ -29,7 +29,8 @@ const SCORE_FONT_SIZE = 10;
 // Weighted score sits in a pill under the label, set apart from long labels.
 const SCORE_PILL_H = 16;
 const SCORE_PILL_GAP = 6;
-const SCORE_PILL_PAD_X = 6;
+// At least the end radius, so the text clears the rounded ends.
+const SCORE_PILL_PAD_X = SCORE_PILL_H / 2;
 
 const DEFAULT_SCALE_LABELS = ['Not effective', 'Neutral', 'Somewhat effective', 'Effective', 'Very effective'];
 
@@ -413,6 +414,11 @@ export const LikertChart = ({
                             const blockTop = y0 + (rowH - blockH) / 2;
                             const firstBaseline = blockTop + LABEL_LINE_H - 3;
                             const pillY = blockTop + lines.length * LABEL_LINE_H + SCORE_PILL_GAP;
+                            const pillW =
+                                score === null
+                                    ? 0
+                                    : (textWidth(formatScore(score)) * SCORE_FONT_SIZE) / LABEL_FONT_SIZE +
+                                      SCORE_PILL_PAD_X * 2;
 
                             return (
                                 <g key={row.label}>
@@ -447,11 +453,7 @@ export const LikertChart = ({
                                                 <rect
                                                     x={PAD_L + LABEL_INSET}
                                                     y={pillY}
-                                                    width={
-                                                        (textWidth(formatScore(score)) * SCORE_FONT_SIZE) /
-                                                            LABEL_FONT_SIZE +
-                                                        SCORE_PILL_PAD_X * 2
-                                                    }
+                                                    width={pillW}
                                                     height={SCORE_PILL_H}
                                                     rx={SCORE_PILL_H / 2}
                                                     fill={Palette.chart.likertScorePill.fill}
@@ -459,8 +461,11 @@ export const LikertChart = ({
                                                 />
                                                 <text
                                                     data-testid="likert-weighted-score"
-                                                    x={PAD_L + LABEL_INSET + SCORE_PILL_PAD_X}
+                                                    // Centred, so any error in the measured width is split evenly
+                                                    // between both sides instead of eating the right padding.
+                                                    x={PAD_L + LABEL_INSET + pillW / 2}
                                                     y={pillY + SCORE_PILL_H / 2}
+                                                    textAnchor="middle"
                                                     dominantBaseline="central"
                                                     fontSize={SCORE_FONT_SIZE}
                                                     fill={Palette.chart.likertClassification.neutral.label}
